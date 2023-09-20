@@ -1,3 +1,5 @@
+import scene2d;
+
 #include "quickjs.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,5 +20,7 @@ function JSX(tag,atts,kids) {
     JS_GetFastArray(ctx, val, &sub, &n);
     printf("ret=%x\n", n);
     printf("tag=%s\n", JS_ToCString(ctx, val));
+    //kml::Node node(kml::NodeType::ELEMENT_NODE);
+    scene2d::Actor actor;
     return 0;
 }
