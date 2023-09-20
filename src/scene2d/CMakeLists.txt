@@ -1,5 +1,5 @@
 target_sources(quickui PRIVATE
-  FILE_SET modules
+  FILE_SET scene2d
   TYPE CXX_MODULES FILES
   "scene2d.ixx"
   "scene2d-Actor.ixx"

@@ -20,7 +20,6 @@ function JSX(tag,atts,kids) {
     JS_GetFastArray(ctx, val, &sub, &n);
     printf("ret=%x\n", n);
     printf("tag=%s\n", JS_ToCString(ctx, val));
-    //kml::Node node(kml::NodeType::ELEMENT_NODE);
-    scene2d::Actor actor;
+    scene2d::Actor actor(scene2d::ActorType::ACTOR_ELEMENT);
     return 0;
 }
