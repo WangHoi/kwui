@@ -7,7 +7,7 @@ namespace base {
 export class Object {
 public:
 	Object()
-		: ref_count_(1)
+		: ref_count_(0)
 	{}
 	void retain()
 	{
@@ -35,7 +35,9 @@ public:
 	{}
 	object_refptr(O* ptr)
 		: ptr_(ptr)
-	{}
+	{
+		ptr_->retain();
+	}
 	object_refptr(const object_refptr& o)
 		: ptr_(o.ptr_)
 	{
