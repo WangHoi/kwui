@@ -2,6 +2,7 @@ add_executable(kwui "")
 
 add_subdirectory(base)
 add_subdirectory(scene2d)
+add_subdirectory(style)
 
 target_sources(kwui PRIVATE
     main.cpp)
