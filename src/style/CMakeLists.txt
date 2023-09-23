@@ -3,4 +3,5 @@ target_sources(kwui PRIVATE
   TYPE CXX_MODULES FILES
   "style.ixx"
   "style-Style.ixx"
+  "style-Parser.ixx"
 )

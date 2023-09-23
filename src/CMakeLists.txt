@@ -11,5 +11,7 @@ target_link_libraries(kwui PRIVATE
 #    absl::base
 #    absl::synchronization
 #    absl::strings
+    PEGTL
+    fifo_map
 )
-# target_compile_options(kwui PRIVATE /experimental:module)
+target_compile_options(kwui PRIVATE /utf-8)
