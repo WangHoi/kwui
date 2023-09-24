@@ -10,8 +10,10 @@ import base;
 
 namespace style {
 
-enum class Unit {
+export enum class ValueUnit {
 	Undefined,
+
+	Raw,
 
 	Pixel,
 	Point,
@@ -21,25 +23,25 @@ enum class Unit {
 	Keyword,
 };
 
-struct Value {
+export struct Value {
 	float f32_val = 0.0f;
 	base::string_atom keyword_val;
-	Unit unit = Unit::Undefined;
+	ValueUnit unit = ValueUnit::Undefined;
 };
 
-enum class SpecType {
+export enum class ValueSpecType {
 	Unset,
 	Inherit,
 	Initial,
 	Specified,
 };
 
-struct ValueSpec {
-	SpecType type = SpecType::Unset;
+export struct ValueSpec {
+	ValueSpecType type = ValueSpecType::Unset;
 	std::optional<Value> value;
 };
 
-struct StyleSpec {
+export struct StyleSpec {
 	ValueSpec display;
 	ValueSpec position;
 
@@ -69,23 +71,34 @@ struct StyleSpec {
 	ValueSpec height;
 };
 
-enum class DisplayType {
+export enum class DisplayType {
 	Block,
 	Inline,
 	InlineBlock,
 	None,
 };
 
-enum class PositionType {
+export enum class PositionType {
 	Static,
 	Relative,
 	Absolute,
 	Fixed,
 };
 
-struct Style {
+export struct Style {
 	DisplayType display = DisplayType::Block;
 	PositionType position = PositionType::Static;
+	Value left;
+	Value top;
+	Value right;
+	Value bottom;
+	Value min_width;
+	Value min_height;
+	Value max_width;
+	Value max_height;
+
+	Value width;
+	Value height;
 
 	Value margin_left;
 	Value margin_top;
@@ -99,18 +112,6 @@ struct Style {
 	Value padding_top;
 	Value padding_right;
 	Value padding_bottom;
-
-	Value left;
-	Value top;
-	Value right;
-	Value bottom;
-	Value min_width;
-	Value min_height;
-	Value max_width;
-	Value max_height;
-
-	Value width;
-	Value height;
 };
 
 }

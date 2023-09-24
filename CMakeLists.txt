@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 # set(ABSL_PROPAGATE_CXX_STD ON)
 # add_subdirectory(3rdparty/abseil-cpp-20230802.1)
 add_subdirectory(3rdparty/quickjspp)
-add_subdirectory(3rdparty/PEGTL)
+# add_subdirectory(3rdparty/PEGTL)
 add_subdirectory(3rdparty/fifo_map)
 
 add_subdirectory(src)

@@ -6,6 +6,7 @@ module;
 export module scene2d:Actor;
 
 import base;
+import style;
 
 namespace scene2d {
 
@@ -34,11 +35,11 @@ public:
 	}
 
 protected:
-#pragma region 对象模型相关
+#pragma region AOM
 	Stage* stage_ = nullptr;
 
 	Actor* parent_ = nullptr;
-	Actor* next_sibling_;
+	Actor* next_sibling_;	// double linked
 	Actor* prev_sibling_;
 	Actor* first_child_ = nullptr;
 
@@ -51,8 +52,12 @@ protected:
 	base::string_atom tag_;
 #pragma endregion
 
-#pragma region 布局相关
+#pragma region Style and layout
+	style::StyleSpec specStyle_;
+	style::Style computedStyle_;
 #pragma endregion
+	
+	friend class Stage;
 };
 
 }
