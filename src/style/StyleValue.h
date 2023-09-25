@@ -1,16 +1,15 @@
-module;
+#pragma once
+
 #include <string>
 #include <memory>
 #include <vector>
 #include <set>
 #include <optional>
-export module style:Style;
-
-import base;
+#include "base/base.h"
 
 namespace style {
 
-export enum class ValueUnit {
+enum class ValueUnit {
 	Undefined,
 
 	Raw,
@@ -23,25 +22,25 @@ export enum class ValueUnit {
 	Keyword,
 };
 
-export struct Value {
+struct Value {
 	float f32_val = 0.0f;
 	base::string_atom keyword_val;
 	ValueUnit unit = ValueUnit::Undefined;
 };
 
-export enum class ValueSpecType {
+enum class ValueSpecType {
 	Unset,
 	Inherit,
 	Initial,
 	Specified,
 };
 
-export struct ValueSpec {
+struct ValueSpec {
 	ValueSpecType type = ValueSpecType::Unset;
 	std::optional<Value> value;
 };
 
-export struct StyleSpec {
+struct StyleSpec {
 	ValueSpec display;
 	ValueSpec position;
 
@@ -71,21 +70,21 @@ export struct StyleSpec {
 	ValueSpec height;
 };
 
-export enum class DisplayType {
+enum class DisplayType {
 	Block,
 	Inline,
 	InlineBlock,
 	None,
 };
 
-export enum class PositionType {
+enum class PositionType {
 	Static,
 	Relative,
 	Absolute,
 	Fixed,
 };
 
-export struct Style {
+struct Style {
 	DisplayType display = DisplayType::Block;
 	PositionType position = PositionType::Static;
 	Value left;

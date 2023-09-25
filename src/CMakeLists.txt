@@ -7,11 +7,12 @@ add_subdirectory(scene2d)
 
 target_sources(kwui PRIVATE
     main.cpp)
+target_include_directories(kwui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(kwui PRIVATE
-    quickjs
 #    absl::base
 #    absl::synchronization
 #    absl::strings
     fifo_map
+    quickjs
 )
 target_compile_options(kwui PRIVATE /utf-8)

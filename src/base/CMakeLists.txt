@@ -1,10 +1,5 @@
+target_sources(kwui PUBLIC
+  base.h)
 target_sources(kwui PRIVATE
-  FILE_SET base
-  TYPE CXX_MODULES FILES
-  base.ixx
-  base-Object.ixx
- "base-string_intern.ixx")
-# target_sources(kwui PRIVATE 
-#   Actor.cpp
-#   Stage.cpp
-# )
+  Object.h
+  string_intern.h)

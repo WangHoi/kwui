@@ -1,4 +1,4 @@
-module scene2d;
+#include "Actor.h"
 
 namespace scene2d {
 

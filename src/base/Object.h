@@ -1,20 +1,20 @@
-module;
+#pragma once
+
 #include <cassert>
-export module base:Object;
 
 namespace base {
 
-export class Object {
+class Object {
 public:
 	Object()
 		: ref_count_(0)
 	{}
-	void retain()
+	inline void retain()
 	{
 		assert(ref_count_ > 0);
 		++ref_count_;
 	}
-	void release()
+	inline void release()
 	{
 		assert(ref_count_ > 0);
 		--ref_count_;
@@ -26,7 +26,7 @@ protected:
 	int ref_count_;
 };
 
-export template <typename O>
+template <typename O>
 class object_refptr
 {
 public:

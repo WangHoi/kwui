@@ -1,4 +1,5 @@
-module;
+#pragma once
+
 #include "quickjs.h"
 #include "quickjs-libc.h"
 #include "cutils.h"
@@ -6,15 +7,14 @@ module;
 #include <stdlib.h>
 #include <stdexcept>
 #include <fstream>
-export module script;
 
-import base;
-import style;
+#include "base/base.h"
+#include "style/style.h"
 
 namespace script {
 
 class Context;
-export class Runtime {
+class Runtime {
 public:
 	static Runtime* get() {
 		static Runtime rt;
@@ -36,7 +36,7 @@ private:
 	friend class Context;
 };
 
-export class Context {
+class Context {
 public:
 	Context()
 		: Context(Runtime::get()) {}

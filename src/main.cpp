@@ -1,10 +1,9 @@
-import scene2d;
-import script;
-
-#include "quickjs.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "scene2d/scene2d.h"
+#include "script/script.h"
 
 int main() {
     script::Context ctx;

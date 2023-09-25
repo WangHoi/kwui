@@ -1,22 +1,22 @@
-module;
+#pragma once
+
 #include <string>
 #include <memory>
 #include <vector>
 #include <set>
-export module scene2d:Actor;
 
-import base;
-import style;
+#include "base/base.h"
+#include "style/Style.h"
 
 namespace scene2d {
 
-export enum class ActorType {
+enum class ActorType {
 	ACTOR_TEXT = 1,
 	ACTOR_ELEMENT = 2,
 };
 
 class Stage;
-export class Actor : public base::Object {
+class Actor : public base::Object {
 public:
 	Actor(ActorType type)
 		: next_sibling_(this)
