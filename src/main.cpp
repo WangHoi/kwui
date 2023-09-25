@@ -8,6 +8,6 @@
 int main() {
     script::Context ctx;
     ctx.loadFile("d:/projects/kwui/test.js");
-    scene2d::Actor actor(scene2d::ActorType::ACTOR_ELEMENT);
+    scene2d::Node actor(scene2d::ActorType::ACTOR_ELEMENT);
     return 0;
 }

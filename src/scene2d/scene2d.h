@@ -1,4 +1,4 @@
 #pragma once
 
-#include "Actor.h"
-#include "Stage.h"
+#include "Node.h"
+#include "Scene.h"

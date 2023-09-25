@@ -1,8 +1,8 @@
-#include "Actor.h"
+#include "Node.h"
 
 namespace scene2d {
 
-//Actor::~Actor()
+//Node::~Node()
 //{
 //
 //}

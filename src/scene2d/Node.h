@@ -15,33 +15,33 @@ enum class ActorType {
 	ACTOR_ELEMENT = 2,
 };
 
-class Stage;
-class Actor : public base::Object {
+class Scene;
+class Node : public base::Object {
 public:
-	Actor(ActorType type)
+	Node(ActorType type)
 		: next_sibling_(this)
 		, prev_sibling_(this)
 		, type_(type)
 	{}
-	Actor(ActorType type, const std::string& text)
-		: Actor(type)
+	Node(ActorType type, const std::string& text)
+		: Node(type)
 	{
 		text_ = text;
 	}
-	Actor(ActorType type, base::string_atom tag)
-		: Actor(type)
+	Node(ActorType type, base::string_atom tag)
+		: Node(type)
 	{
 		tag_ = tag;
 	}
 
 protected:
 #pragma region AOM
-	Stage* stage_ = nullptr;
+	Scene* stage_ = nullptr;
 
-	Actor* parent_ = nullptr;
-	Actor* next_sibling_;	// double linked
-	Actor* prev_sibling_;
-	Actor* first_child_ = nullptr;
+	Node* parent_ = nullptr;
+	Node* next_sibling_;	// double linked
+	Node* prev_sibling_;
+	Node* first_child_ = nullptr;
 
 	ActorType type_;
 
@@ -57,7 +57,7 @@ protected:
 	style::Style computedStyle_;
 #pragma endregion
 	
-	friend class Stage;
+	friend class Scene;
 };
 
 }
