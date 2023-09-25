@@ -1,5 +1,5 @@
 add_library(quickjs STATIC "")
-target_compile_definitions(quickjs PRIVATE
+target_compile_definitions(quickjs PUBLIC
   JS_STRICT_NAN_BOXING # this option enables x64 build on Windows/MSVC
   CONFIG_BIGNUM
   CONFIG_JSX)

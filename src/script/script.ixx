@@ -1,7 +1,11 @@
 module;
 #include "quickjs.h"
+#include "quickjs-libc.h"
 #include "cutils.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdexcept>
+#include <fstream>
 export module script;
 
 import base;
@@ -12,6 +16,11 @@ namespace script {
 class Context;
 export class Runtime {
 public:
+	static Runtime* get() {
+		static Runtime rt;
+		return &rt;
+	}
+private:
 	Runtime()
 	{
 		rt_ = JS_NewRuntime();
@@ -22,21 +31,50 @@ public:
 		JS_FreeRuntime(rt_);
 		rt_ = nullptr;
 	}
-private:
+
 	JSRuntime* rt_;
 	friend class Context;
 };
 
 export class Context {
 public:
-	Context(Runtime& rt)
+	Context()
+		: Context(Runtime::get()) {}
+	Context(Runtime* rt)
 	{
-		ctx_ = JS_NewContext(rt.rt_);
+		ctx_ = JS_NewContext(rt->rt_);
+		JS_SetContextOpaque(ctx_, this);
+		js_init_module_std(ctx_, "std");
+		js_init_module_os(ctx_, "os");
+		js_std_add_helpers(ctx_, 0, nullptr);
 	}
 	~Context()
 	{
 		JS_FreeContext(ctx_);
 		ctx_ = nullptr;
+	}
+
+	void loadFile(const std::string& fname)
+	{
+		FILE* f = fopen(fname.c_str(), "r");
+		if (!f)
+			return;
+		fseek(f, 0, SEEK_END);
+		long size = ftell(f);
+		if (size <= 0)
+			return;
+		std::string content;
+		content.resize(size);
+		fseek(f, 0, SEEK_SET);
+		fread(content.data(), 1, size, f);
+		int eval_type = JS_DetectModule(content.data(), content.size())
+			? JS_EVAL_TYPE_MODULE
+			: JS_EVAL_TYPE_GLOBAL;
+		JSValue ret = JS_Eval(ctx_, content.data(), size, fname.c_str(), eval_type);
+		if (JS_IsException(ret)) {
+			js_std_dump_error(ctx_);
+		}
+		JS_FreeValue(ctx_, ret);
 	}
 
 	template<typename T>
