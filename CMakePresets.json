@@ -46,6 +46,15 @@
       }
     }
   ],
-  "buildPresets": [],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "x86-debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "x86-release"
+    }
+  ],
   "testPresets": []
 }
