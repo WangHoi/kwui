@@ -11,6 +11,10 @@
 #include "base/base.h"
 #include "style/style.h"
 
+namespace scene2d {
+class Scene;
+}
+
 namespace script {
 
 class Context;
@@ -40,19 +44,10 @@ class Context {
 public:
 	Context()
 		: Context(Runtime::get()) {}
-	Context(Runtime* rt)
-	{
-		ctx_ = JS_NewContext(rt->rt_);
-		JS_SetContextOpaque(ctx_, this);
-		js_init_module_std(ctx_, "std");
-		js_init_module_os(ctx_, "os");
-		js_std_add_helpers(ctx_, 0, nullptr);
-	}
-	~Context()
-	{
-		JS_FreeContext(ctx_);
-		ctx_ = nullptr;
-	}
+	Context(Runtime* rt);
+	~Context();
+
+	void initSceneClass();
 
 	void loadFile(const std::string& fname)
 	{
@@ -92,7 +87,7 @@ public:
 	template<>
 	std::string parse<std::string>(JSValue j)
 	{
-		const char *s = JS_ToCString(ctx_, j);
+		const char* s = JS_ToCString(ctx_, j);
 		return s ? std::string(s) : std::string();
 	}
 
@@ -158,7 +153,7 @@ public:
 			v.f32_val = (float)f64;
 			v.unit = style::ValueUnit::Raw;
 		} else if (JS_IsString(j)) {
-			const char *s = JS_ToCString(ctx_, j);
+			const char* s = JS_ToCString(ctx_, j);
 			int ret;
 			char dim[32] = {};
 			ret = sscanf(s, "%f%32s", &v.f32_val, dim);
@@ -182,10 +177,7 @@ public:
 		return v;
 	}
 
-	JSValue wrapObject(base::Object* obj)
-	{
-		return JS_UNDEFINED;
-	}
+	JSValue wrapScene(scene2d::Scene* scene);
 
 private:
 	JSContext* ctx_;

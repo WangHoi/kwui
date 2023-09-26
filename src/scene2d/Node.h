@@ -7,6 +7,7 @@
 
 #include "base/base.h"
 #include "style/Style.h"
+#include "script/script.h"
 
 namespace scene2d {
 
@@ -35,7 +36,7 @@ public:
 	}
 
 protected:
-#pragma region AOM
+#pragma region Tree nodes
 	Scene* stage_ = nullptr;
 
 	Node* parent_ = nullptr;
@@ -50,6 +51,10 @@ protected:
 
 	// Element
 	base::string_atom tag_;
+
+	// Component
+	JSValue comp_state_ = JS_UNINITIALIZED;
+
 #pragma endregion
 
 #pragma region Style and layout

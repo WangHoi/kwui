@@ -15,9 +15,32 @@ class Div extends Object {
 	}
 };
 
+class __ComponentState__ extends Object {
+	scene;
+	renderFn;
+	props;
+	children;
+
+	constructor(scene, builder, props, children) {
+		this.scene = scene;
+		this.renderFn = builder;
+		this.props = props;
+		this.children = children;
+	}
+	update() {
+		this.scene.updateComponent(this);
+	}
+	render() {
+		return this.renderFn(this.props, this.children);
+	}
+}
+
 function main() {
 	var a = <Div a="attr1"><p>aa<Div>jjj</Div></p></Div>;
-	console.log(`${JSON.stringify(a)}`);
+	//console.log(`${JSON.stringify(a)}`);
 }
+console.log("first");
+var bb = app.showDialog(<Div>aaa</Div>);
+console.log(`showDialog: ${bb}`);
 
 main();

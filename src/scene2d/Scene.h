@@ -12,11 +12,16 @@ class Scene : public base::Object {
 public:
 	Scene();
 	~Scene();
-	Node* createTextActor(const std::string &text);
-	Node* createElementActor(base::string_atom tag);
+	inline base::WeakObject<Scene> *weakObject() const
+	{
+		return weakptr_;
+	}
+	Node* createTextNode(const std::string &text);
+	Node* createElementNode(base::string_atom tag);
+	void updateComponent(JSValue comp_state);
 
-	void setup(JSValue actorData, JSValue styleData);
 private:
 	Node* root_;
+	base::WeakObject<Scene> *weakptr_;
 };
 }
