@@ -11,28 +11,26 @@
 
 namespace scene2d {
 
-enum class ActorType {
-	ACTOR_TEXT = 1,
-	ACTOR_ELEMENT = 2,
+enum class NodeType {
+	NODE_TEXT = 1,
+	NODE_ELEMENT = 2,
+	NODE_COMPONENT = 3,
 };
 
 class Scene;
 class Node : public base::Object {
 public:
-	Node(ActorType type)
-		: next_sibling_(this)
-		, prev_sibling_(this)
-		, type_(type)
-	{}
-	Node(ActorType type, const std::string& text)
-		: Node(type)
+	Node(NodeType type);
+	Node(NodeType type, const std::string& text);
+	Node(NodeType type, base::string_atom tag);
+	Node(NodeType type, JSValue comp_state);
+	~Node();
+	
+	void appendChild(Node *child);
+
+	inline base::WeakObject<Node> *weakObject() const
 	{
-		text_ = text;
-	}
-	Node(ActorType type, base::string_atom tag)
-		: Node(type)
-	{
-		tag_ = tag;
+		return weakptr_;
 	}
 
 protected:
@@ -40,11 +38,10 @@ protected:
 	Scene* stage_ = nullptr;
 
 	Node* parent_ = nullptr;
-	Node* next_sibling_;	// double linked
-	Node* prev_sibling_;
-	Node* first_child_ = nullptr;
+	int child_index = -1;
+	std::vector<Node*> children_;
 
-	ActorType type_;
+	NodeType type_;
 
 	// Text
 	std::string text_;
@@ -54,6 +51,7 @@ protected:
 
 	// Component
 	JSValue comp_state_ = JS_UNINITIALIZED;
+	base::WeakObject<Node> *weakptr_ = nullptr;
 
 #pragma endregion
 

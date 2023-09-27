@@ -77,6 +77,7 @@ JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, 
     if (!scene)
         return JS_UNDEFINED;
     scene->updateComponent(argv[1]);
+    return JS_UNDEFINED;
 }
 
 static JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);

@@ -5,9 +5,13 @@
 #include "scene2d/scene2d.h"
 #include "script/script.h"
 
-int main() {
+int main()
+{
+    base::initialize_log();
     script::Context ctx;
     ctx.loadFile("d:/projects/kwui/test.js");
-    scene2d::Node actor(scene2d::ActorType::ACTOR_ELEMENT);
+    LOG(INFO) << "started";
+    scene2d::Node actor(scene2d::NodeType::NODE_ELEMENT);
+    LOG(INFO) << "end";
     return 0;
 }

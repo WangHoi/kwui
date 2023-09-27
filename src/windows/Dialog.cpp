@@ -1,0 +1,867 @@
+#include "Dialog.h"
+#include "scene2d/scene2d.h"
+#include "text/EncodingManager.h"
+#include "graphics/GraphicDevice.h"
+#include "graphics/Painter.h"
+#include "platform/platform_helpers.h"
+#include "ui/ButtonNode.h"
+#include "ui/LabelNode.h"
+#include "ui/TextEditNode.h"
+#include "ui/ImageNode.h"
+#include "ui/ImageButtonNode.h"
+#include "pattern/callback.h"
+#include "theme.h"
+
+typedef LRESULT(CALLBACK *WndProc)(HWND, UINT, WPARAM, LPARAM);
+static ATOM RegisterWindowClass(HINSTANCE hInstance,
+                                const wchar_t* class_name,
+                                HICON icon,
+                                WndProc wnd_proc);
+
+static constexpr UINT_PTR ANIMATION_TIMER_EVENT = 0xFFFF00A0;
+static HCURSOR s_preloaded_cursors[NUM_CURSOR_TYPES] = {};
+
+static void PreloadCursor() {
+    if (s_preloaded_cursors[0])
+        return;
+    s_preloaded_cursors[CURSOR_ARROW] = LoadCursorW(NULL, IDC_ARROW);
+    s_preloaded_cursors[CURSOR_CROSS] = LoadCursorW(NULL, IDC_CROSS);
+    s_preloaded_cursors[CURSOR_HAND] = LoadCursorW(NULL, IDC_HAND);
+    s_preloaded_cursors[CURSOR_IBEAM] = LoadCursorW(NULL, IDC_IBEAM);
+    s_preloaded_cursors[CURSOR_WAIT] = LoadCursorW(NULL, IDC_WAIT);
+}
+
+Dialog::Dialog(float width, float height,
+               const WCHAR* wnd_class_name,
+               HICON icon, int flags,
+               optional<PopupShadowData> popup_shadow,
+               optional<CreateData> create_data)
+    : _hwnd_parent(NULL), _hwnd(NULL)
+    , _flags(flags), _create_data(create_data)
+    , _visible(false), _first_show_window(true)
+    , _size((float)width, (float)height)
+    , _mouse_event_tracking(false), _mouse_capture(false)
+    , _popup_shadow_data(popup_shadow)
+    , _on_window_pos_changed(false)
+    , _dpi_scale(1.0f)
+    , _himc(NULL)
+    , _animation_timer_id(0) {
+    _mouse_position = _size * 0.5f; // center mouse position
+    PreloadCursor();
+    InitWindow(GetModuleHandle(NULL), wnd_class_name, icon);
+}
+
+Dialog::~Dialog() {
+}
+
+void Dialog::SetVisible(bool visible) {
+    if (_visible != visible) {
+        _visible = visible;
+    }
+    if (_popup_shadow) {
+        _popup_shadow->SetVisible(visible);
+    }
+    ShowWindow(_hwnd, _visible ? SW_SHOWNORMAL : SW_HIDE);
+    if (_hwnd_parent) {
+        EnableWindow(_hwnd_parent, !_visible);
+    }
+    if (_visible && _first_show_window) {
+        _first_show_window = false;
+        UpdateWindow(_hwnd);
+    }
+}
+
+void Dialog::Resize(float width, float height) {
+    if (_size == Vector2(width, height))
+        return;
+    _size.Set(width, height);
+    /* TODO: remove the code
+    if (_popup_shadow) {
+        float px = (float)_popup_shadow_data->padding ;
+        float py = (float)_popup_shadow_data->padding;
+        _popup_shadow->_size.Set(width + 2.0f * px, height + 2.0f * px);
+    }
+    */
+    Vector2 pixel_size = (Vector2(width, height) * _dpi_scale).MakeRound();
+    SetWindowPos(_hwnd, NULL,
+                 0, 0,
+                 (int)pixel_size.x,
+                 (int)pixel_size.y,
+                 SWP_NOMOVE);
+}
+
+void Dialog::SetTitle(const String& text) {
+    _title_label->SetText(text);
+    auto utf16_text = EncodingManager::Instance()->UTF8ToWide(text);
+    SetWindowTextW(_hwnd, utf16_text.c_str());
+}
+
+void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON icon) {
+    auto EM = EncodingManager::Instance();
+    auto title = EM->UTF8ToWide("");
+    RegisterWindowClass(hInstance, wnd_class_name, icon, &Dialog::WndProcMain);
+    DWORD style, ex_style;
+    if (_flags & DIALOG_FLAG_MAIN) {
+        style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+        ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
+            | WS_EX_STATICEDGE | WS_EX_APPWINDOW;
+    } else {
+        style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+        ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
+            | WS_EX_STATICEDGE | WS_EX_APPWINDOW;// | WS_EX_TOPMOST;
+    }
+    int wnd_left = 360;
+    int wnd_top = 240;
+    if (_create_data.has_value()) {
+        _dpi_scale = _create_data->dpi_scale;
+        _pixel_size = (_size * _dpi_scale).MakeRound();
+        MONITORINFO info = {};
+        info.cbSize = sizeof(info);
+        if (GetMonitorInfoW(_create_data->monitor, &info)) {
+            int monitor_width = (int)info.rcWork.right;
+            int monitor_height = (int)info.rcWork.bottom;
+            wnd_left = (monitor_width - (int)_pixel_size.x) / 2;
+            wnd_top = (monitor_height - (int)_pixel_size.y) / 2;
+        }
+    } else {
+        _dpi_scale = GraphicDevice::Instance()->GetInitialDesktopDpiScale();
+        _pixel_size = (_size * _dpi_scale).MakeRound();
+        RECT work_area;
+        if (SystemParametersInfoW(SPI_GETWORKAREA, 0, &work_area, 0)) {
+            int monitor_width = (int)work_area.right;
+            int monitor_height = (int)work_area.bottom;
+            wnd_left = (monitor_width - (int)_pixel_size.x) / 2;
+            wnd_top = (monitor_height - (int)_pixel_size.y) / 2;
+        }
+    }
+    RECT rect;
+
+    SetRect(&rect, wnd_left, wnd_top,
+            wnd_left + (int)_pixel_size.x,
+            wnd_top + (int)_pixel_size.y);
+    CreateWindowExW(ex_style, wnd_class_name, title.c_str(), style,
+                    rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
+                    NULL, NULL, hInstance, this);
+}
+
+ATOM RegisterWindowClass(HINSTANCE hInstance, const wchar_t* class_name, HICON icon, WndProc wnd_proc) {
+    WNDCLASSEX wcex = {};
+
+    wcex.cbSize = sizeof(WNDCLASSEX);
+
+    //wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;// | CS_DBLCLKS;
+    wcex.style = CS_DBLCLKS; /*| CS_OWNDC*/;
+    wcex.lpfnWndProc = wnd_proc;
+    wcex.cbClsExtra = 0;
+    wcex.cbWndExtra = 0;
+    wcex.hInstance = hInstance;
+    wcex.hIcon = icon;
+    wcex.hIconSm = icon;
+    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszMenuName = nullptr; // MAKEINTRESOURCE(IDC_TRYWIN32);
+    wcex.lpszClassName = class_name;
+
+    return RegisterClassEx(&wcex);
+}
+
+static int MakeButtonMask(WPARAM wParam) {
+    int mask = 0;
+    if (wParam & MK_LBUTTON) mask |= (1 << LEFT_BUTTON);
+    if (wParam & MK_MBUTTON) mask |= (1 << MIDDLE_BUTTON);
+    if (wParam & MK_RBUTTON) mask |= (1 << RIGHT_BUTTON);
+    return mask;
+}
+
+static int GetModifiersState() {
+    int state = NO_MODIFILER;
+    if (GetKeyState(VK_LCONTROL) & 0x8000) state |= LCTRL_MODIFIER;
+    if (GetKeyState(VK_RCONTROL) & 0x8000) state |= RCTRL_MODIFIER;
+    if (GetKeyState(VK_LSHIFT) & 0x8000) state |= LSHIFT_MODIFIER;
+    if (GetKeyState(VK_RSHIFT) & 0x8000) state |= RSHIFT_MODIFIER;
+    if (GetKeyState(VK_LMENU) & 0x8000) state |= LALT_MODIFIER;
+    if (GetKeyState(VK_RMENU) & 0x8000) state |= RALT_MODIFIER;
+    return state;
+}
+
+static WPARAM MapLeftRightKeys(WPARAM vk, LPARAM lParam) {
+    WPARAM new_vk = vk;
+    UINT scancode = (lParam & 0x00ff0000) >> 16;
+    int extended = (lParam & 0x01000000) != 0;
+
+    switch (vk) {
+    case VK_SHIFT:
+        new_vk = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
+        break;
+    case VK_CONTROL:
+        new_vk = extended ? VK_RCONTROL : VK_LCONTROL;
+        break;
+    case VK_MENU:
+        new_vk = extended ? VK_RMENU : VK_LMENU;
+        break;
+    default:
+        // not a key we map from generic to left/right specialized
+        //  just return it.
+        new_vk = vk;
+        break;
+    }
+
+    return new_vk;
+}
+static wstring IME_GetCompositionString(HIMC himc, DWORD str) {
+    LONG length = ImmGetCompositionStringW(himc, str, NULL, 0);
+    if (length < sizeof(WCHAR))
+        return wstring();
+
+    length /= sizeof(WCHAR);
+    wstring text(length, L'\0');
+    ImmGetCompositionStringW(himc, str, &text[0], length * sizeof(WCHAR));
+    return text;
+}
+static int IME_GetCaretPos(HIMC himc) {
+    return (int)ImmGetCompositionStringW(himc, GCS_CURSORPOS, NULL, 0);
+}
+
+LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch (message) {
+    case WM_CREATE:
+        OnCreate();
+        break;
+    case WM_DESTROY:
+        OnDestroy();
+        break;
+    case WM_DPICHANGED:
+        OnDpiChanged(LOWORD(wParam), (const RECT*)lParam);
+        return 0;
+    case WM_SIZE:
+        _pixel_size = Vector2((float)LOWORD(lParam), (float)HIWORD(lParam));
+        OnResize();
+        break;
+    case WM_NCCALCSIZE: {
+        WINDOWPLACEMENT placement;
+        if (GetWindowPlacement(hWnd, &placement)) {
+            if (placement.showCmd == SW_SHOWMINIMIZED) {
+                return DefWindowProcW(hWnd, message, wParam, lParam);
+            }
+        }
+        LPNCCALCSIZE_PARAMS ncParams = (LPNCCALCSIZE_PARAMS)lParam;
+        ncParams->rgrc[0].top -= 0;
+        ncParams->rgrc[0].left -= 0;
+        ncParams->rgrc[0].bottom += 0;
+        ncParams->rgrc[0].right += 0;
+        return 0;
+    }
+    case WM_NCHITTEST: {
+        RECT rect;
+        GetWindowRect(hWnd, &rect);
+        float x = (float)(GET_X_LPARAM(lParam) - rect.left) / _dpi_scale;
+        float y = (float)(GET_Y_LPARAM(lParam) - rect.top) / _dpi_scale;
+        if (PickNode(_root.get(), Vector2(x, y), NODE_FLAG_CLICKABLE, NULL)) {
+            return HTCLIENT;
+        } else {
+            return HTCAPTION;
+        }
+    }
+    //case WM_NCACTIVATE:
+        //c2_log("Dialog HWND %p NCACTIVE wParam %d\n", hWnd, wParam);
+        //OnActivate(wParam);
+        //return FALSE;
+    case WM_DISPLAYCHANGE:
+        //c2_log("recv WM_DISPLAYCHANGE\n");
+        DiscardDeviceResources();
+        OnPaint();
+        break;
+    case WM_PAINT:
+        OnPaint();
+        break;
+    case WM_WINDOWPOSCHANGING:
+        return DefWindowProcW(_hwnd, message, wParam, lParam);
+    case WM_WINDOWPOSCHANGED: {
+        OnWindowPosChanged((WINDOWPOS*)lParam);
+        return DefWindowProcW(_hwnd, message, wParam, lParam);
+    }
+    case WM_ERASEBKGND: // don't want flicker
+        return true;
+    case WM_KEYDOWN:
+        //c2_log("WM_KEYDOWN: wParam=0x%08x, mapped=0x%08x\n", wParam, MapLeftRightKeys(wParam, lParam));
+        OnKeyDown(MapLeftRightKeys(wParam, lParam), GetModifiersState(), (lParam & (1 << 30)) != 0);
+        break;
+    case WM_KEYUP:
+        OnKeyUp(MapLeftRightKeys(wParam, lParam), GetModifiersState());
+        break;
+    case WM_CHAR:
+        //c2_log("WM_CHAR 0x%04x\n", wParam);
+        switch (wParam) {
+        case 0x08: // backspace
+        case 0x0A: // linefeed
+        case 0x1B: // escape
+        case 0x09: // tab
+        case 0x0D: // carriage return
+            break;
+        default:
+            if (wParam >= 0x20)
+                OnCharacter(wParam);
+        }
+        break;
+    case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
+        OnMouseDown(LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        break;
+    case WM_LBUTTONUP:
+        OnMouseUp(LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        break;
+    case WM_MBUTTONDOWN: case WM_MBUTTONDBLCLK:
+        OnMouseDown(MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        break;
+    case WM_MBUTTONUP:
+        OnMouseUp(MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        break;
+    case WM_RBUTTONDOWN: case WM_RBUTTONDBLCLK:
+        OnMouseDown(RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        break;
+    case WM_RBUTTONUP:
+        OnMouseUp(RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        break;
+    case WM_MOUSEMOVE:
+        _mouse_position = Vector2((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam))
+            / _dpi_scale;
+        OnMouseMove(MakeButtonMask(wParam), GetModifiersState());
+        break;
+    case WM_NCMOUSEMOVE:
+        _mouse_position = Vector2((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam))
+            / _dpi_scale;
+        OnMouseMove(MakeButtonMask(wParam), GetModifiersState());
+        return DefWindowProcW(hWnd, message, wParam, lParam);
+    case WM_MOUSELEAVE:
+        //c2_log("mouse leave\n");
+        _mouse_event_tracking = false;
+        RequestUpdate();
+        return 0;
+    case WM_ACTIVATE: {
+        LRESULT ret = DefWindowProcW(hWnd, message, wParam, lParam);
+        if (wParam == WA_INACTIVE) {
+            OnActivate(false);
+        } else {
+            OnActivate(true);
+        }
+        return ret;
+    }
+    case WM_IME_STARTCOMPOSITION:
+        //c2_log("WM_IME_STARTCOMPOSITION\n");
+        OnImeStartComposition();
+        break;
+    case WM_IME_COMPOSITION:
+        //c2_log("WM_IME_COMPOSITION lParam=0x%08X\n", lParam);
+        _himc = ImmGetContext(hWnd);
+        if (_himc) {
+            if (lParam & GCS_COMPSTR) {
+                wstring utf16_text = IME_GetCompositionString(_himc, GCS_COMPSTR);
+                //c2_log("  GCS_COMPSTR=[%s]\n",
+                //       EncodingManager::Instance()->WideToUTF8(utf16_text).GetCString());
+                // Send Editing Text
+                if (lParam & GCS_CURSORPOS) {
+                    int caret_pos = IME_GetCaretPos(_himc);
+                    //c2_log("  GCS_CURSORPOS=[%d]\n", caret_pos);
+                    OnImeComposition(utf16_text, make_optional(caret_pos));
+                } else {
+                    OnImeComposition(utf16_text, nullopt);
+                }
+            }
+            if (lParam & GCS_RESULTSTR) {
+                wstring utf16_text = IME_GetCompositionString(_himc, GCS_RESULTSTR);
+                //c2_log("  GCS_RESULTSTR=[%s]\n",
+                //       EncodingManager::Instance()->WideToUTF8(utf16_text).GetCString());
+                // Send Input Text
+                OnImeCommit(utf16_text);
+            }
+            ImmReleaseContext(hWnd, _himc);
+            _himc = NULL;
+        }
+        break;
+    case WM_IME_ENDCOMPOSITION:
+        OnImeEndComposition();
+        //c2_log("WM_IME_ENDCOMPOSITION\n");
+        break;
+    case WM_TIMER:
+        if (wParam == ANIMATION_TIMER_EVENT)
+            OnAnimationTimerEvent();
+        break;
+    case WM_SETFOCUS:
+        if (auto node = _focused_node.lock()) {
+            node->OnFocusIn(*this);
+        }
+        return 0;
+    case WM_KILLFOCUS:
+        if (auto node = _focused_node.lock()) {
+            node->OnFocusOut(*this);
+        }
+        return 0;
+    case WM_SETCURSOR:
+        if (auto node = _hovered_node.lock()) {
+            CursorType c = node->GetCursorType().value_or(CURSOR_ARROW);
+            SetCursor(s_preloaded_cursors[c]);
+        } else {
+            SetCursor(s_preloaded_cursors[CURSOR_ARROW]);
+        }
+        return TRUE;
+    case WM_SYSCOMMAND:
+        if (wParam == SC_CLOSE) {
+            OnCloseButtonClicked(*this);
+            return 0;
+        }
+        return DefWindowProcW(hWnd, message, wParam, lParam);
+    default:
+        return DefWindowProcW(hWnd, message, wParam, lParam);
+    }
+    return 0;
+}
+LRESULT CALLBACK Dialog::WndProcMain(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    Dialog *me;
+    if (message == WM_CREATE) {
+        me = reinterpret_cast<Dialog*>(((LPCREATESTRUCTW)lParam)->lpCreateParams);
+        me->_hwnd = hWnd;
+        SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG)me);
+    } else {
+        me = reinterpret_cast<Dialog*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
+    }
+    return me->WindowProc(hWnd, message, wParam, lParam);
+}
+void Dialog::OnCreate() {
+    _root = make_shared<Node2D>();
+
+    _title_label = make_shared<LabelNode>();
+    _title_label->SetFontSize(14);
+    _title_label->SetColor(theme::H3_TEXT_COLOR);
+    _title_label->SetOrigin(Vector2(16, 8));
+    _root->AddChild(_title_label);
+
+    _close_button = make_shared<ImageButtonNode>();
+    _close_button->SetImageName("close_button.png", "close_button_hover.png");
+    _close_button->SetBackgroundColor(NO_COLOR, theme::CLOSE_BUTTON_HOVER_COLOR);
+    _close_button->SetSize({ 40, 32 });
+    _close_button->SetOrigin({ _size.x - 40, 0 });
+    _root->AddChild(_close_button);
+    _close_button->SetClickedCallback(MakeCallback(this, &Dialog::OnCloseButtonClicked));
+
+    if (_popup_shadow_data.has_value()) {
+        float px = (float)_popup_shadow_data->padding;
+        float py = (float)_popup_shadow_data->padding;
+        _popup_shadow_data->monitor = _create_data.has_value()
+            ? _create_data->monitor
+            : NULL;
+        _popup_shadow_data->dpi_scale = _dpi_scale;
+        _popup_shadow = make_shared<PopupShadow>(
+            _size.x + px * 2,
+            _size.y + py * 2,
+            _hwnd, L"popupshadow", *_popup_shadow_data);
+    }
+}
+void Dialog::OnPaint() {
+    if (!_rt) {
+        c2_log("OnPaint: No render target.\n");
+        return;
+    }
+	int tries = 0;
+
+	while (tries < 2) {
+		PAINTSTRUCT ps;
+		BeginPaint(_hwnd, &ps);
+		_rt->BeginDraw();
+
+		Painter p(_rt.Get(), _mouse_position);
+		p.Clear(theme::BACKGROUND_COLOR);
+		PaintNode(p, _root.get());
+
+		HRESULT hr = _rt->EndDraw();
+		if (hr == D2DERR_RECREATE_TARGET) {
+			c2_log("Got D2DERR_RECREATE_TARGET\n");
+			EndPaint(_hwnd, &ps);
+
+			DiscardDeviceResources();
+			RecreateRenderTarget();
+			++tries;
+
+			continue;
+		}
+		if (FAILED(hr))
+			c2_log("OnPaint hr=%08x\n", hr);
+		EndPaint(_hwnd, &ps);
+		break;
+	}
+}
+void Dialog::OnResize() {
+    c2_log("OnResize %.0fx%.0f px\n", _pixel_size.x, _pixel_size.y);
+    UpdateBorderAndRenderTarget();
+    RequestPaint();
+}
+void Dialog::PaintNode(Painter& p, Node2D* node) {
+    if (!node->IsVisible()) return;
+    p.Translate(node->GetOrigin());
+    node->PaintNode(p);
+    for (auto &child : node->GetChildren()) {
+        if (!child->IsVisible()) continue;
+        p.Save();
+        PaintNode(p, child.get());
+        p.Restore();
+    }
+}
+void Dialog::Close() {
+    if (_animation_timer_id) {
+        KillTimer(_hwnd, _animation_timer_id);
+        _animation_timer_id = 0;
+        _animating_nodes.clear();
+    }
+    SendMessageW(_hwnd, WM_CLOSE, 0, 0);
+    if (_popup_shadow) {
+        _popup_shadow->Close();
+        _popup_shadow = nullptr;
+    }
+}
+void Dialog::RequestPaint() {
+    InvalidateRect(_hwnd, NULL, FALSE);
+}
+void Dialog::RequestUpdate() {
+    POINT point;
+    RECT wnd_rect;
+    if (GetCursorPos(&point) && GetWindowRect(_hwnd, &wnd_rect)) {
+        _mouse_position.Set((float)(point.x - wnd_rect.left),
+            (float)point.y - wnd_rect.top);
+        _mouse_position /= _dpi_scale;
+    } else {
+        _mouse_position.Set(-1);
+    }
+    UpdateHoveredNode();
+    UpdateFocusedNode();
+}
+void Dialog::RequestAnimationFrame(Node2D* node) {
+    auto it = find_if(_animating_nodes.begin(), _animating_nodes.end(),
+                      [&](const Node2DLink& link) {
+                          return link.lock().get() == node;
+                      });
+    if (it == _animating_nodes.end())
+        _animating_nodes.push_back(node->weak_from_this());
+    if (!_animating_nodes.empty() && !_animation_timer_id) {
+        _animation_timer_id = SetTimer(_hwnd, ANIMATION_TIMER_EVENT, USER_TIMER_MINIMUM, NULL);
+    }
+}
+void Dialog::UpdateCaretRect(const Vector2& origin, const Vector2& size) {
+    Vector2 top_left = (origin * _dpi_scale).MakeRound();
+    Vector2 bottom_right = ((origin + size) * _dpi_scale).MakeRound();
+
+    COMPOSITIONFORM cof;
+    cof.dwStyle = CFS_RECT;
+    cof.ptCurrentPos.x = (LONG)top_left.x;
+    cof.ptCurrentPos.y = (LONG)top_left.y;
+    cof.rcArea.left = (LONG)top_left.x;
+    cof.rcArea.top = (LONG)top_left.y;
+    cof.rcArea.right = (LONG)bottom_right.x;
+    cof.rcArea.bottom = (LONG)bottom_right.y;
+
+    CANDIDATEFORM caf;
+    caf.dwIndex = 0;
+    caf.dwStyle = CFS_EXCLUDE;
+    caf.ptCurrentPos.x = (LONG)top_left.x;
+    caf.ptCurrentPos.y = (LONG)top_left.y;
+    caf.rcArea.left = (LONG)top_left.x;
+    caf.rcArea.top = (LONG)top_left.y;
+    caf.rcArea.right = (LONG)bottom_right.x;
+    caf.rcArea.bottom = (LONG)bottom_right.y;
+
+    if (_himc) {
+        ImmSetCompositionWindow(_himc, &cof);
+        ImmSetCandidateWindow(_himc, &caf);
+    } else {
+        _himc = ImmGetContext(_hwnd);
+        if (_himc) {
+            ImmSetCompositionWindow(_himc, &cof);
+            ImmSetCandidateWindow(_himc, &caf);
+            ImmReleaseContext(_hwnd, _himc);
+        }
+    }
+}
+void Dialog::OnKeyDown(int key, int modifiers, bool prev_down) {
+    if (key == VK_RETURN)
+        return OnEnterKeyDown(*this);
+    if (key == VK_ESCAPE)
+        return OnEscapeKeyDown(*this);
+
+    Node2DRef node = _focused_node.lock();
+    if (node) node->OnKeyDown(key, modifiers, *this);
+}
+void Dialog::OnKeyUp(int key, int modifiers) {
+    if (key == VK_RETURN)
+        return OnEnterKeyUp(*this);
+    if (key == VK_ESCAPE)
+        return OnEscapeKeyUp(*this);
+
+    Node2DRef node = _focused_node.lock();
+    if (node) node->OnKeyUp(key, modifiers, *this);
+}
+void Dialog::OnCharacter(wchar_t ch) {
+    Node2DRef node = _focused_node.lock();
+    if (node) node->OnCharacter(ch, *this);
+}
+void Dialog::OnImeComposition(const wstring& text, optional<int> caret_pos) {
+    Node2DRef node = _focused_node.lock();
+    if (node) node->OnImeComposition(text, caret_pos, *this);
+}
+void Dialog::OnImeCommit(const wstring& text) {
+    Node2DRef node = _focused_node.lock();
+    if (node) node->OnImeCommit(text, *this);
+}
+void Dialog::OnImeStartComposition() {
+    Node2DRef node = _focused_node.lock();
+    if (node) {
+        node->OnImeStartComposition(*this);
+        Vector2 origin, size;
+        if (node->QueryImeCaretRect(origin, size))
+            UpdateCaretRect(node->MapPointToRoot(origin), size);
+    }
+}
+void Dialog::OnImeEndComposition() {
+    Node2DRef node = _focused_node.lock();
+    if (node) {
+        node->OnImeEndComposition(*this);
+    }
+}
+void Dialog::OnMouseDown(ButtonState button, int buttons, int modifiers) {
+    if ((1 << button) == buttons && !_mouse_capture) {
+        //c2_log("capture mouse\n");
+        _mouse_capture = true;
+        SetCapture(_hwnd);
+    }
+
+    if (button != LEFT_BUTTON) return;
+
+    Node2D *node;
+    Vector2 local_pos;
+    node = PickNode(_root.get(), _mouse_position, NODE_FLAG_CLICKABLE, &local_pos);
+    if (node) node->OnMouseDown(local_pos, *this);
+
+    node = PickNode(_root.get(), _mouse_position, NODE_FLAG_FOCUSABLE);
+    Node2DRef old_focused = _focused_node.lock();
+    if (node) {
+        if (node != old_focused.get())
+            if (old_focused) old_focused->OnFocusOut(*this);
+        _focused_node = node->weak_from_this();
+        node->OnFocusIn(*this);
+    }
+}
+void Dialog::OnMouseUp(ButtonState button, int buttons, int modifiers) {
+    if (buttons == 0 && _mouse_capture) {
+        _mouse_capture = false;
+        //c2_log("release mouse\n");
+        ReleaseCapture();
+    }
+
+    if (button != LEFT_BUTTON) return;
+
+    Node2D *node;
+    Vector2 local_pos;
+    node = PickNode(_root.get(), _mouse_position, NODE_FLAG_CLICKABLE, &local_pos);
+    if (node) node->OnClick(*this);
+}
+void Dialog::OnMouseMove(int buttons, int modifiers) {
+    //c2_log("OnMouseMove %.0f, %.0f\n", _mouse_position.x, _mouse_position.y);
+    UpdateMouseTracking();
+    UpdateHoveredNode();
+}
+void Dialog::UpdateHoveredNode() {
+    Node2D* node = PickNode(_root.get(), _mouse_position, NODE_FLAG_HOVERABLE);
+    Node2DRef old_hovered = _hovered_node.lock();
+    if (node != old_hovered.get()) {
+        if (old_hovered) {
+            old_hovered->_under_mouse = false;
+            old_hovered->OnHoverLeave(*this);
+        }
+        _hovered_node = node ? node->weak_from_this() : Node2DLink();
+        if (node) {
+            node->_under_mouse = true;
+            node->OnHoverEnter(*this);
+        }
+    }
+}
+void Dialog::UpdateFocusedNode() {
+    // Focused node become invisible
+    if (auto node = _focused_node.lock()) {
+        if (!node->IsVisibleInHierarchy()) {
+            node->OnFocusOut(*this);
+            _focused_node.reset();
+        }
+    }
+}
+Node2D* Dialog::PickNode(Node2D *node, const Vector2& pos, int flag_mask, Vector2* out_local_pos) {
+    if (!node->IsVisible()) {
+        return nullptr;
+    }
+    Vector2 local_pos = pos - node->GetOrigin();
+    const auto& children = node->GetChildren();
+    for (auto it = children.rbegin(); it != children.rend(); ++it) {
+        Node2D *node = PickNode(it->get(), local_pos, flag_mask, out_local_pos);
+        if (node)
+            return node;
+    }
+    return PickSelf(node, pos, flag_mask, out_local_pos);
+}
+Node2D* Dialog::PickSelf(Node2D *node, const Vector2& pos, int flag_mask, Vector2* out_local_pos) {
+    if (!node->IsVisible())
+        return nullptr;
+    if ((node->GetFlags() & flag_mask) && node->HitTestNode(pos)) {
+        if (out_local_pos)
+            *out_local_pos = pos - node->GetOrigin();
+        return node;
+    } else {
+        return nullptr;
+    }
+}
+void Dialog::RecreateRenderTarget() {
+    _rt = GraphicDevice::Instance()->CreateHwndRenderTarget(
+        _hwnd, _size, _dpi_scale);
+    c2_log("Dialog::RecreateRenderTarget() hwnd=%p, size=(%.0fx%.0f), dpi_scale=%.02f rt=0x%p\n",
+           _hwnd, _size.x, _size.y, _dpi_scale, _rt.Get());
+}
+void Dialog::OnDpiChanged(UINT dpi, const RECT* rect) {
+    c2_log("Dialog dpi changed to %u, size %dx%d px\n",
+           dpi, rect->right - rect->left, rect->bottom - rect->top);
+    float new_dpi_scale = (float)dpi / USER_DEFAULT_SCREEN_DPI;
+    if (new_dpi_scale == _dpi_scale)
+        return;
+
+    _dpi_scale = new_dpi_scale;
+    if (_popup_shadow) {
+        _popup_shadow->_render_dpi_scale = _dpi_scale;
+        float padding_px = roundf(_popup_shadow_data->padding * _dpi_scale);
+        float double_padding_px = roundf(2.0f * _popup_shadow_data->padding * _dpi_scale);
+        SetWindowPos(_popup_shadow->GetHwnd(), _hwnd,
+            (LONG)(rect->left - padding_px),
+                     (LONG)(rect->top - padding_px),
+                     (LONG)(rect->right - rect->left + double_padding_px),
+                     (LONG)(rect->bottom - rect->top + double_padding_px),
+                     SWP_NOACTIVATE);
+        c2_log("...Adjust PopupShadow geometry to pos=(%lu, %lu) px, size=(%lu, %lu) px\n",
+            (LONG)(rect->left - padding_px),
+               (LONG)(rect->top - padding_px),
+               (LONG)(rect->right - rect->left + double_padding_px),
+               (LONG)(rect->bottom - rect->top + double_padding_px));
+    }
+    SetWindowPos(_hwnd, NULL,
+                 rect->left,
+                 rect->top,
+                 rect->right - rect->left,
+                 rect->bottom - rect->top,
+                 SWP_NOZORDER | SWP_NOACTIVATE);
+
+    DiscardDeviceResources();
+    UpdateBorderAndRenderTarget();
+    RequestUpdate();
+}
+void Dialog::OnCloseButtonClicked(EventContext& ctx) {
+    Close();
+}
+void Dialog::UpdateMouseTracking() {
+    if (!_mouse_event_tracking) {
+        _mouse_event_tracking = true;
+        TRACKMOUSEEVENT tme = {};
+        tme.cbSize = sizeof(tme);
+        tme.hwndTrack = _hwnd;
+        tme.dwFlags = TME_LEAVE;
+        TrackMouseEvent(&tme);
+    }
+}
+void Dialog::OnDestroy() {
+    _root = nullptr;
+    _title_label = nullptr;
+    _close_button = nullptr;
+    _rt = nullptr;
+    if (_flags & DIALOG_FLAG_MAIN)
+        PostQuitMessage(0);
+    if (_hwnd_parent && _visible)
+        EnableWindow(_hwnd_parent, true);
+}
+
+void Dialog::OnActivate(bool active) {
+    //c2_log("%p OnActive %d\n", _hwnd, active);
+    if (active && _popup_shadow) {
+        SetWindowPos(_popup_shadow->GetHwnd(),
+                     _hwnd,
+                     0, 0,
+                     0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+    }
+}
+void Dialog::OnWindowPosChanged(WINDOWPOS* wnd_pos) {
+    if (_on_window_pos_changed)
+        return;
+    if (!_popup_shadow)
+        return;
+    _on_window_pos_changed = true;
+    //c2_log("OnWindowPosChanged, flags = 0x%04X\n", wnd_pos->flags);
+    if (!(wnd_pos->flags & SWP_NOMOVE) 
+        || !(wnd_pos->flags & SWP_NOSIZE)
+        || !(wnd_pos->flags & SWP_NOACTIVATE)) {
+        BOOL success;
+        auto hdwp = BeginDeferWindowPos(1);
+        UINT flags = SWP_NOACTIVATE;
+        if (wnd_pos->flags & SWP_NOMOVE)
+            flags |= SWP_NOMOVE;
+        if (wnd_pos->flags & SWP_NOSIZE)
+            flags |= SWP_NOSIZE;
+        float padding_px = roundf(_popup_shadow_data->padding * _dpi_scale);
+        float double_padding_px = roundf(2.0f * _popup_shadow_data->padding * _dpi_scale);
+        //c2_log("BeginDeferWindowPos flags=%08x padding_px=%.0f\n", wnd_pos->flags, padding_px);
+        //c2_log("  popup DeferWindowPos cx=%d, cy=%d\n",
+        //       wnd_pos->cx + (int)double_padding_px,
+        //       wnd_pos->cy + (int)double_padding_px);
+        hdwp = DeferWindowPos(hdwp, _popup_shadow->GetHwnd(), _hwnd,
+                              wnd_pos->x - (int)padding_px,
+                              wnd_pos->y - (int)padding_px,
+                              wnd_pos->cx + (int)double_padding_px,
+                              wnd_pos->cy + (int)double_padding_px,
+                              flags);
+        success = EndDeferWindowPos(hdwp);
+        //c2_log("EndDeferWindowPos success=%d\n", success);
+    }
+    _on_window_pos_changed = false;
+}
+void Dialog::DiscardDeviceResources() {
+    DiscardNodeDeviceResources(_root.get());
+}
+void Dialog::DiscardNodeDeviceResources(Node2D* node) {
+    node->DiscardDeviceResources();
+    for (auto& child : node->GetChildren())
+        DiscardNodeDeviceResources(child.get());
+}
+
+void Dialog::UpdateBorderAndRenderTarget() {
+    float border_radius = roundf(theme::DIALOG_BORDER_RADIUS * _dpi_scale);
+    HRGN rgn = CreateRoundRectRgn(
+        0, 0,
+        (int)_pixel_size.x + 1, (int)_pixel_size.y + 1,
+        (int)border_radius, (int)border_radius);
+    SetWindowRgn(_hwnd, rgn, FALSE);
+
+    if (!_rt) {
+        RecreateRenderTarget();
+    } else {
+        HRESULT hr = _rt->Resize(
+            D2D1::SizeU((UINT32)_pixel_size.x, (UINT32)_pixel_size.y));
+        c2_log("RT resize (%ux%u) ret 0x%08x\n", (UINT32)_pixel_size.x, (UINT32)_pixel_size.y);
+        _rt->SetDpi(_dpi_scale * USER_DEFAULT_SCREEN_DPI,
+                    _dpi_scale * USER_DEFAULT_SCREEN_DPI);
+        if (hr == D2DERR_RECREATE_TARGET)
+            RecreateRenderTarget();
+    }
+}
+void Dialog::OnAnimationTimerEvent() {
+    double timestamp = get_timestamp();
+    auto nodes = move(_animating_nodes);
+    _animating_nodes.clear();
+    for (auto& link : nodes) {
+        Node2DRef node = link.lock();
+        if (node)
+            node->OnAnimationFrame(timestamp, *this);
+    }
+    if (_animating_nodes.empty() && _animation_timer_id) {
+        KillTimer(_hwnd, _animation_timer_id);
+        _animation_timer_id = 0;
+    }
+}

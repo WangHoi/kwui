@@ -47,7 +47,10 @@ public:
 	Context(Runtime* rt);
 	~Context();
 
-	void initSceneClass();
+	inline JSContext* get() const
+	{
+		return ctx_;
+	}
 
 	void loadFile(const std::string& fname)
 	{
@@ -87,8 +90,14 @@ public:
 	template<>
 	std::string parse<std::string>(JSValue j)
 	{
-		const char* s = JS_ToCString(ctx_, j);
-		return s ? std::string(s) : std::string();
+		const char* cstr = JS_ToCString(ctx_, j);
+		if (cstr) {
+			std::string s(cstr);
+			JS_FreeCString(ctx_, cstr);
+			return s;
+		} else {
+			return std::string();
+		}
 	}
 
 	template<>
@@ -180,6 +189,8 @@ public:
 	JSValue wrapScene(scene2d::Scene* scene);
 
 private:
+	void initSceneClass();
+
 	JSContext* ctx_;
 };
 
