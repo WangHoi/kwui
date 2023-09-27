@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 "use math";
 
 function JSX(tag,atts,kids) {
@@ -37,7 +37,7 @@ class __ComponentState__ extends Object {
 
 function main() {
 	var a = <Div a="attr1"><p>aa<Div>jjj</Div></p></Div>;
-	//console.log(`${JSON.stringify(a)}`);
+	// console.log(`${JSON.stringify(a)}`);
 }
 console.log("first");
 var bb = app.showDialog(<Div>aaa</Div>);

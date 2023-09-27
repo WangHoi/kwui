@@ -54,7 +54,7 @@ public:
 
 	void loadFile(const std::string& fname)
 	{
-		FILE* f = fopen(fname.c_str(), "r");
+		FILE* f = fopen(fname.c_str(), "rb");
 		if (!f)
 			return;
 		fseek(f, 0, SEEK_END);
