@@ -31,6 +31,44 @@ struct PointF {
         y += p.y;
         return *this;
     }
+    inline PointF operator+(const PointF& p) const
+    {
+        return PointF(x + p.x, y + p.y);
+    }
+    inline PointF& operator-=(const PointF& p)
+    {
+        x -= p.x;
+        y -= p.y;
+        return *this;
+    }
+    inline PointF operator-(const PointF& p) const
+    {
+        return PointF(x - p.x, y - p.y);
+    }
+    inline PointF& operator*=(float f)
+    {
+        x *= f;
+        y *= f;
+        return *this;
+    }
+    inline PointF operator*(float f) const
+    {
+        return PointF(x * f, y * f);
+    }
+    inline PointF& operator/=(float f)
+    {
+        x /= f;
+        y /= f;
+        return *this;
+    }
+    inline PointF operator/(float f) const
+    {
+        return PointF(x / f, y / f);
+    }
+    inline PointF makeRound() const
+    {
+        return PointF(roundf(x), roundf(y));
+    }
 };
 
 struct Point {
@@ -45,6 +83,14 @@ struct DimensionF {
     DimensionF() {} // Uninitialized
     DimensionF(float w, float h)
         : width(w), height(h) {}
+    static inline DimensionF fromZeros()
+    {
+        return DimensionF(0.0f, 0.0f);
+    }
+    static inline DimensionF fromAll(float f)
+    {
+        return DimensionF(f, f);
+    }
     inline DimensionF& operator*=(const PointF &p)
     {
         width *= p.x;

@@ -1,8 +1,12 @@
 add_subdirectory(graphics)
 
 target_sources(kwui PUBLIC
-    # Dialog.h
+    Dialog.h
+    PopupShadow.h
     EncodingManager.h)
 target_sources(kwui PRIVATE
-    # Dialog.cpp
-    EncodingManager.cpp)
+    Dialog.cpp
+    PopupShadow.cpp
+    EncodingManager.cpp
+    theme.h
+    theme.cpp)

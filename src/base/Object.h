@@ -11,7 +11,6 @@ public:
 	{}
 	inline void retain()
 	{
-		assert(ref_count_ > 0);
 		++ref_count_;
 	}
 	inline void release()

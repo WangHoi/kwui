@@ -56,7 +56,7 @@ JSValue Context::wrapScene(scene2d::Scene* scene)
 
 void scene_finalizer(JSRuntime* rt, JSValue val)
 {
-    auto scene_weakptr = (base::WeakObject<scene2d::Scene> *)JS_GetOpaque(val, scene_class_id);
+    auto scene_weakptr = (base::WeakObjectProxy<scene2d::Scene> *)JS_GetOpaque(val, scene_class_id);
     scene_weakptr->release();
 }
 
@@ -72,7 +72,7 @@ JSValue scene_render(JSContext* ctx, JSValueConst this_val, int argc, JSValueCon
 
 JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
-    auto scene_weakptr = (base::WeakObject<scene2d::Scene> *)JS_GetOpaque(this_val, scene_class_id);
+    auto scene_weakptr = (base::WeakObjectProxy<scene2d::Scene> *)JS_GetOpaque(this_val, scene_class_id);
     auto scene = scene_weakptr->get();
     if (!scene)
         return JS_UNDEFINED;

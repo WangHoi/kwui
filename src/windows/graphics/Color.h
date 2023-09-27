@@ -114,16 +114,16 @@ inline bool operator!=(const Color& c1, const Color& c2) {
     return !(c1 == c2);
 }
 
-#define NO_COLOR Color{0, 0, 0, 0}
-#define BLACK Color{0, 0, 0}
-#define WHITE Color{255, 255, 255}
-#define GRAY Color{0.5f, 0.5f, 0.5f}
-#define RED Color{255, 0, 0}
-#define GREEN Color{0, 255, 0}
-#define BLUE Color{0, 0, 255}
-#define YELLOW Color{255, 255, 0}
-#define MEGENTA Color{255, 0, 255}
-#define CYAN Color{0, 255, 255}
+#define NO_COLOR ::windows::graphics::Color{0, 0, 0, 0}
+#define BLACK ::windows::graphics::Color{0, 0, 0}
+#define WHITE ::windows::graphics::Color{255, 255, 255}
+#define GRAY ::windows::graphics::Color{0.5f, 0.5f, 0.5f}
+#define RED ::windows::graphics::Color{255, 0, 0}
+#define GREEN ::windows::graphics::Color{0, 255, 0}
+#define BLUE ::windows::graphics::Color{0, 0, 255}
+#define YELLOW ::windows::graphics::Color{255, 255, 0}
+#define MEGENTA ::windows::graphics::Color{255, 0, 255}
+#define CYAN ::windows::graphics::Color{0, 255, 255}
 
 } // namespace graphics
 } // namespace windows

@@ -17,6 +17,7 @@ target_link_libraries(
          absl::span
          absl::time
          absl::strings
+         absl::optional
          absl::log
          absl::log_initialize
          absl::synchronization

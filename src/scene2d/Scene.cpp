@@ -9,7 +9,7 @@ Scene::Scene()
 	ctx_ = std::make_unique<script::Context>();
 	root_ = createElementNode(base::string_intern("kml"));
 	root_->retain();
-	weakptr_ = new base::WeakObject<Scene>(this);
+	weakptr_ = new base::WeakObjectProxy<Scene>(this);
 	weakptr_->retain();
 }
 
@@ -97,6 +97,35 @@ Node* Scene::createComponentNode(JSValue comp_data)
 
 void Scene::updateComponent(JSValue comp_state)
 {
+
+}
+
+Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos/* = nullptr */)
+{
+    if (!node->visible()) {
+        return nullptr;
+    }
+    scene2d::PointF local_pos = pos - node->origin();
+    const auto& children = node->children_;
+    for (auto it = children.rbegin(); it != children.rend(); ++it) {
+        Node* node = pickNode(*it, local_pos, flag_mask, out_local_pos);
+        if (node)
+            return node;
+    }
+    return pickSelf(node, pos, flag_mask, out_local_pos);
+}
+
+Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
+{
+    if (!node->visible())
+        return nullptr;
+    if (node->testFlags(flag_mask) && node->hitTestNode(pos)) {
+        if (out_local_pos)
+            *out_local_pos = pos - node->origin();
+        return node;
+    } else {
+        return nullptr;
+    }
 
 }
 

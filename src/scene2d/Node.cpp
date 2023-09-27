@@ -3,7 +3,9 @@
 namespace scene2d {
 
 Node::Node(NodeType type)
-    : type_(type) {}
+    : type_(type)
+    , origin_(PointF::fromZeros())
+    , size_(DimensionF::fromZeros()) {}
 
 Node::Node(NodeType type, const std::string& text)
     : Node(type)
@@ -21,7 +23,7 @@ Node::Node(NodeType type, JSValue comp_state)
     : Node(type)
 {
     comp_state_ = comp_state;
-    weakptr_ = new base::WeakObject<Node>(this);
+    weakptr_ = new base::WeakObjectProxy<Node>(this);
     weakptr_->retain();
 }
 
@@ -40,5 +42,11 @@ void Node::appendChild(Node *child)
     child->child_index = (int)children_.size();
     children_.push_back(child);
 }
+
+bool Node::testFlags(int flags) const
+{
+    return false;
+}
+
 
 }

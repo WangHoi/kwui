@@ -4,11 +4,11 @@
 namespace base {
 
 template <typename T>
-class WeakObject : public Object {
+class WeakObjectProxy : public Object {
 public:
-    WeakObject(T *ptr)
+    WeakObjectProxy(T *ptr)
         : ptr_(ptr) {}
-    ~WeakObject()
+    ~WeakObjectProxy()
     {
         ptr_ = nullptr;
     }
@@ -23,6 +23,69 @@ public:
 
 private:
     T *ptr_;
+};
+
+template <typename O>
+class object_weakptr
+{
+public:
+	object_weakptr()
+		: ptr_(nullptr)
+	{}
+	object_weakptr(WeakObjectProxy<O>* ptr)
+		: ptr_(ptr)
+	{
+		ptr_->retain();
+	}
+	object_weakptr(const object_weakptr& o)
+		: ptr_(o.ptr_)
+	{
+		ptr_->retain();
+	}
+	object_weakptr(object_weakptr&& o)
+		: ptr_(o.ptr_)
+	{
+		o.ptr_ = nullptr;
+	}
+	~object_weakptr()
+	{
+		if (ptr_)
+			ptr_->release();
+	}
+	object_weakptr& operator=(const object_weakptr& o)
+	{
+		if (ptr_ != o.ptr_) {
+			if (o.ptr_)
+				o.ptr_->retain();
+			if (ptr_)
+				ptr_->release();
+			ptr_ = o.ptr_;
+		}
+		return *this;
+	}
+	object_weakptr& operator=(object_weakptr&& o)
+	{
+		if (ptr_ != o.ptr_) {
+			if (ptr_)
+				ptr_->release();
+			ptr_ = o.ptr_;
+			o.ptr_ = nullptr;
+		}
+		return *this;
+	}
+	inline operator bool() const
+	{
+		return ptr_ != nullptr && ptr_->get() != nullptr;
+	}
+	inline O* operator->() const
+	{
+		return ptr_ ? ptr_->get() : nullptr;
+	}
+	O* get() const {
+		return ptr_ ? ptr_->get() : nullptr;
+	}
+private:
+	WeakObjectProxy<O>* ptr_ = nullptr;
 };
 
 }

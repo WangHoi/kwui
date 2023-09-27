@@ -1,5 +1,10 @@
 #pragma once
 #include "base/base.h"
+#include "scene2d/scene2d.h"
+#include "windows_header.h"
+#include "absl/types/optional.h"
+#include "PopupShadow.h"
+#include <vector>
 
 namespace scene2d {
 class Scene;
@@ -7,6 +12,10 @@ class Node;
 }
 
 namespace windows {
+
+namespace graphics {
+class Painter;
+}
 
 enum CursorType {
     CURSOR_ARROW,
@@ -43,11 +52,11 @@ enum DialogFlag {
 
 class EventContext {
 public:
-    virtual Vector2 getMousePosition() const = 0;
+    virtual scene2d::PointF GetMousePosition() const = 0;
 
-    virtual void requestPaint() = 0;
-    virtual void requestUpdate() = 0;
-    virtual void requestAnimationFrame(Node2D* node) = 0;
+    virtual void RequestPaint() = 0;
+    virtual void RequestUpdate() = 0;
+    virtual void RequestAnimationFrame(scene2d::Node* node) = 0;
 };
 
 class Dialog : public EventContext {
@@ -58,8 +67,8 @@ public:
     };
     Dialog(float width, float height,
         const WCHAR* wnd_class_name, HICON icon, int flags,
-        optional<PopupShadowData> popup_shadow,
-        optional<CreateData> create_data);
+        absl::optional<PopupShadowData> popup_shadow,
+        absl::optional<CreateData> create_data);
     virtual ~Dialog();
 
     inline void SetParent(HWND parent) { _hwnd_parent = parent; }
@@ -75,18 +84,18 @@ public:
         return _visible;
     }
     void Resize(float width, float height);
-    void SetTitle(const String& text);
-    Node2D* GetRoot() const { return _root.get(); }
-    const Vector2& GetSize() const { return _size; }
+    void SetTitle(const std::string& text);
+    // Node* GetRoot() const { return _root.get(); }
+    const scene2d::DimensionF& GetSize() const { return _size; }
     inline float GetDpiScale() const { return _dpi_scale; }
     HWND GetHwnd() const { return _hwnd; }
     void Close();
 
     // implements EventContext
-    Vector2 GetMousePosition() const override { return _mouse_position; }
+    scene2d::PointF GetMousePosition() const override { return _mouse_position; }
     void RequestPaint() override;
     void RequestUpdate() override;
-    void RequestAnimationFrame(Node2D* node) override;
+    void RequestAnimationFrame(scene2d::Node* node) override;
 
     virtual void OnCloseButtonClicked(EventContext& ctx);
     virtual void OnDestroy();
@@ -109,49 +118,48 @@ private:
     void OnKeyDown(int key, int modifiers, bool prev_down = true);
     void OnKeyUp(int key, int modifiers);
     void OnCharacter(wchar_t ch);
-    void OnImeCommit(const wstring& text);
+    void OnImeCommit(const std::wstring& text);
     void OnImeStartComposition();
-    void OnImeComposition(const wstring& text, optional<int> caret_pos);
+    void OnImeComposition(const std::wstring& text, absl::optional<int> caret_pos);
     void OnImeEndComposition();
-    void UpdateCaretRect(const Vector2& origin, const Vector2& size);
+    void UpdateCaretRect(const scene2d::PointF& origin, const scene2d::DimensionF& size);
     void OnMouseDown(ButtonState button, int buttons, int modifiers);
     void OnMouseUp(ButtonState button, int buttons, int modifiers);
     void OnMouseMove(int buttons, int modifiers);
-    void PaintNode(Painter& p, Node2D* node);
+    void PaintNode(graphics::Painter& p, scene2d::Node* node);
     void UpdateHoveredNode();
     void UpdateFocusedNode();
     void UpdateMouseTracking();
     void RecreateRenderTarget();
     void OnDpiChanged(UINT dpi, const RECT* rect);
-    Node2D* PickNode(Node2D* node, const Vector2& pos, int flag_mask, Vector2* out_local_pos = nullptr);
-    Node2D* PickSelf(Node2D* node, const Vector2& pos, int flag_mask, Vector2* out_local_pos);
-    void DiscardNodeDeviceResources(Node2D* node);
+    void DiscardNodeDeviceResources(scene2d::Node* node);
     void UpdateBorderAndRenderTarget();
     void OnAnimationTimerEvent();
 
     HWND _hwnd_parent;
     HWND _hwnd;
     int _flags;
-    optional<CreateData> _create_data;
+    absl::optional<CreateData> _create_data;
     bool _visible;
     bool _first_show_window;
-    Vector2 _size;
-    Vector2 _pixel_size;
-    Vector2 _mouse_position;
+    scene2d::DimensionF _size;
+    scene2d::DimensionF _pixel_size;
+    scene2d::PointF _mouse_position;
     ComPtr<ID2D1HwndRenderTarget> _rt;
-    Node2DRef _root;
-    LabelNodeRef _title_label;
-    ImageButtonNodeRef _close_button;
-    Node2DLink _hovered_node;   // under mouse node
-    Node2DLink _focused_node;
+    std::unique_ptr<scene2d::Scene> _scene;
+    // Node2DRef _root;
+    // LabelNodeRef _title_label;
+    // ImageButtonNodeRef _close_button;
+    base::object_weakptr<scene2d::Node> _hovered_node;   // under mouse node
+    base::object_weakptr<scene2d::Node> _focused_node;
     bool _mouse_event_tracking;
     bool _mouse_capture;
-    optional<PopupShadowData> _popup_shadow_data;
-    PopupShadowRef _popup_shadow;
+    absl::optional<PopupShadowData> _popup_shadow_data;
+    std::unique_ptr<PopupShadow> _popup_shadow;
     bool _on_window_pos_changed;
     float _dpi_scale;
     HIMC _himc;
-    vector<Node2DLink>  _animating_nodes;
+    std::vector<base::object_weakptr<scene2d::Node>>  _animating_nodes;
     UINT_PTR _animation_timer_id;
 };
 
