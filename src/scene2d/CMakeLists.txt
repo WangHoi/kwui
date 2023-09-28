@@ -7,4 +7,5 @@ target_sources(kwui PRIVATE
   Node.cpp
   Scene.h
   Scene.cpp
+  Event.h
 )

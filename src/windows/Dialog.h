@@ -26,25 +26,6 @@ enum CursorType {
     NUM_CURSOR_TYPES,
 };
 
-enum ModifierState {
-    NO_MODIFILER = 0,
-    LCTRL_MODIFIER = 1,
-    RCTRL_MODIFIER = 2,
-    CTRL_MODIFIER = LCTRL_MODIFIER | RCTRL_MODIFIER,
-    LSHIFT_MODIFIER = 4,
-    RSHIFT_MODIFIER = 8,
-    SHIFT_MODIFIER = LSHIFT_MODIFIER | RSHIFT_MODIFIER,
-    LALT_MODIFIER = 16,
-    RALT_MODIFIER = 32,
-    ALT_MODIFIER = LALT_MODIFIER | RALT_MODIFIER,
-};
-enum ButtonState {
-    LEFT_BUTTON,
-    MIDDLE_BUTTON,
-    RIGHT_BUTTON,
-    BUTTON_COUNT
-};
-
 enum DialogFlag {
     DIALOG_FLAG_MAIN = 1,
     DIALOG_FLAG_POPUP = 2,
@@ -123,10 +104,11 @@ private:
     void OnImeComposition(const std::wstring& text, absl::optional<int> caret_pos);
     void OnImeEndComposition();
     void UpdateCaretRect(const scene2d::PointF& origin, const scene2d::DimensionF& size);
-    void OnMouseDown(ButtonState button, int buttons, int modifiers);
-    void OnMouseUp(ButtonState button, int buttons, int modifiers);
+    void OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers);
+    void OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers);
     void OnMouseMove(int buttons, int modifiers);
     void PaintNode(graphics::Painter& p, scene2d::Node* node);
+    void PaintNodeSelf(graphics::Painter& p, scene2d::Node* node);
     void UpdateHoveredNode();
     void UpdateFocusedNode();
     void UpdateMouseTracking();

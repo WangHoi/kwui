@@ -4,13 +4,6 @@
 #include "EncodingManager.h"
 #include "graphics/GraphicDevice.h"
 #include "graphics/Painter.h"
-// #include "platform/platform_helpers.h"
-// #include "ui/ButtonNode.h"
-// #include "ui/LabelNode.h"
-// #include "ui/TextEditNode.h"
-// #include "ui/ImageNode.h"
-// #include "ui/ImageButtonNode.h"
-// #include "pattern/callback.h"
 #include "theme.h"
 
 namespace windows {
@@ -167,21 +160,21 @@ ATOM RegisterWindowClass(HINSTANCE hInstance, const wchar_t* class_name, HICON i
 }
 
 static int MakeButtonMask(WPARAM wParam) {
-    int mask = 0;
-    if (wParam & MK_LBUTTON) mask |= (1 << LEFT_BUTTON);
-    if (wParam & MK_MBUTTON) mask |= (1 << MIDDLE_BUTTON);
-    if (wParam & MK_RBUTTON) mask |= (1 << RIGHT_BUTTON);
+    int mask = scene2d::NO_BUTTON;
+    if (wParam & MK_LBUTTON) mask |= scene2d::LEFT_BUTTON;
+    if (wParam & MK_MBUTTON) mask |= scene2d::MIDDLE_BUTTON;
+    if (wParam & MK_RBUTTON) mask |= scene2d::RIGHT_BUTTON;
     return mask;
 }
 
 static int GetModifiersState() {
-    int state = NO_MODIFILER;
-    if (GetKeyState(VK_LCONTROL) & 0x8000) state |= LCTRL_MODIFIER;
-    if (GetKeyState(VK_RCONTROL) & 0x8000) state |= RCTRL_MODIFIER;
-    if (GetKeyState(VK_LSHIFT) & 0x8000) state |= LSHIFT_MODIFIER;
-    if (GetKeyState(VK_RSHIFT) & 0x8000) state |= RSHIFT_MODIFIER;
-    if (GetKeyState(VK_LMENU) & 0x8000) state |= LALT_MODIFIER;
-    if (GetKeyState(VK_RMENU) & 0x8000) state |= RALT_MODIFIER;
+    int state = scene2d::NO_MODIFILER;
+    if (GetKeyState(VK_LCONTROL) & 0x8000) state |= scene2d::LCTRL_MODIFIER;
+    if (GetKeyState(VK_RCONTROL) & 0x8000) state |= scene2d::RCTRL_MODIFIER;
+    if (GetKeyState(VK_LSHIFT) & 0x8000) state |= scene2d::LSHIFT_MODIFIER;
+    if (GetKeyState(VK_RSHIFT) & 0x8000) state |= scene2d::RSHIFT_MODIFIER;
+    if (GetKeyState(VK_LMENU) & 0x8000) state |= scene2d::LALT_MODIFIER;
+    if (GetKeyState(VK_RMENU) & 0x8000) state |= scene2d::RALT_MODIFIER;
     return state;
 }
 
@@ -305,22 +298,22 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         }
         break;
     case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
-        OnMouseDown(LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseDown(scene2d::LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_LBUTTONUP:
-        OnMouseUp(LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseUp(scene2d::LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_MBUTTONDOWN: case WM_MBUTTONDBLCLK:
-        OnMouseDown(MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseDown(scene2d::MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_MBUTTONUP:
-        OnMouseUp(MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseUp(scene2d::MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_RBUTTONDOWN: case WM_RBUTTONDBLCLK:
-        OnMouseDown(RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseDown(scene2d::RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_RBUTTONUP:
-        OnMouseUp(RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseUp(scene2d::RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_MOUSEMOVE:
         _mouse_position = scene2d::PointF((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam))
@@ -499,12 +492,22 @@ void Dialog::OnResize() {
 void Dialog::PaintNode(graphics::Painter& p, scene2d::Node* node) {
     if (!node->visible()) return;
     p.Translate(node->origin());
-    // node->PaintNode(p);
+    PaintNodeSelf(p, node);
     for (auto& child : node->children()) {
         if (!child->visible()) continue;
         p.Save();
         PaintNode(p, child);
         p.Restore();
+    }
+}
+void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node) {
+    if (node->type_ == scene2d::NodeType::NODE_TEXT) {
+        auto text_layout = graphics::TextLayoutBuilder(node->text_)
+		    .FontSize(16)
+            .Build();
+        p.DrawTextLayout(scene2d::PointF::fromZeros(), *text_layout);
+    } else if (node->type_ == scene2d::NodeType::NODE_ELEMENT) {
+
     }
 }
 void Dialog::Close() {
@@ -626,14 +629,14 @@ void Dialog::OnImeEndComposition() {
     //     node->OnImeEndComposition(*this);
     // }
 }
-void Dialog::OnMouseDown(ButtonState button, int buttons, int modifiers) {
-    if ((1 << button) == buttons && !_mouse_capture) {
+void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers) {
+    if (button == buttons && !_mouse_capture) {
         //c2_log("capture mouse\n");
         _mouse_capture = true;
         SetCapture(_hwnd);
     }
 
-    if (button != LEFT_BUTTON) return;
+    if (button != scene2d::LEFT_BUTTON) return;
     /*
     Node2D* node;
     scene2d::PointF local_pos;
@@ -650,14 +653,14 @@ void Dialog::OnMouseDown(ButtonState button, int buttons, int modifiers) {
     }
     */
 }
-void Dialog::OnMouseUp(ButtonState button, int buttons, int modifiers) {
+void Dialog::OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers) {
     if (buttons == 0 && _mouse_capture) {
         _mouse_capture = false;
         //c2_log("release mouse\n");
         ReleaseCapture();
     }
 
-    if (button != LEFT_BUTTON) return;
+    if (button != scene2d::LEFT_BUTTON) return;
 
     // Node2D* node;
     // scene2d::PointF local_pos;

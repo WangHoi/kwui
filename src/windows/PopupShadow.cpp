@@ -101,50 +101,6 @@ ATOM RegisterWindowClass(HINSTANCE hInstance, const wchar_t* class_name, HICON i
 	return RegisterClassExW(&wcex);
 }
 
-static int MakeButtonMask(WPARAM wParam) {
-	int mask = 0;
-	if (wParam & MK_LBUTTON) mask |= (1 << LEFT_BUTTON);
-	if (wParam & MK_MBUTTON) mask |= (1 << MIDDLE_BUTTON);
-	if (wParam & MK_RBUTTON) mask |= (1 << RIGHT_BUTTON);
-	return mask;
-}
-
-static int GetModifiersState() {
-	int state = NO_MODIFILER;
-	if (GetKeyState(VK_LCONTROL) & 0x8000) state |= LCTRL_MODIFIER;
-	if (GetKeyState(VK_RCONTROL) & 0x8000) state |= RCTRL_MODIFIER;
-	if (GetKeyState(VK_LSHIFT) & 0x8000) state |= LSHIFT_MODIFIER;
-	if (GetKeyState(VK_RSHIFT) & 0x8000) state |= RSHIFT_MODIFIER;
-	if (GetKeyState(VK_LMENU) & 0x8000) state |= LALT_MODIFIER;
-	if (GetKeyState(VK_RMENU) & 0x8000) state |= RALT_MODIFIER;
-	return state;
-}
-
-static WPARAM MapLeftRightKeys(WPARAM vk, LPARAM lParam) {
-	WPARAM new_vk = vk;
-	UINT scancode = (lParam & 0x00ff0000) >> 16;
-	int extended = (lParam & 0x01000000) != 0;
-
-	switch (vk) {
-	case VK_SHIFT:
-		new_vk = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
-		break;
-	case VK_CONTROL:
-		new_vk = extended ? VK_RCONTROL : VK_LCONTROL;
-		break;
-	case VK_MENU:
-		new_vk = extended ? VK_RMENU : VK_LMENU;
-		break;
-	default:
-		// not a key we map from generic to left/right specialized
-		//  just return it.
-		new_vk = vk;
-		break;
-	}
-
-	return new_vk;
-}
-
 LRESULT PopupShadow::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message) {
 	case WM_CREATE:

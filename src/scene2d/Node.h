@@ -9,6 +9,11 @@
 #include "style/Style.h"
 #include "script/script.h"
 #include "geom_types.h"
+
+namespace windows {
+class Dialog;
+}
+
 namespace scene2d {
 
 enum class NodeType {
@@ -98,6 +103,7 @@ protected:
 #pragma endregion
 
 	friend class Scene;
+	friend class windows::Dialog;
 };
 
 }
