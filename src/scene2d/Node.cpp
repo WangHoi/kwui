@@ -56,7 +56,27 @@ void Node::appendChild(Node* child)
 
 bool Node::testFlags(int flags) const
 {
+    if (control_)
+        return control_->testFlags(flags);
     return false;
+}
+
+void Node::onEvent(MouseEvent &event)
+{
+    if (control_)
+        control_->onMouseEvent(event);
+}
+
+void Node::onEvent(KeyEvent &event)
+{
+    if (control_)
+        control_->onKeyEvent(event);    
+}
+
+void Node::onEvent(FocusEvent &event)
+{
+    if (control_)
+        control_->onFocusEvent(event);
 }
 
 void Node::setStyle(const style::StyleSpec& style)
@@ -67,12 +87,23 @@ void Node::setStyle(const style::StyleSpec& style)
 void Node::setAttribute(base::string_atom name, const NodeAttributeValue &value)
 {
     attrs_[name] = value;
+    if (control_)
+        control_->onSetAttribute(name, value);
 }
 
 void Node::setEventHandler(base::string_atom name, JSValue func)
 {
     event_handlers_[name] = func;
+    if (control_)
+        control_->onSetEventHandler(name, func);
 }
+
+void Node::paintControl(windows::graphics::Painter &painter)
+{
+    if (control_)
+        control_->onPaint(painter);
+}
+
 
 void Node::resolveStyle()
 {

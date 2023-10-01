@@ -11,9 +11,13 @@
 #include "script/script.h"
 #include "geom_types.h"
 #include "Attribute.h"
+#include "Event.h"
 
 namespace windows {
 class Dialog;
+namespace graphics {
+class Painter;
+}
 }
 
 namespace graph2d {
@@ -50,9 +54,13 @@ public:
 		return children_;
 	}
 
-	inline base::WeakObjectProxy<Node>* weakObject() const
+	inline base::WeakObjectProxy<Node>* weakProxy() const
 	{
 		return weakptr_;
+	}
+	inline base::object_weakptr<Node> weaken() const
+	{
+		return base::object_weakptr<Node>(weakptr_);
 	}
 
 	inline const PointF& origin() const
@@ -76,10 +84,15 @@ public:
 		return origin_.x <= p.x && p.x < origin_.x + size_.width
 			&& origin_.y <= p.y && p.y < origin_.y + size_.height;
 	}
+
+	void onEvent(MouseEvent &event);
+	void onEvent(KeyEvent &event);
+	void onEvent(FocusEvent &event);
 	
 	void setStyle(const style::StyleSpec &style);
 	void setAttribute(base::string_atom name, const NodeAttributeValue &value);
 	void setEventHandler(base::string_atom name, JSValue func);
+	void paintControl(windows::graphics::Painter &painter);
 	void resolveStyle();
 	void computeLayout();
 

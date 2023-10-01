@@ -1,4 +1,5 @@
 add_subdirectory(graphics)
+add_subdirectory(control)
 
 target_sources(kwui PUBLIC
     Dialog.h

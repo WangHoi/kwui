@@ -380,17 +380,17 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             OnAnimationTimerEvent();
         break;
     case WM_SETFOCUS:
-        if (auto node = _focused_node.get()) {
+        if (auto node = _focused_node.upgrade()) {
             // node->OnFocusIn(*this);
         }
         return 0;
     case WM_KILLFOCUS:
-        if (auto node = _focused_node.get()) {
+        if (auto node = _focused_node.upgrade()) {
             // node->OnFocusOut(*this);
         }
         return 0;
     case WM_SETCURSOR:
-        if (auto node = _hovered_node.get()) {
+        if (auto node = _hovered_node.upgrade()) {
             // CursorType c = node->GetCursorType().value_or(CURSOR_ARROW);
             // SetCursor(s_preloaded_cursors[c]);
         } else {
@@ -508,10 +508,10 @@ void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node) {
         auto text_layout = (graphics::TextLayout*)node->text_layout_.get();
         p.SetColor(BLACK);
         auto r = text_layout->rect();
-        LOG(INFO) << "Rect: " << r.left << ", " << r.top << " (" << r.bottom - r.left << "x" << r.bottom - r.top << ")";  
+        LOG(INFO) << "Rect: " << r.left << ", " << r.top << " (" << r.bottom - r.left << "x" << r.bottom - r.top << ")";
         p.DrawTextLayout(scene2d::PointF::fromZeros(), *text_layout);
     } else if (node->type_ == scene2d::NodeType::NODE_ELEMENT) {
-
+        node->paintControl(p);
     }
 }
 void Dialog::Close() {
@@ -548,7 +548,7 @@ void Dialog::RequestAnimationFrame(scene2d::Node* node) {
             return link.get() == node;
         });
     if (it == _animating_nodes.end())
-        _animating_nodes.push_back(node->weakObject());
+        _animating_nodes.push_back(node->weakProxy());
     if (!_animating_nodes.empty() && !_animation_timer_id) {
         _animation_timer_id = SetTimer(_hwnd, ANIMATION_TIMER_EVENT, USER_TIMER_MINIMUM, NULL);
     }
@@ -641,21 +641,26 @@ void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers
     }
 
     if (button != scene2d::LEFT_BUTTON) return;
-    /*
-    Node2D* node;
+    scene2d::Node* node;
     scene2d::PointF local_pos;
-    node = PickNode(_root.get(), _mouse_position, NODE_FLAG_CLICKABLE, &local_pos);
-    if (node) node->OnMouseDown(local_pos, *this);
+    node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_CLICKABLE, &local_pos);
+    if (node) {
+        scene2d::MouseEvent mouse_down(node, scene2d::MOUSE_DOWN, _mouse_position, local_pos, button, buttons, modifiers);
+        node->onEvent(mouse_down);
+    }
 
-    node = PickNode(_root.get(), _mouse_position, NODE_FLAG_FOCUSABLE);
-    Node2DRef old_focused = _focused_node.lock();
+    node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_FOCUSABLE);
+    base::object_refptr<scene2d::Node> old_focused = _focused_node.upgrade();
     if (node) {
         if (node != old_focused.get())
-            if (old_focused) old_focused->OnFocusOut(*this);
-        _focused_node = node->weak_from_this();
-        node->OnFocusIn(*this);
+            if (old_focused) {
+                scene2d::FocusEvent focus_out(old_focused.get(), scene2d::FOCUS_OUT);
+                old_focused->onEvent(focus_out);
+            }
+        _focused_node = node->weaken();
+        scene2d::FocusEvent focus_in(node, scene2d::FOCUS_IN);
+        node->onEvent(focus_in);
     }
-    */
 }
 void Dialog::OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers) {
     if (buttons == 0 && _mouse_capture) {
@@ -666,10 +671,13 @@ void Dialog::OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers) 
 
     if (button != scene2d::LEFT_BUTTON) return;
 
-    // Node2D* node;
-    // scene2d::PointF local_pos;
-    // node = PickNode(_root.get(), _mouse_position, NODE_FLAG_CLICKABLE, &local_pos);
-    // if (node) node->OnClick(*this);
+    scene2d::Node* node;
+    scene2d::PointF local_pos;
+    node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_CLICKABLE, &local_pos);
+    if (node) {
+        scene2d::MouseEvent mouse_up(node, scene2d::MOUSE_UP, _mouse_position, local_pos, button, buttons, modifiers);
+        node->onEvent(mouse_up);
+    }
 }
 void Dialog::OnMouseMove(int buttons, int modifiers) {
     //c2_log("OnMouseMove %.0f, %.0f\n", _mouse_position.x, _mouse_position.y);
@@ -677,21 +685,21 @@ void Dialog::OnMouseMove(int buttons, int modifiers) {
     UpdateHoveredNode();
 }
 void Dialog::UpdateHoveredNode() {
-    /*
-    Node2D* node = PickNode(_root.get(), _mouse_position, NODE_FLAG_HOVERABLE);
-    Node2DRef old_hovered = _hovered_node.lock();
+    scene2d::Node* node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_HOVERABLE);
+    base::object_refptr<scene2d::Node> old_hovered = _hovered_node.upgrade();
     if (node != old_hovered.get()) {
         if (old_hovered) {
-            old_hovered->_under_mouse = false;
-            old_hovered->OnHoverLeave(*this);
+            // old_hovered->_under_mouse = false;
+            scene2d::MouseEvent hover_leave(old_hovered.get(), scene2d::MOUSE_LEAVE);
+            old_hovered->onEvent(hover_leave);
         }
-        _hovered_node = node ? node->weak_from_this() : Node2DLink();
+        _hovered_node = node ? node->weaken() : base::object_weakptr<scene2d::Node>();
         if (node) {
-            node->_under_mouse = true;
-            node->OnHoverEnter(*this);
+            // node->_under_mouse = true;
+            scene2d::MouseEvent hover_enter(old_hovered.get(), scene2d::MOUSE_ENTER);
+            node->onEvent(hover_enter);
         }
     }
-    */
 }
 void Dialog::UpdateFocusedNode() {
 #if 0
@@ -708,13 +716,13 @@ void Dialog::RecreateRenderTarget() {
     _rt = graphics::GraphicDevice::get()->CreateHwndRenderTarget(
         _hwnd, _size, _dpi_scale);
     LOG(INFO) << "Dialog::RecreateRenderTarget() hwnd=" << std::hex << _hwnd
-              << " size=(" << _size.width << "x" << _size.height << ")"
-              << " dpi_scale=" << _dpi_scale
-              << " rt=" << std::hex << _rt.Get();
+        << " size=(" << _size.width << "x" << _size.height << ")"
+        << " dpi_scale=" << _dpi_scale
+        << " rt=" << std::hex << _rt.Get();
 }
 void Dialog::OnDpiChanged(UINT dpi, const RECT* rect) {
     LOG(INFO) << "Dialog dpi changed to " << dpi
-        << "size " << rect->right - rect->left << "x" << rect->bottom - rect->top << "px"; 
+        << "size " << rect->right - rect->left << "x" << rect->bottom - rect->top << "px";
     float new_dpi_scale = (float)dpi / USER_DEFAULT_SCREEN_DPI;
     if (new_dpi_scale == _dpi_scale)
         return;

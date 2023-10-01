@@ -16,7 +16,6 @@ class __ComponentState__ extends Object {
 		// this.scene.updateComponent(this);
 	}
 	render() {
-		console.log("mia")
 		return this.renderFn(this.props, this.children);
 	}
 };
@@ -44,5 +43,6 @@ function Div(props, kids) {
 
 var simple = <p style={{ left: 30, top: 100 }}>第一栏<p style={{ left: 20, top: 30 }}>测试2</p></p>;
 var complex = <Div a="f1"><p>aa</p><p>bb</p></Div>;
-console.log(JSON.stringify(complex.render()));
-app.showDialog(complex);
+var edit = <line-edit style={{ left: 20, top: 20, width: 200, height: 40 }}></line-edit>
+// console.log(JSON.stringify(complex.render()));
+app.showDialog(edit);

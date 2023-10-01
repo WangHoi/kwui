@@ -49,7 +49,7 @@ void Context::initSceneClass()
 JSValue Context::wrapScene(scene2d::Scene* scene)
 {
     JSValue j = JS_NewObjectClass(ctx_, scene_class_id);
-    auto scene_weakptr = scene->weakObject();
+    auto scene_weakptr = scene->weakProxy();
     scene_weakptr->retain();
     JS_SetOpaque(j, scene_weakptr);
     return j;

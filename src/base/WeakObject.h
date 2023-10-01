@@ -81,8 +81,12 @@ public:
 	{
 		return ptr_ ? ptr_->get() : nullptr;
 	}
-	O* get() const {
+	inline O* get() const
+	{
 		return ptr_ ? ptr_->get() : nullptr;
+	}
+	object_refptr<O> upgrade() const {
+		return ptr_ && ptr_->get() ? object_refptr<O>(ptr_->get()) : object_refptr<O>();
 	}
 private:
 	WeakObjectProxy<O>* ptr_ = nullptr;

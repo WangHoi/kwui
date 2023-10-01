@@ -17,9 +17,13 @@ class Scene : public base::Object {
 public:
 	Scene();
 	~Scene();
-	inline base::WeakObjectProxy<Scene> *weakObject() const
+	inline base::WeakObjectProxy<Scene> *weakProxy() const
 	{
 		return weakptr_;
+	}
+	inline base::object_weakptr<Scene> weaken() const
+	{
+		return base::object_weakptr<Scene>(weakptr_);
 	}
 	Node* createTextNode(const std::string &text);
 	Node* createElementNode(base::string_atom tag);

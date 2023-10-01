@@ -60,7 +60,7 @@ Node* Scene::createComponentNode(JSValue comp_data)
 		if (JS_IsFunction(jctx, render)) {
 			LOG(INFO) << "createComponentNode";
 			Node* node = createComponentNodeWithState(comp_data);
-			JS_SetOpaque(comp_data, node->weakObject());
+			JS_SetOpaque(comp_data, node->weakProxy());
 
 			JSValue child_comp_data = JS_Call(jctx, render, comp_data, 0, nullptr);
 			node->appendChild(createComponentNode(child_comp_data));
