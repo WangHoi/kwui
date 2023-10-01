@@ -133,6 +133,12 @@ struct RectF {
     static inline RectF fromLTRB(float l, float t, float r, float b) {
         return RectF(l, t, r, b);
     }
+    inline PointF origin() const {
+        return PointF(left, top);
+    }
+    inline DimensionF size() const {
+        return DimensionF(right - left, bottom - top);
+    }
     float left;
     float top;
     float right;

@@ -77,6 +77,14 @@ public:
 	{
 		return visible_;
 	}
+	bool visibleInHierarchy() const
+	{
+		if (!visible_)
+			return false;
+		if (parent_)
+			return parent_->visibleInHierarchy();
+		return true;
+	}
 
 	bool testFlags(int flags) const;
 
@@ -88,6 +96,7 @@ public:
 	void onEvent(MouseEvent &event);
 	void onEvent(KeyEvent &event);
 	void onEvent(FocusEvent &event);
+	void onEvent(ImeEvent &event);
 	
 	void setStyle(const style::StyleSpec &style);
 	void setAttribute(base::string_atom name, const NodeAttributeValue &value);

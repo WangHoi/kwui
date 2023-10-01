@@ -1,6 +1,7 @@
 #pragma once
 #include "base/Object.h"
 #include "geom_types.h"
+#include "absl/types/optional.h"
 #include <string>
 
 namespace scene2d {
@@ -125,8 +126,8 @@ enum ImeCommand {
 struct ImeEvent : public Event {
     ImeEvent(Node* t, int c)
         : Event(t, c) {}
-    ImeEvent(Node* t, int c, const std::wstring &text)
-        : Event(t, c), wtext_(text) {}
+    ImeEvent(Node* t, int c, const std::wstring& text, absl::optional<int> caret_pos = absl::nullopt)
+        : Event(t, c), wtext_(text), caret_pos_(caret_pos) {}
     static const EventGroups EVENT_GROUP = HANDLE_IME;
     EventGroups group() const override
     {
@@ -134,6 +135,8 @@ struct ImeEvent : public Event {
     }
 
     std::wstring wtext_;
+    absl::optional<int> caret_pos_;
+    absl::optional<RectF> caret_rect_;
 };
 
 }

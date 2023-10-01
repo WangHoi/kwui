@@ -79,6 +79,12 @@ void Node::onEvent(FocusEvent &event)
         control_->onFocusEvent(event);
 }
 
+void Node::onEvent(ImeEvent &event)
+{
+    if (control_)
+        control_->onImeEvent(event);
+}
+
 void Node::setStyle(const style::StyleSpec& style)
 {
     specStyle_ = style;

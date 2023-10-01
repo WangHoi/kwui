@@ -381,12 +381,14 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         break;
     case WM_SETFOCUS:
         if (auto node = _focused_node.upgrade()) {
-            // node->OnFocusIn(*this);
+            scene2d::FocusEvent focus_in(node.get(), scene2d::FOCUS_IN);
+            node->onEvent(focus_in);
         }
         return 0;
     case WM_KILLFOCUS:
         if (auto node = _focused_node.upgrade()) {
-            // node->OnFocusOut(*this);
+            scene2d::FocusEvent focus_out(node.get(), scene2d::FOCUS_OUT);
+            node->onEvent(focus_out);
         }
         return 0;
     case WM_SETCURSOR:
@@ -594,8 +596,11 @@ void Dialog::OnKeyDown(int key, int modifiers, bool prev_down) {
     if (key == VK_ESCAPE)
         return OnEscapeKeyDown(*this);
 
-    // Node2DRef node = _focused_node.lock();
-    // if (node) node->OnKeyDown(key, modifiers, *this);
+    base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
+    if (node) {
+        scene2d::KeyEvent key_down(node.get(), scene2d::KEY_DOWN, key, modifiers);
+        node->onEvent(key_down);
+    }
 }
 void Dialog::OnKeyUp(int key, int modifiers) {
     if (key == VK_RETURN)
@@ -603,20 +608,32 @@ void Dialog::OnKeyUp(int key, int modifiers) {
     if (key == VK_ESCAPE)
         return OnEscapeKeyUp(*this);
 
-    // Node2DRef node = _focused_node.lock();
-    // if (node) node->OnKeyUp(key, modifiers, *this);
+    base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
+    if (node) {
+        scene2d::KeyEvent key_up(node.get(), scene2d::KEY_UP, key, modifiers);
+        node->onEvent(key_up);
+    }
 }
 void Dialog::OnCharacter(wchar_t ch) {
-    // Node2DRef node = _focused_node.lock();
-    // if (node) node->OnCharacter(ch, *this);
+    base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
+    if (node) {
+        scene2d::ImeEvent chars(node.get(), scene2d::CHARS, std::wstring(1, ch));
+        node->onEvent(chars);
+    }
 }
 void Dialog::OnImeComposition(const std::wstring& text, absl::optional<int> caret_pos) {
-    // Node2DRef node = _focused_node.lock();
-    // if (node) node->OnImeComposition(text, caret_pos, *this);
+    base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
+    if (node) {
+        scene2d::ImeEvent composing(node.get(), scene2d::COMPOSING, text, caret_pos);
+        node->onEvent(composing);
+    }
 }
 void Dialog::OnImeCommit(const std::wstring& text) {
-    // Node2DRef node = _focused_node.lock();
-    // if (node) node->OnImeCommit(text, *this);
+    base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
+    if (node) {
+        scene2d::ImeEvent commit(node.get(), scene2d::COMMIT, text);
+        node->onEvent(commit);
+    }
 }
 void Dialog::OnImeStartComposition() {
     // Node2DRef node = _focused_node.lock();
@@ -626,12 +643,23 @@ void Dialog::OnImeStartComposition() {
     //     if (node->QueryImeCaretRect(origin, size))
     //         UpdateCaretRect(node->MapPointToRoot(origin), size);
     // }
+    base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
+    if (node) {
+        scene2d::ImeEvent start_compose(node.get(), scene2d::START_COMPOSE);
+        node->onEvent(start_compose);
+        if (start_compose.caret_rect_) {
+            LOG(INFO) << "TODO: MapPointToRoot";
+            UpdateCaretRect(start_compose.caret_rect_->origin(),
+                start_compose.caret_rect_->size());
+        }
+    }
 }
 void Dialog::OnImeEndComposition() {
-    // Node2DRef node = _focused_node.lock();
-    // if (node) {
-    //     node->OnImeEndComposition(*this);
-    // }
+    base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
+    if (node) {
+        scene2d::ImeEvent end_compose(node.get(), scene2d::END_COMPOSE);
+        node->onEvent(end_compose);
+    }
 }
 void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers) {
     if (button == buttons && !_mouse_capture) {
@@ -702,15 +730,14 @@ void Dialog::UpdateHoveredNode() {
     }
 }
 void Dialog::UpdateFocusedNode() {
-#if 0
     // Focused node become invisible
-    if (auto node = _focused_node.lock()) {
-        if (!node->IsVisibleInHierarchy()) {
-            node->OnFocusOut(*this);
-            _focused_node.reset();
+    if (auto node = _focused_node.upgrade()) {
+        if (!node->visibleInHierarchy()) {
+            scene2d::FocusEvent focus_out(node.get(), scene2d::FOCUS_OUT);
+            node->onEvent(focus_out);
+            _focused_node = nullptr;
         }
     }
-#endif
 }
 void Dialog::RecreateRenderTarget() {
     _rt = graphics::GraphicDevice::get()->CreateHwndRenderTarget(
