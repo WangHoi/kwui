@@ -1,6 +1,7 @@
 #pragma once
 #include "windows/windows_header.h"
 #include "scene2d/geom_types.h"
+#include "graph2d/TextLayout.h"
 #include <memory>
 #include <string>
 
@@ -50,7 +51,7 @@ private:
 	uint16_t _raw;
 };
 
-struct TextLayout;
+class TextLayout;
 class TextLayoutBuilder {
 public:
 	TextLayoutBuilder(const std::string& text);
@@ -91,17 +92,18 @@ private:
 	TextAlignment _align;
 };
 
-class TextLayout {
+class TextLayout : public graph2d::TextLayoutInterface {
 public:
 	TextLayout(const std::wstring& text, const std::string& font_family,
 			   float font_size, ComPtr<IDWriteTextLayout> layout);
-	inline float GetLineHeight() const { return _line_height; }
-	inline float GetBaseline() const { return _baseline; }
+	float lineHeight() const override { return _line_height; }
+	float baseline() const override { return _baseline; }
+	scene2d::RectF rect() const override { return _rect; }
+	scene2d::RectF caretRect(int idx) const override;
+	scene2d::RectF rangeRect(int start_idx, int end_idx) const override;
+	int hitTest(const scene2d::PointF& pos, scene2d::RectF* out_caret_rect = nullptr) const override;
+
 	inline IDWriteTextLayout *GetRaw() const { return _layout.Get(); }
-	inline const scene2d::RectF& GetRect() const { return _rect; }
-	scene2d::RectF GetCaretRect(int idx) const;
-	scene2d::RectF GetRangeRect(int start_idx, int end_idx) const;
-	int HitTest(const scene2d::PointF& pos, scene2d::RectF* out_caret_rect = nullptr) const;
 
 private:
 	void UpdateTextMetrics();

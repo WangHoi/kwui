@@ -107,25 +107,44 @@ public:
 		return s ? base::string_intern(s) : base::string_atom();
 	}
 
-	template<>
-	style::StyleSpec parse<style::StyleSpec>(JSValue j)
+	template<typename F>
+	void eachObjectField(JSValue j, F&& f)
 	{
-		style::StyleSpec v;
-		if (!JS_IsObjectPlain(ctx_, j))
-			return v;
 		JSPropertyEnum* ptab = nullptr;
 		uint32_t plen = 0;
-		JS_GetOwnPropertyNames(ctx_, &ptab, &plen, j, JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK | JS_GPN_ENUM_ONLY);
+		JS_GetOwnPropertyNames(ctx_, &ptab, &plen, j, JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY);
 		for (uint32_t i = 0; i < plen; ++i) {
 			JSValue jval = JS_GetProperty(ctx_, j, ptab[i].atom);
 			if (JS_IsException(jval))
 				continue;
 			char prop_name_buf[32] = {};
-			JS_AtomGetStr(ctx_, prop_name_buf, 31, ptab[i].atom);
-			base::string_atom prop = base::string_intern(prop_name_buf);
-			style::ValueSpec val = parse<style::ValueSpec>(jval);
+			const char *prop_name = JS_AtomGetStr(ctx_, prop_name_buf, 31, ptab[i].atom);
+			base::string_atom prop = base::string_intern(prop_name);
+			f(prop, jval);
 			JS_FreeValue(ctx_, jval);
 		}
+		if (ptab)
+			js_free_prop_enum(ctx_, ptab, plen);
+	}
+
+	template<>
+	style::StyleSpec parse<style::StyleSpec>(JSValue j)
+	{
+		style::StyleSpec v;
+		eachObjectField(j, [&](base::string_atom prop, JSValue jval) {
+			style::ValueSpec val = parse<style::ValueSpec>(jval);
+			if (prop == base::string_intern("left")) {
+				v.left = val;
+			} else if (prop == base::string_intern("top")) {
+				v.top = val;
+			} else if (prop == base::string_intern("width")) {
+				v.width = val;
+			} else if (prop == base::string_intern("height")) {
+				v.height = val;
+			} else {
+				LOG(WARNING) << "parse StyleSpec: " << (const char*)prop << " not supported.";
+			}
+		});
 		return v;
 	}
 
@@ -170,9 +189,7 @@ public:
 				v.unit = style::ValueUnit::Raw;
 			} else if (ret == 2) {
 				v.keyword_val = base::string_intern(dim);
-				if (strcmp(dim, "auto") == 0) {
-					v.unit = style::ValueUnit::Auto;
-				} else if (strcmp(dim, "px") == 0) {
+				if (strcmp(dim, "px") == 0) {
 					v.unit = style::ValueUnit::Pixel;
 				} else if (strcmp(dim, "pt") == 0) {
 					v.unit = style::ValueUnit::Point;

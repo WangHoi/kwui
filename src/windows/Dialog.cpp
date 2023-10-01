@@ -456,8 +456,11 @@ void Dialog::OnPaint() {
         LOG(WARNING) << "OnPaint: No render target.";
         return;
     }
-    int tries = 0;
 
+    _scene->resolveStyle(_scene->root());
+    _scene->computeLayout(_scene->root());
+
+    int tries = 0;
     while (tries < 2) {
         PAINTSTRUCT ps;
         BeginPaint(_hwnd, &ps);
@@ -502,9 +505,10 @@ void Dialog::PaintNode(graphics::Painter& p, scene2d::Node* node) {
 }
 void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node) {
     if (node->type_ == scene2d::NodeType::NODE_TEXT) {
-        auto text_layout = graphics::TextLayoutBuilder(node->text_)
-		    .FontSize(16)
-            .Build();
+        auto text_layout = (graphics::TextLayout*)node->text_layout_.get();
+        p.SetColor(BLACK);
+        auto r = text_layout->rect();
+        LOG(INFO) << "Rect: " << r.left << ", " << r.top << " (" << r.bottom - r.left << "x" << r.bottom - r.top << ")";  
         p.DrawTextLayout(scene2d::PointF::fromZeros(), *text_layout);
     } else if (node->type_ == scene2d::NodeType::NODE_ELEMENT) {
 

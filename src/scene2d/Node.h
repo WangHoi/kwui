@@ -4,14 +4,20 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <map>
 
 #include "base/base.h"
-#include "style/Style.h"
+#include "style/style.h"
 #include "script/script.h"
 #include "geom_types.h"
+#include "Attribute.h"
 
 namespace windows {
 class Dialog;
+}
+
+namespace graph2d {
+class TextLayoutInterface;
 }
 
 namespace scene2d {
@@ -28,6 +34,7 @@ enum NodeFlag {
 	NODE_FLAG_CLICKABLE = 4,
 };
 
+class Control;
 class Scene;
 class Node : public base::Object {
 public:
@@ -69,10 +76,18 @@ public:
 		return origin_.x <= p.x && p.x < origin_.x + size_.width
 			&& origin_.y <= p.y && p.y < origin_.y + size_.height;
 	}
-
+	
+	void setStyle(const style::StyleSpec &style);
+	void setAttribute(base::string_atom name, const NodeAttributeValue &value);
+	void setEventHandler(base::string_atom name, JSValue func);
+	void resolveStyle();
+	void computeLayout();
 
 protected:
-#pragma region Tree nodes
+	static style::Value resolve(const style::Value *parent,
+		const style::ValueSpec& spec, const style::Value& default_);
+
+	// Tree nodes
 	Scene* stage_ = nullptr;
 
 	Node* parent_ = nullptr;
@@ -83,6 +98,7 @@ protected:
 
 	// Text
 	std::string text_;
+	std::unique_ptr<graph2d::TextLayoutInterface> text_layout_;
 
 	// Element
 	base::string_atom tag_;
@@ -91,16 +107,20 @@ protected:
 	JSValue comp_state_ = JS_UNINITIALIZED;
 	base::WeakObjectProxy<Node>* weakptr_ = nullptr;
 
-#pragma endregion
+	// Attribute and Event handlers
+	std::map<base::string_atom, NodeAttributeValue> attrs_;
+	std::map<base::string_atom, JSValue> event_handlers_;
 
-#pragma region Style and layout
+	// Control
+	std::unique_ptr<Control> control_;
+
+	// Style and layout
 	style::StyleSpec specStyle_;
 	style::Style computedStyle_;
 
 	PointF origin_;
 	DimensionF size_;
 	bool visible_ = true;
-#pragma endregion
 
 	friend class Scene;
 	friend class windows::Dialog;

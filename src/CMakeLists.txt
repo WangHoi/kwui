@@ -4,6 +4,7 @@ add_subdirectory(base)
 add_subdirectory(script)
 add_subdirectory(style)
 add_subdirectory(scene2d)
+add_subdirectory(graph2d)
 
 if(WIN32)
   add_subdirectory(windows)
@@ -21,6 +22,7 @@ target_link_libraries(
          absl::log
          absl::log_initialize
          absl::synchronization
+         absl::variant
          fifo_map
          quickjs)
 target_link_libraries(kwui PUBLIC d2d1.lib dwrite.lib Windowscodecs.lib

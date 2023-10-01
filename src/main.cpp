@@ -9,14 +9,9 @@
 
 int main()
 {
+    ::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
     base::initialize_log();
-    /*
-    script::Context ctx;
-    ctx.loadFile("d:/projects/kwui/test.js");
-    LOG(INFO) << "started";
-    scene2d::Node actor(scene2d::NodeType::NODE_ELEMENT);
-    LOG(INFO) << "end";
-    */
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
     windows::graphics::GraphicDevice::get()->Init();
 
@@ -24,8 +19,8 @@ int main()
     MSG msg;
     PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
 
-    windows::Dialog diag(640, 480,L"d", NULL, 0, absl::nullopt, absl::nullopt);
-    diag.Show();
+    script::Context ctx;
+    ctx.loadFile("d:/projects/kwui/test.js");
 
     while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);

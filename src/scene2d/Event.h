@@ -1,14 +1,16 @@
 #pragma once
 #include "base/Object.h"
 #include "geom_types.h"
+#include <string>
 
 namespace scene2d {
 
 enum EventGroups {
     NO_GROUP = 0,
     HANDLE_MOUSE = 1,
-    HANDLE_KEY,
-    HANDLE_FOCUS,
+    HANDLE_KEY = 2,
+    HANDLE_FOCUS = 4,
+    HANDLE_IME = 8,
 };
 
 class Node;
@@ -106,6 +108,28 @@ struct FocusEvent : public Event {
     {
         return EVENT_GROUP;
     }
+};
+
+enum ImeCommand {
+    CHARS,
+    START_COMPOSE,
+    COMPOSING,
+    END_COMPOSE,
+    COMMIT,
+};
+
+struct ImeEvent : public Event {
+    ImeEvent(Node* t, int c)
+        : Event(t, c) {}
+    ImeEvent(Node* t, int c, const std::wstring &text)
+        : Event(t, c), wtext_(text) {}
+    static const EventGroups EVENT_GROUP = HANDLE_IME;
+    EventGroups group() const override
+    {
+        return EVENT_GROUP;
+    }
+
+    std::wstring wtext_;
 };
 
 }

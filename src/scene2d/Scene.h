@@ -36,9 +36,13 @@ public:
 	}
     Node* pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
 
+	void resolveStyle(Node* node);
+	void computeLayout(Node* node);
+
 private:
 	Node* createComponentNodeWithState(JSValue comp_data);
     Node* pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos);
+	void setupProps(Node* node, JSValue props);
 
 	std::unique_ptr<script::Context> ctx_;
 	Node* root_;

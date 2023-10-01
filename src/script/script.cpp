@@ -1,5 +1,6 @@
 #include "script.h"
 #include "scene2d/Scene.h"
+#include "windows/Dialog.h"
 
 namespace script {
 
@@ -107,10 +108,16 @@ Context::~Context()
     ctx_ = nullptr;
 }
 
-
 JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
-    return JS_NewInt32(ctx, 12345);
+    auto dialog = new windows::Dialog(
+        640, 480, L"dialog", NULL, windows::DIALOG_FLAG_MAIN,
+        absl::nullopt, absl::nullopt);
+    dialog->GetScene()->root()->appendChild(
+        dialog->GetScene()->createComponentNode(argv[0]));
+    LOG(INFO) << "show dialog";
+    dialog->Show();
+    return JS_UNDEFINED;
 }
 
 

@@ -81,7 +81,7 @@ void TextLayout::UpdateTextMetrics() {
         _rect = scene2d::RectF::fromZeros();
     }
 }
-scene2d::RectF TextLayout::GetCaretRect(int idx) const {
+scene2d::RectF TextLayout::caretRect(int idx) const {
     UINT index;
     BOOL trailing_hit;
     if (idx == _text.length()) {
@@ -101,16 +101,16 @@ scene2d::RectF TextLayout::GetCaretRect(int idx) const {
         return MakeCaretRect(nullptr);
     }
 }
-scene2d::RectF TextLayout::GetRangeRect(int start_idx, int end_idx) const {
+scene2d::RectF TextLayout::rangeRect(int start_idx, int end_idx) const {
     if (start_idx == end_idx)
         return scene2d::RectF::fromZeros();
     if (start_idx > end_idx)
         std::swap(start_idx, end_idx);
-    scene2d::RectF r1 = GetCaretRect(start_idx);
-    scene2d::RectF r2 = GetCaretRect(end_idx);
+    scene2d::RectF r1 = caretRect(start_idx);
+    scene2d::RectF r2 = caretRect(end_idx);
     return scene2d::RectF::fromLTRB(r1.left, r1.top, r2.right, r2.bottom);
 }
-int TextLayout::HitTest(const scene2d::PointF& pos, scene2d::RectF* out_caret_rect) const {
+int TextLayout::hitTest(const scene2d::PointF& pos, scene2d::RectF* out_caret_rect) const {
     BOOL trailing_hit = FALSE;
     BOOL inside = FALSE;
     DWRITE_HIT_TEST_METRICS htm;

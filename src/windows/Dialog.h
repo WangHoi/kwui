@@ -66,7 +66,7 @@ public:
     }
     void Resize(float width, float height);
     void SetTitle(const std::string& text);
-    // Node* GetRoot() const { return _root.get(); }
+    scene2d::Scene* GetScene() const { return _scene.get(); }
     const scene2d::DimensionF& GetSize() const { return _size; }
     inline float GetDpiScale() const { return _dpi_scale; }
     HWND GetHwnd() const { return _hwnd; }

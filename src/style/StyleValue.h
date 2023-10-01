@@ -18,7 +18,6 @@ enum class ValueUnit {
 	Point,
 	Percent,
 
-	Auto,
 	Keyword,
 };
 
@@ -26,11 +25,29 @@ struct Value {
 	float f32_val = 0.0f;
 	base::string_atom keyword_val;
 	ValueUnit unit = ValueUnit::Undefined;
+
+	static Value fromKeyword(base::string_atom k)
+	{
+		Value v;
+		v.keyword_val = k;
+		v.unit = ValueUnit::Keyword;
+	}
+	static Value fromPixel(float val)
+	{
+		return fromUnit(val, ValueUnit::Pixel);
+	}
+	static Value fromUnit(float val, ValueUnit u)
+	{
+		Value v;
+		v.f32_val = val;
+		v.unit = u;
+		return v;
+	}
 };
 
 enum class ValueSpecType {
-	Unset,
 	Inherit,
+	Unset,
 	Initial,
 	Specified,
 };

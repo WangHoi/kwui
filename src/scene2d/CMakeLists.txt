@@ -8,4 +8,7 @@ target_sources(kwui PRIVATE
   Scene.h
   Scene.cpp
   Event.h
+  Attribute.h
+  Control.h
+  Control.cpp
 )

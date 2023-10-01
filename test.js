@@ -1,46 +1,48 @@
 ﻿"use strict";
 "use math";
 
-function JSX(tag,atts,kids) {
-	return [tag,atts,kids];
-}
-
-class Div extends Object {
-	render(props, kids) {
-		return <div>
-			<p>{props.a}</p>
-			{kids}
-			<p>next kids</p>
-		</div>
-	}
-};
-
 class __ComponentState__ extends Object {
-	scene;
 	renderFn;
 	props;
 	children;
 
-	constructor(scene, builder, props, children) {
-		this.scene = scene;
+	constructor(builder, props, children) {
+		super();
 		this.renderFn = builder;
 		this.props = props;
 		this.children = children;
 	}
 	update() {
-		this.scene.updateComponent(this);
+		// this.scene.updateComponent(this);
 	}
 	render() {
+		console.log("mia")
 		return this.renderFn(this.props, this.children);
+	}
+};
+
+
+function JSX(tag, atts, kids) {
+	if (typeof tag == 'function') {
+		return new __ComponentState__(tag, atts, kids);
+	} else {
+		return {
+			tag,
+			atts,
+			kids,
+		};
 	}
 }
 
-function main() {
-	var a = <Div a="attr1"><p>aa<Div>jjj</Div></p></Div>;
-	// console.log(`${JSON.stringify(a)}`);
+function Div(props, kids) {
+	return <div>
+		<p>{props.a}</p>
+		{kids}
+		<p>next</p>
+	</div>;
 }
-console.log("first");
-var bb = app.showDialog(<Div>aaa</Div>);
-console.log(`showDialog: ${bb}`);
 
-main();
+var simple = <p style={{ left: 30, top: 100 }}>第一栏<p style={{ left: 20, top: 30 }}>测试2</p></p>;
+var complex = <Div a="f1"><p>aa</p><p>bb</p></Div>;
+console.log(JSON.stringify(complex.render()));
+app.showDialog(complex);
