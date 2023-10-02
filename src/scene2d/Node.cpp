@@ -5,6 +5,15 @@
 
 namespace scene2d {
 
+static void resolve_style(style::Value& style,
+    const style::Value* parent,
+    const style::ValueSpec& spec,
+    const style::Value& default_);
+static void resolve_style(style::DisplayType& style, const style::DisplayType* parent,
+    const style::ValueSpec& spec, const style::DisplayType& default_);
+static void resolve_style(style::PositionType& style, const style::PositionType* parent,
+    const style::ValueSpec& spec, const style::PositionType& default_);
+
 Node::Node(NodeType type)
     : type_(type)
     , origin_(PointF::fromZeros())
@@ -61,25 +70,25 @@ bool Node::testFlags(int flags) const
     return false;
 }
 
-void Node::onEvent(MouseEvent &event)
+void Node::onEvent(MouseEvent& event)
 {
     if (control_)
         control_->onMouseEvent(event);
 }
 
-void Node::onEvent(KeyEvent &event)
+void Node::onEvent(KeyEvent& event)
 {
     if (control_)
-        control_->onKeyEvent(event);    
+        control_->onKeyEvent(event);
 }
 
-void Node::onEvent(FocusEvent &event)
+void Node::onEvent(FocusEvent& event)
 {
     if (control_)
         control_->onFocusEvent(event);
 }
 
-void Node::onEvent(ImeEvent &event)
+void Node::onEvent(ImeEvent& event)
 {
     if (control_)
         control_->onImeEvent(event);
@@ -90,7 +99,7 @@ void Node::setStyle(const style::StyleSpec& style)
     specStyle_ = style;
 }
 
-void Node::setAttribute(base::string_atom name, const NodeAttributeValue &value)
+void Node::setAttribute(base::string_atom name, const NodeAttributeValue& value)
 {
     attrs_[name] = value;
     if (control_)
@@ -104,44 +113,49 @@ void Node::setEventHandler(base::string_atom name, JSValue func)
         control_->onSetEventHandler(name, func);
 }
 
-void Node::paintControl(windows::graphics::Painter &painter)
+void Node::paintControl(windows::graphics::Painter& painter)
 {
     if (control_)
         control_->onPaint(painter);
 }
 
-
 void Node::resolveStyle()
 {
-#define RESOLVE_ZERO_PX_DEFAULT(x) \
-    computedStyle_.x = resolve(\
+#define RESOLVE_STYLE(x, def) \
+    resolve_style(computedStyle_.x, \
         parent_ ? &parent_->computedStyle_.x : nullptr, \
         specStyle_.x,\
-        style::Value::fromPixel(0))
-    RESOLVE_ZERO_PX_DEFAULT(margin_left);
-    RESOLVE_ZERO_PX_DEFAULT(margin_top);
-    RESOLVE_ZERO_PX_DEFAULT(margin_right);
-    RESOLVE_ZERO_PX_DEFAULT(margin_bottom);
-    RESOLVE_ZERO_PX_DEFAULT(border_left);
-    RESOLVE_ZERO_PX_DEFAULT(border_top);
-    RESOLVE_ZERO_PX_DEFAULT(border_right);
-    RESOLVE_ZERO_PX_DEFAULT(border_bottom);
-    RESOLVE_ZERO_PX_DEFAULT(padding_left);
-    RESOLVE_ZERO_PX_DEFAULT(padding_top);
-    RESOLVE_ZERO_PX_DEFAULT(padding_right);
-    RESOLVE_ZERO_PX_DEFAULT(padding_bottom);
-    RESOLVE_ZERO_PX_DEFAULT(left);
-    RESOLVE_ZERO_PX_DEFAULT(top);
-    RESOLVE_ZERO_PX_DEFAULT(right);
-    RESOLVE_ZERO_PX_DEFAULT(bottom);
+        def)
+    RESOLVE_STYLE(display, style::DisplayType::Block);
+    RESOLVE_STYLE(position, style::PositionType::Static);
+    RESOLVE_STYLE(margin_left, style::Value::fromPixel(0));
+    RESOLVE_STYLE(margin_top, style::Value::fromPixel(0));
+    RESOLVE_STYLE(margin_right, style::Value::fromPixel(0));
+    RESOLVE_STYLE(margin_bottom, style::Value::fromPixel(0));
+    RESOLVE_STYLE(border_left_width, style::Value::fromPixel(0));
+    RESOLVE_STYLE(border_top_width, style::Value::fromPixel(0));
+    RESOLVE_STYLE(border_right_width, style::Value::fromPixel(0));
+    RESOLVE_STYLE(border_bottom_width, style::Value::fromPixel(0));
+    RESOLVE_STYLE(border_top_left_radius, style::Value::fromPixel(0));
+    RESOLVE_STYLE(border_top_right_radius, style::Value::fromPixel(0));
+    RESOLVE_STYLE(border_bottom_right_radius, style::Value::fromPixel(0));
+    RESOLVE_STYLE(border_bottom_left_radius, style::Value::fromPixel(0));
+    RESOLVE_STYLE(padding_left, style::Value::fromPixel(0));
+    RESOLVE_STYLE(padding_top, style::Value::fromPixel(0));
+    RESOLVE_STYLE(padding_right, style::Value::fromPixel(0));
+    RESOLVE_STYLE(padding_bottom, style::Value::fromPixel(0));
+    RESOLVE_STYLE(left, style::Value::fromPixel(0));
+    RESOLVE_STYLE(top, style::Value::fromPixel(0));
+    RESOLVE_STYLE(right, style::Value::fromPixel(0));
+    RESOLVE_STYLE(bottom, style::Value::fromPixel(0));
 
-    RESOLVE_ZERO_PX_DEFAULT(min_width);
-    RESOLVE_ZERO_PX_DEFAULT(min_height);
-    RESOLVE_ZERO_PX_DEFAULT(max_width);
-    RESOLVE_ZERO_PX_DEFAULT(max_height);
-    RESOLVE_ZERO_PX_DEFAULT(width);
-    RESOLVE_ZERO_PX_DEFAULT(height);
-#undef RESOLVE_ZERO_PX_DEFAULT
+    RESOLVE_STYLE(min_width, style::Value::fromPixel(0));
+    RESOLVE_STYLE(min_height, style::Value::fromPixel(0));
+    RESOLVE_STYLE(max_width, style::Value::fromPixel(0));
+    RESOLVE_STYLE(max_height, style::Value::fromPixel(0));
+    RESOLVE_STYLE(width, style::Value::fromPixel(0));
+    RESOLVE_STYLE(height, style::Value::fromPixel(0));
+#undef RESOLVE_STYLE
 }
 
 void Node::computeLayout()
@@ -152,15 +166,59 @@ void Node::computeLayout()
     size_.height = computedStyle_.height.f32_val;
 }
 
-style::Value Node::resolve(const style::Value* parent,
+void resolve_style(style::Value& style, const style::Value* parent,
     const style::ValueSpec& spec, const style::Value& default_)
 {
     if (spec.type == style::ValueSpecType::Inherit) {
-        return parent ? *parent : default_;
+        style = parent ? *parent : default_;
     } else if (spec.type == style::ValueSpecType::Specified) {
-        return *spec.value;
+        style = *spec.value;
     } else {
-        return default_;
+        style = default_;
+    }
+}
+
+void resolve_style(style::DisplayType& style, const style::DisplayType* parent,
+    const style::ValueSpec& spec, const style::DisplayType& default_)
+{
+    if (spec.type == style::ValueSpecType::Inherit) {
+        style = parent ? *parent : default_;
+    } else if (spec.type == style::ValueSpecType::Specified) {
+        if (spec.value->unit == style::ValueUnit::Keyword) {
+            if (spec.value->keyword_val == base::string_intern("block"))
+                style = style::DisplayType::Block;
+            else if (spec.value->keyword_val == base::string_intern("inline"))
+                style = style::DisplayType::Inline;
+            else if (spec.value->keyword_val == base::string_intern("inline-block"))
+                style = style::DisplayType::InlineBlock;
+        } else {
+            style = default_;
+        }
+    } else {
+        style = default_;
+    }
+}
+
+void resolve_style(style::PositionType& style, const style::PositionType* parent,
+    const style::ValueSpec& spec, const style::PositionType& default_)
+{
+    if (spec.type == style::ValueSpecType::Inherit) {
+        style = parent ? *parent : default_;
+    } else if (spec.type == style::ValueSpecType::Specified) {
+        if (spec.value->unit == style::ValueUnit::Keyword) {
+            if (spec.value->keyword_val == base::string_intern("static"))
+                style = style::PositionType::Static;
+            else if (spec.value->keyword_val == base::string_intern("relative"))
+                style = style::PositionType::Relative;
+            else if (spec.value->keyword_val == base::string_intern("absolute"))
+                style = style::PositionType::Absolute;
+            else if (spec.value->keyword_val == base::string_intern("fixed"))
+                style = style::PositionType::Fixed;
+        } else {
+            style = default_;
+        }
+    } else {
+        style = default_;
     }
 }
 

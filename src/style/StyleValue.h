@@ -18,6 +18,9 @@ enum class ValueUnit {
 	Point,
 	Percent,
 
+	HexColor,
+	Url,
+
 	Keyword,
 };
 
@@ -25,6 +28,7 @@ struct Value {
 	float f32_val = 0.0f;
 	base::string_atom keyword_val;
 	ValueUnit unit = ValueUnit::Undefined;
+	std::string string_val;
 
 	static Value fromKeyword(base::string_atom k)
 	{
@@ -42,6 +46,18 @@ struct Value {
 		v.f32_val = val;
 		v.unit = u;
 		return v;
+	}
+	static Value fromHexColor(const std::string &s)
+	{
+		Value v;
+		v.string_val = s;
+		v.unit = ValueUnit::HexColor;
+	}
+	static Value fromUrl(const std::string &url)
+	{
+		Value v;
+		v.string_val = url;
+		v.unit = ValueUnit::Url;
 	}
 };
 
@@ -65,10 +81,10 @@ struct StyleSpec {
 	ValueSpec margin_top;
 	ValueSpec margin_right;
 	ValueSpec margin_bottom;
-	ValueSpec border_left;
-	ValueSpec border_top;
-	ValueSpec border_right;
-	ValueSpec border_bottom;
+	ValueSpec border_left_width;
+	ValueSpec border_top_width;
+	ValueSpec border_right_width;
+	ValueSpec border_bottom_width;
 	ValueSpec padding_left;
 	ValueSpec padding_top;
 	ValueSpec padding_right;
@@ -85,6 +101,15 @@ struct StyleSpec {
 	
 	ValueSpec width;
 	ValueSpec height;
+
+	ValueSpec border_top_left_radius;
+	ValueSpec border_top_right_radius;
+	ValueSpec border_bottom_right_radius;
+	ValueSpec border_bottom_left_radius;
+
+	ValueSpec background_color;
+	ValueSpec background_image;
+	ValueSpec border_color;
 };
 
 enum class DisplayType {
@@ -120,14 +145,21 @@ struct Style {
 	Value margin_top;
 	Value margin_right;
 	Value margin_bottom;
-	Value border_left;
-	Value border_top;
-	Value border_right;
-	Value border_bottom;
+
+	Value border_left_width;
+	Value border_top_width;
+	Value border_right_width;
+	Value border_bottom_width;
+
 	Value padding_left;
 	Value padding_top;
 	Value padding_right;
 	Value padding_bottom;
+
+	Value border_top_left_radius;
+	Value border_top_right_radius;
+	Value border_bottom_right_radius;
+	Value border_bottom_left_radius;
 };
 
 }

@@ -11,6 +11,8 @@
 #include "base/base.h"
 #include "style/style.h"
 
+#include "absl/strings/match.h"
+
 namespace scene2d {
 class Scene;
 }
@@ -118,7 +120,7 @@ public:
 			if (JS_IsException(jval))
 				continue;
 			char prop_name_buf[32] = {};
-			const char *prop_name = JS_AtomGetStr(ctx_, prop_name_buf, 31, ptab[i].atom);
+			const char* prop_name = JS_AtomGetStr(ctx_, prop_name_buf, 31, ptab[i].atom);
 			base::string_atom prop = base::string_intern(prop_name);
 			f(prop, jval);
 			JS_FreeValue(ctx_, jval);
@@ -133,18 +135,53 @@ public:
 		style::StyleSpec v;
 		eachObjectField(j, [&](base::string_atom prop, JSValue jval) {
 			style::ValueSpec val = parse<style::ValueSpec>(jval);
-			if (prop == base::string_intern("left")) {
-				v.left = val;
-			} else if (prop == base::string_intern("top")) {
-				v.top = val;
-			} else if (prop == base::string_intern("width")) {
-				v.width = val;
-			} else if (prop == base::string_intern("height")) {
-				v.height = val;
-			} else {
-				LOG(WARNING) << "parse StyleSpec: " << (const char*)prop << " not supported.";
-			}
-		});
+#define CHECK_VALUE(x) if (prop == base::string_intern(#x)) { v.x = val; }
+#define CHECK_VALUE2(x, name) if (prop == base::string_intern(#name)) { v.x = val; }
+			CHECK_VALUE(display);
+			CHECK_VALUE(position);
+
+			CHECK_VALUE2(margin_left, margin-left);
+			CHECK_VALUE2(margin_top, margin-top);
+			CHECK_VALUE2(margin_right, margin-right);
+			CHECK_VALUE2(margin_bottom, margin-bottom);
+			if (prop == base::string_intern("margin"))
+				v.margin_left = v.margin_top = v.margin_right = v.margin_bottom = val;
+			
+			CHECK_VALUE2(border_left_width, border-left-width);
+			CHECK_VALUE2(border_top_width, border-top-width);
+			CHECK_VALUE2(border_right_width, border-right-width);
+			CHECK_VALUE2(border_bottom_width, border-bottom-width);
+			if (prop == base::string_intern("border-width"))
+				v.border_left_width = v.border_top_width = v.border_right_width = v.border_bottom_width = val;
+			
+			CHECK_VALUE2(border_top_left_radius, border-top-left-radius);
+			CHECK_VALUE2(border_top_right_radius, border-top-right-radius);
+			CHECK_VALUE2(border_bottom_right_radius, border-bottom-right-radius);
+			CHECK_VALUE2(border_bottom_left_radius, border-bottom-left-radius);
+			if (prop == base::string_intern("border-radius"))
+				v.border_top_left_radius = v.border_top_right_radius = v.border_bottom_right_radius = v.border_bottom_left_radius = val;
+			
+			CHECK_VALUE2(padding_left, padding-left);
+			CHECK_VALUE2(padding_top, padding-top);
+			CHECK_VALUE2(padding_right, padding-right);
+			CHECK_VALUE2(padding_bottom, padding-bottom);
+			if (prop == base::string_intern("padding"))
+				v.padding_left = v.padding_top = v.padding_right = v.padding_bottom = val;
+
+			CHECK_VALUE(left);
+			CHECK_VALUE(top);
+			CHECK_VALUE(right);
+			CHECK_VALUE(bottom);
+
+			CHECK_VALUE(width);
+			CHECK_VALUE(height);
+
+			CHECK_VALUE2(background_color, background-color);
+			CHECK_VALUE2(background_image, background-image);
+			CHECK_VALUE2(border_color, border-color);
+#undef CHECK_VALUE
+#undef CHECK_VALUE2
+			});
 		return v;
 	}
 
@@ -181,22 +218,35 @@ public:
 			v.f32_val = (float)f64;
 			v.unit = style::ValueUnit::Raw;
 		} else if (JS_IsString(j)) {
-			const char* s = JS_ToCString(ctx_, j);
-			int ret;
-			char dim[32] = {};
-			ret = sscanf(s, "%f%32s", &v.f32_val, dim);
-			if (ret == 1) {
-				v.unit = style::ValueUnit::Raw;
-			} else if (ret == 2) {
-				v.keyword_val = base::string_intern(dim);
-				if (strcmp(dim, "px") == 0) {
-					v.unit = style::ValueUnit::Pixel;
-				} else if (strcmp(dim, "pt") == 0) {
-					v.unit = style::ValueUnit::Point;
-				} else if (strcmp(dim, "%") == 0) {
-					v.unit = style::ValueUnit::Percent;
+			std::string s = parse<std::string>(j);
+			if (absl::StartsWith(s, "#")) {
+				v.string_val = s;
+				v.unit = style::ValueUnit::HexColor;
+			} else if (absl::StartsWith(s, "url(") && absl::EndsWith(s, ")")) {
+				s = s.substr(4, s.length() - 5);
+				if (s.length() >= 2 && absl::StartsWith(s, "\"") && absl::EndsWith(s, "\"")) {
+					v.string_val = s.substr(1, s.length() - 2);
 				} else {
-					v.unit = style::ValueUnit::Keyword;
+					v.string_val = s;
+				}
+				v.unit = style::ValueUnit::Url;
+			} else {
+				int ret;
+				char dim[32] = {};
+				ret = sscanf(s.c_str(), "%f%32s", &v.f32_val, dim);
+				if (ret == 1) {
+					v.unit = style::ValueUnit::Raw;
+				} else if (ret == 2) {
+					v.keyword_val = base::string_intern(dim);
+					if (strcmp(dim, "px") == 0) {
+						v.unit = style::ValueUnit::Pixel;
+					} else if (strcmp(dim, "pt") == 0) {
+						v.unit = style::ValueUnit::Point;
+					} else if (strcmp(dim, "%") == 0) {
+						v.unit = style::ValueUnit::Percent;
+					} else {
+						v.unit = style::ValueUnit::Keyword;
+					}
 				}
 			}
 		}

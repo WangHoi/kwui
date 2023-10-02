@@ -106,9 +106,6 @@ public:
 	void computeLayout();
 
 protected:
-	static style::Value resolve(const style::Value *parent,
-		const style::ValueSpec& spec, const style::Value& default_);
-
 	// Tree nodes
 	Scene* stage_ = nullptr;
 
