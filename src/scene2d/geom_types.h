@@ -25,6 +25,16 @@ struct PointF {
     {
         return PointF(f, f);
     }
+    inline PointF& operator+=(float f)
+    {
+        x += f;
+        y += f;
+        return *this;
+    }
+    inline PointF operator+(float f) const
+    {
+        return PointF(x + f, y + f);
+    }
     inline PointF& operator+=(const PointF& p)
     {
         x += p.x;
@@ -34,6 +44,16 @@ struct PointF {
     inline PointF operator+(const PointF& p) const
     {
         return PointF(x + p.x, y + p.y);
+    }
+    inline PointF& operator-=(float f)
+    {
+        x -= f;
+        y -= f;
+        return *this;
+    }
+    inline PointF operator-(float f) const
+    {
+        return PointF(x - f, y - f);
     }
     inline PointF& operator-=(const PointF& p)
     {
@@ -139,6 +159,8 @@ struct RectF {
     inline DimensionF size() const {
         return DimensionF(right - left, bottom - top);
     }
+    inline float width() const { return right - left; }
+    inline float height() const { return bottom - top; }
     float left;
     float top;
     float right;

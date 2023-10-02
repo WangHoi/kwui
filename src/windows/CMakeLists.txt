@@ -4,10 +4,12 @@ add_subdirectory(control)
 target_sources(kwui PUBLIC
     Dialog.h
     PopupShadow.h
-    EncodingManager.h)
+    EncodingManager.h
+    encoding_helpers.h)
 target_sources(kwui PRIVATE
     Dialog.cpp
     PopupShadow.cpp
     EncodingManager.cpp
+    encoding_helpers.cpp
     theme.h
     theme.cpp)
