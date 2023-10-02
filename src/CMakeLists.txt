@@ -18,11 +18,14 @@ target_link_libraries(
          absl::span
          absl::time
          absl::strings
+         absl::string_view
          absl::optional
          absl::log
          absl::log_initialize
          absl::synchronization
          absl::variant
+         absl::statusor
+         absl::status
          fifo_map
          quickjs)
 target_link_libraries(kwui PUBLIC d2d1.lib dwrite.lib Windowscodecs.lib

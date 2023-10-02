@@ -94,6 +94,11 @@ void Node::onEvent(ImeEvent& event)
         control_->onImeEvent(event);
 }
 
+void Node::setId(base::string_atom id)
+{
+    id_ = id;
+}
+
 void Node::setStyle(const style::StyleSpec& style)
 {
     specStyle_ = style;
@@ -119,12 +124,12 @@ void Node::paintControl(windows::graphics::Painter& painter)
         control_->onPaint(painter);
 }
 
-void Node::resolveStyle()
+void Node::resolveStyle(const style::StyleSpec& spec)
 {
 #define RESOLVE_STYLE(x, def) \
     resolve_style(computedStyle_.x, \
         parent_ ? &parent_->computedStyle_.x : nullptr, \
-        specStyle_.x,\
+        spec.x,\
         def)
     RESOLVE_STYLE(display, style::DisplayType::Block);
     RESOLVE_STYLE(position, style::PositionType::Static);
@@ -156,6 +161,21 @@ void Node::resolveStyle()
     RESOLVE_STYLE(width, style::Value::fromPixel(0));
     RESOLVE_STYLE(height, style::Value::fromPixel(0));
 #undef RESOLVE_STYLE
+}
+
+bool Node::matchSimple(style::Selector* selector) const
+{
+    if (type_ != NodeType::NODE_ELEMENT)
+        return false;
+    if (selector->id != base::string_atom() && selector->id != id_)
+        return false;
+    LOG(WARNING) << "handle css klasses match";
+    // if (selector->klasses != base::string_atom() && selector->klasses != klasses_)
+    //     return false;
+    if (selector->tag != base::string_atom() && selector->tag != base::string_intern("*")
+        && selector->tag != tag_)
+        return false;
+    return true;
 }
 
 void Node::computeLayout()

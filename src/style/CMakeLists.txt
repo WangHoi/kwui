@@ -3,4 +3,6 @@ target_sources(kwui PRIVATE
 )
 target_sources(kwui PRIVATE
   StyleValue.h
+  StyleRule.h
+  StyleRule.cpp
 )

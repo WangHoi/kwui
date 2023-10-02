@@ -98,11 +98,17 @@ public:
 	void onEvent(FocusEvent &event);
 	void onEvent(ImeEvent &event);
 	
+	void setId(base::string_atom id);
 	void setStyle(const style::StyleSpec &style);
 	void setAttribute(base::string_atom name, const NodeAttributeValue &value);
 	void setEventHandler(base::string_atom name, JSValue func);
 	void paintControl(windows::graphics::Painter &painter);
-	void resolveStyle();
+	void resolveStyle(const style::StyleSpec &style);
+	inline void resolveInlineStyle()
+	{
+		resolveStyle(specStyle_);
+	}
+	bool matchSimple(style::Selector *selector) const;
 	void computeLayout();
 
 protected:
@@ -121,6 +127,7 @@ protected:
 
 	// Element
 	base::string_atom tag_;
+	base::string_atom id_;
 
 	// Component
 	JSValue comp_state_ = JS_UNINITIALIZED;

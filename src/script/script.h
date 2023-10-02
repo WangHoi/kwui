@@ -7,11 +7,13 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include <fstream>
+#include <vector>
 
 #include "base/base.h"
 #include "style/style.h"
 
 #include "absl/strings/match.h"
+#include "absl/status/statusor.h"
 
 namespace scene2d {
 class Scene;
@@ -82,15 +84,30 @@ public:
 	{
 		return T();
 	}
+	template<typename T>
+	static T parse(JSContext *, JSValue)
+	{
+		return T();
+	}
 
 	template<>
 	bool parse<bool>(JSValue j)
+	{
+		return Context::parse<bool>(ctx_, j);
+	}
+	template<>
+	static bool parse<bool>(JSContext *ctx_, JSValue j)
 	{
 		return JS_ToBool(ctx_, j) == TRUE;
 	}
 
 	template<>
 	std::string parse<std::string>(JSValue j)
+	{
+		return Context::parse<std::string>(ctx_, j);
+	}
+	template<>
+	static std::string parse<std::string>(JSContext *ctx_, JSValue j)
 	{
 		const char* cstr = JS_ToCString(ctx_, j);
 		if (cstr) {
@@ -105,6 +122,11 @@ public:
 	template<>
 	base::string_atom parse<base::string_atom>(JSValue j)
 	{
+		return Context::parse<base::string_atom>(ctx_, j);
+	}
+	template<>
+	static base::string_atom parse<base::string_atom>(JSContext* ctx_, JSValue j)
+	{
 		const char* s = JS_ToCString(ctx_, j);
 		return s ? base::string_intern(s) : base::string_atom();
 	}
@@ -112,29 +134,41 @@ public:
 	template<typename F>
 	void eachObjectField(JSValue j, F&& f)
 	{
+		Context::eachObjectField(ctx_, j, std::move(f));
+	}
+
+	template<typename F>
+	static void eachObjectField(JSContext* ctx, JSValue j, F&& f)
+	{
 		JSPropertyEnum* ptab = nullptr;
 		uint32_t plen = 0;
-		JS_GetOwnPropertyNames(ctx_, &ptab, &plen, j, JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY);
+		JS_GetOwnPropertyNames(ctx, &ptab, &plen, j, JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY);
 		for (uint32_t i = 0; i < plen; ++i) {
-			JSValue jval = JS_GetProperty(ctx_, j, ptab[i].atom);
+			JSValue jval = JS_GetProperty(ctx, j, ptab[i].atom);
 			if (JS_IsException(jval))
 				continue;
 			char prop_name_buf[32] = {};
-			const char* prop_name = JS_AtomGetStr(ctx_, prop_name_buf, 31, ptab[i].atom);
-			base::string_atom prop = base::string_intern(prop_name);
-			f(prop, jval);
-			JS_FreeValue(ctx_, jval);
+			const char* prop_name = JS_AtomGetStr(ctx, prop_name_buf, 31, ptab[i].atom);
+			f(prop_name, jval);
+			JS_FreeValue(ctx, jval);
 		}
 		if (ptab)
-			js_free_prop_enum(ctx_, ptab, plen);
+			js_free_prop_enum(ctx, ptab, plen);
 	}
 
 	template<>
 	style::StyleSpec parse<style::StyleSpec>(JSValue j)
 	{
+		return Context::parse<style::StyleSpec>(ctx_, j);
+	}
+
+	template<>
+	static style::StyleSpec parse<style::StyleSpec>(JSContext* ctx_, JSValue j)
+	{
 		style::StyleSpec v;
-		eachObjectField(j, [&](base::string_atom prop, JSValue jval) {
-			style::ValueSpec val = parse<style::ValueSpec>(jval);
+		Context::eachObjectField(ctx_, j, [&](const char *prop_name, JSValue jval) {
+			auto prop = base::string_intern(prop_name);
+			style::ValueSpec val = Context::parse<style::ValueSpec>(ctx_, jval);
 #define CHECK_VALUE(x) if (prop == base::string_intern(#x)) { v.x = val; }
 #define CHECK_VALUE2(x, name) if (prop == base::string_intern(#name)) { v.x = val; }
 			CHECK_VALUE(display);
@@ -188,12 +222,17 @@ public:
 	template<>
 	style::ValueSpec parse<style::ValueSpec>(JSValue j)
 	{
+		return Context::parse<style::ValueSpec>(ctx_, j);
+	}
+	template<>
+	static style::ValueSpec parse<style::ValueSpec>(JSContext *ctx_, JSValue j)
+	{
 		style::ValueSpec v;
 		if (JS_IsNumber(j)) {
-			v.value = parse<style::Value>(j);
+			v.value = Context::parse<style::Value>(ctx_, j);
 			v.type = style::ValueSpecType::Specified;
 		} else if (JS_IsString(j)) {
-			v.value = parse<style::Value>(j);
+			v.value = Context::parse<style::Value>(ctx_, j);
 			if (v.value->unit != style::ValueUnit::Undefined) {
 				v.type = style::ValueSpecType::Specified;
 			}
@@ -211,6 +250,11 @@ public:
 	template<>
 	style::Value parse<style::Value>(JSValue j)
 	{
+		return Context::parse<style::Value>(ctx_, j);
+	}
+	template<>
+	static style::Value parse<style::Value>(JSContext *ctx_, JSValue j)
+	{
 		style::Value v;
 		if (JS_IsNumber(j)) {
 			double f64;
@@ -218,7 +262,7 @@ public:
 			v.f32_val = (float)f64;
 			v.unit = style::ValueUnit::Raw;
 		} else if (JS_IsString(j)) {
-			std::string s = parse<std::string>(j);
+			std::string s = Context::parse<std::string>(ctx_, j);
 			if (absl::StartsWith(s, "#")) {
 				v.string_val = s;
 				v.unit = style::ValueUnit::HexColor;

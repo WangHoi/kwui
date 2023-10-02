@@ -91,6 +91,7 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "*.inc": "cpp",
-        "coroutine": "cpp"
+        "coroutine": "cpp",
+        "*.rh": "cpp"
     }
 }

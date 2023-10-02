@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "Node.h"
 #include "script/script.h"
+#include "style/style.h"
 
 namespace scene2d {
 
@@ -118,19 +119,40 @@ Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_
 	return pickSelf(node, pos, flag_mask, out_local_pos);
 }
 
-void Scene::resolveStyle(Node* node)
+void Scene::appendStyleRule(std::unique_ptr<style::StyleRule>&& rule)
 {
-	node->resolveStyle();
-	for (auto child : node->children())
-		resolveStyle(child);
+	if (style_rules_.empty()) {
+		style_rules_.emplace_back(std::move(rule));
+		return;
+	}
+	auto sp = rule->specificity();
+	if (style_rules_.back()->specificity() <= sp) {
+		style_rules_.emplace_back(std::move(rule));
+		return;
+	}
+	for (auto it = style_rules_.begin(); it != style_rules_.end(); ++it) {
+		if (sp < (*it)->specificity()) {
+			style_rules_.insert(it, std::move(rule));
+			break;
+		}
+	}
 }
 
-void Scene::computeLayout(Node* node)
+void Scene::resolveStyle(Node* node)
 {
-	node->computeLayout();
-	for (auto child : node->children())
-		computeLayout(child);
+	for (auto& rule : style_rules_) {
+		if (match(node, rule->selector.get()))
+			node->resolveStyle(rule->spec);
+	}
+	node->resolveInlineStyle();
 }
+
+// void Scene::computeLayout(Node* node)
+// {
+// 	node->computeLayout();
+// 	for (auto child : node->children())
+// 		computeLayout(child);
+// }
 
 Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
 {
@@ -153,10 +175,14 @@ Node* Scene::createComponentNodeWithState(JSValue comp_state)
 
 void Scene::setupProps(Node* node, JSValue props)
 {
-	ctx_->eachObjectField(props, [&](base::string_atom name, JSValue value) {
+	ctx_->eachObjectField(props, [&](const char* name_str, JSValue value) {
 		JSContext* jctx = ctx_->get();
+		auto name = base::string_intern(name_str);
 		if (name == base::string_intern("style")) {
 			node->setStyle(ctx_->parse<style::StyleSpec>(value));
+		} else if (name == base::string_intern("id")) {
+			node->setId(ctx_->parse<base::string_atom>(value));
+		} else if (name == base::string_intern("class")) {
 		} else if (JS_IsFunction(ctx_->get(), value)) {
 			node->setEventHandler(name, JS_DupValue(jctx, value));
 		} else if (JS_IsNumber(value)) {
@@ -175,6 +201,34 @@ void Scene::setupProps(Node* node, JSValue props)
 			JS_FreeValue(jctx, jval);
 		}
 	});
+}
+
+bool Scene::match(Node* node, style::Selector* selector)
+{
+	if (!node)
+		return false;
+
+	if (!node->matchSimple(selector))
+		return false;
+
+	if (!selector->dep_selector)
+		return true;
+	
+	if (selector->dep_type == style::SelectorDependency::DirectParent)
+		return match(node->parent_, selector->dep_selector.get());
+
+	if (selector->dep_type == style::SelectorDependency::Ancestor) {
+		Node *pnode = node->parent_;
+		style::Selector *psel = selector->dep_selector.get();
+		while (pnode) {
+			if (match(pnode, psel))
+				return true;
+			pnode = pnode->parent_;
+		}
+		return false;
+	}
+
+	return true;
 }
 
 }

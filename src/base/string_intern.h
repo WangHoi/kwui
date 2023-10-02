@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_set>
+#include "absl/strings/string_view.h"
 
 namespace base {
 
@@ -28,12 +29,12 @@ private:
 
 	const char* atom_text_;
 
-	friend string_atom string_intern(const std::string& s);
+	friend string_atom string_intern(absl::string_view s);
 };
 
-inline string_atom string_intern(const std::string& s)
+inline string_atom string_intern(absl::string_view s)
 {
-	return string_atom(s);
+	return string_atom(std::string(s));
 }
 
 }

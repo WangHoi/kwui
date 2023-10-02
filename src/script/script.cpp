@@ -113,6 +113,21 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
     auto dialog = new windows::Dialog(
         640, 480, L"dialog", NULL, windows::DIALOG_FLAG_MAIN,
         absl::nullopt, absl::nullopt);
+    
+    if (argc >= 2 && JS_IsObject(argv[1])) {
+        auto scene = dialog->GetScene();
+        Context::eachObjectField(ctx, argv[1], [ctx, scene](const char *name, JSValue value) {
+            auto selectors_res = style::Selector::parseGroup(name);
+            auto style_spec = Context::parse<style::StyleSpec>(ctx, value);
+            if (selectors_res.ok()) {
+                for (auto&& selector : *selectors_res) {
+                    auto rule = std::make_unique<style::StyleRule>(std::move(selector), style_spec);
+                    scene->appendStyleRule(std::move(rule));
+                }
+            }
+        });
+    }
+    
     dialog->GetScene()->root()->appendChild(
         dialog->GetScene()->createComponentNode(argv[0]));
     LOG(INFO) << "show dialog";

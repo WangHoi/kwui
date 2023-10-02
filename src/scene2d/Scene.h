@@ -5,6 +5,7 @@
 #include "base/base.h"
 #include "quickjs.h"
 #include "geom_types.h"
+#include "style/StyleRule.h"
 
 namespace script {
 class Context;
@@ -40,16 +41,19 @@ public:
 	}
     Node* pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
 
+	void appendStyleRule(std::unique_ptr<style::StyleRule>&& rule);
 	void resolveStyle(Node* node);
-	void computeLayout(Node* node);
+	// void computeLayout(Node* node);
 
 private:
 	Node* createComponentNodeWithState(JSValue comp_data);
     Node* pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos);
 	void setupProps(Node* node, JSValue props);
+	bool match(Node* node, style::Selector* selector);
 
 	std::unique_ptr<script::Context> ctx_;
 	Node* root_;
 	base::WeakObjectProxy<Scene> *weakptr_;
+	std::vector<std::unique_ptr<style::StyleRule>> style_rules_;
 };
 }
