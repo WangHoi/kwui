@@ -1,6 +1,7 @@
 #pragma once
 #include "base/string_intern.h"
 #include "StyleValue.h"
+#include "StyleClass.h"
 
 namespace style {
 
@@ -14,7 +15,7 @@ class Selector {
 public:
     base::string_atom tag;
     base::string_atom id;
-    base::string_atom klass;
+    Classes klass;
     std::unique_ptr<Selector> dep_selector;
     SelectorDependency dep_type = SelectorDependency::None;
 

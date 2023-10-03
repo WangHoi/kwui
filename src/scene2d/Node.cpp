@@ -99,6 +99,11 @@ void Node::setId(base::string_atom id)
     id_ = id;
 }
 
+void Node::setClass(const style::Classes &klass)
+{
+    klass_ = klass;
+}
+
 void Node::setStyle(const style::StyleSpec& style)
 {
     specStyle_ = style;
@@ -170,8 +175,8 @@ bool Node::matchSimple(style::Selector* selector) const
     if (selector->id != base::string_atom() && selector->id != id_)
         return false;
     LOG(WARNING) << "handle css klasses match";
-    // if (selector->klasses != base::string_atom() && selector->klasses != klasses_)
-    //     return false;
+    if (!klass_.containsClass(selector->klass))
+         return false;
     if (selector->tag != base::string_atom() && selector->tag != base::string_intern("*")
         && selector->tag != tag_)
         return false;

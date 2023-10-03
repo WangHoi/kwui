@@ -137,7 +137,7 @@ absl::StatusOr<IResult<std::unique_ptr<Selector>>> selector_item(absl::string_vi
         std::tie(input, std::ignore) = res1.value_or(std::make_tuple(input, n));
 
         auto res2 = map(klass, [&sel, &n](auto tup) {
-            sel.klass = base::string_intern(std::string(std::get<1>(tup))); 
+            sel.klass = Classes::parse(std::get<1>(tup)); 
             return ++n;
             })(input);
         std::tie(input, std::ignore) = res2.value_or(std::make_tuple(input, n));
@@ -251,8 +251,7 @@ int Selector::specificity() const
     int s = 0;
     if (id != base::string_atom())
         s += 100;
-    if (klass != base::string_atom())
-        s += 10;
+    s += 10 * (int)klass.size();
     if (tag != base::string_atom())
         s += 1;
     if (dep_selector)

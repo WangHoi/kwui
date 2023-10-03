@@ -99,6 +99,7 @@ public:
 	void onEvent(ImeEvent &event);
 	
 	void setId(base::string_atom id);
+	void setClass(const style::Classes &klass);
 	void setStyle(const style::StyleSpec &style);
 	void setAttribute(base::string_atom name, const NodeAttributeValue &value);
 	void setEventHandler(base::string_atom name, JSValue func);
@@ -128,6 +129,7 @@ protected:
 	// Element
 	base::string_atom tag_;
 	base::string_atom id_;
+	style::Classes klass_;
 
 	// Component
 	JSValue comp_state_ = JS_UNINITIALIZED;
