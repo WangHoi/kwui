@@ -131,6 +131,11 @@ void Node::paintControl(windows::graphics::Painter& painter)
 
 void Node::resolveStyle(const style::StyleSpec& spec)
 {
+    if (type_ != NodeType::NODE_ELEMENT) {
+        if (parent_)
+            computedStyle_ = parent_->computedStyle_;
+        return;
+    }
 #define RESOLVE_STYLE(x, def) \
     resolve_style(computedStyle_.x, \
         parent_ ? &parent_->computedStyle_.x : nullptr, \

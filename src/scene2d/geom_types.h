@@ -5,11 +5,8 @@
 namespace scene2d {
 
 struct PointF;
-struct Point;
 struct DimensionF;
-struct Dimension;
 struct RectF;
-struct Rect;
 
 struct PointF {
     float x;
@@ -91,11 +88,6 @@ struct PointF {
     }
 };
 
-struct Point {
-    int32_t x;
-    int32_t y;
-};
-
 struct DimensionF {
     float width;
     float height;
@@ -137,11 +129,6 @@ struct DimensionF {
     }
 };
 
-struct Dimension {
-    int32_t width;
-    int32_t height;
-};
-
 struct RectF {
     RectF() {} // Uninitialized
     static inline RectF fromZeros() {
@@ -170,11 +157,15 @@ private:
         : left(l), top(t), right(r), bottom(b) {}
 };
 
-struct Rect {
-    int32_t left;
-    int32_t top;
-    int32_t right;
-    int32_t bottom;
+struct BoxF {
+    // margin edges
+    RectF margin_rect = RectF::fromZeros();
+    // border edges
+    RectF border_rect = RectF::fromZeros();
+    // padding edges
+    RectF padding_rect = RectF::fromZeros();
+     // content size
+    DimensionF content_size = DimensionF::fromZeros(); 
 };
 
 }

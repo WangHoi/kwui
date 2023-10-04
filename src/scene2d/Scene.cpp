@@ -2,6 +2,7 @@
 #include "Node.h"
 #include "script/script.h"
 #include "style/style.h"
+#include "Layout.h"
 
 namespace scene2d {
 
@@ -138,7 +139,7 @@ void Scene::appendStyleRule(std::unique_ptr<style::StyleRule>&& rule)
 	}
 }
 
-void Scene::resolveStyle(Node* node)
+void Scene::resolveNodeStyle(Node* node)
 {
 	for (auto& rule : style_rules_) {
 		if (match(node, rule->selector.get()))
@@ -147,12 +148,13 @@ void Scene::resolveStyle(Node* node)
 	node->resolveInlineStyle();
 }
 
-// void Scene::computeLayout(Node* node)
-// {
-// 	node->computeLayout();
-// 	for (auto child : node->children())
-// 		computeLayout(child);
-// }
+void Scene::computeLayout(const scene2d::DimensionF &size)
+{
+	BlockFormatContext bfc;
+	bfc.contg_block_size = size;
+	bfc.abs_pos_parent = nullptr;
+	layoutBlock(root_, bfc);
+}
 
 Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
 {
@@ -231,4 +233,69 @@ bool Scene::match(Node* node, style::Selector* selector)
 	return true;
 }
 
+static void try_resolve_to_px(style::Value& v, float percent_base)
+{
+	if (v.unit == style::ValueUnit::Percent) {
+		v.unit = style::ValueUnit::Pixel;
+		v.f32_val = v.f32_val / 100.0f * percent_base;
+	}
 }
+
+void Scene::layoutBlock(Node* node, BlockFormatContext &bfc)
+{
+	// node->layoutBox_ = absl::make_optional<BoxF>();
+	const style::Style& st = node->computedStyle_;
+
+	/* Compute box width and margin. */
+	style::Value left = st.left;
+	style::Value margin_left = st.margin_left;
+	style::Value border_left = st.border_left_width;
+	style::Value padding_left = st.padding_left;
+	style::Value width = st.width;
+	style::Value right = st.right;
+	style::Value margin_right = st.margin_right;
+	style::Value border_right = st.border_right_width;
+	style::Value padding_right = st.padding_right;
+
+	if (st.position == style::PositionType::Static) {
+		/* 10.3.3 Block-level, non-replaced elements in normal flow */
+		left = style::Value::fromPixel(0);
+		try_resolve_to_px(margin_left, bfc.contg_block_size.width);
+		try_resolve_to_px(border_left, bfc.contg_block_size.width);
+		try_resolve_to_px(padding_left, bfc.contg_block_size.width);
+		try_resolve_to_px(width, bfc.contg_block_size.width);
+		try_resolve_to_px(padding_right, bfc.contg_block_size.width);
+		try_resolve_to_px(border_right, bfc.contg_block_size.width);
+		try_resolve_to_px(margin_right, bfc.contg_block_size.width);
+		right = style::Value::fromPixel(0);
+
+		if (border_left.isAuto()) border_left = style::Value::fromPixel(0);
+		if (padding_left.isAuto()) padding_left = style::Value::fromPixel(0);
+		if (padding_right.isAuto()) padding_right = style::Value::fromPixel(0);
+		if (border_right.isAuto()) border_right = style::Value::fromPixel(0);
+	} else if (st.position == style::PositionType::Absolute) {
+		/* 10.3.7 Absolutely positioned, non-replaced elements */
+		try_resolve_to_px(left, bfc.contg_block_size.width);
+		try_resolve_to_px(margin_left, bfc.contg_block_size.width);
+		try_resolve_to_px(border_left, bfc.contg_block_size.width);
+		try_resolve_to_px(padding_left, bfc.contg_block_size.width);
+		try_resolve_to_px(width, bfc.contg_block_size.width);
+		try_resolve_to_px(padding_right, bfc.contg_block_size.width);
+		try_resolve_to_px(border_right, bfc.contg_block_size.width);
+		try_resolve_to_px(margin_right, bfc.contg_block_size.width);
+		try_resolve_to_px(right, bfc.contg_block_size.width);
+
+		if (border_left.isAuto()) border_left = style::Value::fromPixel(0);
+		if (padding_left.isAuto()) padding_left = style::Value::fromPixel(0);
+		if (padding_right.isAuto()) padding_right = style::Value::fromPixel(0);
+		if (border_right.isAuto()) border_right = style::Value::fromPixel(0);
+
+		// if (margin_left.isAuto()) margin_left = style::Value::fromPixel(0);
+		// if (margin_right.isAuto()) margin_right = style::Value::fromPixel(0);
+	} else if (st.position == style::PositionType::Fixed) {
+	}
+
+	// find_inline_descendants(node);
+}
+
+} // namespace scene2d

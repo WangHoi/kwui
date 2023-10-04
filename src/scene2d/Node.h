@@ -12,6 +12,7 @@
 #include "geom_types.h"
 #include "Attribute.h"
 #include "Event.h"
+#include "Layout.h"
 
 namespace windows {
 class Dialog;
@@ -145,9 +146,10 @@ protected:
 	// Style and layout
 	style::StyleSpec specStyle_;
 	style::Style computedStyle_;
-
+	absl::optional<BoxF> layoutBox_;
 	PointF origin_;
 	DimensionF size_;
+
 	bool visible_ = true;
 
 	friend class Scene;

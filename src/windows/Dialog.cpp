@@ -459,7 +459,7 @@ void Dialog::OnPaint() {
         return;
     }
 
-    _scene->resolveStyle(_scene->root());
+    _scene->resolveNodeStyle(_scene->root());
     // _scene->computeLayout(_scene->root());
 
     int tries = 0;

@@ -47,17 +47,29 @@ struct Value {
 		v.unit = u;
 		return v;
 	}
-	static Value fromHexColor(const std::string &s)
+	static Value fromHexColor(const std::string& s)
 	{
 		Value v;
 		v.string_val = s;
 		v.unit = ValueUnit::HexColor;
 	}
-	static Value fromUrl(const std::string &url)
+	static Value fromUrl(const std::string& url)
 	{
 		Value v;
 		v.string_val = url;
 		v.unit = ValueUnit::Url;
+	}
+	inline bool isPixel() const
+	{
+		return unit == ValueUnit::Pixel;
+	}
+	inline bool isAuto() const
+	{
+		return isKeyword("auto");
+	}
+	inline bool isKeyword(absl::string_view key) const
+	{
+		return unit == ValueUnit::Keyword && keyword_val == base::string_intern(key);
 	}
 };
 
@@ -98,7 +110,7 @@ struct StyleSpec {
 	ValueSpec min_height;
 	ValueSpec max_width;
 	ValueSpec max_height;
-	
+
 	ValueSpec width;
 	ValueSpec height;
 
