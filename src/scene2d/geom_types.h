@@ -11,7 +11,7 @@ struct RectF;
 struct PointF {
     float x;
     float y;
-    PointF() {} // Uninitialized
+    PointF(): x(0), y(0) {}
     PointF(float x_, float y_)
         : x(x_), y(y_) {}
     static inline PointF fromZeros()
@@ -92,7 +92,8 @@ struct DimensionF {
     float width;
     float height;
 
-    DimensionF() {} // Uninitialized
+    DimensionF()
+        : width(0), height(0) {}
     DimensionF(float w, float h)
         : width(w), height(h) {}
     static inline DimensionF fromZeros()
@@ -130,7 +131,8 @@ struct DimensionF {
 };
 
 struct RectF {
-    RectF() {} // Uninitialized
+    RectF()
+        : left(0), top(0), right(0), bottom(0) {}
     static inline RectF fromZeros() {
         return RectF(0.0f, 0.0f, 0.0f, 0.0f);
     }
