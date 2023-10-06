@@ -134,12 +134,12 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 {
     if (type_ != NodeType::NODE_ELEMENT) {
         if (parent_)
-            computedStyle_ = parent_->computedStyle_;
+            computed_style_ = parent_->computed_style_;
         return;
     }
 #define RESOLVE_STYLE(x, def) \
-    resolve_style(computedStyle_.x, \
-        parent_ ? &parent_->computedStyle_.x : nullptr, \
+    resolve_style(computed_style_.x, \
+        parent_ ? &parent_->computed_style_.x : nullptr, \
         spec.x,\
         def)
     RESOLVE_STYLE(display, style::DisplayType::Block);
@@ -191,10 +191,10 @@ bool Node::matchSimple(style::Selector* selector) const
 
 void Node::computeLayout()
 {
-    origin_.x = computedStyle_.left.f32_val;
-    origin_.y = computedStyle_.top.f32_val;
-    size_.width = computedStyle_.width.f32_val;
-    size_.height = computedStyle_.height.f32_val;
+    origin_.x = computed_style_.left.f32_val;
+    origin_.y = computed_style_.top.f32_val;
+    size_.width = computed_style_.width.f32_val;
+    size_.height = computed_style_.height.f32_val;
 }
 
 void Node::layoutText(InlineFormatContext& ifc)
@@ -205,29 +205,69 @@ void Node::layoutText(InlineFormatContext& ifc)
     ifc.setupBox(&text_box_);
 }
 
-void Node::layoutInlineElement(InlineFormatContext& ifc)
+void Node::layoutInlineElement(InlineFormatContext& ifc, int element_depth)
 {
-    CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutText(): expect NODE_ELEMENT";
+    CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutInlineElement(): expect NODE_ELEMENT";
+    
+    inline_boxes_.clear();
     for (Node* child : children()) {
-        layoutInline(child, ifc);
+        layoutInlineChild(child, ifc, element_depth);
         collectInlineBoxes(child, inline_boxes_);
     }
 }
 
-void Node::layoutBlockElement(const BlockBox& box)
+void Node::layoutBlockElement(BlockFormatContext& bfc)
 {
-    block_box_ = box;
+    CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutBlockElement(): expect NODE_ELEMENT";
+    
+    block_box_.children.clear();
+    if (anyBlockChildren()) {
+        for (Node* child : children()) {
+            layoutBlockChild(child, bfc);
+            collectBlockBoxes(child, block_box_);
+        }
+    } else {
+        float measure_width = bfc.contg_block_size.width
+            - computed_style_.left.pixelOrZero()
+            - computed_style_.margin_left.pixelOrZero()
+            - computed_style_.border_left_width.pixelOrZero()
+            - computed_style_.padding_left.pixelOrZero()
+            - computed_style_.width.pixelOrZero()
+            - computed_style_.padding_right.pixelOrZero()
+            - computed_style_.border_right_width.pixelOrZero()
+            - computed_style_.margin_right.pixelOrZero()
+            - computed_style_.right.pixelOrZero();
+        if (measure_width < 0)
+            measure_width = 0;
+        
+        InlineFormatContext ifc(measure_width);
+        for (Node* child : children())
+            layoutInlineChild(child, ifc, 0);
+        ifc.layout();
+        float layout_height = ifc.getLayoutHeight();
+        float layout_width = ifc.getLayoutWidth();
+
+        BoxF& b = block_box_.box;
+        b.content_size.width = layout_width;
+        b.content_size.height = layout_height;
+    }
 }
 
-void Node::layoutInline(Node* node, InlineFormatContext& ifc)
+void Node::layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_depth)
 {
     if (node->type() == NodeType::NODE_TEXT) {
         node->layoutText(ifc);
+        if (element_depth == 0)
+            ifc.addBox(&node->text_box_);
     } else if (node->type() == NodeType::NODE_COMPONENT) {
         for (auto child : node->children())
-            layoutInline(child, ifc);
+            layoutInlineChild(child, ifc, element_depth);
     } else if (node->type() == NodeType::NODE_ELEMENT) {
-        node->layoutInlineElement(ifc);
+        node->layoutInlineElement(ifc, element_depth + 1);
+        if (element_depth == 0) {
+            for (InlineBox& box : node->inline_boxes_)
+                ifc.addBox(&box);
+        }
     }
 }
 
@@ -246,6 +286,43 @@ void Node::collectInlineBoxes(Node* node, std::vector<InlineBox>& boxes)
         InlineBox wrap_box = node->text_box_;
         wrap_box.children.push_back(&node->text_box_);
         boxes.push_back(wrap_box);
+    }
+}
+
+bool Node::anyBlockChildren() const
+{
+    for (auto child : children()) {
+        if (child->type() == NodeType::NODE_COMPONENT) {
+            return child->anyBlockChildren();
+        } else if (child->type() == NodeType::NODE_ELEMENT) {
+            if (child->computedStyle().display == style::DisplayType::Block)
+                return true;
+        }
+    }
+    return false;
+}
+
+void Node::layoutBlockChild(Node* node, BlockFormatContext& bfc)
+{
+    if (node->type() == NodeType::NODE_TEXT) {
+        ;
+    } else if (node->type() == NodeType::NODE_COMPONENT) {
+        for (auto child : node->children())
+            layoutBlockChild(child, bfc);
+    } else if (node->type() == NodeType::NODE_ELEMENT) {
+        node->layoutBlockElement(bfc);
+    }
+}
+
+void Node::collectBlockBoxes(Node* node, BlockBox& box)
+{
+    if (node->type_ == NodeType::NODE_COMPONENT) {
+        for (Node* child : node->children())
+            collectBlockBoxes(child, box);
+    } else if (node->type_ == NodeType::NODE_ELEMENT) {
+        box.children.push_back(&node->block_box_);
+    } else if (node->type_ == NodeType::NODE_TEXT) {
+        ;
     }
 }
 

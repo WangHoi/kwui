@@ -2,6 +2,24 @@
 
 namespace scene2d {
 
+void try_convert_to_px(style::Value& v, float percent_base)
+{
+    v = style::Value::fromPixel(resolve_to_px(v, percent_base));
+}
+
+float resolve_to_px(const style::Value& v, float percent_base)
+{
+    if (v.unit == style::ValueUnit::Percent) {
+        return v.f32_val / 100.0f * percent_base;
+    }
+    return 0;
+}
+
+void BlockFormatContext::addBox(BlockBox* box)
+{
+    block_boxes_.push_back(box);
+}
+
 struct LineBox {
     PointF offset;
     
@@ -92,6 +110,12 @@ void InlineFormatContext::setupBox(InlineBox* box)
 void InlineFormatContext::addBox(InlineBox* box)
 {
     box->line_box->addInlineBox(box);
+}
+
+float InlineFormatContext::getLayoutWidth() const
+{
+    LOG(WARNING) << "TODO: IFC::getLayoutWidth()";
+    return avail_width_;
 }
 
 LineBox* InlineFormatContext::newLineBox()

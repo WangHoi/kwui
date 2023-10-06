@@ -1,6 +1,8 @@
 #pragma once
 #include "geom_types.h"
 #include "base/log.h"
+#include "style/style.h"
+#include "absl/types/optional.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -11,6 +13,8 @@ class Node;
 
 struct BlockBox {
     BoxF box;
+    
+    std::vector<BlockBox*> children;
     PointF offset; // set by BFC
 };
 
@@ -22,7 +26,12 @@ struct BlockFormatContext {
     // absolute positioned parent    
     Node* abs_pos_parent = nullptr;
 
-    float offset_y = 0;
+    float offset_y = 0; // normal flow y offset
+
+    void addBox(BlockBox* box);
+
+private:
+    std::vector<BlockBox*> block_boxes_;
 };
 
 struct LineBox;
@@ -53,7 +62,8 @@ public:
     {
         return height_;
     }
-    
+    float getLayoutWidth() const;
+
 private:
     LineBox* newLineBox();
     LineBox* getLineBox(float pref_min_width);
@@ -63,5 +73,8 @@ private:
 
     float height_;
 };
+
+void try_convert_to_px(style::Value& v, float percent_base);
+float resolve_to_px(const style::Value& v, float percent_base);
 
 } // namespace scene2d

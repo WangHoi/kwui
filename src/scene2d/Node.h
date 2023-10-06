@@ -117,18 +117,21 @@ public:
 	}
 	inline const style::Style& computedStyle() const
 	{
-		return computedStyle_;
+		return computed_style_;
 	}
 	bool matchSimple(style::Selector *selector) const;
 	void computeLayout();
 
 	void layoutText(InlineFormatContext& ifc);
-	void layoutInlineElement(InlineFormatContext& ifc);
-	void layoutBlockElement(const BlockBox& box);
+	void layoutInlineElement(InlineFormatContext& ifc, int element_depth);
+	void layoutBlockElement(BlockFormatContext& bfc);
 
 protected:
-	void layoutInline(Node* node, InlineFormatContext& ifc);
+	void layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_depth);
 	static void collectInlineBoxes(Node* child, std::vector<InlineBox>& box);
+	bool anyBlockChildren() const;
+	void layoutBlockChild(Node* node, BlockFormatContext& bfc);
+	static void collectBlockBoxes(Node* child, BlockBox& box);
 
 	// Tree nodes
 	Scene* stage_ = nullptr;
@@ -164,7 +167,7 @@ protected:
 
 	// Style and layout
 	style::StyleSpec specStyle_;
-	style::Style computedStyle_;
+	style::Style computed_style_;
 	absl::optional<BoxF> layoutBox_;
 	PointF origin_;
 	DimensionF size_;

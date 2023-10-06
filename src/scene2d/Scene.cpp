@@ -153,7 +153,7 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 	BlockFormatContext bfc;
 	bfc.contg_block_size = size;
 	bfc.abs_pos_parent = nullptr;
-	layoutBlock(root_, bfc);
+	layoutChildBlock(root_, bfc);
 }
 
 Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
@@ -233,31 +233,10 @@ bool Scene::match(Node* node, style::Selector* selector)
 	return true;
 }
 
-static void try_resolve_to_px(style::Value& v, float percent_base)
-{
-	if (v.unit == style::ValueUnit::Percent) {
-		v.unit = style::ValueUnit::Pixel;
-		v.f32_val = v.f32_val / 100.0f * percent_base;
-	}
-}
-
-static bool has_block_children(Node* node)
-{
-	for (auto child : node->children()) {
-		if (child->type() == NodeType::NODE_COMPONENT) {
-			return has_block_children(child);
-		} else if (child->type() == NodeType::NODE_ELEMENT) {
-			if (child->computedStyle().display == style::DisplayType::Block)
-				return true;
-		}
-	}
-	return false;
-}
-
 void Scene::layoutBlock(Node* node, BlockFormatContext& bfc)
 {
-	// node->layoutBox_ = absl::make_optional<BoxF>();
-	const style::Style& st = node->computedStyle_;
+	BlockBox blkb;
+	const style::Style& st = node->computed_style_;
 
 	/* Compute box width and margin. */
 	style::Value left = st.left;
@@ -270,72 +249,154 @@ void Scene::layoutBlock(Node* node, BlockFormatContext& bfc)
 	style::Value border_right = st.border_right_width;
 	style::Value padding_right = st.padding_right;
 
+	float measure_width = bfc.contg_block_size.width;
 	if (st.position == style::PositionType::Static) {
 		/* 10.3.3 Block-level, non-replaced elements in normal flow */
 		left = style::Value::fromPixel(0);
-		try_resolve_to_px(margin_left, bfc.contg_block_size.width);
-		try_resolve_to_px(border_left, bfc.contg_block_size.width);
-		try_resolve_to_px(padding_left, bfc.contg_block_size.width);
-		try_resolve_to_px(width, bfc.contg_block_size.width);
-		try_resolve_to_px(padding_right, bfc.contg_block_size.width);
-		try_resolve_to_px(border_right, bfc.contg_block_size.width);
-		try_resolve_to_px(margin_right, bfc.contg_block_size.width);
+		try_convert_to_px(margin_left, bfc.contg_block_size.width);
+		try_convert_to_px(border_left, bfc.contg_block_size.width);
+		try_convert_to_px(padding_left, bfc.contg_block_size.width);
+		try_convert_to_px(width, bfc.contg_block_size.width);
+		try_convert_to_px(padding_right, bfc.contg_block_size.width);
+		try_convert_to_px(border_right, bfc.contg_block_size.width);
+		try_convert_to_px(margin_right, bfc.contg_block_size.width);
 		right = style::Value::fromPixel(0);
 
 		if (border_left.isAuto()) border_left = style::Value::fromPixel(0);
 		if (padding_left.isAuto()) padding_left = style::Value::fromPixel(0);
 		if (padding_right.isAuto()) padding_right = style::Value::fromPixel(0);
 		if (border_right.isAuto()) border_right = style::Value::fromPixel(0);
+
+		measure_width -= margin_left.pixelOrZero();
+		measure_width -= border_left.pixelOrZero();
+		measure_width -= padding_left.pixelOrZero();
+		measure_width -= padding_right.pixelOrZero();
+		measure_width -= border_right.pixelOrZero();
+		measure_width -= margin_right.pixelOrZero();
 	} else if (st.position == style::PositionType::Absolute) {
 		/* 10.3.7 Absolutely positioned, non-replaced elements */
-		try_resolve_to_px(left, bfc.contg_block_size.width);
-		try_resolve_to_px(margin_left, bfc.contg_block_size.width);
-		try_resolve_to_px(border_left, bfc.contg_block_size.width);
-		try_resolve_to_px(padding_left, bfc.contg_block_size.width);
-		try_resolve_to_px(width, bfc.contg_block_size.width);
-		try_resolve_to_px(padding_right, bfc.contg_block_size.width);
-		try_resolve_to_px(border_right, bfc.contg_block_size.width);
-		try_resolve_to_px(margin_right, bfc.contg_block_size.width);
-		try_resolve_to_px(right, bfc.contg_block_size.width);
+		try_convert_to_px(left, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(margin_left, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(border_left, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(padding_left, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(width, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(padding_right, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(border_right, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(margin_right, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(right, bfc.abs_pos_parent_block_size.width);
 
 		if (border_left.isAuto()) border_left = style::Value::fromPixel(0);
 		if (padding_left.isAuto()) padding_left = style::Value::fromPixel(0);
 		if (padding_right.isAuto()) padding_right = style::Value::fromPixel(0);
 		if (border_right.isAuto()) border_right = style::Value::fromPixel(0);
 
-		// if (margin_left.isAuto()) margin_left = style::Value::fromPixel(0);
-		// if (margin_right.isAuto()) margin_right = style::Value::fromPixel(0);
+		measure_width -= left.pixelOrZero();
+		measure_width -= right.pixelOrZero();
+		measure_width -= margin_left.pixelOrZero();
+		measure_width -= border_left.pixelOrZero();
+		measure_width -= padding_left.pixelOrZero();
+		measure_width -= padding_right.pixelOrZero();
+		measure_width -= border_right.pixelOrZero();
+		measure_width -= margin_right.pixelOrZero();
 	} else if (st.position == style::PositionType::Fixed) {
-	}
+		/* 10.3.7 Absolutely positioned, non-replaced elements */
+		try_convert_to_px(left, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(margin_left, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(border_left, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(padding_left, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(width, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(padding_right, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(border_right, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(margin_right, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(right, bfc.abs_pos_parent_block_size.width);
 
-	float height = 0;
-	if (!has_block_children(node)) {
-		InlineFormatContext ifc(bfc.contg_block_size.width);
+		if (border_left.isAuto()) border_left = style::Value::fromPixel(0);
+		if (padding_left.isAuto()) padding_left = style::Value::fromPixel(0);
+		if (padding_right.isAuto()) padding_right = style::Value::fromPixel(0);
+		if (border_right.isAuto()) border_right = style::Value::fromPixel(0);
+
+		measure_width -= left.pixelOrZero();
+		measure_width -= right.pixelOrZero();
+		measure_width -= margin_left.pixelOrZero();
+		measure_width -= border_left.pixelOrZero();
+		measure_width -= padding_left.pixelOrZero();
+		measure_width -= padding_right.pixelOrZero();
+		measure_width -= border_right.pixelOrZero();
+		measure_width -= margin_right.pixelOrZero();
+	}
+	if (measure_width < 0)
+		measure_width = 0;
+
+	// Comput top offset
+	style::Value top = st.top;
+	style::Value margin_top = st.margin_top;
+	if (st.position == style::PositionType::Static) {
+		top = style::Value::fromPixel(0);
+		try_convert_to_px(margin_top, bfc.contg_block_size.width);
+	} else if (st.position == style::PositionType::Absolute) {
+		try_convert_to_px(top, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(margin_top, bfc.abs_pos_parent_block_size.width);
+	} else if (st.position == style::PositionType::Fixed) {
+		try_convert_to_px(top, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(margin_top, bfc.abs_pos_parent_block_size.width);
+	}
+	blkb.offset.y = bfc.offset_y + top.pixelOrZero();
+
+	float layout_width = 0;
+	float layout_height = 0;
+	if (!node->anyBlockChildren()) {
+		InlineFormatContext ifc(measure_width);
 		for (auto child : node->children())
-			layoutInline(child, ifc);
+			layoutInlineChild(child, ifc);
 		ifc.layout();
-		height = ifc.getLayoutHeight();
+		layout_height = ifc.getLayoutHeight();
+		layout_width = ifc.getLayoutWidth();
+	} else if (st.position == style::PositionType::Static) {
+		layout_width = measure_width;
+		for (auto child : node->children()) {
+			layoutChildBlock(child, bfc);
+		}
 	} else {
-
+		BlockFormatContext new_bfc;
+		new_bfc.contg_block_size.width = measure_width;
+		new_bfc.abs_pos_parent = node;
+		new_bfc.abs_pos_parent_block_size.width = measure_width;
+		for (auto child : node->children()) {
+			layoutChildBlock(child, new_bfc);
+		}
 	}
-	BlockBox blkb;
-	blkb.offset.y = bfc.offset_y;
-	blkb.box.content_size.height = height;
-	node->layoutBlockElement(blkb);
+	
+	//BlockBox blkb;
+	//blkb.offset.y = bfc.offset_y;
+	//blkb.box.content_size.height = layout_height;
+	//node->layoutBlockElement(blkb);
 
-	bfc.offset_y += height;
+	bfc.offset_y += layout_height;
 }
 
-void Scene::layoutInline(Node* node, InlineFormatContext& ifc)
+void Scene::layoutChildBlock(Node* node, BlockFormatContext& bfc)
+{
+	if (node->type() == NodeType::NODE_COMPONENT) {
+		for (auto child : node->children())
+			layoutChildBlock(child, bfc);
+	} else if (node->type() == NodeType::NODE_ELEMENT) {
+		if (node->computedStyle().display == style::DisplayType::Block) {
+			node->layoutBlockElement(bfc);
+			bfc.addBox(&node->block_box_);
+		}
+	}
+}
+
+void Scene::layoutInlineChild(Node* node, InlineFormatContext& ifc)
 {
 	if (node->type() == NodeType::NODE_TEXT) {
 		node->layoutText(ifc);
 		ifc.addBox(&node->text_box_);
 	} else if (node->type() == NodeType::NODE_COMPONENT) {
 		for (auto child : node->children())
-			layoutInline(child, ifc);
+			layoutInlineChild(child, ifc);
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
-		node->layoutInlineElement(ifc);
+		node->layoutInlineElement(ifc, 0);
 		for (InlineBox& box : node->inline_boxes_)
 			ifc.addBox(&box);
 	}

@@ -71,6 +71,10 @@ struct Value {
 	{
 		return unit == ValueUnit::Keyword && keyword_val == base::string_intern(key);
 	}
+	inline float pixelOrZero() const
+	{
+		return isPixel() ? f32_val : 0.0f;
+	}
 };
 
 enum class ValueSpecType {
