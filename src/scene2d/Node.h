@@ -124,13 +124,13 @@ public:
 
 	void layoutText(InlineFormatContext& ifc);
 	void layoutInlineElement(InlineFormatContext& ifc, int element_depth);
-	void layoutBlockElement(BlockFormatContext& bfc);
+	void layoutBlockElement(BlockFormatContext& bfc, int element_depth);
 
 protected:
 	void layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_depth);
 	static void collectInlineBoxes(Node* child, std::vector<InlineBox>& box);
 	bool anyBlockChildren() const;
-	void layoutBlockChild(Node* node, BlockFormatContext& bfc);
+	void layoutBlockChild(Node* node, BlockFormatContext& bfc, int element_depth);
 	static void collectBlockBoxes(Node* child, BlockBox& box);
 
 	// Tree nodes

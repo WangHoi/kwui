@@ -216,14 +216,14 @@ void Node::layoutInlineElement(InlineFormatContext& ifc, int element_depth)
     }
 }
 
-void Node::layoutBlockElement(BlockFormatContext& bfc)
+void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 {
     CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutBlockElement(): expect NODE_ELEMENT";
     
     block_box_.children.clear();
     if (anyBlockChildren()) {
         for (Node* child : children()) {
-            layoutBlockChild(child, bfc);
+            layoutBlockChild(child, bfc, element_depth);
             collectBlockBoxes(child, block_box_);
         }
     } else {
@@ -302,15 +302,17 @@ bool Node::anyBlockChildren() const
     return false;
 }
 
-void Node::layoutBlockChild(Node* node, BlockFormatContext& bfc)
+void Node::layoutBlockChild(Node* node, BlockFormatContext& bfc, int element_depth)
 {
     if (node->type() == NodeType::NODE_TEXT) {
         ;
     } else if (node->type() == NodeType::NODE_COMPONENT) {
         for (auto child : node->children())
-            layoutBlockChild(child, bfc);
+            layoutBlockChild(child, bfc, element_depth);
     } else if (node->type() == NodeType::NODE_ELEMENT) {
-        node->layoutBlockElement(bfc);
+        node->layoutBlockElement(bfc, element_depth + 1);
+        if (element_depth == 0)
+            bfc.addBox(&node->block_box_);
     }
 }
 

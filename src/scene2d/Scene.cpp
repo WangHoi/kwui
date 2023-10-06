@@ -381,7 +381,7 @@ void Scene::layoutChildBlock(Node* node, BlockFormatContext& bfc)
 			layoutChildBlock(child, bfc);
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		if (node->computedStyle().display == style::DisplayType::Block) {
-			node->layoutBlockElement(bfc);
+			node->layoutBlockElement(bfc, 0);
 			bfc.addBox(&node->block_box_);
 		}
 	}
