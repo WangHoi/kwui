@@ -2,6 +2,7 @@
 #include "graph2d/graph2d.h"
 #include "style/style.h"
 #include "control.h"
+#include "Scene.h"
 
 namespace scene2d {
 
@@ -194,6 +195,58 @@ void Node::computeLayout()
     origin_.y = computedStyle_.top.f32_val;
     size_.width = computedStyle_.width.f32_val;
     size_.height = computedStyle_.height.f32_val;
+}
+
+void Node::layoutText(InlineFormatContext& ifc)
+{
+    CHECK(type_ == NodeType::NODE_TEXT) << "layoutText(): expect NODE_TEXT";
+    text_box_.size = text_layout_->rect().size();
+    text_box_.baseline = text_layout_->baseline();
+    ifc.setupBox(&text_box_);
+}
+
+void Node::layoutInlineElement(InlineFormatContext& ifc)
+{
+    CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutText(): expect NODE_ELEMENT";
+    for (Node* child : children()) {
+        layoutInline(child, ifc);
+        collectInlineBoxes(child, inline_boxes_);
+    }
+}
+
+void Node::layoutBlockElement(const BlockBox& box)
+{
+    block_box_ = box;
+}
+
+void Node::layoutInline(Node* node, InlineFormatContext& ifc)
+{
+    if (node->type() == NodeType::NODE_TEXT) {
+        node->layoutText(ifc);
+    } else if (node->type() == NodeType::NODE_COMPONENT) {
+        for (auto child : node->children())
+            layoutInline(child, ifc);
+    } else if (node->type() == NodeType::NODE_ELEMENT) {
+        node->layoutInlineElement(ifc);
+    }
+}
+
+void Node::collectInlineBoxes(Node* node, std::vector<InlineBox>& boxes)
+{
+    if (node->type_ == NodeType::NODE_COMPONENT) {
+        for (Node* child : node->children())
+            collectInlineBoxes(child, boxes);
+    } else if (node->type_ == NodeType::NODE_ELEMENT) {
+        for (InlineBox& child_box : node->inline_boxes_) {
+            InlineBox wrap_box = child_box;
+            wrap_box.children.push_back(&child_box);
+            boxes.push_back(wrap_box);
+        }
+    } else if (node->type_ == NodeType::NODE_TEXT) {
+        InlineBox wrap_box = node->text_box_;
+        wrap_box.children.push_back(&node->text_box_);
+        boxes.push_back(wrap_box);
+    }
 }
 
 void resolve_style(style::Value& style, const style::Value* parent,

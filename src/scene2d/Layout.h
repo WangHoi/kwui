@@ -7,8 +7,13 @@
 
 namespace scene2d
 {
-
 class Node;
+
+struct BlockBox {
+    BoxF box;
+    PointF offset; // set by BFC
+};
+
 struct BlockFormatContext {
     // containing block size
     DimensionF contg_block_size;
@@ -16,105 +21,47 @@ struct BlockFormatContext {
     DimensionF abs_pos_parent_block_size;
     // absolute positioned parent    
     Node* abs_pos_parent = nullptr;
+
+    float offset_y = 0;
 };
+
+struct LineBox;
 
 struct InlineBox {
-    PointF offset; // set by parent
-    
     DimensionF size;
     float baseline = 0; // offset from bottom
-};
 
-struct LineBox {
-    PointF offset; // set by parent
-    
-    float left;
-    float avail_width;
-    // float line_gap;  // leading
-    
-    DimensionF used_size;
-    float used_baseline; // offset from used_size's bottom
+    std::vector<InlineBox*> children;
 
-    std::vector<InlineBox> inline_boxes;
+    LineBox* line_box; // set by IFC::setupBox()
+    float line_box_offset_x; // set by IFC::setupBox()
 
-    LineBox(float left_, float avail_w)
-        : left(left_)
-        , avail_width(avail_w)
-        , used_baseline(0)
-    {
-    }
-    int addInlineBox(const InlineBox &box)
-    {
-        int idx = (int)inline_boxes.size();
-        inline_boxes.push_back(box);
-        return idx;
-    }
-    void updateInlineBox(int idx, const InlineBox &box)
-    {
-        CHECK(idx >= 0 && idx < (int)inline_boxes.size())
-            << "invalid inline box index.";
-        inline_boxes[idx] = box;
-    }
-    std::tuple<float, float> getAvailWidth() const
-    {
-        float x = left;
-        float w = avail_width;
-        for (auto& b : inline_boxes) {
-            x += b.size.width;
-            w -= b.size.width;
-        }
-        return std::make_tuple(x, w);
-    }
-    float remainWidth() const
-    {
-        float w = avail_width;
-        for (auto& b : inline_boxes) {
-            w -= b.size.width;
-        }
-        return w;
-    }
-    void finish()
-    {
-        used_size.width = 0;
-        float top = 0, bottom = 0;
-        for (auto& b : inline_boxes) {
-            used_size.width += b.size.width;
-            top = std::max(top, b.size.width - b.baseline);
-            bottom = std::max(bottom, b.baseline);
-        }
-        used_size.height = top + bottom;
-        used_baseline = bottom;
-
-        float x = left;
-        for (auto& b : inline_boxes) {
-            b.offset.x = x;
-            x += b.size.width;
-        }
-    }
+    PointF offset; // set by LineBox::layout()
 };
 
 class InlineFormatContext {
 public:
-private:
-    LineBox* newLineBox()
-    {
-        auto lb = std::make_unique<LineBox>(0, avail_width);
-        auto ret = lb.get();
-        line_boxes.emplace_back(std::move(lb));
-        return ret;
-    }
-    LineBox* getLineBox(float pref_min_width)
-    {
-        if (line_boxes.empty())
-            return newLineBox();
-        LineBox* lb = line_boxes.back().get();
-        if (lb->inline_boxes.empty() || lb->remainWidth() >= pref_min_width)
-            return lb;
-        return newLineBox();
-    }
+    InlineFormatContext(float avail_width);
+    ~InlineFormatContext();
+    float getAvailWidth() const;
+    void setupBox(InlineBox* box);
+    
+    void addBox(InlineBox* box);
 
-    float avail_width;
-    std::vector<std::unique_ptr<LineBox>> line_boxes;
+    void layout();
+    inline float getLayoutHeight() const
+    {
+        return height_;
+    }
+    
+private:
+    LineBox* newLineBox();
+    LineBox* getLineBox(float pref_min_width);
+
+    float avail_width_;
+    std::vector<std::unique_ptr<LineBox>> line_boxes_;
+
+    float height_;
 };
 
 } // namespace scene2d

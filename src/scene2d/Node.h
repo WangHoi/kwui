@@ -49,8 +49,13 @@ public:
 	Node(NodeType type, JSValue comp_state);
 	~Node();
 
+	NodeType type() const
+	{
+		return type_;
+	}
+
 	void appendChild(Node* child);
-	inline const std::vector<Node*> children() const
+	inline const std::vector<Node*>& children() const
 	{
 		return children_;
 	}
@@ -110,10 +115,21 @@ public:
 	{
 		resolveStyle(specStyle_);
 	}
+	inline const style::Style& computedStyle() const
+	{
+		return computedStyle_;
+	}
 	bool matchSimple(style::Selector *selector) const;
 	void computeLayout();
 
+	void layoutText(InlineFormatContext& ifc);
+	void layoutInlineElement(InlineFormatContext& ifc);
+	void layoutBlockElement(const BlockBox& box);
+
 protected:
+	void layoutInline(Node* node, InlineFormatContext& ifc);
+	static void collectInlineBoxes(Node* child, std::vector<InlineBox>& box);
+
 	// Tree nodes
 	Scene* stage_ = nullptr;
 
@@ -126,11 +142,14 @@ protected:
 	// Text
 	std::string text_;
 	std::unique_ptr<graph2d::TextLayoutInterface> text_layout_;
+	InlineBox text_box_;
 
 	// Element
 	base::string_atom tag_;
 	base::string_atom id_;
 	style::Classes klass_;
+	std::vector<InlineBox> inline_boxes_; // inline-level layout
+	BlockBox block_box_; // block-level layout
 
 	// Component
 	JSValue comp_state_ = JS_UNINITIALIZED;

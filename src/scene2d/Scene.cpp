@@ -148,7 +148,7 @@ void Scene::resolveNodeStyle(Node* node)
 	node->resolveInlineStyle();
 }
 
-void Scene::computeLayout(const scene2d::DimensionF &size)
+void Scene::computeLayout(const scene2d::DimensionF& size)
 {
 	BlockFormatContext bfc;
 	bfc.contg_block_size = size;
@@ -192,17 +192,17 @@ void Scene::setupProps(Node* node, JSValue props)
 			JS_ToFloat64(jctx, &f64, value);
 			node->setAttribute(name, (float)f64);
 		} else if (JS_IsString(value)) {
-			const char *s = JS_ToCString(jctx, value);
+			const char* s = JS_ToCString(jctx, value);
 			node->setAttribute(name, std::string(s));
 			JS_FreeCString(jctx, s);
 		} else {
 			JSValue jval = JS_ToString(jctx, value);
-			const char *s = JS_ToCString(jctx, jval);
+			const char* s = JS_ToCString(jctx, jval);
 			node->setAttribute(name, std::string(s));
 			JS_FreeCString(jctx, s);
 			JS_FreeValue(jctx, jval);
 		}
-	});
+		});
 }
 
 bool Scene::match(Node* node, style::Selector* selector)
@@ -215,13 +215,13 @@ bool Scene::match(Node* node, style::Selector* selector)
 
 	if (!selector->dep_selector)
 		return true;
-	
+
 	if (selector->dep_type == style::SelectorDependency::DirectParent)
 		return match(node->parent_, selector->dep_selector.get());
 
 	if (selector->dep_type == style::SelectorDependency::Ancestor) {
-		Node *pnode = node->parent_;
-		style::Selector *psel = selector->dep_selector.get();
+		Node* pnode = node->parent_;
+		style::Selector* psel = selector->dep_selector.get();
 		while (pnode) {
 			if (match(pnode, psel))
 				return true;
@@ -241,7 +241,20 @@ static void try_resolve_to_px(style::Value& v, float percent_base)
 	}
 }
 
-void Scene::layoutBlock(Node* node, BlockFormatContext &bfc)
+static bool has_block_children(Node* node)
+{
+	for (auto child : node->children()) {
+		if (child->type() == NodeType::NODE_COMPONENT) {
+			return has_block_children(child);
+		} else if (child->type() == NodeType::NODE_ELEMENT) {
+			if (child->computedStyle().display == style::DisplayType::Block)
+				return true;
+		}
+	}
+	return false;
+}
+
+void Scene::layoutBlock(Node* node, BlockFormatContext& bfc)
 {
 	// node->layoutBox_ = absl::make_optional<BoxF>();
 	const style::Style& st = node->computedStyle_;
@@ -295,7 +308,37 @@ void Scene::layoutBlock(Node* node, BlockFormatContext &bfc)
 	} else if (st.position == style::PositionType::Fixed) {
 	}
 
-	// find_inline_descendants(node);
+	float height = 0;
+	if (!has_block_children(node)) {
+		InlineFormatContext ifc(bfc.contg_block_size.width);
+		for (auto child : node->children())
+			layoutInline(child, ifc);
+		ifc.layout();
+		height = ifc.getLayoutHeight();
+	} else {
+
+	}
+	BlockBox blkb;
+	blkb.offset.y = bfc.offset_y;
+	blkb.box.content_size.height = height;
+	node->layoutBlockElement(blkb);
+
+	bfc.offset_y += height;
+}
+
+void Scene::layoutInline(Node* node, InlineFormatContext& ifc)
+{
+	if (node->type() == NodeType::NODE_TEXT) {
+		node->layoutText(ifc);
+		ifc.addBox(&node->text_box_);
+	} else if (node->type() == NodeType::NODE_COMPONENT) {
+		for (auto child : node->children())
+			layoutInline(child, ifc);
+	} else if (node->type() == NodeType::NODE_ELEMENT) {
+		node->layoutInlineElement(ifc);
+		for (InlineBox& box : node->inline_boxes_)
+			ifc.addBox(&box);
+	}
 }
 
 } // namespace scene2d

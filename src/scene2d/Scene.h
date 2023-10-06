@@ -52,10 +52,13 @@ private:
 	void setupProps(Node* node, JSValue props);
 	bool match(Node* node, style::Selector* selector);
 	void layoutBlock(Node* node, BlockFormatContext &bfc);
-	
+	void layoutInline(Node* node, InlineFormatContext& ifc);
+
 	std::unique_ptr<script::Context> ctx_;
 	Node* root_;
 	base::WeakObjectProxy<Scene> *weakptr_;
 	std::vector<std::unique_ptr<style::StyleRule>> style_rules_;
+
+	friend class Node;
 };
 }
