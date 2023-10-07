@@ -123,10 +123,13 @@ public:
 	bool matchSimple(style::Selector *selector) const;
 	void computeLayout();
 
+	// layout with new BFC
+	void layoutBlockElement(const DimensionF &cont_block_size);
+
 	void layoutText(InlineFormatContext& ifc);
 	// layout self and children
 	void layoutInlineElement(InlineFormatContext& ifc, int element_depth);
-	// layout self and children
+	// in-flow layout
 	void layoutBlockElement(BlockFormatContext& bfc, int element_depth);
 
 protected:

@@ -13,6 +13,6 @@ target_sources(kwui PRIVATE
   Control.cpp
   Layout.h
   Layout.cpp
-  WidthSolver.h
-  WidthSolver.cpp
+  BoxConstraintSolver.h
+  BoxConstraintSolver.cpp
 )

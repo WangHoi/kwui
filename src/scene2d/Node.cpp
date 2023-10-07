@@ -3,7 +3,7 @@
 #include "style/style.h"
 #include "control.h"
 #include "Scene.h"
-#include "WidthSolver.h"
+#include "BoxConstraintSolver.h"
 
 namespace scene2d {
 
@@ -198,6 +198,20 @@ void Node::computeLayout()
 	size_.height = computed_style_.height.f32_val;
 }
 
+void Node::layoutBlockElement(const DimensionF& cont_block_size)
+{
+	CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutBlockElement(): expect NODE_ELEMENT";
+
+	bfc_ = std::make_optional<BlockFormatContext>();
+	bfc_->owner = this;
+	bfc_->contg_block_width = cont_block_size.width;
+	bfc_->contg_block_height = cont_block_size.height;
+	bfc_->abs_pos_parent = this;
+	bfc_->abs_pos_parent_block_width = cont_block_size.width;
+	bfc_->abs_pos_parent_block_height = cont_block_size.height;
+	layoutBlockElement(*bfc_, 0);
+}
+
 void Node::layoutText(InlineFormatContext& ifc)
 {
 	CHECK(type_ == NodeType::NODE_TEXT) << "layoutText(): expect NODE_TEXT";
@@ -229,45 +243,27 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 
 		float measure_width = solver->measureWidth();
 
-		if (computed_style_.position == style::PositionType::Static) {
+		if (computed_style_.position == style::PositionType::Static || computed_style_.position == style::PositionType::Relative) {
 			base::scoped_setter _1(bfc.contg_block_width, measure_width);
 			for (Node* child : children()) {
 				layoutBlockChild(bfc, block_box_, child, element_depth);
-				//assembleBlockChild(child, block_box_);
 			}
-		} else if (computed_style_.position == style::PositionType::Relative) {
-			base::scoped_setter _1(bfc.contg_block_width, measure_width);
-			for (Node* child : children()) {
-				layoutBlockChild(bfc, block_box_, child, element_depth);
-				//assembleBlockChild(child, block_box_);
-			}
-			
-		} else if (computed_style_.position == style::PositionType::Absolute || computed_style_.position == style::PositionType::Fixed) {
-			bfc_ = std::make_optional<BlockFormatContext>();
-			bfc_->owner = this;
-			bfc_->contg_block_width = measure_width;
-			bfc_->abs_pos_parent = this;
-			bfc_->abs_pos_parent_block_width = measure_width;
-			layoutBlockElement(*bfc_, 0);
 		}
 
 		// arrange child block boxes
+		block_box_.offset.y = bfc.offset_y;
 		float layout_width = measure_width;
 		float layout_height = 0;
 		for (BlockBox* b : block_box_.children) {
-			if (b->isStatic()) {
-				b->offset.y = layout_height;
-				layout_height += b->box.margin_rect.top + b->box.border_rect.top + b->box.padding_rect.top
-					+ b->box.content_size.height
-					+ b->box.padding_rect.bottom + b->box.border_rect.bottom + b->box.margin_rect.bottom;
-			} else {
-				b->offset.y = 0;
-			}
+			b->offset.y = block_box_.offset.y + layout_height;
+			layout_height += b->box.margin_rect.top + b->box.border_rect.top + b->box.padding_rect.top
+				+ b->box.content_size.height
+				+ b->box.padding_rect.bottom + b->box.border_rect.bottom + b->box.margin_rect.bottom;
 		}
 
 		solver->setLayoutWidth(layout_width);
-		block_box_.box.content_size.height = layout_height;
 
+		// Compute width and margins
 		float base_width = solver->containingBlockWidth();
 		block_box_.box.margin_rect.left = solver->marginLeft();
 		block_box_.box.border_rect.left = try_resolve_to_px(computed_style_.border_left_width, base_width).value_or(0);
@@ -277,6 +273,8 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 		block_box_.box.border_rect.right = try_resolve_to_px(computed_style_.border_right_width, base_width).value_or(0);
 		block_box_.box.margin_rect.right = solver->marginRight();
 
+		// Compute height and margins
+		absl::optional<float> base_height = bfc.contg_block_height;
 		block_box_.box.margin_rect.top = try_resolve_to_px(computed_style_.margin_top, base_width).value_or(0);
 		block_box_.box.border_rect.top = try_resolve_to_px(computed_style_.border_top_width, base_width).value_or(0);
 		block_box_.box.padding_rect.top = try_resolve_to_px(computed_style_.padding_top, base_width).value_or(0);
@@ -285,11 +283,13 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 		block_box_.box.border_rect.bottom = try_resolve_to_px(computed_style_.border_bottom_width, base_width).value_or(0);
 		block_box_.box.margin_rect.bottom = try_resolve_to_px(computed_style_.margin_bottom, base_width).value_or(0);
 
-		if (solver->left().has_value()) {
-			block_box_.abs_pos = RectF::fromLTRB(*solver->left(),
-				try_resolve_to_px(computed_style_.top, base_width).value_or(0),
-				*solver->right(),
-				try_resolve_to_px(computed_style_.bottom, base_width).value_or(0));
+		absl::optional<float> height = try_resolve_to_px(computed_style_.height, base_height);
+		if (height.has_value()) {
+			block_box_.box.content_size.height = *height;
+		} else {
+			// Compute 'auto' height
+			block_box_.box.content_size.height = layout_height;
+
 		}
 	} else {
 		std::unique_ptr<BlockWidthSolverInterface> solver = createBlockWidthSolver(bfc);
@@ -306,8 +306,8 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 		float layout_width = ifc.getLayoutWidth();
 		float layout_height = ifc.getLayoutHeight();
 		solver->setLayoutWidth(layout_width);
-		block_box_.box.content_size.height = layout_height;
 
+		// Compute width and margins
 		float base_width = solver->containingBlockWidth();
 		block_box_.box.margin_rect.left = solver->marginLeft();
 		block_box_.box.border_rect.left = try_resolve_to_px(computed_style_.border_left_width, base_width).value_or(0);
@@ -317,18 +317,30 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 		block_box_.box.border_rect.right = try_resolve_to_px(computed_style_.border_right_width, base_width).value_or(0);
 		block_box_.box.margin_rect.right = solver->marginRight();
 
-		block_box_.box.margin_rect.top = try_resolve_to_px(computed_style_.margin_top, base_width).value_or(0);
-		block_box_.box.border_rect.top = try_resolve_to_px(computed_style_.border_top_width, base_width).value_or(0);
-		block_box_.box.padding_rect.top = try_resolve_to_px(computed_style_.padding_top, base_width).value_or(0);
+		// Compute height and margins
+		absl::optional<float> base_height = bfc.contg_block_height;
+		block_box_.box.margin_rect.top = try_resolve_to_px(computed_style_.margin_top, base_height).value_or(0);
+		block_box_.box.border_rect.top = try_resolve_to_px(computed_style_.border_top_width, base_height).value_or(0);
+		block_box_.box.padding_rect.top = try_resolve_to_px(computed_style_.padding_top, base_height).value_or(0);
 
-		block_box_.box.padding_rect.bottom = try_resolve_to_px(computed_style_.padding_bottom, base_width).value_or(0);
-		block_box_.box.border_rect.bottom = try_resolve_to_px(computed_style_.border_bottom_width, base_width).value_or(0);
-		block_box_.box.margin_rect.bottom = try_resolve_to_px(computed_style_.margin_bottom, base_width).value_or(0);
+		block_box_.box.padding_rect.bottom = try_resolve_to_px(computed_style_.padding_bottom, base_height).value_or(0);
+		block_box_.box.border_rect.bottom = try_resolve_to_px(computed_style_.border_bottom_width, base_height).value_or(0);
+		block_box_.box.margin_rect.bottom = try_resolve_to_px(computed_style_.margin_bottom, base_height).value_or(0);
 
+		absl::optional<float> height = try_resolve_to_px(computed_style_.height, base_height);
+		if (height.has_value()) {
+			block_box_.box.content_size.height = *height;
+		} else {
+			// Compute 'auto' height
+			block_box_.box.content_size.height = layout_height;
+
+		}
+		/*
 		block_box_.abs_pos.left = solver->left().value_or(0);
 		block_box_.abs_pos.right = solver->right().value_or(0);
 		block_box_.abs_pos.top = try_resolve_to_px(computed_style_.top, base_width).value_or(0);
 		block_box_.abs_pos.bottom = try_resolve_to_px(computed_style_.bottom, base_width).value_or(0);
+		*/
 	}
 }
 

@@ -33,10 +33,14 @@ struct BlockBox {
 struct BlockFormatContext {
     // Owner of this BFC
     Node* owner = nullptr;
-    // static containing block width
+    // containing block width
     float contg_block_width;
+    // containing block width
+    float contg_block_height;
     // absolute positioned parent block width
     float abs_pos_parent_block_width;
+    // absolute positioned parent block height
+    float abs_pos_parent_block_height;
     // absolute positioned parent    
     Node* abs_pos_parent = nullptr;
 
@@ -90,5 +94,6 @@ private:
 
 void try_convert_to_px(style::Value& v, float percent_base);
 absl::optional<float> try_resolve_to_px(const style::Value& v, float percent_base);
+absl::optional<float> try_resolve_to_px(const style::Value& v, absl::optional<float> percent_base);
 
 } // namespace scene2d

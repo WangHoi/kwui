@@ -89,4 +89,26 @@ private:
     absl::optional<float> right_;
 };
 
+class StaticBlockHeightSolver {
+public:
+    StaticBlockHeightSolver(float cont_block_height,
+        absl::optional<float> margin_top,
+        absl::optional<float> height,
+        absl::optional<float> margin_bottom);
+
+    float containingBlockHeight() const;
+    
+    void setLayoutHeight(float layout_height);
+
+    float marginTop();
+    float height();
+    float marginBottom();
+
+private:
+    float cont_block_height_;
+    absl::optional<float> margin_top_;
+    absl::optional<float> height_;
+    absl::optional<float> margin_bottom_;
+};
+
 }

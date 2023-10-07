@@ -11,8 +11,26 @@ absl::optional<float> try_resolve_to_px(const style::Value& v, float percent_bas
 {
     if (v.unit == style::ValueUnit::Percent) {
         return v.f32_val / 100.0f * percent_base;
+    } else if (v.unit == style::ValueUnit::Pixel) {
+        return v.f32_val;
+    } else if (v.unit == style::ValueUnit::Raw) {
+        return v.f32_val;
     }
-    return 0;
+    return 0.0f;
+}
+
+absl::optional<float> try_resolve_to_px(const style::Value& v, absl::optional<float> percent_base)
+{
+    if (v.unit == style::ValueUnit::Percent) {
+        return percent_base.has_value()
+            ? absl::optional<float>(v.f32_val / 100.0f * percent_base.value())
+            : absl::nullopt;
+    } else if (v.unit == style::ValueUnit::Pixel) {
+        return v.f32_val;
+    } else if (v.unit == style::ValueUnit::Raw) {
+        return v.f32_val;
+    }
+    return absl::nullopt;
 }
 
 void BlockFormatContext::addBox(BlockBox* box)
