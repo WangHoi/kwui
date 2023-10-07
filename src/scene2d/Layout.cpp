@@ -1,4 +1,5 @@
 #include "Layout.h"
+#include <utility>
 
 namespace scene2d {
 
@@ -31,6 +32,16 @@ absl::optional<float> try_resolve_to_px(const style::Value& v, absl::optional<fl
         return v.f32_val;
     }
     return absl::nullopt;
+}
+
+float collapse_margin(float m1, float m2)
+{
+    if (m1 >= 0 && m2 >= 0)
+        return std::max(m1, m2);
+    else if (m1 < 0 && m2 < 0)
+        return std::min(m1, m2);
+    else
+        return m1 + m2;
 }
 
 void BlockFormatContext::addBox(BlockBox* box)
@@ -132,8 +143,11 @@ void InlineFormatContext::addBox(InlineBox* box)
 
 float InlineFormatContext::getLayoutWidth() const
 {
-    LOG(WARNING) << "TODO: IFC::getLayoutWidth()";
-    return avail_width_;
+    float w = 0.0f;
+    for (const auto& lb : line_boxes_) {
+        w = std::max(w, lb->used_size.width);
+    }
+    return w;
 }
 
 LineBox* InlineFormatContext::newLineBox()

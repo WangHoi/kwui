@@ -139,6 +139,9 @@ protected:
 	void layoutBlockChild(BlockFormatContext& bfc, BlockBox& box, Node* child, int element_depth);
 	static void assembleBlockChild(Node* child, BlockBox& box);
 	std::unique_ptr<BlockWidthSolverInterface> createBlockWidthSolver(BlockFormatContext& bfc);
+	// in-flow placing
+	void arrangeBlockElement(BlockFormatContext& bfc, int element_depth);
+	void arrangeBlockChild(Node* child, BlockFormatContext& bfc, int element_depth);
 
 	// Tree nodes
 	Scene* stage_ = nullptr;

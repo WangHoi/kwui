@@ -206,10 +206,9 @@ void Node::layoutBlockElement(const DimensionF& cont_block_size)
 	bfc_->owner = this;
 	bfc_->contg_block_width = cont_block_size.width;
 	bfc_->contg_block_height = cont_block_size.height;
-	bfc_->abs_pos_parent = this;
-	bfc_->abs_pos_parent_block_width = cont_block_size.width;
-	bfc_->abs_pos_parent_block_height = cont_block_size.height;
 	layoutBlockElement(*bfc_, 0);
+
+	arrangeBlockElement(*bfc_, 0);
 }
 
 void Node::layoutText(InlineFormatContext& ifc)
@@ -245,13 +244,13 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 
 		if (computed_style_.position == style::PositionType::Static || computed_style_.position == style::PositionType::Relative) {
 			base::scoped_setter _1(bfc.contg_block_width, measure_width);
+			base::scoped_setter _2(bfc.contg_block_height,
+				try_resolve_to_px(computed_style_.height, bfc.contg_block_height));
 			for (Node* child : children()) {
 				layoutBlockChild(bfc, block_box_, child, element_depth);
 			}
 		}
-
-		// arrange child block boxes
-		block_box_.offset.y = bfc.offset_y;
+		/*
 		float layout_width = measure_width;
 		float layout_height = 0;
 		for (BlockBox* b : block_box_.children) {
@@ -260,10 +259,10 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 				+ b->box.content_size.height
 				+ b->box.padding_rect.bottom + b->box.border_rect.bottom + b->box.margin_rect.bottom;
 		}
+		*/
+		solver->setLayoutWidth(measure_width);
 
-		solver->setLayoutWidth(layout_width);
-
-		// Compute width and margins
+		// Compute width, left and right margins
 		float base_width = solver->containingBlockWidth();
 		block_box_.box.margin_rect.left = solver->marginLeft();
 		block_box_.box.border_rect.left = try_resolve_to_px(computed_style_.border_left_width, base_width).value_or(0);
@@ -273,7 +272,7 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 		block_box_.box.border_rect.right = try_resolve_to_px(computed_style_.border_right_width, base_width).value_or(0);
 		block_box_.box.margin_rect.right = solver->marginRight();
 
-		// Compute height and margins
+		// Compute top and bottom margins
 		absl::optional<float> base_height = bfc.contg_block_height;
 		block_box_.box.margin_rect.top = try_resolve_to_px(computed_style_.margin_top, base_width).value_or(0);
 		block_box_.box.border_rect.top = try_resolve_to_px(computed_style_.border_top_width, base_width).value_or(0);
@@ -283,14 +282,6 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 		block_box_.box.border_rect.bottom = try_resolve_to_px(computed_style_.border_bottom_width, base_width).value_or(0);
 		block_box_.box.margin_rect.bottom = try_resolve_to_px(computed_style_.margin_bottom, base_width).value_or(0);
 
-		absl::optional<float> height = try_resolve_to_px(computed_style_.height, base_height);
-		if (height.has_value()) {
-			block_box_.box.content_size.height = *height;
-		} else {
-			// Compute 'auto' height
-			block_box_.box.content_size.height = layout_height;
-
-		}
 	} else {
 		std::unique_ptr<BlockWidthSolverInterface> solver = createBlockWidthSolver(bfc);
 		if (!solver)
@@ -333,14 +324,7 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 		} else {
 			// Compute 'auto' height
 			block_box_.box.content_size.height = layout_height;
-
 		}
-		/*
-		block_box_.abs_pos.left = solver->left().value_or(0);
-		block_box_.abs_pos.right = solver->right().value_or(0);
-		block_box_.abs_pos.top = try_resolve_to_px(computed_style_.top, base_width).value_or(0);
-		block_box_.abs_pos.bottom = try_resolve_to_px(computed_style_.bottom, base_width).value_or(0);
-		*/
 	}
 }
 
@@ -435,23 +419,92 @@ std::unique_ptr<BlockWidthSolverInterface> Node::createBlockWidthSolver(BlockFor
 				try_resolve_to_px(st.margin_right, base_width))
 		);
 	} else if (st.position == style::PositionType::Absolute || st.position == style::PositionType::Fixed) {
-		float base_width = bfc.abs_pos_parent_block_width;
-		float clean_width = base_width
-			- try_resolve_to_px(st.border_left_width, base_width).value_or(0)
-			- try_resolve_to_px(st.padding_left, base_width).value_or(0)
-			- try_resolve_to_px(st.padding_right, base_width).value_or(0)
-			- try_resolve_to_px(st.border_right_width, base_width).value_or(0);
-		return std::unique_ptr<BlockWidthSolverInterface>(
-			new AbsoluteBlockWidthSolver(clean_width,
-				try_resolve_to_px(st.left, base_width),
-				try_resolve_to_px(st.margin_left, base_width),
-				try_resolve_to_px(st.width, base_width),
-				try_resolve_to_px(st.margin_right, base_width),
-				try_resolve_to_px(st.right, base_width))
-		);
+		LOG(ERROR) << "create BlockWidthSolver with unsupported position type: " << (int)st.position;
+		return nullptr;
 	} else {
 		LOG(ERROR) << "create BlockWidthSolver with invalid position type: " << (int)st.position;
 		return nullptr;
+	}
+}
+
+void Node::arrangeBlockElement(BlockFormatContext& bfc, int element_depth)
+{
+	CHECK(type_ == NodeType::NODE_ELEMENT) << "arrangeBlockElement(): expect NODE_ELEMENT";
+
+	float borpad_top = block_box_.box.border_rect.top + block_box_.box.padding_rect.top;
+
+	if (borpad_top > 0) {
+		float coll_margin = collapse_margin(block_box_.box.margin_rect.top,
+			(bfc.margin_bottom - bfc.border_bottom));
+		block_box_.pos.y = bfc.border_bottom + coll_margin - block_box_.box.margin_rect.top;
+		bfc.border_bottom = block_box_.pos.y + block_box_.box.margin_rect.top + borpad_top;
+		bfc.margin_bottom = bfc.border_bottom;
+	}
+
+	float bfc_border_bottom = bfc.border_bottom;
+	float bfc_margin_bottom = bfc.margin_bottom;
+
+	if (anyBlockChildren()) {
+		for (Node* child : children())
+			arrangeBlockChild(child, bfc, element_depth);
+	} else {
+		float border_box_width = block_box_.box.border_rect.top
+			+ block_box_.box.padding_rect.top
+			+ block_box_.box.content_size.height
+			+ block_box_.box.padding_rect.bottom
+			+ block_box_.box.border_rect.bottom;
+		if (border_box_width > 0) {
+			float border_bottom = block_box_.pos.y
+				+ block_box_.box.margin_rect.top
+				+ block_box_.box.border_rect.top
+				+ block_box_.box.padding_rect.top
+				+ block_box_.box.content_size.height
+				+ block_box_.box.padding_rect.bottom
+				+ block_box_.box.border_rect.bottom;
+			float margin_bottom = border_bottom + block_box_.box.margin_rect.bottom;
+			if (border_bottom > bfc.border_bottom)
+				bfc.border_bottom = border_bottom;
+			if (margin_bottom > bfc.margin_bottom)
+				bfc.margin_bottom = margin_bottom;
+		} else {
+			float m1 = collapse_margin(block_box_.box.margin_rect.top, block_box_.box.margin_rect.bottom);
+			float coll_margin = collapse_margin(m1, (bfc.margin_bottom - bfc.border_bottom));
+			block_box_.pos.y = bfc.border_bottom + coll_margin;
+		}
+	}
+
+	absl::optional<float> base_height = bfc.contg_block_height;
+	absl::optional<float> height = try_resolve_to_px(computed_style_.height, base_height);
+	if (height.has_value()) {
+		block_box_.box.content_size.height = *height;
+		bfc.border_bottom = bfc_margin_bottom + *height;
+		bfc.margin_bottom = bfc.border_bottom;
+	} else {
+		// Compute 'auto' height
+		block_box_.box.content_size.height = max(0.0f,
+			bfc.border_bottom - block_box_.pos.y - block_box_.box.margin_rect.top - borpad_top);
+	}
+	
+	float borpad_bottom = block_box_.box.border_rect.bottom + block_box_.box.padding_rect.bottom;
+	if (borpad_bottom > 0) {
+		bfc.border_bottom += borpad_bottom;
+		bfc.margin_bottom = bfc.border_bottom;
+	} else {
+		float coll_margin = collapse_margin(block_box_.box.margin_rect.bottom,
+			(bfc.margin_bottom - bfc.border_bottom));
+		bfc.margin_bottom = bfc.border_bottom + coll_margin;
+	}
+}
+
+void Node::arrangeBlockChild(Node* node, BlockFormatContext& bfc, int element_depth)
+{
+	if (node->type_ == NodeType::NODE_TEXT) {
+		;
+	} else if (node->type_ == NodeType::NODE_ELEMENT) {
+		node->arrangeBlockElement(bfc, element_depth + 1);
+	} else if (node->type_ == NodeType::NODE_COMPONENT) {
+		for (Node* child : node->children())
+			arrangeBlockChild(child, bfc, element_depth);
 	}
 }
 

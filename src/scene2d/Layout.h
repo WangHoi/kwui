@@ -13,21 +13,12 @@ class Node;
 
 struct BlockBox {
     BoxF box;
-    std::optional<RectF> abs_pos;
+    //std::optional<RectF> abs_pos;
     
     std::vector<BlockBox*> children;
     /* Static: relative to BFC origin
      * Absolute: zero */ 
-    PointF offset;
-
-    inline bool isStatic() const
-    {
-        return !abs_pos.has_value();
-    }
-    inline bool isAbsolute() const
-    {
-        return abs_pos.has_value();
-    }
+    PointF pos;
 };
 
 struct BlockFormatContext {
@@ -35,16 +26,11 @@ struct BlockFormatContext {
     Node* owner = nullptr;
     // containing block width
     float contg_block_width;
-    // containing block width
-    float contg_block_height;
-    // absolute positioned parent block width
-    float abs_pos_parent_block_width;
-    // absolute positioned parent block height
-    float abs_pos_parent_block_height;
-    // absolute positioned parent    
-    Node* abs_pos_parent = nullptr;
+    // containing block height
+    absl::optional<float> contg_block_height;
 
-    float offset_y = 0; // normal flow y offset
+    float border_bottom = 0;
+    float margin_bottom = 0;
 
     void addBox(BlockBox* box);
 
@@ -95,5 +81,6 @@ private:
 void try_convert_to_px(style::Value& v, float percent_base);
 absl::optional<float> try_resolve_to_px(const style::Value& v, float percent_base);
 absl::optional<float> try_resolve_to_px(const style::Value& v, absl::optional<float> percent_base);
+float collapse_margin(float m1, float m2);
 
 } // namespace scene2d

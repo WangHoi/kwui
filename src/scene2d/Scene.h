@@ -51,9 +51,6 @@ private:
     Node* pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos);
 	void setupProps(Node* node, JSValue props);
 	bool match(Node* node, style::Selector* selector);
-	void layoutBlock(Node* node, BlockFormatContext& bfc);
-	void layoutChildBlock(Node* node, BlockFormatContext &bfc);
-	void layoutInlineChild(Node* node, InlineFormatContext& ifc);
 
 	std::unique_ptr<script::Context> ctx_;
 	Node* root_;
