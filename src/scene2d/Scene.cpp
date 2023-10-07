@@ -150,10 +150,11 @@ void Scene::resolveNodeStyle(Node* node)
 
 void Scene::computeLayout(const scene2d::DimensionF& size)
 {
-	BlockFormatContext bfc;
-	bfc.contg_block_size = size;
-	bfc.abs_pos_parent = nullptr;
-	layoutChildBlock(root_, bfc);
+	root_->bfc_ = std::make_optional<BlockFormatContext>();
+	root_->bfc_->contg_block_width = size.width;
+	root_->bfc_->abs_pos_parent = root_;
+	root_->bfc_->abs_pos_parent_block_width = size.width;
+	root_->layoutBlockElement(*root_->bfc_, 0);
 }
 
 Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
@@ -249,17 +250,17 @@ void Scene::layoutBlock(Node* node, BlockFormatContext& bfc)
 	style::Value border_right = st.border_right_width;
 	style::Value padding_right = st.padding_right;
 
-	float measure_width = bfc.contg_block_size.width;
+	float measure_width = bfc.contg_block_width;
 	if (st.position == style::PositionType::Static) {
 		/* 10.3.3 Block-level, non-replaced elements in normal flow */
 		left = style::Value::fromPixel(0);
-		try_convert_to_px(margin_left, bfc.contg_block_size.width);
-		try_convert_to_px(border_left, bfc.contg_block_size.width);
-		try_convert_to_px(padding_left, bfc.contg_block_size.width);
-		try_convert_to_px(width, bfc.contg_block_size.width);
-		try_convert_to_px(padding_right, bfc.contg_block_size.width);
-		try_convert_to_px(border_right, bfc.contg_block_size.width);
-		try_convert_to_px(margin_right, bfc.contg_block_size.width);
+		try_convert_to_px(margin_left, bfc.contg_block_width);
+		try_convert_to_px(border_left, bfc.contg_block_width);
+		try_convert_to_px(padding_left, bfc.contg_block_width);
+		try_convert_to_px(width, bfc.contg_block_width);
+		try_convert_to_px(padding_right, bfc.contg_block_width);
+		try_convert_to_px(border_right, bfc.contg_block_width);
+		try_convert_to_px(margin_right, bfc.contg_block_width);
 		right = style::Value::fromPixel(0);
 
 		if (border_left.isAuto()) border_left = style::Value::fromPixel(0);
@@ -275,15 +276,15 @@ void Scene::layoutBlock(Node* node, BlockFormatContext& bfc)
 		measure_width -= margin_right.pixelOrZero();
 	} else if (st.position == style::PositionType::Absolute) {
 		/* 10.3.7 Absolutely positioned, non-replaced elements */
-		try_convert_to_px(left, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(margin_left, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(border_left, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(padding_left, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(width, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(padding_right, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(border_right, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(margin_right, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(right, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(left, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(margin_left, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(border_left, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(padding_left, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(width, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(padding_right, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(border_right, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(margin_right, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(right, bfc.abs_pos_parent_block_width);
 
 		if (border_left.isAuto()) border_left = style::Value::fromPixel(0);
 		if (padding_left.isAuto()) padding_left = style::Value::fromPixel(0);
@@ -300,15 +301,15 @@ void Scene::layoutBlock(Node* node, BlockFormatContext& bfc)
 		measure_width -= margin_right.pixelOrZero();
 	} else if (st.position == style::PositionType::Fixed) {
 		/* 10.3.7 Absolutely positioned, non-replaced elements */
-		try_convert_to_px(left, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(margin_left, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(border_left, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(padding_left, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(width, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(padding_right, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(border_right, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(margin_right, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(right, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(left, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(margin_left, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(border_left, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(padding_left, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(width, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(padding_right, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(border_right, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(margin_right, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(right, bfc.abs_pos_parent_block_width);
 
 		if (border_left.isAuto()) border_left = style::Value::fromPixel(0);
 		if (padding_left.isAuto()) padding_left = style::Value::fromPixel(0);
@@ -332,13 +333,13 @@ void Scene::layoutBlock(Node* node, BlockFormatContext& bfc)
 	style::Value margin_top = st.margin_top;
 	if (st.position == style::PositionType::Static) {
 		top = style::Value::fromPixel(0);
-		try_convert_to_px(margin_top, bfc.contg_block_size.width);
+		try_convert_to_px(margin_top, bfc.contg_block_width);
 	} else if (st.position == style::PositionType::Absolute) {
-		try_convert_to_px(top, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(margin_top, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(top, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(margin_top, bfc.abs_pos_parent_block_width);
 	} else if (st.position == style::PositionType::Fixed) {
-		try_convert_to_px(top, bfc.abs_pos_parent_block_size.width);
-		try_convert_to_px(margin_top, bfc.abs_pos_parent_block_size.width);
+		try_convert_to_px(top, bfc.abs_pos_parent_block_width);
+		try_convert_to_px(margin_top, bfc.abs_pos_parent_block_width);
 	}
 	blkb.offset.y = bfc.offset_y + top.pixelOrZero();
 
@@ -358,9 +359,9 @@ void Scene::layoutBlock(Node* node, BlockFormatContext& bfc)
 		}
 	} else {
 		BlockFormatContext new_bfc;
-		new_bfc.contg_block_size.width = measure_width;
+		new_bfc.contg_block_width = measure_width;
 		new_bfc.abs_pos_parent = node;
-		new_bfc.abs_pos_parent_block_size.width = measure_width;
+		new_bfc.abs_pos_parent_block_width = measure_width;
 		for (auto child : node->children()) {
 			layoutChildBlock(child, new_bfc);
 		}

@@ -10,6 +10,10 @@ StaticBlockWidthSolver::StaticBlockWidthSolver(float cont_block_width, absl::opt
 	, margin_right_(margin_right)
 {
 }
+float StaticBlockWidthSolver::containingBlockWidth() const
+{
+	return cont_block_width_;
+}
 float StaticBlockWidthSolver::measureWidth()
 {
 	if (width_.has_value())
@@ -62,6 +66,10 @@ AbsoluteBlockWidthSolver::AbsoluteBlockWidthSolver(float cont_block_width, absl:
 	, margin_right_(margin_right)
 	, right_(right)
 {
+}
+float AbsoluteBlockWidthSolver::containingBlockWidth() const
+{
+	return cont_block_width_;
 }
 float AbsoluteBlockWidthSolver::measureWidth()
 {

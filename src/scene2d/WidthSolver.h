@@ -5,6 +5,12 @@ namespace scene2d {
 
 class BlockWidthSolverInterface {
 public:
+    bool isAbsolute() const
+    {
+        return !isStatic();
+    }
+    virtual bool isStatic() const = 0;
+    virtual float containingBlockWidth() const = 0;
     virtual float measureWidth() = 0;
     virtual void setLayoutWidth(float layout_width) = 0;
 
@@ -23,6 +29,11 @@ public:
         absl::optional<float> width,
         absl::optional<float> margin_right);
 
+    bool isStatic() const override
+    {
+        return true;
+    }
+    float containingBlockWidth() const override;
     float measureWidth() override;
     void setLayoutWidth(float layout_width) override;
 
@@ -55,6 +66,11 @@ public:
         absl::optional<float> margin_right,
         absl::optional<float> right);
 
+    bool isStatic() const override
+    {
+        return false;
+    }
+    float containingBlockWidth() const override;
     float measureWidth() override;
     void setLayoutWidth(float layout_width) override;
 

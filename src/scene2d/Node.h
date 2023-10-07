@@ -41,6 +41,7 @@ enum NodeFlag {
 
 class Control;
 class Scene;
+class BlockWidthSolverInterface;
 class Node : public base::Object {
 public:
 	Node(NodeType type);
@@ -123,15 +124,18 @@ public:
 	void computeLayout();
 
 	void layoutText(InlineFormatContext& ifc);
+	// layout self and children
 	void layoutInlineElement(InlineFormatContext& ifc, int element_depth);
+	// layout self and children
 	void layoutBlockElement(BlockFormatContext& bfc, int element_depth);
 
 protected:
 	void layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_depth);
-	static void collectInlineBoxes(Node* child, std::vector<InlineBox>& box);
+	static void assembleInlineChild(Node* child, std::vector<InlineBox>& box);
 	bool anyBlockChildren() const;
-	void layoutBlockChild(Node* node, BlockFormatContext& bfc, int element_depth);
-	static void collectBlockBoxes(Node* child, BlockBox& box);
+	void layoutBlockChild(BlockFormatContext& bfc, BlockBox& box, Node* child, int element_depth);
+	static void assembleBlockChild(Node* child, BlockBox& box);
+	std::unique_ptr<BlockWidthSolverInterface> createBlockWidthSolver(BlockFormatContext& bfc);
 
 	// Tree nodes
 	Scene* stage_ = nullptr;
@@ -153,6 +157,8 @@ protected:
 	style::Classes klass_;
 	std::vector<InlineBox> inline_boxes_; // inline-level layout
 	BlockBox block_box_; // block-level layout
+	absl::optional<BlockFormatContext> bfc_;
+	absl::optional<InlineFormatContext> ifc_;
 
 	// Component
 	JSValue comp_state_ = JS_UNINITIALIZED;

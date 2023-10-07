@@ -4,10 +4,10 @@ namespace scene2d {
 
 void try_convert_to_px(style::Value& v, float percent_base)
 {
-    v = style::Value::fromPixel(resolve_to_px(v, percent_base));
+    v = style::Value::fromPixel(try_resolve_to_px(v, percent_base).value_or(0));
 }
 
-float resolve_to_px(const style::Value& v, float percent_base)
+absl::optional<float> try_resolve_to_px(const style::Value& v, float percent_base)
 {
     if (v.unit == style::ValueUnit::Percent) {
         return v.f32_val / 100.0f * percent_base;
