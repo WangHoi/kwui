@@ -31,11 +31,6 @@ struct BlockFormatContext {
 
     float border_bottom = 0;
     float margin_bottom = 0;
-
-    void addBox(BlockBox* box);
-
-private:
-    std::vector<BlockBox*> block_boxes_;
 };
 
 struct LineBox;

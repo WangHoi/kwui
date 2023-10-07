@@ -198,16 +198,15 @@ void Node::computeLayout()
 	size_.height = computed_style_.height.f32_val;
 }
 
-void Node::layoutBlockElement(const DimensionF& cont_block_size)
+void Node::layoutBlockElement(float contg_blk_width, absl::optional<float> contg_blk_height)
 {
 	CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutBlockElement(): expect NODE_ELEMENT";
 
 	bfc_ = std::make_optional<BlockFormatContext>();
 	bfc_->owner = this;
-	bfc_->contg_block_width = cont_block_size.width;
-	bfc_->contg_block_height = cont_block_size.height;
+	bfc_->contg_block_width = contg_blk_width;
+	bfc_->contg_block_height = contg_blk_height;
 	layoutBlockElement(*bfc_, 0);
-
 	arrangeBlockElement(*bfc_, 0);
 }
 
@@ -241,25 +240,17 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 			return;
 
 		float measure_width = solver->measureWidth();
-
-		if (computed_style_.position == style::PositionType::Static || computed_style_.position == style::PositionType::Relative) {
+		{
 			base::scoped_setter _1(bfc.contg_block_width, measure_width);
 			base::scoped_setter _2(bfc.contg_block_height,
 				try_resolve_to_px(computed_style_.height, bfc.contg_block_height));
 			for (Node* child : children()) {
-				layoutBlockChild(bfc, block_box_, child, element_depth);
+				if (child->computed_style_.position == style::PositionType::Static
+					|| child->computed_style_.position == style::PositionType::Relative) {
+					layoutBlockChild(bfc, block_box_, child, element_depth);
+				}
 			}
 		}
-		/*
-		float layout_width = measure_width;
-		float layout_height = 0;
-		for (BlockBox* b : block_box_.children) {
-			b->offset.y = block_box_.offset.y + layout_height;
-			layout_height += b->box.margin_rect.top + b->box.border_rect.top + b->box.padding_rect.top
-				+ b->box.content_size.height
-				+ b->box.padding_rect.bottom + b->box.border_rect.bottom + b->box.margin_rect.bottom;
-		}
-		*/
 		solver->setLayoutWidth(measure_width);
 
 		// Compute width, left and right margins
@@ -445,8 +436,17 @@ void Node::arrangeBlockElement(BlockFormatContext& bfc, int element_depth)
 	float bfc_margin_bottom = bfc.margin_bottom;
 
 	if (anyBlockChildren()) {
-		for (Node* child : children())
-			arrangeBlockChild(child, bfc, element_depth);
+		base::scoped_setter _1(bfc.contg_block_width, block_box_.box.content_size.width);
+		base::scoped_setter _2(bfc.contg_block_height,
+			try_resolve_to_px(computed_style_.height, bfc.contg_block_height));
+		for (Node* child : children()) {
+			if (child->computed_style_.position == style::PositionType::Static
+				|| child->computed_style_.position == style::PositionType::Relative) {
+				arrangeBlockChild(child, bfc, element_depth);
+			} else if (child->computed_style_.position == style::PositionType::Absolute
+				|| child->computed_style_.position == style::PositionType::Fixed) {
+			}
+		}
 	} else {
 		float border_box_width = block_box_.box.border_rect.top
 			+ block_box_.box.padding_rect.top
@@ -493,6 +493,18 @@ void Node::arrangeBlockElement(BlockFormatContext& bfc, int element_depth)
 		float coll_margin = collapse_margin(block_box_.box.margin_rect.bottom,
 			(bfc.margin_bottom - bfc.border_bottom));
 		bfc.margin_bottom = bfc.border_bottom + coll_margin;
+	}
+
+	// Layout 'absolute' or 'fixed' children
+	if (anyBlockChildren()) {
+		for (Node* child : children()) {
+			if (child->computed_style_.position == style::PositionType::Absolute
+				|| child->computed_style_.position == style::PositionType::Fixed) {
+				
+				child->layoutBlockElement(block_box_.box.content_size.width,
+					block_box_.box.content_size.height);
+			}
+		}
 	}
 }
 

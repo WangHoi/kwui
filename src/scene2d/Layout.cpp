@@ -44,11 +44,6 @@ float collapse_margin(float m1, float m2)
         return m1 + m2;
 }
 
-void BlockFormatContext::addBox(BlockBox* box)
-{
-    block_boxes_.push_back(box);
-}
-
 struct LineBox {
     PointF offset;
     

@@ -124,7 +124,7 @@ public:
 	void computeLayout();
 
 	// layout with new BFC
-	void layoutBlockElement(const DimensionF &cont_block_size);
+	void layoutBlockElement(float contg_blk_width, absl::optional<float> contg_blk_height);
 
 	void layoutText(InlineFormatContext& ifc);
 	// layout self and children

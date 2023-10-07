@@ -150,9 +150,7 @@ void Scene::resolveNodeStyle(Node* node)
 
 void Scene::computeLayout(const scene2d::DimensionF& size)
 {
-	root_->bfc_ = std::make_optional<BlockFormatContext>();
-	root_->bfc_->contg_block_width = size.width;
-	root_->layoutBlockElement(*root_->bfc_, 0);
+	root_->layoutBlockElement(size.width, size.height);
 }
 
 Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
