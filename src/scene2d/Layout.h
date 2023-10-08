@@ -11,6 +11,24 @@ namespace scene2d
 {
 class Node;
 
+struct EdgeSizeF {
+    float left = 0;
+    float top = 0;
+    float right = 0;
+    float bottom = 0;
+};
+
+struct BoxF {
+    // margin edges
+    EdgeSizeF margin;
+    // border edges
+    EdgeSizeF border;
+    // padding edges
+    EdgeSizeF padding;
+    // content size
+    DimensionF content = DimensionF::fromZeros();
+};
+
 struct BlockBox {
     BoxF box;
     //std::optional<RectF> abs_pos;

@@ -159,15 +159,4 @@ private:
         : left(l), top(t), right(r), bottom(b) {}
 };
 
-struct BoxF {
-    // margin edges
-    RectF margin_rect = RectF::fromZeros();
-    // border edges
-    RectF border_rect = RectF::fromZeros();
-    // padding edges
-    RectF padding_rect = RectF::fromZeros();
-     // content size
-    DimensionF content_size = DimensionF::fromZeros(); 
-};
-
 }

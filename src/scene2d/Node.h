@@ -137,11 +137,16 @@ protected:
 	static void assembleInlineChild(Node* child, std::vector<InlineBox>& box);
 	bool anyBlockChildren() const;
 	void layoutBlockChild(BlockFormatContext& bfc, BlockBox& box, Node* child, int element_depth);
-	static void assembleBlockChild(Node* child, BlockBox& box);
 	std::unique_ptr<BlockWidthSolverInterface> createBlockWidthSolver(BlockFormatContext& bfc);
 	// in-flow placing
 	void arrangeBlockElement(BlockFormatContext& bfc, int element_depth);
-	void arrangeBlockChild(Node* child, BlockFormatContext& bfc, int element_depth);
+	template<typename F>
+	inline void eachLayoutChild(F&& f)
+	{
+		return Node::eachLayoutChild(this, std::move(f));
+	}
+	template<typename F>
+	static void eachLayoutChild(Node* node, F&& f);
 
 	// Tree nodes
 	Scene* stage_ = nullptr;
@@ -189,5 +194,19 @@ protected:
 	friend class Scene;
 	friend class windows::Dialog;
 };
+
+template<typename F>
+void Node::eachLayoutChild(Node* node, F&& f)
+{
+	for (Node* child : node->children()) {
+		if (child->type() == NodeType::NODE_TEXT) {
+			f(child);
+		} else if (child->type() == NodeType::NODE_ELEMENT) {
+			f(child);
+		} else if (child->type() == NodeType::NODE_COMPONENT) {
+			eachLayoutChild(child, std::move(f));
+		}
+	}
+}
 
 }
