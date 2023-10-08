@@ -45,4 +45,4 @@ var simple = <p style={{ left: 30, top: 100 }}>第一栏<p style={{ left: 20, to
 var complex = <Div a="f1"><p>aa</p><p>bb</p></Div>;
 var edit = <line-edit style={{ left: 20, top: 20, width: 200, height: 40 }}></line-edit>
 // console.log(JSON.stringify(complex.render()));
-app.showDialog(edit);
+app.showDialog(simple);

@@ -55,6 +55,10 @@ public:
 		return type_;
 	}
 
+	inline Node* parent() const
+	{
+		return parent_;
+	}
 	void appendChild(Node* child);
 	inline const std::vector<Node*>& children() const
 	{
@@ -129,8 +133,6 @@ public:
 	void layoutText(InlineFormatContext& ifc);
 	// layout self and children
 	void layoutInlineElement(InlineFormatContext& ifc, int element_depth);
-	// in-flow layout
-	void layoutBlockElement(BlockFormatContext& bfc, int element_depth);
 
 protected:
 	void layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_depth);
@@ -138,8 +140,17 @@ protected:
 	bool anyBlockChildren() const;
 	void layoutBlockChild(BlockFormatContext& bfc, BlockBox& box, Node* child, int element_depth);
 	std::unique_ptr<BlockWidthSolverInterface> createBlockWidthSolver(BlockFormatContext& bfc);
+	// in-flow layout
+	static void layoutMeasure(BlockFormatContext& bfc, BlockBoxBuilder& bbb, Node* node);
 	// in-flow placing
-	void arrangeBlockElement(BlockFormatContext& bfc, int element_depth);
+	static void layoutArrange(BlockFormatContext& bfc, BlockBox& box);
+	template<typename F>
+	inline void eachChild(F&& f)
+	{
+		return Node::eachChild(this, std::move(f));
+	}
+	template<typename F>
+	static void eachChild(Node* node, F&& f);
 	template<typename F>
 	inline void eachLayoutChild(F&& f)
 	{
@@ -194,6 +205,14 @@ protected:
 	friend class Scene;
 	friend class windows::Dialog;
 };
+
+template<typename F>
+void Node::eachChild(Node* node, F&& f)
+{
+	for (Node* child : node->children()) {
+		f(child);
+	}
+}
 
 template<typename F>
 void Node::eachLayoutChild(Node* node, F&& f)

@@ -1,4 +1,5 @@
 #include "Layout.h"
+#include "Node.h"
 #include <utility>
 
 namespace scene2d {
@@ -171,6 +172,53 @@ void InlineFormatContext::layout()
         y += line_box->used_size.height;
     }
     height_ = y;
+}
+
+BlockBoxBuilder::BlockBoxBuilder(BlockBox* root)
+    : root_(root), contg_(root) {}
+
+float BlockBoxBuilder::containingBlockWidth() const
+{
+    return contg_->avail_width;
+}
+
+void BlockBoxBuilder::addText(Node* node)
+{
+    contg_->type = BlockBoxType::WithInlineChildren;
+    contg_->payload = node->parent();
+}
+
+void BlockBoxBuilder::beginInline(Node* node)
+{
+}
+
+void BlockBoxBuilder::endInline()
+{
+}
+
+void BlockBoxBuilder::beginBlock(BlockBox* box)
+{
+    if (last_child_) {
+        box->next_sibling = last_child_->next_sibling;
+        box->prev_sibling = last_child_;
+        last_child_->next_sibling = box;
+        box->next_sibling->prev_sibling = box;
+    } else {
+        box->next_sibling = box->prev_sibling = box;
+    }
+    last_child_ = box;
+    stack_.push_back(std::make_tuple(contg_, last_child_));
+    
+    contg_->type = BlockBoxType::WithBlockChildren;
+    contg_->payload = box;
+    contg_ = box;
+    last_child_ = nullptr;
+}
+
+void BlockBoxBuilder::endBlock()
+{
+    std::tie(contg_, last_child_) = stack_.back();
+    stack_.pop_back();
 }
 
 }

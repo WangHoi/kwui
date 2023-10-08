@@ -3,6 +3,7 @@
 #include "base/log.h"
 #include "style/style.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -10,85 +11,139 @@
 namespace scene2d
 {
 class Node;
+struct BlockFormatContext;
+class InlineFormatContext;
+class InlineBox;
 
 struct EdgeSizeF {
-    float left = 0;
-    float top = 0;
-    float right = 0;
-    float bottom = 0;
+	float left = 0;
+	float top = 0;
+	float right = 0;
+	float bottom = 0;
 };
 
 struct BoxF {
-    // margin edges
-    EdgeSizeF margin;
-    // border edges
-    EdgeSizeF border;
-    // padding edges
-    EdgeSizeF padding;
-    // content size
-    DimensionF content = DimensionF::fromZeros();
+	// margin edges
+	EdgeSizeF margin;
+	// border edges
+	EdgeSizeF border;
+	// padding edges
+	EdgeSizeF padding;
+	// content size
+	DimensionF content = DimensionF::fromZeros();
 };
 
+enum class BlockBoxType {
+	Empty,
+	WithBlockChildren,
+	WithInlineChildren,
+	WithBFC,
+};
 struct BlockBox {
-    BoxF box;
-    //std::optional<RectF> abs_pos;
-    
-    std::vector<BlockBox*> children;
-    /* Static: relative to BFC origin
-     * Absolute: zero */ 
-    PointF pos;
+	PointF pos; // BFC coordinates
+	EdgeSizeF margin; // margin edges
+	EdgeSizeF border; // border edges
+	EdgeSizeF padding; // padding edges
+	DimensionF content; // content size
+
+	float avail_width = 0;
+	absl::optional<float> prefer_height;
+	
+	BlockBoxType type = BlockBoxType::Empty;
+	absl::variant<
+		absl::monostate,	// empty
+		BlockBox*,			// first-child
+		Node*,				// Node containing inlines
+		std::unique_ptr<BlockFormatContext>		// nested BFC, in-flow
+	> payload;
+	std::optional<EdgeSizeF> rel_offset; // Relative positioned box offset
+	BlockBox* parent;
+	BlockBox* next_sibling;
+	BlockBox* prev_sibling;
+
+	BlockBox()
+		: parent(nullptr), next_sibling(this), prev_sibling(this) {}
+	template <typename T>
+	void eachChild(T&& f)
+	{
+		if (type == BlockBoxType::WithBlockChildren) {
+			BlockBox* first_child = std::get<BlockBox*>(payload);
+			BlockBox* child = first_child;
+			do {
+				f(child);
+				child = child->next_sibling;
+			} while (child != first_child);
+		}
+	}
+};
+
+class BlockBoxBuilder {
+public:
+	BlockBoxBuilder(BlockBox* root);
+	float containingBlockWidth() const;
+	void addText(Node* node);
+	void beginInline(Node* node);
+	void endInline();
+	void beginBlock(BlockBox* box);
+	void endBlock();
+
+private:
+	BlockBox* root_;
+	BlockBox* contg_;
+	BlockBox* last_child_ = nullptr;
+	std::vector<std::tuple<BlockBox*, BlockBox*>> stack_;
 };
 
 struct BlockFormatContext {
-    // Owner of this BFC
-    Node* owner = nullptr;
-    // containing block width
-    float contg_block_width;
-    // containing block height
-    absl::optional<float> contg_block_height;
+	// Owner of this BFC
+	Node* owner = nullptr;
+	// containing block width
+	float contg_block_width;
+	// containing block height
+	absl::optional<float> contg_block_height;
 
-    float border_bottom = 0;
-    float margin_bottom = 0;
+	float border_bottom = 0;
+	float margin_bottom = 0;
 };
 
 struct LineBox;
 
 struct InlineBox {
-    DimensionF size;
-    float baseline = 0; // offset from bottom
+	DimensionF size;
+	float baseline = 0; // offset from bottom
 
-    std::vector<InlineBox*> children;
+	std::vector<InlineBox*> children;
 
-    LineBox* line_box; // set by IFC::setupBox()
-    float line_box_offset_x; // set by IFC::setupBox()
+	LineBox* line_box; // set by IFC::setupBox()
+	float line_box_offset_x; // set by IFC::setupBox()
 
-    PointF offset; // set by LineBox::layout()
+	PointF offset; // set by LineBox::layout()
 };
 
 class InlineFormatContext {
 public:
-    InlineFormatContext(float avail_width);
-    ~InlineFormatContext();
-    float getAvailWidth() const;
-    void setupBox(InlineBox* box);
-    
-    void addBox(InlineBox* box);
+	InlineFormatContext(float avail_width);
+	~InlineFormatContext();
+	float getAvailWidth() const;
+	void setupBox(InlineBox* box);
 
-    void layout();
-    inline float getLayoutHeight() const
-    {
-        return height_;
-    }
-    float getLayoutWidth() const;
+	void addBox(InlineBox* box);
+
+	void layout();
+	inline float getLayoutHeight() const
+	{
+		return height_;
+	}
+	float getLayoutWidth() const;
 
 private:
-    LineBox* newLineBox();
-    LineBox* getLineBox(float pref_min_width);
+	LineBox* newLineBox();
+	LineBox* getLineBox(float pref_min_width);
 
-    float avail_width_;
-    std::vector<std::unique_ptr<LineBox>> line_boxes_;
+	float avail_width_;
+	std::vector<std::unique_ptr<LineBox>> line_boxes_;
 
-    float height_;
+	float height_;
 };
 
 void try_convert_to_px(style::Value& v, float percent_base);

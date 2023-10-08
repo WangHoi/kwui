@@ -26,6 +26,7 @@ target_link_libraries(
          absl::variant
          absl::statusor
          absl::status
+         absl::bind_front
          fifo_map
          quickjs)
 target_link_libraries(kwui PUBLIC d2d1.lib dwrite.lib Windowscodecs.lib

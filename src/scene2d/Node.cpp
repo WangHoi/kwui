@@ -206,8 +206,15 @@ void Node::layoutBlockElement(float contg_blk_width, absl::optional<float> contg
 	bfc_->owner = this;
 	bfc_->contg_block_width = contg_blk_width;
 	bfc_->contg_block_height = contg_blk_height;
-	layoutBlockElement(*bfc_, 0);
-	arrangeBlockElement(*bfc_, 0);
+
+	BlockBox blk_box;
+	blk_box.avail_width = contg_blk_width;
+	blk_box.prefer_height = contg_blk_height;
+	BlockBoxBuilder bbb(&blk_box);
+	eachLayoutChild([this, &bbb](Node* child) {
+		layoutMeasure(*bfc_, bbb, child);
+		});
+	layoutArrange(*bfc_, blk_box);
 }
 
 void Node::layoutText(InlineFormatContext& ifc)
@@ -229,8 +236,151 @@ void Node::layoutInlineElement(InlineFormatContext& ifc, int element_depth)
 	}
 }
 
-void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
+void Node::layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_depth)
 {
+	if (node->type() == NodeType::NODE_TEXT) {
+		node->layoutText(ifc);
+		if (element_depth == 0)
+			ifc.addBox(&node->text_box_);
+	} else if (node->type() == NodeType::NODE_ELEMENT) {
+		node->layoutInlineElement(ifc, element_depth + 1);
+		if (element_depth == 0) {
+			for (InlineBox& box : node->inline_boxes_)
+				ifc.addBox(&box);
+		}
+	} else if (node->type() == NodeType::NODE_COMPONENT) {
+		for (auto child : node->children())
+			layoutInlineChild(child, ifc, element_depth);
+	}
+}
+
+void Node::assembleInlineChild(Node* node, std::vector<InlineBox>& boxes)
+{
+	if (node->type_ == NodeType::NODE_TEXT) {
+		InlineBox wrap_box = node->text_box_;
+		wrap_box.children.push_back(&node->text_box_);
+		boxes.push_back(wrap_box);
+	} else if (node->type_ == NodeType::NODE_ELEMENT) {
+		for (InlineBox& child_box : node->inline_boxes_) {
+			InlineBox wrap_box = child_box;
+			wrap_box.children.push_back(&child_box);
+			boxes.push_back(wrap_box);
+		}
+	} else if (node->type_ == NodeType::NODE_COMPONENT) {
+		for (Node* child : node->children())
+			assembleInlineChild(child, boxes);
+	}
+}
+
+bool Node::anyBlockChildren() const
+{
+	for (auto child : children()) {
+		if (child->type() == NodeType::NODE_COMPONENT) {
+			return child->anyBlockChildren();
+		} else if (child->type() == NodeType::NODE_ELEMENT) {
+			if (child->computedStyle().display == style::DisplayType::Block)
+				return true;
+		}
+	}
+	return false;
+}
+
+void Node::layoutBlockChild(BlockFormatContext& bfc, BlockBox& block_box, Node* node, int element_depth)
+{
+	if (node->type() == NodeType::NODE_TEXT) {
+		;
+	} else if (node->type() == NodeType::NODE_ELEMENT) {
+		//node->layoutMeasure(bfc, element_depth + 1);
+		//block_box.children.push_back(&node->block_box_);
+	} else if (node->type() == NodeType::NODE_COMPONENT) {
+		for (auto child : node->children())
+			layoutBlockChild(bfc, block_box, child, element_depth);
+	}
+}
+
+std::unique_ptr<BlockWidthSolverInterface> Node::createBlockWidthSolver(BlockFormatContext& bfc)
+{
+	const auto& st = computed_style_;
+	if (st.position == style::PositionType::Static || st.position == style::PositionType::Relative) {
+		float base_width = bfc.contg_block_width;
+		float clean_width = base_width
+			- try_resolve_to_px(st.border_left_width, base_width).value_or(0)
+			- try_resolve_to_px(st.padding_left, base_width).value_or(0)
+			- try_resolve_to_px(st.padding_right, base_width).value_or(0)
+			- try_resolve_to_px(st.border_right_width, base_width).value_or(0);
+		return std::unique_ptr<BlockWidthSolverInterface>(
+			new StaticBlockWidthSolver(clean_width,
+				try_resolve_to_px(st.margin_left, base_width),
+				try_resolve_to_px(st.width, base_width),
+				try_resolve_to_px(st.margin_right, base_width))
+		);
+	} else if (st.position == style::PositionType::Absolute || st.position == style::PositionType::Fixed) {
+		LOG(ERROR) << "create BlockWidthSolver with unsupported position type: " << (int)st.position;
+		return nullptr;
+	} else {
+		LOG(ERROR) << "create BlockWidthSolver with invalid position type: " << (int)st.position;
+		return nullptr;
+	}
+}
+
+void Node::layoutMeasure(BlockFormatContext& bfc, BlockBoxBuilder& bbb, Node* node)
+{
+	if (node->type() == NodeType::NODE_TEXT) {
+		bbb.addText(node);
+	} else if (node->type() == NodeType::NODE_ELEMENT) {
+		const auto& st = node->computedStyle();
+		if (st.display == style::DisplayType::Block) {
+
+			float contg_width = bbb.containingBlockWidth();
+			float clean_contg_width = contg_width
+				- try_resolve_to_px(st.border_left_width, contg_width).value_or(0)
+				- try_resolve_to_px(st.padding_left, contg_width).value_or(0)
+				- try_resolve_to_px(st.padding_right, contg_width).value_or(0)
+				- try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
+			auto solver = std::make_unique<StaticBlockWidthSolver>(
+				clean_contg_width,
+				try_resolve_to_px(st.margin_left, contg_width),
+				try_resolve_to_px(st.width, contg_width),
+				try_resolve_to_px(st.margin_right, contg_width));
+			solver->setLayoutWidth(solver->measureWidth());
+
+			// Compute width, left and right margins
+			float base_width = solver->containingBlockWidth();
+			auto& b = node->block_box_;
+			b.margin.left = solver->marginLeft();
+			b.border.left = try_resolve_to_px(st.border_left_width, base_width).value_or(0);
+			b.padding.left = try_resolve_to_px(st.padding_left, base_width).value_or(0);
+			b.avail_width = solver->width();
+			b.padding.right = try_resolve_to_px(st.padding_right, base_width).value_or(0);
+			b.border.right = try_resolve_to_px(st.border_right_width, base_width).value_or(0);
+			b.margin.right = solver->marginRight();
+
+			// Compute height, top and bottom margins
+			absl::optional<float> base_height = bfc.contg_block_height;
+			b.margin.top = try_resolve_to_px(st.margin_top, base_width).value_or(0);
+			b.border.top = try_resolve_to_px(st.border_top_width, base_width).value_or(0);
+			b.padding.top = try_resolve_to_px(st.padding_top, base_width).value_or(0);
+
+			b.prefer_height = try_resolve_to_px(st.height, base_height);
+
+			b.padding.bottom = try_resolve_to_px(st.padding_bottom, base_width).value_or(0);
+			b.border.bottom = try_resolve_to_px(st.border_bottom_width, base_width).value_or(0);
+			b.margin.bottom = try_resolve_to_px(st.margin_bottom, base_width).value_or(0);
+
+			bbb.beginBlock(&node->block_box_);
+			Node::eachLayoutChild(node, [&bfc, &bbb](Node* child) {
+				layoutMeasure(bfc, bbb, child);
+				});
+			bbb.endBlock();
+		} else if (st.display == style::DisplayType::Inline) {
+			bbb.beginInline(node);
+			Node::eachLayoutChild(node, [&bfc, &bbb](Node* child) {
+				layoutMeasure(bfc, bbb, child);
+				});
+			bbb.endInline();
+		}
+	}
+#if 0
 	CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutBlockElement(): expect NODE_ELEMENT";
 
 	block_box_.children.clear();
@@ -318,97 +468,83 @@ void Node::layoutBlockElement(BlockFormatContext& bfc, int element_depth)
 			block_box_.box.content.height = layout_height;
 		}
 	}
+#endif
 }
 
-void Node::layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_depth)
+void Node::layoutArrange(BlockFormatContext& bfc, BlockBox& box)
 {
-	if (node->type() == NodeType::NODE_TEXT) {
-		node->layoutText(ifc);
-		if (element_depth == 0)
-			ifc.addBox(&node->text_box_);
-	} else if (node->type() == NodeType::NODE_ELEMENT) {
-		node->layoutInlineElement(ifc, element_depth + 1);
-		if (element_depth == 0) {
-			for (InlineBox& box : node->inline_boxes_)
-				ifc.addBox(&box);
-		}
-	} else if (node->type() == NodeType::NODE_COMPONENT) {
-		for (auto child : node->children())
-			layoutInlineChild(child, ifc, element_depth);
+	float borpad_top = box.border.top + box.padding.top;
+
+	if (borpad_top > 0) {
+		float coll_margin = collapse_margin(box.margin.top,
+			(bfc.margin_bottom - bfc.border_bottom));
+		box.pos.y = bfc.border_bottom + coll_margin - box.margin.top;
+		bfc.border_bottom += coll_margin + borpad_top;
+		bfc.margin_bottom = bfc.border_bottom;
 	}
-}
 
-void Node::assembleInlineChild(Node* node, std::vector<InlineBox>& boxes)
-{
-	if (node->type_ == NodeType::NODE_TEXT) {
-		InlineBox wrap_box = node->text_box_;
-		wrap_box.children.push_back(&node->text_box_);
-		boxes.push_back(wrap_box);
-	} else if (node->type_ == NodeType::NODE_ELEMENT) {
-		for (InlineBox& child_box : node->inline_boxes_) {
-			InlineBox wrap_box = child_box;
-			wrap_box.children.push_back(&child_box);
-			boxes.push_back(wrap_box);
-		}
-	} else if (node->type_ == NodeType::NODE_COMPONENT) {
-		for (Node* child : node->children())
-			assembleInlineChild(child, boxes);
-	}
-}
+	float bfc_border_bottom = bfc.border_bottom;
+	float bfc_margin_bottom = bfc.margin_bottom;
 
-bool Node::anyBlockChildren() const
-{
-	for (auto child : children()) {
-		if (child->type() == NodeType::NODE_COMPONENT) {
-			return child->anyBlockChildren();
-		} else if (child->type() == NodeType::NODE_ELEMENT) {
-			if (child->computedStyle().display == style::DisplayType::Block)
-				return true;
-		}
-	}
-	return false;
-}
+	if (box.type == BlockBoxType::WithBlockChildren) {
+		box.content.width = box.avail_width;
 
-void Node::layoutBlockChild(BlockFormatContext& bfc, BlockBox& block_box, Node* node, int element_depth)
-{
-	if (node->type() == NodeType::NODE_TEXT) {
-		;
-	} else if (node->type() == NodeType::NODE_ELEMENT) {
-		node->layoutBlockElement(bfc, element_depth + 1);
-		block_box.children.push_back(&node->block_box_);
-	} else if (node->type() == NodeType::NODE_COMPONENT) {
-		for (auto child : node->children())
-			layoutBlockChild(bfc, block_box, child, element_depth);
-	}
-}
-
-std::unique_ptr<BlockWidthSolverInterface> Node::createBlockWidthSolver(BlockFormatContext& bfc)
-{
-	const auto& st = computed_style_;
-	if (st.position == style::PositionType::Static || st.position == style::PositionType::Relative) {
-		float base_width = bfc.contg_block_width;
-		float clean_width = base_width
-			- try_resolve_to_px(st.border_left_width, base_width).value_or(0)
-			- try_resolve_to_px(st.padding_left, base_width).value_or(0)
-			- try_resolve_to_px(st.padding_right, base_width).value_or(0)
-			- try_resolve_to_px(st.border_right_width, base_width).value_or(0);
-		return std::unique_ptr<BlockWidthSolverInterface>(
-			new StaticBlockWidthSolver(clean_width,
-				try_resolve_to_px(st.margin_left, base_width),
-				try_resolve_to_px(st.width, base_width),
-				try_resolve_to_px(st.margin_right, base_width))
-		);
-	} else if (st.position == style::PositionType::Absolute || st.position == style::PositionType::Fixed) {
-		LOG(ERROR) << "create BlockWidthSolver with unsupported position type: " << (int)st.position;
-		return nullptr;
+		base::scoped_setter _1(bfc.contg_block_width, box.content.width);
+		base::scoped_setter _2(bfc.contg_block_height, box.prefer_height);
+		box.eachChild([&](BlockBox* child) {
+				Node::layoutArrange(bfc, *child);
+			});
 	} else {
-		LOG(ERROR) << "create BlockWidthSolver with invalid position type: " << (int)st.position;
-		return nullptr;
+		/*
+		float border_box_width = box.border.top
+			+ box.padding.top
+			+ box.content.height
+			+ box.padding.bottom
+			+ box.border.bottom;
+		if (border_box_width > 0) {
+			float border_bottom = box.pos.y
+				+ box.margin.top
+				+ box.border.top
+				+ box.padding.top
+				+ box.content.height
+				+ box.padding.bottom
+				+ box.border.bottom;
+			float margin_bottom = border_bottom + box.margin.bottom;
+			if (border_bottom > bfc.border_bottom)
+				bfc.border_bottom = border_bottom;
+			if (margin_bottom > bfc.margin_bottom)
+				bfc.margin_bottom = margin_bottom;
+		} else {
+			float m1 = collapse_margin(box.margin.top, box.margin.bottom);
+			float coll_margin = collapse_margin(m1, (bfc.margin_bottom - bfc.border_bottom));
+			box.pos.y = bfc.border_bottom + coll_margin;
+		}
+		*/
 	}
-}
 
-void Node::arrangeBlockElement(BlockFormatContext& bfc, int element_depth)
-{
+	if (box.prefer_height.has_value()) {
+		box.content.height = *box.prefer_height;
+		bfc.border_bottom = bfc_margin_bottom + *box.prefer_height;
+		bfc.margin_bottom = bfc.border_bottom;
+	} else {
+		// Compute 'auto' height
+		box.content.height = std::max(0.0f,
+			bfc.border_bottom - box.pos.y - box.margin.top - borpad_top);
+	}
+
+	float borpad_bottom = box.border.bottom + box.padding.bottom;
+	if (borpad_bottom > 0) {
+		bfc.border_bottom = bfc.margin_bottom + borpad_bottom;
+		bfc.margin_bottom = bfc.border_bottom + box.margin.bottom;
+	} else {
+		float coll_margin = collapse_margin(box.margin.bottom,
+			(bfc.margin_bottom - bfc.border_bottom));
+		bfc.margin_bottom = bfc.border_bottom + coll_margin;
+	}
+
+	// TODO: Layout 'absolute' or 'fixed' children
+
+#if 0
 	CHECK(type_ == NodeType::NODE_ELEMENT) << "arrangeBlockElement(): expect NODE_ELEMENT";
 
 	float borpad_top = block_box_.box.border.top + block_box_.box.padding.top;
@@ -431,7 +567,7 @@ void Node::arrangeBlockElement(BlockFormatContext& bfc, int element_depth)
 		eachLayoutChild([&](Node* child) {
 			if (child->type() == NodeType::NODE_ELEMENT && (child->computed_style_.position == style::PositionType::Static
 				|| child->computed_style_.position == style::PositionType::Relative)) {
-				child->arrangeBlockElement(bfc, element_depth + 1);
+				child->layoutArrange(bfc, element_depth + 1);
 			}
 			});
 	} else {
@@ -480,7 +616,7 @@ void Node::arrangeBlockElement(BlockFormatContext& bfc, int element_depth)
 		float coll_margin = collapse_margin(block_box_.box.margin.bottom,
 			(bfc.margin_bottom - bfc.border_bottom));
 		bfc.margin_bottom = bfc.border_bottom + coll_margin;
-	}
+		}
 
 	// Layout 'absolute' or 'fixed' children
 	if (anyBlockChildren()) {
@@ -493,7 +629,8 @@ void Node::arrangeBlockElement(BlockFormatContext& bfc, int element_depth)
 			}
 		}
 	}
-}
+#endif
+	}
 
 void resolve_style(style::Value& style, const style::Value* parent,
 	const style::ValueSpec& spec, const style::Value& default_)

@@ -301,7 +301,7 @@ void LineEditControl::onPaint(windows::graphics::Painter &p) {
         // Draw underline
         float baseline = _layout->baseline();
         auto pos = HasSelection()
-            ? min(_sel_anchor.value(), _caret_pos)
+            ? std::min(_sel_anchor.value(), _caret_pos)
             : _caret_pos;
         scene2d::RectF rect = _layout->rangeRect(pos,
             pos + _composing->text.length());
@@ -667,8 +667,8 @@ std::wstring LineEditControl::GetDisplayText() const {
     std::wstring display_text = _text;
     if (HasSelection()) {
         if (_composing.has_value()) {
-            auto pos = min(_sel_anchor.value(), _caret_pos);
-            auto sel_len = max(_sel_anchor.value(), _caret_pos) - pos;
+            auto pos = std::min(_sel_anchor.value(), _caret_pos);
+            auto sel_len = std::max(_sel_anchor.value(), _caret_pos) - pos;
             if (pos >= 0 && pos <= (int)display_text.length()) {
                 display_text.erase(pos, sel_len);
                 display_text.insert(pos, _composing->text);
@@ -685,7 +685,7 @@ std::wstring LineEditControl::GetDisplayText() const {
 int LineEditControl::GetDisplayCaretPos() const {
     if (HasSelection()) {
         if (_composing.has_value()) {
-            return min(_sel_anchor.value(), _caret_pos)
+            return std::min(_sel_anchor.value(), _caret_pos)
                 + _composing->caret_pos;
         } else {
             return _caret_pos;
@@ -758,8 +758,8 @@ void LineEditControl::ClipboardPaste() {
 std::wstring LineEditControl::GetSelectionText() const {
     if (!_sel_anchor.has_value())
         return std::wstring();
-    int sel_start = min(_sel_anchor.value(), _caret_pos);
-    int sel_end = max(_sel_anchor.value(), _caret_pos);
+    int sel_start = std::min(_sel_anchor.value(), _caret_pos);
+    int sel_end = std::max(_sel_anchor.value(), _caret_pos);
     return _text.substr(sel_start, sel_end - sel_start);
 }
 void LineEditControl::ResetCaretBlink() {

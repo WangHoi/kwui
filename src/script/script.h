@@ -2,7 +2,7 @@
 
 #include "quickjs.h"
 #include "quickjs-libc.h"
-#include "cutils.h"
+//#include "cutils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
@@ -98,7 +98,7 @@ public:
 	template<>
 	static bool parse<bool>(JSContext *ctx_, JSValue j)
 	{
-		return JS_ToBool(ctx_, j) == TRUE;
+		return !!JS_ToBool(ctx_, j);
 	}
 
 	template<>
