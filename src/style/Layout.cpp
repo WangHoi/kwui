@@ -182,6 +182,11 @@ float BlockBoxBuilder::containingBlockWidth() const
     return contg_->avail_width;
 }
 
+absl::optional<float> BlockBoxBuilder::containingBlockHeight() const
+{
+    return contg_->prefer_height;
+}
+
 void BlockBoxBuilder::addText(scene2d::Node* node)
 {
     contg_->type = BlockBoxType::WithInlineChildren;

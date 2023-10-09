@@ -470,8 +470,8 @@ void Dialog::OnPaint() {
         return;
     }
 
-    _scene->resolveNodeStyle(_scene->root());
-    // _scene->computeLayout(_scene->root());
+    _scene->resolveStyle();
+    _scene->computeLayout(_pixel_size);
 
     int tries = 0;
     while (tries < 2) {

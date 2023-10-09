@@ -21,7 +21,7 @@ class InlineBox;
 class BlockBox;
 class BlockBoxBuilder;
 
-struct EdgeSizeF {
+struct EdgeOffsetF {
 	float left = 0;
 	float top = 0;
 	float right = 0;
@@ -30,11 +30,11 @@ struct EdgeSizeF {
 
 struct BoxF {
 	// margin edges
-	EdgeSizeF margin;
+	EdgeOffsetF margin;
 	// border edges
-	EdgeSizeF border;
+	EdgeOffsetF border;
 	// padding edges
-	EdgeSizeF padding;
+	EdgeOffsetF padding;
 	// content size
 	scene2d::DimensionF content;
 };
@@ -47,9 +47,9 @@ enum class BlockBoxType {
 };
 struct BlockBox {
 	scene2d::PointF pos; // BFC coordinates
-	EdgeSizeF margin; // margin edges
-	EdgeSizeF border; // border edges
-	EdgeSizeF padding; // padding edges
+	EdgeOffsetF margin; // margin edges
+	EdgeOffsetF border; // border edges
+	EdgeOffsetF padding; // padding edges
 	scene2d::DimensionF content; // content size
 
 	float avail_width = 0;
@@ -62,7 +62,7 @@ struct BlockBox {
 		scene2d::Node*,		// Node containing inlines
 		std::unique_ptr<BlockFormatContext>		// nested BFC, in-flow
 	> payload;
-	std::optional<EdgeSizeF> rel_offset; // Relative positioned box offset
+	std::optional<EdgeOffsetF> rel_offset; // Relative positioned box offset
 	BlockBox* parent;
 	BlockBox* next_sibling;
 	BlockBox* prev_sibling;
@@ -121,6 +121,7 @@ class BlockBoxBuilder {
 public:
 	BlockBoxBuilder(BlockBox* root);
 	float containingBlockWidth() const;
+	absl::optional<float> containingBlockHeight() const;
 	void addText(scene2d::Node* node);
 	void beginInline(scene2d::Node* node);
 	void endInline();
@@ -137,15 +138,14 @@ private:
 struct BlockFormatContext {
 	// Owner of this BFC
 	scene2d::Node* owner = nullptr;
-	// containing block width
-	float contg_block_width;
-	// containing block height
-	absl::optional<float> contg_block_height;
 	
 	std::vector<scene2d::Node*> abs_pos_nodes; // 'absolute' and 'fixed' positioned nodes
 
 	float border_bottom = 0;
 	float margin_bottom = 0;
+
+	BlockFormatContext(scene2d::Node* owner_)
+		: owner(owner_) {}
 };
 
 struct LineBox;

@@ -129,8 +129,8 @@ public:
 	bool matchSimple(style::Selector *selector) const;
 	void computeLayout();
 
-	// layout with new BFC
-	void layoutBlockElement(float contg_blk_width, absl::optional<float> contg_blk_height);
+	// layout absoluted positioned
+	void reflow(float contg_blk_width, float contg_blk_height);
 
 	void layoutText(style::InlineFormatContext& ifc);
 	// layout self and children
@@ -141,7 +141,6 @@ protected:
 	static void assembleInlineChild(Node* child, std::vector<style::InlineBox>& box);
 	bool anyBlockChildren() const;
 	void layoutBlockChild(style::BlockFormatContext& bfc, style::BlockBox& box, Node* child, int element_depth);
-	std::unique_ptr<style::BlockWidthSolverInterface> createBlockWidthSolver(style::BlockFormatContext& bfc);
 	// in-flow layout
 	static void layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
 	// in-flow placing

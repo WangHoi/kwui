@@ -133,11 +133,6 @@ void Node::paintControl(windows::graphics::Painter& painter)
 
 void Node::resolveStyle(const style::StyleSpec& spec)
 {
-	if (type_ != NodeType::NODE_ELEMENT) {
-		if (parent_)
-			computed_style_ = parent_->computed_style_;
-		return;
-	}
 #define RESOLVE_STYLE(x, def) \
     resolve_style(computed_style_.x, \
         parent_ ? &parent_->computed_style_.x : nullptr, \
@@ -202,28 +197,70 @@ void Node::computeLayout()
 	size_.height = computed_style_.height.f32_val;
 }
 
-void Node::layoutBlockElement(float contg_blk_width, absl::optional<float> contg_blk_height)
+void Node::reflow(float contg_blk_width, float contg_blk_height)
 {
-	CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutBlockElement(): expect NODE_ELEMENT";
+	CHECK(type_ == NodeType::NODE_ELEMENT) << "reflow(): expect NODE_ELEMENT";
+	CHECK(computed_style_.position == style::PositionType::Absolute || computed_style_.position == style::PositionType::Fixed)
+		<< "reflow(): invalid position " << computed_style_.position;
 
-	bfc_ = std::make_optional<style::BlockFormatContext>();
+	bfc_ = std::make_optional<style::BlockFormatContext>(this);
 	bfc_->owner = this;
-	bfc_->contg_block_width = contg_blk_width;
-	bfc_->contg_block_height = contg_blk_height;
 
-	style::BlockBox& blk_box = block_box_;
-	blk_box.avail_width = contg_blk_width;
-	blk_box.prefer_height = contg_blk_height;
-	style::BlockBoxBuilder bbb(&blk_box);
+	const auto& st = computed_style_;
+	float clean_contg_width = contg_blk_width
+		- try_resolve_to_px(st.border_left_width, contg_blk_width).value_or(0)
+		- try_resolve_to_px(st.padding_left, contg_blk_width).value_or(0)
+		- try_resolve_to_px(st.padding_right, contg_blk_width).value_or(0)
+		- try_resolve_to_px(st.border_right_width, contg_blk_width).value_or(0);
+	auto width_solver = std::make_unique<style::AbsoluteBlockWidthSolver>(
+		clean_contg_width,
+		try_resolve_to_px(st.left, contg_blk_width),
+		try_resolve_to_px(st.margin_left, contg_blk_width),
+		try_resolve_to_px(st.width, contg_blk_width),
+		try_resolve_to_px(st.margin_right, contg_blk_width),
+		try_resolve_to_px(st.right, contg_blk_width));
+	width_solver->setLayoutWidth(width_solver->measureWidth());
+
+	// Compute width, left and right margins
+	auto& b = block_box_;
+	b.pos.x = width_solver->left();
+	b.margin.left = width_solver->marginLeft();
+	b.border.left = try_resolve_to_px(st.border_left_width, contg_blk_width).value_or(0);
+	b.padding.left = try_resolve_to_px(st.padding_left, contg_blk_width).value_or(0);
+	b.avail_width = width_solver->width();
+	b.padding.right = try_resolve_to_px(st.padding_right, contg_blk_width).value_or(0);
+	b.border.right = try_resolve_to_px(st.border_right_width, contg_blk_width).value_or(0);
+	b.margin.right = width_solver->marginRight();
+
+	// Compute height, top and bottom margins
+	b.margin.top = try_resolve_to_px(st.margin_top, contg_blk_width).value_or(0);
+	b.border.top = try_resolve_to_px(st.border_top_width, contg_blk_width).value_or(0);
+	b.padding.top = try_resolve_to_px(st.padding_top, contg_blk_width).value_or(0);
+
+	b.prefer_height = try_resolve_to_px(st.height, contg_blk_height);
+
+	b.padding.bottom = try_resolve_to_px(st.padding_bottom, contg_blk_width).value_or(0);
+	b.border.bottom = try_resolve_to_px(st.border_bottom_width, contg_blk_width).value_or(0);
+	b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_blk_width).value_or(0);
+
+	style::BlockBoxBuilder bbb(&b);
 	eachLayoutChild([this, &bbb](Node* child) {
 		layoutMeasure(*bfc_, bbb, child);
 		});
-	layoutArrange(*bfc_, blk_box);
+	layoutArrange(*bfc_, b);
+
+	// for absolutely positioned block
+	style::AbsoluteBlockPositionSolver height_solver(contg_blk_height,
+		try_resolve_to_px(st.top, contg_blk_height),
+		try_resolve_to_px(st.height, contg_blk_height),
+		try_resolve_to_px(st.bottom, contg_blk_height));
+	height_solver.setLayoutHeight(b.marginRect().size().height);
+	b.pos.y = height_solver.top();
 
 	// layout out-of-flow
 	for (Node* node : bfc_->abs_pos_nodes) {
-		float abs_contg_width = blk_box.padding.left + blk_box.content.width + blk_box.padding.right;
-		float abs_contg_height = blk_box.padding.top + blk_box.content.height + blk_box.padding.bottom;
+		float abs_contg_width = b.avail_width;
+		float abs_contg_height = b.padding.top + b.content.height + b.padding.bottom;
 	
 		// find containing block
 		Node* pn = node->parent();
@@ -236,7 +273,7 @@ void Node::layoutBlockElement(float contg_blk_width, absl::optional<float> contg
 			pn = pn->parent();
 		}
 
-		node->layoutBlockElement(abs_contg_width, abs_contg_height);
+		node->reflow(abs_contg_width, abs_contg_height);
 	}
 }
 
@@ -321,32 +358,6 @@ void Node::layoutBlockChild(style::BlockFormatContext& bfc, style::BlockBox& blo
 	}
 }
 
-std::unique_ptr<style::BlockWidthSolverInterface> Node::createBlockWidthSolver(style::BlockFormatContext& bfc)
-{
-	LOG(INFO) << "TODO: remove calling createBlockWidthSolver";
-	const auto& st = computed_style_;
-	if (st.position == style::PositionType::Static || st.position == style::PositionType::Relative) {
-		float base_width = bfc.contg_block_width;
-		float clean_width = base_width
-			- try_resolve_to_px(st.border_left_width, base_width).value_or(0)
-			- try_resolve_to_px(st.padding_left, base_width).value_or(0)
-			- try_resolve_to_px(st.padding_right, base_width).value_or(0)
-			- try_resolve_to_px(st.border_right_width, base_width).value_or(0);
-		return std::unique_ptr<style::BlockWidthSolverInterface>(
-			new style::StaticBlockWidthSolver(clean_width,
-				try_resolve_to_px(st.margin_left, base_width),
-				try_resolve_to_px(st.width, base_width),
-				try_resolve_to_px(st.margin_right, base_width))
-		);
-	} else if (st.position == style::PositionType::Absolute || st.position == style::PositionType::Fixed) {
-		LOG(ERROR) << "create BlockWidthSolver with unsupported position type: " << (int)st.position;
-		return nullptr;
-	} else {
-		LOG(ERROR) << "create BlockWidthSolver with invalid position type: " << (int)st.position;
-		return nullptr;
-	}
-}
-
 void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node)
 {
 	if (node->type() == NodeType::NODE_TEXT) {
@@ -379,27 +390,26 @@ void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 			solver->setLayoutWidth(solver->measureWidth());
 
 			// Compute width, left and right margins
-			float base_width = solver->containingBlockWidth();
 			auto& b = node->block_box_;
 			b.margin.left = solver->marginLeft();
-			b.border.left = try_resolve_to_px(st.border_left_width, base_width).value_or(0);
-			b.padding.left = try_resolve_to_px(st.padding_left, base_width).value_or(0);
+			b.border.left = try_resolve_to_px(st.border_left_width, contg_width).value_or(0);
+			b.padding.left = try_resolve_to_px(st.padding_left, contg_width).value_or(0);
 			b.avail_width = solver->width();
-			b.padding.right = try_resolve_to_px(st.padding_right, base_width).value_or(0);
-			b.border.right = try_resolve_to_px(st.border_right_width, base_width).value_or(0);
+			b.padding.right = try_resolve_to_px(st.padding_right, contg_width).value_or(0);
+			b.border.right = try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
 			b.margin.right = solver->marginRight();
 
 			// Compute height, top and bottom margins
-			absl::optional<float> base_height = bfc.contg_block_height;
-			b.margin.top = try_resolve_to_px(st.margin_top, base_width).value_or(0);
-			b.border.top = try_resolve_to_px(st.border_top_width, base_width).value_or(0);
-			b.padding.top = try_resolve_to_px(st.padding_top, base_width).value_or(0);
+			absl::optional<float> base_height = bbb.containingBlockHeight();
+			b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);
+			b.border.top = try_resolve_to_px(st.border_top_width, contg_width).value_or(0);
+			b.padding.top = try_resolve_to_px(st.padding_top, contg_width).value_or(0);
 
 			b.prefer_height = try_resolve_to_px(st.height, base_height);
 
-			b.padding.bottom = try_resolve_to_px(st.padding_bottom, base_width).value_or(0);
-			b.border.bottom = try_resolve_to_px(st.border_bottom_width, base_width).value_or(0);
-			b.margin.bottom = try_resolve_to_px(st.margin_bottom, base_width).value_or(0);
+			b.padding.bottom = try_resolve_to_px(st.padding_bottom, contg_width).value_or(0);
+			b.border.bottom = try_resolve_to_px(st.border_bottom_width, contg_width).value_or(0);
+			b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_width).value_or(0);
 
 			bbb.beginBlock(&node->block_box_);
 			Node::eachLayoutChild(node, [&bfc, &bbb](Node* child) {

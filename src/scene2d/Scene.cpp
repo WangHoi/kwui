@@ -3,6 +3,7 @@
 #include "script/script.h"
 #include "style/style.h"
 #include "style/Layout.h"
+#include "absl/functional/bind_front.h"
 
 namespace scene2d {
 
@@ -139,18 +140,18 @@ void Scene::appendStyleRule(std::unique_ptr<style::StyleRule>&& rule)
 	}
 }
 
-void Scene::resolveNodeStyle(Node* node)
+void Scene::resolveStyle()
 {
-	for (auto& rule : style_rules_) {
-		if (match(node, rule->selector.get()))
-			node->resolveStyle(rule->spec);
-	}
-	node->resolveInlineStyle();
+	root_->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
 }
 
 void Scene::computeLayout(const scene2d::DimensionF& size)
 {
-	root_->layoutBlockElement(size.width, size.height);
+	root_->computed_style_.display = style::DisplayType::Block;
+	root_->computed_style_.position = style::PositionType::Absolute;
+	root_->computed_style_.width = style::Value::fromPixel(size.width);
+	root_->computed_style_.height = style::Value::fromPixel(size.height);
+	root_->reflow(size.width, size.height);
 }
 
 Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
@@ -228,6 +229,21 @@ bool Scene::match(Node* node, style::Selector* selector)
 	}
 
 	return true;
+}
+
+void Scene::resolveNodeStyle(Node* node)
+{
+	if (node->type() != NodeType::NODE_ELEMENT) {
+		if (node->parent_)
+			node->computed_style_ = node->parent_->computed_style_;
+		return;
+	}
+	
+	for (auto& rule : style_rules_) {
+		if (match(node, rule->selector.get()))
+			node->resolveStyle(rule->spec);
+	}
+	node->resolveInlineStyle();
 }
 
 } // namespace scene2d

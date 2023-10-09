@@ -3,6 +3,7 @@ target_sources(kwui PRIVATE
 )
 target_sources(kwui PRIVATE
   StyleValue.h
+  StyleValue.cpp
   StyleClass.h
   StyleRule.h
   StyleRule.cpp

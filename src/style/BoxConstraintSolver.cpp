@@ -191,9 +191,9 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 		}
 	}
 }
-absl::optional<float> AbsoluteBlockWidthSolver::left()
+float AbsoluteBlockWidthSolver::left()
 {
-	return left_;
+	return left_.value_or(0);
 }
 float AbsoluteBlockWidthSolver::marginLeft()
 {
@@ -207,55 +207,51 @@ float AbsoluteBlockWidthSolver::marginRight()
 {
 	return margin_right_.value_or(0);
 }
-absl::optional<float> AbsoluteBlockWidthSolver::right()
+float AbsoluteBlockWidthSolver::right()
 {
-	return right_;
+	return right_.value_or(0);
 }
 
-StaticBlockHeightSolver::StaticBlockHeightSolver(float cont_block_height, absl::optional<float> margin_top, absl::optional<float> height, absl::optional<float> margin_bottom)
+AbsoluteBlockPositionSolver::AbsoluteBlockPositionSolver(float cont_block_height,
+	absl::optional<float> margin_top, absl::optional<float> height, absl::optional<float> margin_bottom)
 	: cont_block_height_(cont_block_height)
-	, margin_top_(margin_top)
+	, top_(margin_top)
 	, height_(height)
-	, margin_bottom_(margin_bottom)
-{
-}
-float StaticBlockHeightSolver::containingBlockHeight() const
-{
-	return cont_block_height_;
-}
-void StaticBlockHeightSolver::setLayoutHeight(float layout_height)
+	, bottom_(margin_bottom)
+{}
+void AbsoluteBlockPositionSolver::setLayoutHeight(float layout_height)
 {
 	if (!height_.has_value())
 		*height_ = layout_height;
 
-	if (!margin_top_.has_value() && !margin_bottom_.has_value()) {
+	if (!top_.has_value() && !bottom_.has_value()) {
 		float remain = cont_block_height_ - *height_;
 		if (remain >= 0) {
-			*margin_top_ = *margin_bottom_ = 0.5f * remain;
+			*top_ = *bottom_ = 0.5f * remain;
 		} else {
-			*margin_top_ = 0.0f;
-			*margin_bottom_ = cont_block_height_ - *height_;
+			*top_ = 0.0f;
+			*bottom_ = cont_block_height_ - *height_;
 		}
-	} else if (!margin_top_.has_value()) {
-		*margin_top_ = cont_block_height_ - *height_ - margin_bottom_.value_or(0);
-	} else if (!margin_bottom_.has_value()) {
-		*margin_bottom_ = cont_block_height_ - margin_top_.value_or(0) - *height_;
+	} else if (!top_.has_value()) {
+		*top_ = cont_block_height_ - *height_ - bottom_.value_or(0);
+	} else if (!bottom_.has_value()) {
+		*bottom_ = cont_block_height_ - top_.value_or(0) - *height_;
 	} else {
 		// may over-constrained
-		*margin_bottom_ = cont_block_height_ - margin_top_.value_or(0) - *height_;
+		*bottom_ = cont_block_height_ - top_.value_or(0) - *height_;
 	}
 }
-float StaticBlockHeightSolver::marginTop()
+float AbsoluteBlockPositionSolver::top()
 {
-	return margin_top_.value_or(0);
+	return top_.value_or(0);
 }
-float StaticBlockHeightSolver::height()
+float AbsoluteBlockPositionSolver::height()
 {
 	return height_.value_or(0);
 }
-float StaticBlockHeightSolver::marginBottom()
+float AbsoluteBlockPositionSolver::bottom()
 {
-	return margin_bottom_.value_or(0);
+	return bottom_.value_or(0);
 }
 
 }

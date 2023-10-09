@@ -42,7 +42,7 @@ public:
     Node* pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
 
 	void appendStyleRule(std::unique_ptr<style::StyleRule>&& rule);
-	void resolveNodeStyle(Node* node);
+	void resolveStyle();
 	void computeLayout(const scene2d::DimensionF &size);
 
 private:
@@ -50,6 +50,7 @@ private:
     Node* pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos);
 	void setupProps(Node* node, JSValue props);
 	bool match(Node* node, style::Selector* selector);
+	void resolveNodeStyle(Node* node);
 
 	std::unique_ptr<script::Context> ctx_;
 	Node* root_;

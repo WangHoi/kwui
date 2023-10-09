@@ -6,6 +6,7 @@
 #include <set>
 #include <optional>
 #include "base/base.h"
+#include "absl/strings/str_format.h"
 
 namespace style {
 
@@ -30,36 +31,11 @@ struct Value {
 	ValueUnit unit = ValueUnit::Undefined;
 	std::string string_val;
 
-	static Value fromKeyword(base::string_atom k)
-	{
-		Value v;
-		v.keyword_val = k;
-		v.unit = ValueUnit::Keyword;
-		return v;
-	}
-	static Value fromPixel(float val)
-	{
-		return fromUnit(val, ValueUnit::Pixel);
-	}
-	static Value fromUnit(float val, ValueUnit u)
-	{
-		Value v;
-		v.f32_val = val;
-		v.unit = u;
-		return v;
-	}
-	static Value fromHexColor(const std::string& s)
-	{
-		Value v;
-		v.string_val = s;
-		v.unit = ValueUnit::HexColor;
-	}
-	static Value fromUrl(const std::string& url)
-	{
-		Value v;
-		v.string_val = url;
-		v.unit = ValueUnit::Url;
-	}
+	static Value fromKeyword(base::string_atom k);
+	static Value fromPixel(float val);
+	static Value fromUnit(float val, ValueUnit u);
+	static Value fromHexColor(const std::string& s);
+	static Value fromUrl(const std::string& url);
 	inline bool isPixel() const
 	{
 		return unit == ValueUnit::Pixel;
@@ -182,5 +158,25 @@ struct Style {
 	Value background_color;
 	Value color;
 };
+
+template <typename Sink>
+void AbslStringify(Sink& sink, PositionType p) {
+	switch (p) {
+	case PositionType::Static:
+		absl::Format(&sink, "Static");
+		break;
+	case PositionType::Relative:
+		absl::Format(&sink, "Relative");
+		break;
+	case PositionType::Absolute:
+		absl::Format(&sink, "Absolute");
+		break;
+	case PositionType::Fixed:
+		absl::Format(&sink, "Fixed");
+		break;
+	default:
+		absl::Format(&sink, "Custom(%d)", (int)p);
+	}
+}
 
 }
