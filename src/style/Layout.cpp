@@ -48,7 +48,7 @@ float collapse_margin(float m1, float m2)
 struct LineBox {
     scene2d::PointF offset;
     
-    float left;
+    float left; // BFC coord: left
     float avail_width;
     // float line_gap;  // leading
     
@@ -89,13 +89,13 @@ struct LineBox {
         return w;
     }
     */
-    void layout(float base_y)
+    void layout(float offset_y)
     {
         used_size.width = 0;
         float top = 0, bottom = 0;
         for (auto& b : inline_boxes) {
             used_size.width += b->size.width;
-            top = std::max(top, b->size.width - b->baseline);
+            top = std::max(top, b->size.height - b->baseline);
             bottom = std::max(bottom, b->baseline);
         }
         used_size.height = top + bottom;
@@ -104,14 +104,14 @@ struct LineBox {
         float x = left;
         for (auto& b : inline_boxes) {
             b->offset.x = x;
-            b->offset.y = base_y + (top - (b->size.width - b->baseline));
+            b->offset.y = offset_y + (top - (b->size.height - b->baseline));
             x += b->size.width;
         }
     }
 };
 
-InlineFormatContext::InlineFormatContext(float avail_width)
-    : avail_width_(avail_width), height_(0)
+InlineFormatContext::InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width)
+    : bfc_(bfc), left_(left), avail_width_(avail_width), height_(0)
 {}
 
 InlineFormatContext::~InlineFormatContext() = default;
@@ -148,7 +148,7 @@ float InlineFormatContext::getLayoutWidth() const
 
 LineBox* InlineFormatContext::newLineBox()
 {
-    auto lb = std::make_unique<LineBox>(0.0f, avail_width_);
+    auto lb = std::make_unique<LineBox>(left_, avail_width_);
     auto ret = lb.get();
     line_boxes_.emplace_back(std::move(lb));
     return ret;
@@ -168,7 +168,7 @@ void InlineFormatContext::layout()
 {
     float y = 0;
     for (auto& line_box : line_boxes_) {
-        line_box->layout(y);
+        line_box->layout(bfc_.margin_bottom + y);
         y += line_box->used_size.height;
     }
     height_ = y;
@@ -226,8 +226,10 @@ void BlockBoxBuilder::beginBlock(BlockBox* box)
         box->next_sibling = box->prev_sibling = box;
     }
     last_child_ = box;
-    contg_->type = BlockBoxType::WithBlockChildren;
-    contg_->payload = box;
+    if (contg_->type == BlockBoxType::Empty) {
+        contg_->type = BlockBoxType::WithBlockChildren;
+        contg_->payload = box;
+    }
     stack_.push_back(std::make_tuple(contg_, last_child_));
 
     contg_ = box;

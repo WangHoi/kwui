@@ -117,6 +117,7 @@ public:
 	void setAttribute(base::string_atom name, const NodeAttributeValue &value);
 	void setEventHandler(base::string_atom name, JSValue func);
 	void paintControl(windows::graphics::Painter &painter);
+	void resolveDefaultStyle();
 	void resolveStyle(const style::StyleSpec &style);
 	inline void resolveInlineStyle()
 	{

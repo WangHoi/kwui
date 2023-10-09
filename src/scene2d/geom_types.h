@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <math.h>
+#include "absl/strings/str_format.h"
 
 namespace scene2d {
 
@@ -86,6 +87,11 @@ struct PointF {
     {
         return PointF(roundf(x), roundf(y));
     }
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const PointF& p) {
+        absl::Format(&sink, "Point(%.2f, %.2f)", p.x, p.y);
+    }
 };
 
 struct DimensionF {
@@ -128,6 +134,11 @@ struct DimensionF {
     {
         return DimensionF(roundf(width), roundf(height));
     }
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const DimensionF& p) {
+        absl::Format(&sink, "Dim(%.2f, %.2f)", p.width, p.height);
+    }
 };
 
 struct RectF {
@@ -157,6 +168,12 @@ struct RectF {
 private:
     RectF(float l, float t, float r, float b)
         : left(l), top(t), right(r), bottom(b) {}
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const RectF& p) {
+        absl::Format(&sink, "Rect(%v, %v - %vx%v)",
+            p.left, p.top, p.right - p.left, p.bottom - p.top);
+    }
 };
 
 }

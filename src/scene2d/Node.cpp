@@ -4,13 +4,22 @@
 #include "control.h"
 #include "Scene.h"
 #include "style/BoxConstraintSolver.h"
+#include "base/scoped_setter.h"
 
 namespace scene2d {
 
-static void resolve_style(style::Value& style,
+static inline void resolve_style(style::Value& style,
 	const style::Value* parent,
 	const style::ValueSpec& spec,
-	const style::Value& default_);
+	const style::Value& default_)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		style = *spec.value;
+	}
+}
 static void resolve_style(style::DisplayType& style, const style::DisplayType* parent,
 	const style::ValueSpec& spec, const style::DisplayType& default_);
 static void resolve_style(style::PositionType& style, const style::PositionType* parent,
@@ -131,8 +140,61 @@ void Node::paintControl(windows::graphics::Painter& painter)
 		control_->onPaint(painter);
 }
 
+void Node::resolveDefaultStyle()
+{
+	CHECK(type_ == NodeType::NODE_ELEMENT);
+	if (tag_ == base::string_intern("span")) {
+		computed_style_.display = style::DisplayType::Inline;
+	} else {
+		computed_style_.display = style::DisplayType::Block;
+	}
+	computed_style_.position = style::PositionType::Static;
+	CHECK(type_ == NodeType::NODE_ELEMENT);
+#define RESOLVE_STYLE_DEFAULT(x, def) \
+    computed_style_.x = def
+
+	RESOLVE_STYLE_DEFAULT(margin_left, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(margin_top, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(margin_right, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(margin_bottom, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_left_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_top_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_right_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_bottom_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_top_left_radius, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_top_right_radius, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_bottom_right_radius, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_bottom_left_radius, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(padding_left, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(padding_top, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(padding_right, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(padding_bottom, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(left, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(top, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(right, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(bottom, style::Value::auto_());
+
+	RESOLVE_STYLE_DEFAULT(min_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(min_height, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(max_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(max_height, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(height, style::Value::auto_());
+
+	RESOLVE_STYLE_DEFAULT(border_color, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(background_color, style::Value::auto_());
+#undef RESOLVE_STYLE_DEFAULT
+
+#define RESOLVE_STYLE_DEFAULT_INHERIT(x, def) \
+    computed_style_.x = (parent_ ? parent_->computed_style_.x : def)
+	
+	RESOLVE_STYLE_DEFAULT_INHERIT(color, style::Value::fromHexColor("#000000"));
+#undef RESOLVE_STYLE_DEFAULT_INHERIT
+}
+
 void Node::resolveStyle(const style::StyleSpec& spec)
 {
+	CHECK(type_ == NodeType::NODE_ELEMENT);
 #define RESOLVE_STYLE(x, def) \
     resolve_style(computed_style_.x, \
         parent_ ? &parent_->computed_style_.x : nullptr, \
@@ -180,7 +242,7 @@ bool Node::matchSimple(style::Selector* selector) const
 		return false;
 	if (selector->id != base::string_atom() && selector->id != id_)
 		return false;
-	LOG(WARNING) << "handle css klasses match";
+	//LOG(WARNING) << "handle css klasses match";
 	if (!klass_.containsClass(selector->klass))
 		return false;
 	if (selector->tag != base::string_atom() && selector->tag != base::string_intern("*")
@@ -249,6 +311,8 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 		});
 	layoutArrange(*bfc_, b);
 
+	LOG(INFO) << "reflow border: " << bfc_->border_bottom << ", margin " << bfc_->margin_bottom;
+
 	// for absolutely positioned block
 	style::AbsoluteBlockPositionSolver height_solver(contg_blk_height,
 		try_resolve_to_px(st.top, contg_blk_height),
@@ -261,7 +325,7 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 	for (Node* node : bfc_->abs_pos_nodes) {
 		float abs_contg_width = b.avail_width;
 		float abs_contg_height = b.padding.top + b.content.height + b.padding.bottom;
-	
+
 		// find containing block
 		Node* pn = node->parent();
 		while (pn) {
@@ -518,7 +582,9 @@ void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 {
 	float borpad_top = box.border.top + box.padding.top;
+	float borpad_bottom = box.border.bottom + box.padding.bottom;
 
+	box.pos.x = bfc.content_left;
 	if (borpad_top > 0) {
 		float coll_margin = style::collapse_margin(box.margin.top,
 			(bfc.margin_bottom - bfc.border_bottom));
@@ -528,11 +594,13 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 	}
 
 
+	base::scoped_setter _(bfc.content_left,
+		bfc.content_left + box.margin.left + box.border.left + box.padding.left);
 	if (box.type == style::BlockBoxType::WithBlockChildren) {
 		box.content.width = box.avail_width;
 		float saved_bfc_margin_bottom = bfc.margin_bottom;
 		box.eachChild([&](style::BlockBox* child) {
-				Node::layoutArrange(bfc, *child);
+			Node::layoutArrange(bfc, *child);
 			});
 
 		if (box.prefer_height.has_value()) {
@@ -541,12 +609,17 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 			bfc.margin_bottom = bfc.border_bottom;
 		} else {
 			// Compute 'auto' height
-			box.content.height = std::max(0.0f,
-				bfc.border_bottom - box.pos.y - box.margin.top - borpad_top);
+			if (borpad_bottom > 0) {
+				box.content.height = std::max(0.0f,
+					bfc.margin_bottom - box.pos.y - box.margin.top - borpad_top);
+			} else {
+				box.content.height = std::max(0.0f,
+					bfc.border_bottom - box.pos.y - box.margin.top - borpad_top);
+			}
 		}
 	} else if (box.type == style::BlockBoxType::WithInlineChildren) {
 		Node* contg_node = std::get<Node*>(box.payload);
-		style::InlineFormatContext ifc(box.avail_width);
+		style::InlineFormatContext ifc(bfc, bfc.content_left, box.avail_width);
 		for (Node* child : contg_node->children())
 			layoutInlineChild(child, ifc, 0);
 		ifc.layout();
@@ -563,7 +636,6 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		}
 	}
 
-	float borpad_bottom = box.border.bottom + box.padding.bottom;
 	if (borpad_bottom > 0) {
 		bfc.border_bottom = bfc.margin_bottom + borpad_bottom;
 		bfc.margin_bottom = bfc.border_bottom + box.margin.bottom;
@@ -647,7 +719,7 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		float coll_margin = collapse_margin(block_box_.box.margin.bottom,
 			(bfc.margin_bottom - bfc.border_bottom));
 		bfc.margin_bottom = bfc.border_bottom + coll_margin;
-		}
+	}
 
 	// Layout 'absolute' or 'fixed' children
 	if (anyBlockChildren()) {
@@ -661,25 +733,14 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		}
 	}
 #endif
-	}
-
-void resolve_style(style::Value& style, const style::Value* parent,
-	const style::ValueSpec& spec, const style::Value& default_)
-{
-	if (spec.type == style::ValueSpecType::Inherit) {
-		style = parent ? *parent : default_;
-	} else if (spec.type == style::ValueSpecType::Specified) {
-		style = *spec.value;
-	} else {
-		style = default_;
-	}
 }
 
 void resolve_style(style::DisplayType& style, const style::DisplayType* parent,
 	const style::ValueSpec& spec, const style::DisplayType& default_)
 {
 	if (spec.type == style::ValueSpecType::Inherit) {
-		style = parent ? *parent : default_;
+		if (parent)
+			style = *parent;
 	} else if (spec.type == style::ValueSpecType::Specified) {
 		if (spec.value->unit == style::ValueUnit::Keyword) {
 			if (spec.value->keyword_val == base::string_intern("block"))
@@ -688,11 +749,7 @@ void resolve_style(style::DisplayType& style, const style::DisplayType* parent,
 				style = style::DisplayType::Inline;
 			else if (spec.value->keyword_val == base::string_intern("inline-block"))
 				style = style::DisplayType::InlineBlock;
-		} else {
-			style = default_;
 		}
-	} else {
-		style = default_;
 	}
 }
 

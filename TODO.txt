@@ -1,0 +1,9 @@
+TODO
+-----
+
+[ ] Absolute的处理
+[ ] Relative的处理
+[ ] Control::onPaint需要RenderBox
+[ ] 鼠标点击坐标处理
+[ ] 支持翻译
+[ ] fragment 处理有问题，不透明

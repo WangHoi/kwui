@@ -141,6 +141,7 @@ struct BlockFormatContext {
 	
 	std::vector<scene2d::Node*> abs_pos_nodes; // 'absolute' and 'fixed' positioned nodes
 
+	float content_left = 0;
 	float border_bottom = 0;
 	float margin_bottom = 0;
 
@@ -163,7 +164,7 @@ struct InlineBox {
 
 class InlineFormatContext {
 public:
-	InlineFormatContext(float avail_width);
+	InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width);
 	~InlineFormatContext();
 	float getAvailWidth() const;
 	void setupBox(InlineBox* box);
@@ -181,6 +182,8 @@ private:
 	LineBox* newLineBox();
 	LineBox* getLineBox(float pref_min_width);
 
+	BlockFormatContext& bfc_;
+	float left_;
 	float avail_width_;
 	std::vector<std::unique_ptr<LineBox>> line_boxes_;
 

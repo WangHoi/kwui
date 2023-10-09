@@ -43,20 +43,20 @@ function Div(props, kids) {
 
 var simple_stylesheet = {
 	"p": {
-		"margin-left": 4,
-		"margin-top": 4,
-		"margin-right": 4,
-		"margin-bottom": 4,
-		"border-left-width": 4,
-		"border-top-width": 4,
-		"border-right-width": 4,
-		"border-bottom-width": 4,
-		"padding-left": 4,
-		"padding-top": 4,
-		"padding-right": 4,
-		"padding-bottom": 4,
-		"border-color": "#00ff00",
-		"background-color": "#0000ff",
+		"margin-left": 10,
+		"margin-top": 10,
+		"margin-right": 10,
+		"margin-bottom": 10,
+		"border-left-width": 10,
+		"border-top-width": 10,
+		"border-right-width": 10,
+		"border-bottom-width": 10,
+		"padding-left": 10,
+		"padding-top": 10,
+		"padding-right": 10,
+		"padding-bottom": 10,
+		"border-color": "#0f0",
+		"background-color": "#0ff",
 	}
 };
 
@@ -65,6 +65,6 @@ var complex = <Div a="f1"><p>aa</p><p>bb</p></Div>;
 var edit = <line-edit style={{ left: 20, top: 20, width: 200, height: 40 }}></line-edit>
 // console.log(JSON.stringify(complex.render()));
 
-var hello_world = <p>hello, world</p>;
+var hello_world = <div><div><p>hello</p></div><p>world</p></div>;
 
 app.showDialog(hello_world, simple_stylesheet);

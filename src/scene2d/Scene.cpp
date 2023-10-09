@@ -142,7 +142,7 @@ void Scene::appendStyleRule(std::unique_ptr<style::StyleRule>&& rule)
 
 void Scene::resolveStyle()
 {
-	root_->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
+	resolveNodeStyle(root_);
 }
 
 void Scene::computeLayout(const scene2d::DimensionF& size)
@@ -236,14 +236,15 @@ void Scene::resolveNodeStyle(Node* node)
 	if (node->type() != NodeType::NODE_ELEMENT) {
 		if (node->parent_)
 			node->computed_style_ = node->parent_->computed_style_;
-		return;
+	} else {
+		node->resolveDefaultStyle();
+		for (auto& rule : style_rules_) {
+			if (match(node, rule->selector.get()))
+				node->resolveStyle(rule->spec);
+		}
+		node->resolveInlineStyle();
 	}
-	
-	for (auto& rule : style_rules_) {
-		if (match(node, rule->selector.get()))
-			node->resolveStyle(rule->spec);
-	}
-	node->resolveInlineStyle();
+	node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
 }
 
 } // namespace scene2d

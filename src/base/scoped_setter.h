@@ -6,15 +6,18 @@ template<typename T>
 class scoped_setter {
 public:
 	scoped_setter(T& ptr, T value)
-		: ptr_(ptr), val_(value) {}
+		: ptr_(ptr), saved_(ptr)
+	{
+		ptr = value;
+	}
 	~scoped_setter()
 	{
-		ptr_ = val_;
+		ptr_ = saved_;
 	}
 
 private:
 	T& ptr_;
-	T val_;
+	T saved_;
 };
 
 }

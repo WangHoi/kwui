@@ -471,7 +471,7 @@ void Dialog::OnPaint() {
     }
 
     _scene->resolveStyle();
-    _scene->computeLayout(_pixel_size);
+    _scene->computeLayout(_size);
 
     int tries = 0;
     while (tries < 2) {
@@ -519,18 +519,22 @@ void Dialog::PaintNode(graphics::Painter& p, scene2d::Node* node) {
 void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node) {
     if (node->type_ == scene2d::NodeType::NODE_TEXT) {
         auto text_layout = (graphics::TextLayout*)node->text_layout_.get();
-        //p.SetColor(get_color(node->computed_style_.color));
-        p.SetColor(BLACK);
+        p.SetColor(get_color(node->computed_style_.color));
         auto r = text_layout->rect();
-        LOG(INFO) << "Rect: " << r.left << ", " << r.top << " (" << r.bottom - r.left << "x" << r.bottom - r.top << ")";
+        LOG(INFO) << "Text: " << node->text_box_.offset << ", " << r;
         p.DrawTextLayout(node->text_box_.offset, *text_layout);
     } else if (node->type_ == scene2d::NodeType::NODE_ELEMENT) {
         auto border_rect = node->block_box_.borderRect();
-        p.SetStrokeWidth(node->block_box_.border.top);
-        //p.SetStrokeColor(get_color(node->computed_style_.border_color));
-        //p.SetColor(get_color(node->computed_style_.color));
-        p.SetStrokeColor(GREEN.MakeAlpha(0.5f));
-        p.SetColor(BLUE.MakeAlpha(0.2f));
+        LOG(INFO) << "BoxBorder: " << node->block_box_.pos + border_rect.origin()
+            << ", " << border_rect;
+        float bw = node->block_box_.border.top;
+        border_rect.left += 0.5f * bw;
+        border_rect.top += 0.5f * bw;
+        border_rect.right -= 0.5f * bw;
+        border_rect.bottom -= 0.5f * bw;
+        p.SetStrokeWidth(bw);
+        p.SetStrokeColor(get_color(node->computed_style_.border_color));
+        p.SetColor(get_color(node->computed_style_.background_color));
         p.DrawRect(node->block_box_.pos + border_rect.origin(), border_rect.size());
         node->paintControl(p);
     }
