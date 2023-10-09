@@ -172,6 +172,10 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 	RESOLVE_STYLE(max_height, style::Value::fromPixel(0));
 	RESOLVE_STYLE(width, style::Value::fromPixel(0));
 	RESOLVE_STYLE(height, style::Value::fromPixel(0));
+
+	RESOLVE_STYLE(border_color, style::Value::fromKeyword(base::string_intern("auto")));
+	RESOLVE_STYLE(background_color, style::Value::fromKeyword(base::string_intern("auto")));
+	RESOLVE_STYLE(color, style::Value::fromKeyword(base::string_intern("auto")));
 #undef RESOLVE_STYLE
 }
 
@@ -207,7 +211,7 @@ void Node::layoutBlockElement(float contg_blk_width, absl::optional<float> contg
 	bfc_->contg_block_width = contg_blk_width;
 	bfc_->contg_block_height = contg_blk_height;
 
-	style::BlockBox blk_box;
+	style::BlockBox& blk_box = block_box_;
 	blk_box.avail_width = contg_blk_width;
 	blk_box.prefer_height = contg_blk_height;
 	style::BlockBoxBuilder bbb(&blk_box);
@@ -215,6 +219,25 @@ void Node::layoutBlockElement(float contg_blk_width, absl::optional<float> contg
 		layoutMeasure(*bfc_, bbb, child);
 		});
 	layoutArrange(*bfc_, blk_box);
+
+	// layout out-of-flow
+	for (Node* node : bfc_->abs_pos_nodes) {
+		float abs_contg_width = blk_box.padding.left + blk_box.content.width + blk_box.padding.right;
+		float abs_contg_height = blk_box.padding.top + blk_box.content.height + blk_box.padding.bottom;
+	
+		// find containing block
+		Node* pn = node->parent();
+		while (pn) {
+			if (pn->type() == NodeType::NODE_ELEMENT && pn->computed_style_.position != style::PositionType::Static) {
+				abs_contg_width = pn->block_box_.padding.left + pn->block_box_.content.width + pn->block_box_.padding.right;
+				abs_contg_height = pn->block_box_.padding.top + pn->block_box_.content.height + pn->block_box_.padding.bottom;
+				break;
+			}
+			pn = pn->parent();
+		}
+
+		node->layoutBlockElement(abs_contg_width, abs_contg_height);
+	}
 }
 
 void Node::layoutText(style::InlineFormatContext& ifc)
@@ -300,6 +323,7 @@ void Node::layoutBlockChild(style::BlockFormatContext& bfc, style::BlockBox& blo
 
 std::unique_ptr<style::BlockWidthSolverInterface> Node::createBlockWidthSolver(style::BlockFormatContext& bfc)
 {
+	LOG(INFO) << "TODO: remove calling createBlockWidthSolver";
 	const auto& st = computed_style_;
 	if (st.position == style::PositionType::Static || st.position == style::PositionType::Relative) {
 		float base_width = bfc.contg_block_width;
@@ -329,6 +353,16 @@ void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 		bbb.addText(node);
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		const auto& st = node->computedStyle();
+
+		if (st.position == style::PositionType::Absolute || st.position == style::PositionType::Fixed) {
+			if ((st.left.isAuto() && st.right.isAuto()) || (st.top.isAuto() && st.bottom.isAuto())) {
+				LOG(INFO) << "TODO: absolute positioned nodes need 'static-position' placeholder node";
+			}
+			bfc.abs_pos_nodes.push_back(node);
+			return;
+		}
+
+		// 'static' or 'relative' positioned
 		if (st.display == style::DisplayType::Block) {
 
 			float contg_width = bbb.containingBlockWidth();
@@ -483,53 +517,40 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		bfc.margin_bottom = bfc.border_bottom;
 	}
 
-	float bfc_border_bottom = bfc.border_bottom;
-	float bfc_margin_bottom = bfc.margin_bottom;
 
 	if (box.type == style::BlockBoxType::WithBlockChildren) {
 		box.content.width = box.avail_width;
-
-		base::scoped_setter _1(bfc.contg_block_width, box.content.width);
-		base::scoped_setter _2(bfc.contg_block_height, box.prefer_height);
+		float saved_bfc_margin_bottom = bfc.margin_bottom;
 		box.eachChild([&](style::BlockBox* child) {
 				Node::layoutArrange(bfc, *child);
 			});
-	} else {
-		/*
-		float border_box_width = box.border.top
-			+ box.padding.top
-			+ box.content.height
-			+ box.padding.bottom
-			+ box.border.bottom;
-		if (border_box_width > 0) {
-			float border_bottom = box.pos.y
-				+ box.margin.top
-				+ box.border.top
-				+ box.padding.top
-				+ box.content.height
-				+ box.padding.bottom
-				+ box.border.bottom;
-			float margin_bottom = border_bottom + box.margin.bottom;
-			if (border_bottom > bfc.border_bottom)
-				bfc.border_bottom = border_bottom;
-			if (margin_bottom > bfc.margin_bottom)
-				bfc.margin_bottom = margin_bottom;
-		} else {
-			float m1 = collapse_margin(box.margin.top, box.margin.bottom);
-			float coll_margin = collapse_margin(m1, (bfc.margin_bottom - bfc.border_bottom));
-			box.pos.y = bfc.border_bottom + coll_margin;
-		}
-		*/
-	}
 
-	if (box.prefer_height.has_value()) {
-		box.content.height = *box.prefer_height;
-		bfc.border_bottom = bfc_margin_bottom + *box.prefer_height;
-		bfc.margin_bottom = bfc.border_bottom;
-	} else {
-		// Compute 'auto' height
-		box.content.height = std::max(0.0f,
-			bfc.border_bottom - box.pos.y - box.margin.top - borpad_top);
+		if (box.prefer_height.has_value()) {
+			box.content.height = *box.prefer_height;
+			bfc.border_bottom = saved_bfc_margin_bottom + *box.prefer_height;
+			bfc.margin_bottom = bfc.border_bottom;
+		} else {
+			// Compute 'auto' height
+			box.content.height = std::max(0.0f,
+				bfc.border_bottom - box.pos.y - box.margin.top - borpad_top);
+		}
+	} else if (box.type == style::BlockBoxType::WithInlineChildren) {
+		Node* contg_node = std::get<Node*>(box.payload);
+		style::InlineFormatContext ifc(box.avail_width);
+		for (Node* child : contg_node->children())
+			layoutInlineChild(child, ifc, 0);
+		ifc.layout();
+		box.content.width = box.avail_width;
+		box.content.height = ifc.getLayoutHeight();
+		if (box.content.height > 0) {
+			bfc.border_bottom = bfc.margin_bottom + box.content.height;
+			bfc.margin_bottom = bfc.border_bottom;
+		} else {
+			// check top and bottom margin collapse 
+			float coll_margin = style::collapse_margin(box.margin.bottom,
+				(bfc.margin_bottom - bfc.border_bottom));
+			bfc.margin_bottom = bfc.border_bottom + coll_margin;
+		}
 	}
 
 	float borpad_bottom = box.border.bottom + box.padding.bottom;

@@ -210,9 +210,9 @@ public:
 			CHECK_VALUE(width);
 			CHECK_VALUE(height);
 
-			CHECK_VALUE2(background_color, background-color);
-			CHECK_VALUE2(background_image, background-image);
 			CHECK_VALUE2(border_color, border-color);
+			CHECK_VALUE2(background_color, background-color);
+			CHECK_VALUE(color);
 #undef CHECK_VALUE
 #undef CHECK_VALUE2
 			});

@@ -18,6 +18,7 @@ public:
 	inline bool operator==(const string_atom &o) const {
 		return atom_text_ == o.atom_text_;
 	}
+	inline const char* c_str() const { return atom_text_; }
 
 private:
 	string_atom(const std::string& text)

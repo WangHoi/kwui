@@ -16,6 +16,17 @@ static ATOM RegisterWindowClass(HINSTANCE hInstance,
 static constexpr UINT_PTR ANIMATION_TIMER_EVENT = 0xFFFF00A0;
 static HCURSOR s_preloaded_cursors[NUM_CURSOR_TYPES] = {};
 
+static graphics::Color get_color(const style::Value& v) {
+    if (v.isAuto())
+        return NO_COLOR;
+    if (v.unit == style::ValueUnit::HexColor) {
+        return graphics::Color::FromString(v.string_val);
+    } else if (v.unit == style::ValueUnit::Keyword) {
+        return graphics::Color::FromString(v.keyword_val.c_str());
+    }
+    return NO_COLOR;
+}
+
 static void PreloadCursor() {
     if (s_preloaded_cursors[0])
         return;
@@ -496,7 +507,7 @@ void Dialog::OnResize() {
 }
 void Dialog::PaintNode(graphics::Painter& p, scene2d::Node* node) {
     if (!node->visible()) return;
-    p.Translate(node->origin());
+    // p.Translate(node->origin());
     PaintNodeSelf(p, node);
     for (auto& child : node->children()) {
         if (!child->visible()) continue;
@@ -508,11 +519,19 @@ void Dialog::PaintNode(graphics::Painter& p, scene2d::Node* node) {
 void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node) {
     if (node->type_ == scene2d::NodeType::NODE_TEXT) {
         auto text_layout = (graphics::TextLayout*)node->text_layout_.get();
+        //p.SetColor(get_color(node->computed_style_.color));
         p.SetColor(BLACK);
         auto r = text_layout->rect();
         LOG(INFO) << "Rect: " << r.left << ", " << r.top << " (" << r.bottom - r.left << "x" << r.bottom - r.top << ")";
-        p.DrawTextLayout(scene2d::PointF::fromZeros(), *text_layout);
+        p.DrawTextLayout(node->text_box_.offset, *text_layout);
     } else if (node->type_ == scene2d::NodeType::NODE_ELEMENT) {
+        auto border_rect = node->block_box_.borderRect();
+        p.SetStrokeWidth(node->block_box_.border.top);
+        //p.SetStrokeColor(get_color(node->computed_style_.border_color));
+        //p.SetColor(get_color(node->computed_style_.color));
+        p.SetStrokeColor(GREEN.MakeAlpha(0.5f));
+        p.SetColor(BLUE.MakeAlpha(0.2f));
+        p.DrawRect(node->block_box_.pos + border_rect.origin(), border_rect.size());
         node->paintControl(p);
     }
 }

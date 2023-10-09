@@ -18,6 +18,8 @@ namespace style
 struct BlockFormatContext;
 class InlineFormatContext;
 class InlineBox;
+class BlockBox;
+class BlockBoxBuilder;
 
 struct EdgeSizeF {
 	float left = 0;
@@ -67,6 +69,40 @@ struct BlockBox {
 
 	BlockBox()
 		: parent(nullptr), next_sibling(this), prev_sibling(this) {}
+
+	inline scene2d::RectF marginRect() const
+	{
+		return scene2d::RectF::fromXYWH(
+			0,
+			0,
+			margin.left + border.left + padding.left + content.width + padding.right + border.right + margin.right,
+			margin.top + border.top + padding.top + content.height + padding.bottom + border.bottom + margin.bottom);
+	}
+	inline scene2d::RectF borderRect() const
+	{
+		return scene2d::RectF::fromXYWH(
+			margin.left,
+			margin.top,
+			border.left + padding.left + content.width + padding.right + border.right,
+			border.top + padding.top + content.height + padding.bottom + border.bottom);
+	}
+	inline scene2d::RectF paddingRect() const
+	{
+		return scene2d::RectF::fromXYWH(
+			margin.left + border.left,
+			margin.top + border.top,
+			padding.left + content.width + padding.right,
+			padding.top + content.height + padding.bottom);
+	}
+	inline scene2d::RectF contentRect() const
+	{
+		return scene2d::RectF::fromXYWH(
+			margin.left + border.left + padding.left,
+			margin.top + border.top + padding.top,
+			content.width,
+			content.height);
+	}
+
 	template <typename T>
 	void eachChild(T&& f)
 	{
@@ -105,6 +141,8 @@ struct BlockFormatContext {
 	float contg_block_width;
 	// containing block height
 	absl::optional<float> contg_block_height;
+	
+	std::vector<scene2d::Node*> abs_pos_nodes; // 'absolute' and 'fixed' positioned nodes
 
 	float border_bottom = 0;
 	float margin_bottom = 0;
@@ -113,6 +151,7 @@ struct BlockFormatContext {
 struct LineBox;
 
 struct InlineBox {
+	scene2d::PointF offset; // set by LineBox::layout()
 	scene2d::DimensionF size;
 	float baseline = 0; // offset from bottom
 
@@ -120,8 +159,6 @@ struct InlineBox {
 
 	LineBox* line_box; // set by IFC::setupBox()
 	float line_box_offset_x; // set by IFC::setupBox()
-
-	scene2d::PointF offset; // set by LineBox::layout()
 };
 
 class InlineFormatContext {

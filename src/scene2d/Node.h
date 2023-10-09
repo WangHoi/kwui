@@ -137,7 +137,7 @@ public:
 	void layoutInlineElement(style::InlineFormatContext& ifc, int element_depth);
 
 protected:
-	void layoutInlineChild(Node* node, style::InlineFormatContext& ifc, int element_depth);
+	static void layoutInlineChild(Node* node, style::InlineFormatContext& ifc, int element_depth);
 	static void assembleInlineChild(Node* child, std::vector<style::InlineBox>& box);
 	bool anyBlockChildren() const;
 	void layoutBlockChild(style::BlockFormatContext& bfc, style::BlockBox& box, Node* child, int element_depth);

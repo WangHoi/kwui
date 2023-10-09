@@ -35,6 +35,7 @@ struct Value {
 		Value v;
 		v.keyword_val = k;
 		v.unit = ValueUnit::Keyword;
+		return v;
 	}
 	static Value fromPixel(float val)
 	{
@@ -123,9 +124,9 @@ struct StyleSpec {
 	ValueSpec border_bottom_right_radius;
 	ValueSpec border_bottom_left_radius;
 
-	ValueSpec background_color;
-	ValueSpec background_image;
 	ValueSpec border_color;
+	ValueSpec background_color;
+	ValueSpec color;
 };
 
 enum class DisplayType {
@@ -176,6 +177,10 @@ struct Style {
 	Value border_top_right_radius;
 	Value border_bottom_right_radius;
 	Value border_bottom_left_radius;
+
+	Value border_color;
+	Value background_color;
+	Value color;
 };
 
 }
