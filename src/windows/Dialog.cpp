@@ -243,7 +243,7 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         OnResize();
         break;
     case WM_NCCALCSIZE: {
-        WINDOWPLACEMENT placement;
+        WINDOWPLACEMENT placement = {};
         if (GetWindowPlacement(hWnd, &placement)) {
             if (placement.showCmd == SW_SHOWMINIMIZED) {
                 return DefWindowProcW(hWnd, message, wParam, lParam);

@@ -42,7 +42,7 @@ public:
 	{
 		ptr_->retain();
 	}
-	object_refptr(object_refptr&& o)
+	object_refptr(object_refptr&& o) noexcept
 		: ptr_(o.ptr_)
 	{
 		o.ptr_ = nullptr;

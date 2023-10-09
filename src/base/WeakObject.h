@@ -42,7 +42,7 @@ public:
 	{
 		ptr_->retain();
 	}
-	object_weakptr(object_weakptr&& o)
+	object_weakptr(object_weakptr&& o) noexcept
 		: ptr_(o.ptr_)
 	{
 		o.ptr_ = nullptr;
@@ -63,7 +63,7 @@ public:
 		}
 		return *this;
 	}
-	object_weakptr& operator=(object_weakptr&& o)
+	object_weakptr& operator=(object_weakptr&& o) noexcept
 	{
 		if (ptr_ != o.ptr_) {
 			if (ptr_)
