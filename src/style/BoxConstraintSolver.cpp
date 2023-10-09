@@ -2,7 +2,8 @@
 #include "base/log.h"
 #include <utility>
 
-namespace scene2d {
+namespace style {
+
 StaticBlockWidthSolver::StaticBlockWidthSolver(float cont_block_width, absl::optional<float> margin_left, absl::optional<float> width, absl::optional<float> margin_right)
 	: cont_block_width_(cont_block_width)
 	, margin_left_(margin_left)

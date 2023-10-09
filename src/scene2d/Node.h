@@ -12,7 +12,7 @@
 #include "geom_types.h"
 #include "Attribute.h"
 #include "Event.h"
-#include "Layout.h"
+#include "style/Layout.h"
 
 namespace windows {
 class Dialog;
@@ -20,9 +20,11 @@ namespace graphics {
 class Painter;
 }
 }
-
 namespace graph2d {
 class TextLayoutInterface;
+}
+namespace style {
+class BlockWidthSolverInterface;
 }
 
 namespace scene2d {
@@ -130,20 +132,20 @@ public:
 	// layout with new BFC
 	void layoutBlockElement(float contg_blk_width, absl::optional<float> contg_blk_height);
 
-	void layoutText(InlineFormatContext& ifc);
+	void layoutText(style::InlineFormatContext& ifc);
 	// layout self and children
-	void layoutInlineElement(InlineFormatContext& ifc, int element_depth);
+	void layoutInlineElement(style::InlineFormatContext& ifc, int element_depth);
 
 protected:
-	void layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_depth);
-	static void assembleInlineChild(Node* child, std::vector<InlineBox>& box);
+	void layoutInlineChild(Node* node, style::InlineFormatContext& ifc, int element_depth);
+	static void assembleInlineChild(Node* child, std::vector<style::InlineBox>& box);
 	bool anyBlockChildren() const;
-	void layoutBlockChild(BlockFormatContext& bfc, BlockBox& box, Node* child, int element_depth);
-	std::unique_ptr<BlockWidthSolverInterface> createBlockWidthSolver(BlockFormatContext& bfc);
+	void layoutBlockChild(style::BlockFormatContext& bfc, style::BlockBox& box, Node* child, int element_depth);
+	std::unique_ptr<style::BlockWidthSolverInterface> createBlockWidthSolver(style::BlockFormatContext& bfc);
 	// in-flow layout
-	static void layoutMeasure(BlockFormatContext& bfc, BlockBoxBuilder& bbb, Node* node);
+	static void layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
 	// in-flow placing
-	static void layoutArrange(BlockFormatContext& bfc, BlockBox& box);
+	static void layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box);
 	template<typename F>
 	inline void eachChild(F&& f)
 	{
@@ -171,16 +173,16 @@ protected:
 	// Text
 	std::string text_;
 	std::unique_ptr<graph2d::TextLayoutInterface> text_layout_;
-	InlineBox text_box_;
+	style::InlineBox text_box_;
 
 	// Element
 	base::string_atom tag_;
 	base::string_atom id_;
 	style::Classes klass_;
-	std::vector<InlineBox> inline_boxes_; // inline-level layout
-	BlockBox block_box_; // block-level layout
-	absl::optional<BlockFormatContext> bfc_;
-	absl::optional<InlineFormatContext> ifc_;
+	std::vector<style::InlineBox> inline_boxes_; // inline-level layout
+	style::BlockBox block_box_; // block-level layout
+	absl::optional<style::BlockFormatContext> bfc_;
+	absl::optional<style::InlineFormatContext> ifc_;
 
 	// Component
 	JSValue comp_state_ = JS_UNINITIALIZED;
@@ -196,7 +198,7 @@ protected:
 	// Style and layout
 	style::StyleSpec specStyle_;
 	style::Style computed_style_;
-	absl::optional<BoxF> layoutBox_;
+	absl::optional<style::BoxF> layoutBox_;
 	PointF origin_;
 	DimensionF size_;
 

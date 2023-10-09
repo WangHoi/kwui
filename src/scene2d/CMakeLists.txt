@@ -11,8 +11,4 @@ target_sources(kwui PRIVATE
   Attribute.h
   Control.h
   Control.cpp
-  Layout.h
-  Layout.cpp
-  BoxConstraintSolver.h
-  BoxConstraintSolver.cpp
 )

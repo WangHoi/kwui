@@ -6,7 +6,6 @@
 #include "quickjs.h"
 #include "geom_types.h"
 #include "style/StyleRule.h"
-#include "Layout.h"
 
 namespace script {
 class Context;

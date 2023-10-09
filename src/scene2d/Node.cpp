@@ -3,7 +3,7 @@
 #include "style/style.h"
 #include "control.h"
 #include "Scene.h"
-#include "BoxConstraintSolver.h"
+#include "style/BoxConstraintSolver.h"
 
 namespace scene2d {
 
@@ -202,22 +202,22 @@ void Node::layoutBlockElement(float contg_blk_width, absl::optional<float> contg
 {
 	CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutBlockElement(): expect NODE_ELEMENT";
 
-	bfc_ = std::make_optional<BlockFormatContext>();
+	bfc_ = std::make_optional<style::BlockFormatContext>();
 	bfc_->owner = this;
 	bfc_->contg_block_width = contg_blk_width;
 	bfc_->contg_block_height = contg_blk_height;
 
-	BlockBox blk_box;
+	style::BlockBox blk_box;
 	blk_box.avail_width = contg_blk_width;
 	blk_box.prefer_height = contg_blk_height;
-	BlockBoxBuilder bbb(&blk_box);
+	style::BlockBoxBuilder bbb(&blk_box);
 	eachLayoutChild([this, &bbb](Node* child) {
 		layoutMeasure(*bfc_, bbb, child);
 		});
 	layoutArrange(*bfc_, blk_box);
 }
 
-void Node::layoutText(InlineFormatContext& ifc)
+void Node::layoutText(style::InlineFormatContext& ifc)
 {
 	CHECK(type_ == NodeType::NODE_TEXT) << "layoutText(): expect NODE_TEXT";
 	text_box_.size = text_layout_->rect().size();
@@ -225,7 +225,7 @@ void Node::layoutText(InlineFormatContext& ifc)
 	ifc.setupBox(&text_box_);
 }
 
-void Node::layoutInlineElement(InlineFormatContext& ifc, int element_depth)
+void Node::layoutInlineElement(style::InlineFormatContext& ifc, int element_depth)
 {
 	CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutInlineElement(): expect NODE_ELEMENT";
 
@@ -236,7 +236,7 @@ void Node::layoutInlineElement(InlineFormatContext& ifc, int element_depth)
 	}
 }
 
-void Node::layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_depth)
+void Node::layoutInlineChild(Node* node, style::InlineFormatContext& ifc, int element_depth)
 {
 	if (node->type() == NodeType::NODE_TEXT) {
 		node->layoutText(ifc);
@@ -245,7 +245,7 @@ void Node::layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_d
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		node->layoutInlineElement(ifc, element_depth + 1);
 		if (element_depth == 0) {
-			for (InlineBox& box : node->inline_boxes_)
+			for (style::InlineBox& box : node->inline_boxes_)
 				ifc.addBox(&box);
 		}
 	} else if (node->type() == NodeType::NODE_COMPONENT) {
@@ -254,15 +254,15 @@ void Node::layoutInlineChild(Node* node, InlineFormatContext& ifc, int element_d
 	}
 }
 
-void Node::assembleInlineChild(Node* node, std::vector<InlineBox>& boxes)
+void Node::assembleInlineChild(Node* node, std::vector<style::InlineBox>& boxes)
 {
 	if (node->type_ == NodeType::NODE_TEXT) {
-		InlineBox wrap_box = node->text_box_;
+		style::InlineBox wrap_box = node->text_box_;
 		wrap_box.children.push_back(&node->text_box_);
 		boxes.push_back(wrap_box);
 	} else if (node->type_ == NodeType::NODE_ELEMENT) {
-		for (InlineBox& child_box : node->inline_boxes_) {
-			InlineBox wrap_box = child_box;
+		for (style::InlineBox& child_box : node->inline_boxes_) {
+			style::InlineBox wrap_box = child_box;
 			wrap_box.children.push_back(&child_box);
 			boxes.push_back(wrap_box);
 		}
@@ -285,7 +285,7 @@ bool Node::anyBlockChildren() const
 	return false;
 }
 
-void Node::layoutBlockChild(BlockFormatContext& bfc, BlockBox& block_box, Node* node, int element_depth)
+void Node::layoutBlockChild(style::BlockFormatContext& bfc, style::BlockBox& block_box, Node* node, int element_depth)
 {
 	if (node->type() == NodeType::NODE_TEXT) {
 		;
@@ -298,7 +298,7 @@ void Node::layoutBlockChild(BlockFormatContext& bfc, BlockBox& block_box, Node* 
 	}
 }
 
-std::unique_ptr<BlockWidthSolverInterface> Node::createBlockWidthSolver(BlockFormatContext& bfc)
+std::unique_ptr<style::BlockWidthSolverInterface> Node::createBlockWidthSolver(style::BlockFormatContext& bfc)
 {
 	const auto& st = computed_style_;
 	if (st.position == style::PositionType::Static || st.position == style::PositionType::Relative) {
@@ -308,8 +308,8 @@ std::unique_ptr<BlockWidthSolverInterface> Node::createBlockWidthSolver(BlockFor
 			- try_resolve_to_px(st.padding_left, base_width).value_or(0)
 			- try_resolve_to_px(st.padding_right, base_width).value_or(0)
 			- try_resolve_to_px(st.border_right_width, base_width).value_or(0);
-		return std::unique_ptr<BlockWidthSolverInterface>(
-			new StaticBlockWidthSolver(clean_width,
+		return std::unique_ptr<style::BlockWidthSolverInterface>(
+			new style::StaticBlockWidthSolver(clean_width,
 				try_resolve_to_px(st.margin_left, base_width),
 				try_resolve_to_px(st.width, base_width),
 				try_resolve_to_px(st.margin_right, base_width))
@@ -323,7 +323,7 @@ std::unique_ptr<BlockWidthSolverInterface> Node::createBlockWidthSolver(BlockFor
 	}
 }
 
-void Node::layoutMeasure(BlockFormatContext& bfc, BlockBoxBuilder& bbb, Node* node)
+void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node)
 {
 	if (node->type() == NodeType::NODE_TEXT) {
 		bbb.addText(node);
@@ -337,7 +337,7 @@ void Node::layoutMeasure(BlockFormatContext& bfc, BlockBoxBuilder& bbb, Node* no
 				- try_resolve_to_px(st.padding_left, contg_width).value_or(0)
 				- try_resolve_to_px(st.padding_right, contg_width).value_or(0)
 				- try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
-			auto solver = std::make_unique<StaticBlockWidthSolver>(
+			auto solver = std::make_unique<style::StaticBlockWidthSolver>(
 				clean_contg_width,
 				try_resolve_to_px(st.margin_left, contg_width),
 				try_resolve_to_px(st.width, contg_width),
@@ -471,12 +471,12 @@ void Node::layoutMeasure(BlockFormatContext& bfc, BlockBoxBuilder& bbb, Node* no
 #endif
 }
 
-void Node::layoutArrange(BlockFormatContext& bfc, BlockBox& box)
+void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 {
 	float borpad_top = box.border.top + box.padding.top;
 
 	if (borpad_top > 0) {
-		float coll_margin = collapse_margin(box.margin.top,
+		float coll_margin = style::collapse_margin(box.margin.top,
 			(bfc.margin_bottom - bfc.border_bottom));
 		box.pos.y = bfc.border_bottom + coll_margin - box.margin.top;
 		bfc.border_bottom += coll_margin + borpad_top;
@@ -486,12 +486,12 @@ void Node::layoutArrange(BlockFormatContext& bfc, BlockBox& box)
 	float bfc_border_bottom = bfc.border_bottom;
 	float bfc_margin_bottom = bfc.margin_bottom;
 
-	if (box.type == BlockBoxType::WithBlockChildren) {
+	if (box.type == style::BlockBoxType::WithBlockChildren) {
 		box.content.width = box.avail_width;
 
 		base::scoped_setter _1(bfc.contg_block_width, box.content.width);
 		base::scoped_setter _2(bfc.contg_block_height, box.prefer_height);
-		box.eachChild([&](BlockBox* child) {
+		box.eachChild([&](style::BlockBox* child) {
 				Node::layoutArrange(bfc, *child);
 			});
 	} else {
@@ -537,7 +537,7 @@ void Node::layoutArrange(BlockFormatContext& bfc, BlockBox& box)
 		bfc.border_bottom = bfc.margin_bottom + borpad_bottom;
 		bfc.margin_bottom = bfc.border_bottom + box.margin.bottom;
 	} else {
-		float coll_margin = collapse_margin(box.margin.bottom,
+		float coll_margin = style::collapse_margin(box.margin.bottom,
 			(bfc.margin_bottom - bfc.border_bottom));
 		bfc.margin_bottom = bfc.border_bottom + coll_margin;
 	}

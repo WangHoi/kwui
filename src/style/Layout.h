@@ -1,5 +1,5 @@
 #pragma once
-#include "geom_types.h"
+#include "scene2d/geom_types.h"
 #include "base/log.h"
 #include "style/style.h"
 #include "absl/types/optional.h"
@@ -11,6 +11,10 @@
 namespace scene2d
 {
 class Node;
+}
+
+namespace style
+{
 struct BlockFormatContext;
 class InlineFormatContext;
 class InlineBox;
@@ -30,7 +34,7 @@ struct BoxF {
 	// padding edges
 	EdgeSizeF padding;
 	// content size
-	DimensionF content = DimensionF::fromZeros();
+	scene2d::DimensionF content;
 };
 
 enum class BlockBoxType {
@@ -40,11 +44,11 @@ enum class BlockBoxType {
 	WithBFC,
 };
 struct BlockBox {
-	PointF pos; // BFC coordinates
+	scene2d::PointF pos; // BFC coordinates
 	EdgeSizeF margin; // margin edges
 	EdgeSizeF border; // border edges
 	EdgeSizeF padding; // padding edges
-	DimensionF content; // content size
+	scene2d::DimensionF content; // content size
 
 	float avail_width = 0;
 	absl::optional<float> prefer_height;
@@ -53,7 +57,7 @@ struct BlockBox {
 	absl::variant<
 		absl::monostate,	// empty
 		BlockBox*,			// first-child
-		Node*,				// Node containing inlines
+		scene2d::Node*,		// Node containing inlines
 		std::unique_ptr<BlockFormatContext>		// nested BFC, in-flow
 	> payload;
 	std::optional<EdgeSizeF> rel_offset; // Relative positioned box offset
@@ -81,8 +85,8 @@ class BlockBoxBuilder {
 public:
 	BlockBoxBuilder(BlockBox* root);
 	float containingBlockWidth() const;
-	void addText(Node* node);
-	void beginInline(Node* node);
+	void addText(scene2d::Node* node);
+	void beginInline(scene2d::Node* node);
 	void endInline();
 	void beginBlock(BlockBox* box);
 	void endBlock();
@@ -96,7 +100,7 @@ private:
 
 struct BlockFormatContext {
 	// Owner of this BFC
-	Node* owner = nullptr;
+	scene2d::Node* owner = nullptr;
 	// containing block width
 	float contg_block_width;
 	// containing block height
@@ -109,7 +113,7 @@ struct BlockFormatContext {
 struct LineBox;
 
 struct InlineBox {
-	DimensionF size;
+	scene2d::DimensionF size;
 	float baseline = 0; // offset from bottom
 
 	std::vector<InlineBox*> children;
@@ -117,7 +121,7 @@ struct InlineBox {
 	LineBox* line_box; // set by IFC::setupBox()
 	float line_box_offset_x; // set by IFC::setupBox()
 
-	PointF offset; // set by LineBox::layout()
+	scene2d::PointF offset; // set by LineBox::layout()
 };
 
 class InlineFormatContext {

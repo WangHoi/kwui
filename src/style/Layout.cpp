@@ -1,8 +1,8 @@
 #include "Layout.h"
-#include "Node.h"
+#include "scene2d/Node.h"
 #include <utility>
 
-namespace scene2d {
+namespace style {
 
 void try_convert_to_px(style::Value& v, float percent_base)
 {
@@ -46,13 +46,13 @@ float collapse_margin(float m1, float m2)
 }
 
 struct LineBox {
-    PointF offset;
+    scene2d::PointF offset;
     
     float left;
     float avail_width;
     // float line_gap;  // leading
     
-    DimensionF used_size;
+    scene2d::DimensionF used_size;
     float used_baseline; // offset from used_size's bottom
 
     std::vector<InlineBox*> inline_boxes;
@@ -182,13 +182,13 @@ float BlockBoxBuilder::containingBlockWidth() const
     return contg_->avail_width;
 }
 
-void BlockBoxBuilder::addText(Node* node)
+void BlockBoxBuilder::addText(scene2d::Node* node)
 {
     contg_->type = BlockBoxType::WithInlineChildren;
     contg_->payload = node->parent();
 }
 
-void BlockBoxBuilder::beginInline(Node* node)
+void BlockBoxBuilder::beginInline(scene2d::Node* node)
 {
 }
 

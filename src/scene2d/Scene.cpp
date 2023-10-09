@@ -2,7 +2,7 @@
 #include "Node.h"
 #include "script/script.h"
 #include "style/style.h"
-#include "Layout.h"
+#include "style/Layout.h"
 
 namespace scene2d {
 

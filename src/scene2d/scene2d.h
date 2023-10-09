@@ -5,4 +5,3 @@
 #include "Node.h"
 #include "Scene.h"
 #include "Control.h"
-#include "BoxConstraintSolver.h"

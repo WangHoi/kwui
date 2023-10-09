@@ -6,4 +6,8 @@ target_sources(kwui PRIVATE
   StyleClass.h
   StyleRule.h
   StyleRule.cpp
+  Layout.h
+  Layout.cpp
+  BoxConstraintSolver.h
+  BoxConstraintSolver.cpp
 )

@@ -1,7 +1,7 @@
 #pragma once
 #include "absl/types/optional.h"
 
-namespace scene2d {
+namespace style {
 
 class BlockWidthSolverInterface {
 public:
