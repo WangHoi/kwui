@@ -18,7 +18,7 @@ absl::optional<float> try_resolve_to_px(const style::Value& v, float percent_bas
     } else if (v.unit == style::ValueUnit::Raw) {
         return v.f32_val;
     }
-    return 0.0f;
+    return absl::nullopt;
 }
 
 absl::optional<float> try_resolve_to_px(const style::Value& v, absl::optional<float> percent_base)

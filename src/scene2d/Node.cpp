@@ -140,37 +140,37 @@ void Node::resolveStyle(const style::StyleSpec& spec)
         def)
 	RESOLVE_STYLE(display, style::DisplayType::Block);
 	RESOLVE_STYLE(position, style::PositionType::Static);
-	RESOLVE_STYLE(margin_left, style::Value::fromPixel(0));
-	RESOLVE_STYLE(margin_top, style::Value::fromPixel(0));
-	RESOLVE_STYLE(margin_right, style::Value::fromPixel(0));
-	RESOLVE_STYLE(margin_bottom, style::Value::fromPixel(0));
-	RESOLVE_STYLE(border_left_width, style::Value::fromPixel(0));
-	RESOLVE_STYLE(border_top_width, style::Value::fromPixel(0));
-	RESOLVE_STYLE(border_right_width, style::Value::fromPixel(0));
-	RESOLVE_STYLE(border_bottom_width, style::Value::fromPixel(0));
-	RESOLVE_STYLE(border_top_left_radius, style::Value::fromPixel(0));
-	RESOLVE_STYLE(border_top_right_radius, style::Value::fromPixel(0));
-	RESOLVE_STYLE(border_bottom_right_radius, style::Value::fromPixel(0));
-	RESOLVE_STYLE(border_bottom_left_radius, style::Value::fromPixel(0));
-	RESOLVE_STYLE(padding_left, style::Value::fromPixel(0));
-	RESOLVE_STYLE(padding_top, style::Value::fromPixel(0));
-	RESOLVE_STYLE(padding_right, style::Value::fromPixel(0));
-	RESOLVE_STYLE(padding_bottom, style::Value::fromPixel(0));
-	RESOLVE_STYLE(left, style::Value::fromPixel(0));
-	RESOLVE_STYLE(top, style::Value::fromPixel(0));
-	RESOLVE_STYLE(right, style::Value::fromPixel(0));
-	RESOLVE_STYLE(bottom, style::Value::fromPixel(0));
+	RESOLVE_STYLE(margin_left, style::Value::auto_());
+	RESOLVE_STYLE(margin_top, style::Value::auto_());
+	RESOLVE_STYLE(margin_right, style::Value::auto_());
+	RESOLVE_STYLE(margin_bottom, style::Value::auto_());
+	RESOLVE_STYLE(border_left_width, style::Value::auto_());
+	RESOLVE_STYLE(border_top_width, style::Value::auto_());
+	RESOLVE_STYLE(border_right_width, style::Value::auto_());
+	RESOLVE_STYLE(border_bottom_width, style::Value::auto_());
+	RESOLVE_STYLE(border_top_left_radius, style::Value::auto_());
+	RESOLVE_STYLE(border_top_right_radius, style::Value::auto_());
+	RESOLVE_STYLE(border_bottom_right_radius, style::Value::auto_());
+	RESOLVE_STYLE(border_bottom_left_radius, style::Value::auto_());
+	RESOLVE_STYLE(padding_left, style::Value::auto_());
+	RESOLVE_STYLE(padding_top, style::Value::auto_());
+	RESOLVE_STYLE(padding_right, style::Value::auto_());
+	RESOLVE_STYLE(padding_bottom, style::Value::auto_());
+	RESOLVE_STYLE(left, style::Value::auto_());
+	RESOLVE_STYLE(top, style::Value::auto_());
+	RESOLVE_STYLE(right, style::Value::auto_());
+	RESOLVE_STYLE(bottom, style::Value::auto_());
 
-	RESOLVE_STYLE(min_width, style::Value::fromPixel(0));
-	RESOLVE_STYLE(min_height, style::Value::fromPixel(0));
-	RESOLVE_STYLE(max_width, style::Value::fromPixel(0));
-	RESOLVE_STYLE(max_height, style::Value::fromPixel(0));
-	RESOLVE_STYLE(width, style::Value::fromPixel(0));
-	RESOLVE_STYLE(height, style::Value::fromPixel(0));
+	RESOLVE_STYLE(min_width, style::Value::auto_());
+	RESOLVE_STYLE(min_height, style::Value::auto_());
+	RESOLVE_STYLE(max_width, style::Value::auto_());
+	RESOLVE_STYLE(max_height, style::Value::auto_());
+	RESOLVE_STYLE(width, style::Value::auto_());
+	RESOLVE_STYLE(height, style::Value::auto_());
 
-	RESOLVE_STYLE(border_color, style::Value::fromKeyword(base::string_intern("auto")));
-	RESOLVE_STYLE(background_color, style::Value::fromKeyword(base::string_intern("auto")));
-	RESOLVE_STYLE(color, style::Value::fromKeyword(base::string_intern("auto")));
+	RESOLVE_STYLE(border_color, style::Value::auto_());
+	RESOLVE_STYLE(background_color, style::Value::auto_());
+	RESOLVE_STYLE(color, style::Value::auto_());
 #undef RESOLVE_STYLE
 }
 

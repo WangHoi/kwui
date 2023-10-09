@@ -1,7 +1,10 @@
 #include "StyleValue.h"
 
 namespace style {
-
+Value Value::auto_()
+{
+	return Value::fromKeyword(base::string_intern("auto"));
+}
 Value Value::fromKeyword(base::string_atom k)
 {
 	Value v;

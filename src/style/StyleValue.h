@@ -31,11 +31,13 @@ struct Value {
 	ValueUnit unit = ValueUnit::Undefined;
 	std::string string_val;
 
+	static Value auto_();
 	static Value fromKeyword(base::string_atom k);
 	static Value fromPixel(float val);
 	static Value fromUnit(float val, ValueUnit u);
 	static Value fromHexColor(const std::string& s);
 	static Value fromUrl(const std::string& url);
+
 	inline bool isPixel() const
 	{
 		return unit == ValueUnit::Pixel;
