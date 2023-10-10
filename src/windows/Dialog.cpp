@@ -507,8 +507,21 @@ void Dialog::OnResize() {
 }
 void Dialog::PaintNode(graphics::Painter& p, scene2d::Node* node) {
     if (!node->visible()) return;
-    // p.Translate(node->origin());
     PaintNodeSelf(p, node);
+    
+    if (node->bfc_) {
+        if (node->absolutelyPositioned()) {
+            scene2d::PointF abs_offset = node->block_box_.pos;
+            scene2d::Node* pn = node->absolutelyPositionedParent();
+            while (pn) {
+                abs_offset += pn->block_box_.pos;
+                pn = pn->absolutelyPositionedParent();
+            }
+            p.SetTranslation(abs_offset);
+        } else {
+            p.Translate(node->block_box_.pos);
+        }
+    }
     for (auto& child : node->children()) {
         if (!child->visible()) continue;
         p.Save();

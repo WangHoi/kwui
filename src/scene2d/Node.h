@@ -137,6 +137,10 @@ public:
 	// layout self and children
 	void layoutInlineElement(style::InlineFormatContext& ifc, int element_depth);
 
+	bool positioned() const;
+	bool absolutelyPositioned() const;
+	Node* absolutelyPositionedParent() const;
+
 protected:
 	static void layoutInlineChild(Node* node, style::InlineFormatContext& ifc, int element_depth);
 	static void assembleInlineChild(Node* child, std::vector<style::InlineBox>& box);

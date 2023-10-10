@@ -360,6 +360,28 @@ void Node::layoutInlineElement(style::InlineFormatContext& ifc, int element_dept
 	}
 }
 
+bool Node::positioned() const
+{
+	return computed_style_.position != style::PositionType::Static;
+}
+
+bool Node::absolutelyPositioned() const
+{
+	return computed_style_.position != style::PositionType::Static
+		&& computed_style_.position != style::PositionType::Relative;
+}
+
+Node* Node::absolutelyPositionedParent() const
+{
+	Node* p = parent_;
+	while (p) {
+		if (p->positioned() && p->bfc_)
+			return p;
+		p = p->parent_;
+	}
+	return nullptr;
+}
+
 void Node::layoutInlineChild(Node* node, style::InlineFormatContext& ifc, int element_depth)
 {
 	if (node->type() == NodeType::NODE_TEXT) {
