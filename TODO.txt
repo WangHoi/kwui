@@ -1,9 +1,15 @@
-TODO
------
+布局:
+- Absolute的处理
+- Relative的处理
 
-[ ] Absolute的处理
-[ ] Relative的处理
-[ ] Control::onPaint需要RenderBox
-[ ] 鼠标点击坐标处理
-[ ] 支持翻译
-[ ] fragment 处理有问题，不透明
+DOM:
+- 鼠标点击坐标处理
+- Control::onPaint需要RenderBox
+- 移植ButtonControl, ImageButtonControl, ProgressBarControl
+- fragment 处理有问题，不透明
+
+测试:
+- 安装程序主界面模拟 js
+- 确定对话框模拟 js
+- 测试 js 放单独目录
+- 脚本转换 html 为 js
