@@ -107,8 +107,7 @@ private:
     void OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers);
     void OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers);
     void OnMouseMove(int buttons, int modifiers);
-    void PaintNode(graphics::Painter& p, scene2d::Node* node);
-    void PaintNodeSelf(graphics::Painter& p, scene2d::Node* node);
+    void PaintNodeSelf(graphics::Painter& p, scene2d::Node* node, const scene2d::PointF& pos);
     void UpdateHoveredNode();
     void UpdateFocusedNode();
     void UpdateMouseTracking();

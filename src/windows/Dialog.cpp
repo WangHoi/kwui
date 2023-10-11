@@ -5,6 +5,7 @@
 #include "graphics/GraphicDevice.h"
 #include "graphics/Painter.h"
 #include "theme.h"
+#include "absl/functional/bind_front.h"
 
 namespace windows {
 typedef LRESULT(CALLBACK* WndProc)(HWND, UINT, WPARAM, LPARAM);
@@ -481,7 +482,7 @@ void Dialog::OnPaint() {
 
         graphics::Painter p(_rt.Get(), _mouse_position);
         p.Clear(theme::BACKGROUND_COLOR);
-        PaintNode(p, _scene->root());
+        _scene->paintNode(_scene->root(), absl::bind_front(&Dialog::PaintNodeSelf, this, std::ref(p)));
 
         HRESULT hr = _rt->EndDraw();
         if (hr == D2DERR_RECREATE_TARGET) {
@@ -505,40 +506,16 @@ void Dialog::OnResize() {
     UpdateBorderAndRenderTarget();
     RequestPaint();
 }
-void Dialog::PaintNode(graphics::Painter& p, scene2d::Node* node) {
-    if (!node->visible()) return;
-    PaintNodeSelf(p, node);
-    
-    if (node->bfc_) {
-        if (node->absolutelyPositioned()) {
-            scene2d::PointF abs_offset = node->block_box_.pos;
-            scene2d::Node* pn = node->absolutelyPositionedParent();
-            while (pn) {
-                abs_offset += pn->block_box_.pos;
-                pn = pn->absolutelyPositionedParent();
-            }
-            p.SetTranslation(abs_offset);
-        } else {
-            p.Translate(node->block_box_.pos);
-        }
-    }
-    for (auto& child : node->children()) {
-        if (!child->visible()) continue;
-        p.Save();
-        PaintNode(p, child);
-        p.Restore();
-    }
-}
-void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node) {
+void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node, const scene2d::PointF& pos) {
     if (node->type_ == scene2d::NodeType::NODE_TEXT) {
         auto text_layout = (graphics::TextLayout*)node->text_layout_.get();
         p.SetColor(get_color(node->computed_style_.color));
         auto r = text_layout->rect();
-        LOG(INFO) << "Text: " << node->text_box_.offset << ", " << r;
-        p.DrawTextLayout(node->text_box_.offset, *text_layout);
+        LOG(INFO) << "Text: " << pos + node->text_box_.offset << ", " << r;
+        p.DrawTextLayout(pos + node->text_box_.offset, *text_layout);
     } else if (node->type_ == scene2d::NodeType::NODE_ELEMENT) {
         auto border_rect = node->block_box_.borderRect();
-        LOG(INFO) << "BoxBorder: " << node->block_box_.pos + border_rect.origin()
+        LOG(INFO) << "BoxBorder: " << pos + node->block_box_.pos + border_rect.origin()
             << ", " << border_rect;
         float bw = node->block_box_.border.top;
         border_rect.left += 0.5f * bw;
@@ -548,7 +525,7 @@ void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node) {
         p.SetStrokeWidth(bw);
         p.SetStrokeColor(get_color(node->computed_style_.border_color));
         p.SetColor(get_color(node->computed_style_.background_color));
-        p.DrawRect(node->block_box_.pos + border_rect.origin(), border_rect.size());
+        p.DrawRect(pos + node->block_box_.pos + border_rect.origin(), border_rect.size());
         node->paintControl(p);
     }
 }

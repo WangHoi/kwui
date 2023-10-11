@@ -52,25 +52,24 @@ var simple_stylesheet = {
 		"margin-bottom": 10
 	}
 };
-
 var hello_world = (<body>
     <div>橙讯安装程序</div>
-    <div class="title-bar">
+    <div class={"title-bar"}>
         <button>最小化</button>
         <button>最大化</button>
         <button>关闭</button>
     </div>
-    <div style={{margin-top: 40, text-align: "center"}}>
-        <img src="cx_logo_2.svg" />
+    <div style={{"margin-top": 40, "text-align": "center"}}>
+        <img src={"cx_logo_2.svg"} />
     </div>
-    <div style={{margin-top: 40, text-align: "center"}}>
-        <span style={{position:"relative", font-size: 20}}>
+    <div style={{"margin-top": 40, "text-align": "center"}}>
+        <span style={{position:"relative", "font-size": 20}}>
             橙讯
-            <span style={{position:"absolute", left:"100%", top:-10, font-size:10}}">2.7.0</span>
+            <span style={{position:"absolute", left:"100%", top:-10, "font-size":10}}>2.7.0</span>
         </span>
     </div>
-    <div style={{text-align:"center"}}>
-        <button style={{margin-top: 40}}>安装</button>
+    <div style={{"text-align":"center"}}>
+        <button style={{"margin-top": 40}}>安装</button>
     </div>
 </body>);
 

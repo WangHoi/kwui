@@ -288,7 +288,7 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, absl::FunctionR
 		if (node->relativePositioned()) {
 			bpc.pop();
 		}
-	} else if (node->type_ == NodeType::NODE_ELEMENT) {
+	} else if (node->type_ == NodeType::NODE_COMPONENT) {
 		Node::eachLayoutChild(node, [&](Node* child) {
 			paintNode(child, bpc, painter);
 			});
