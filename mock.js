@@ -64,7 +64,7 @@ var hello_world = (<body>
     </div>
     <div style={{"margin-top": 40, "text-align": "center"}}>
         <span style={{position:"relative", "font-size": 20}}>
-            橙讯
+            {"橙讯"}
             <span style={{position:"absolute", left:"100%", top:-10, "font-size":10}}>2.7.0</span>
         </span>
     </div>

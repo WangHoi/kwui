@@ -511,12 +511,12 @@ void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node, const scen
         auto text_layout = (graphics::TextLayout*)node->text_layout_.get();
         p.SetColor(get_color(node->computed_style_.color));
         auto r = text_layout->rect();
-        LOG(INFO) << "Text: " << pos + node->text_box_.offset << ", " << r;
+        //LOG(INFO) << "Text: " << pos + node->text_box_.offset << ", " << r;
         p.DrawTextLayout(pos + node->text_box_.offset, *text_layout);
     } else if (node->type_ == scene2d::NodeType::NODE_ELEMENT) {
         auto border_rect = node->block_box_.borderRect();
-        LOG(INFO) << "BoxBorder: " << pos + node->block_box_.pos + border_rect.origin()
-            << ", " << border_rect;
+        //LOG(INFO) << "BoxBorder: " << pos + node->block_box_.pos + border_rect.origin()
+        //    << ", " << border_rect;
         float bw = node->block_box_.border.top;
         border_rect.left += 0.5f * bw;
         border_rect.top += 0.5f * bw;

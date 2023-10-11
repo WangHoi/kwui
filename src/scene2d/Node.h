@@ -160,8 +160,8 @@ public:
 	Node* absolutelyPositionedParent() const;
 
 protected:
-	static void layoutInlineChild(Node* node, style::InlineFormatContext& ifc, int element_depth);
-	static void assembleInlineChild(Node* child, std::vector<style::InlineBox>& box);
+	static void layoutMeasure(Node* node, style::InlineFormatContext& ifc, int element_depth);
+	static void assembleInlineChild(Node* child, std::vector<style::InlineBox*>& box);
 	bool anyBlockChildren() const;
 	void layoutBlockChild(style::BlockFormatContext& bfc, style::BlockBox& box, Node* child, int element_depth);
 	// in-flow layout
@@ -201,8 +201,8 @@ protected:
 	base::string_atom tag_;
 	base::string_atom id_;
 	style::Classes klass_;
-	std::vector<style::InlineBox> inline_boxes_; // inline-level layout
-	style::BlockBox block_box_; // block-level layout
+	style::InlineBox inline_box_;	// inline-level layout
+	style::BlockBox block_box_;		// block-level layout
 	absl::optional<style::BlockFormatContext> bfc_;
 	absl::optional<style::InlineFormatContext> ifc_;
 

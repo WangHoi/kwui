@@ -46,10 +46,10 @@ Node* Scene::createComponentNode(JSValue comp_data)
 	JSContext* jctx = ctx_->get();
 	if (JS_IsString(comp_data)) {
 		std::string text = ctx_->parse<std::string>(comp_data);
-		LOG(INFO) << "createTextNode: " << text;
+		//LOG(INFO) << "createTextNode: " << text;
 		return createTextNode(text);
 	} else if (JS_IsArray(jctx, comp_data)) {
-		LOG(INFO) << "createElementNode: " << "fragment";
+		//LOG(INFO) << "createElementNode: " << "fragment";
 		Node* node = createElementNode(base::string_intern("fragment"));
 		int64_t length = 0;
 		JS_GetPropertyLength(jctx, &length, comp_data);
@@ -62,7 +62,7 @@ Node* Scene::createComponentNode(JSValue comp_data)
 	} else if (JS_IsObject(comp_data)) {
 		JSValue render = JS_GetPropertyStr(jctx, comp_data, "render");
 		if (JS_IsFunction(jctx, render)) {
-			LOG(INFO) << "createComponentNode";
+			//LOG(INFO) << "createComponentNode";
 			Node* node = createComponentNodeWithState(comp_data);
 			JS_SetOpaque(comp_data, node->weakProxy());
 
@@ -75,7 +75,7 @@ Node* Scene::createComponentNode(JSValue comp_data)
 			JSValue kids = JS_GetPropertyStr(jctx, comp_data, "kids");
 			if (JS_IsString(tag) && JS_IsObject(atts) && JS_IsArray(jctx, kids)) {
 				std::string tagName = ctx_->parse<std::string>(tag);
-				LOG(INFO) << "createElementNode: " << tagName;
+				//LOG(INFO) << "createElementNode: " << tagName;
 				Node* node = createElementNode(base::string_intern(tagName));
 
 				// Setup properties

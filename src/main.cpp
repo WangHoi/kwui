@@ -20,7 +20,7 @@ int main()
     PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
 
     script::Context ctx;
-    ctx.loadFile("d:/projects/kwui/test.js");
+    ctx.loadFile("d:/projects/kwui/mock.js");
 
     while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);

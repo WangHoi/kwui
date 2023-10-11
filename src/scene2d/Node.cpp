@@ -5,6 +5,8 @@
 #include "Scene.h"
 #include "style/BoxConstraintSolver.h"
 #include "base/scoped_setter.h"
+#include "style/BlockLayout.h"
+#include "style/InlineLayout.h"
 
 namespace scene2d {
 
@@ -353,10 +355,17 @@ void Node::layoutInlineElement(style::InlineFormatContext& ifc, int element_dept
 {
 	CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutInlineElement(): expect NODE_ELEMENT";
 
-	inline_boxes_.clear();
+	std::vector<style::InlineBox*> boxes;
 	for (Node* child : children()) {
-		layoutInlineChild(child, ifc, element_depth);
-		assembleInlineChild(child, inline_boxes_);
+		layoutMeasure(child, ifc, element_depth);
+		assembleInlineChild(child, boxes);
+	}
+	if (boxes.empty()) {
+		inline_box_.type = style::InlineBoxType::Empty;
+		inline_box_.payload = absl::monostate{};
+	} else {
+		inline_box_.type = style::InlineBoxType::WithInlineChildren;
+		inline_box_.payload = boxes;
 	}
 }
 
@@ -387,36 +396,32 @@ Node* Node::absolutelyPositionedParent() const
 	return nullptr;
 }
 
-void Node::layoutInlineChild(Node* node, style::InlineFormatContext& ifc, int element_depth)
+void Node::layoutMeasure(Node* node, style::InlineFormatContext& ifc, int element_depth)
 {
 	if (node->type() == NodeType::NODE_TEXT) {
 		node->layoutText(ifc);
 		if (element_depth == 0)
 			ifc.addBox(&node->text_box_);
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
+		
 		node->layoutInlineElement(ifc, element_depth + 1);
-		if (element_depth == 0) {
-			for (style::InlineBox& box : node->inline_boxes_)
-				ifc.addBox(&box);
-		}
+		
+		if (element_depth == 0)
+			ifc.addBox(&node->inline_box_);
 	} else if (node->type() == NodeType::NODE_COMPONENT) {
 		for (auto child : node->children())
-			layoutInlineChild(child, ifc, element_depth);
+			layoutMeasure(child, ifc, element_depth);
 	}
 }
 
-void Node::assembleInlineChild(Node* node, std::vector<style::InlineBox>& boxes)
+void Node::assembleInlineChild(Node* node, std::vector<style::InlineBox*>& boxes)
 {
 	if (node->type_ == NodeType::NODE_TEXT) {
-		style::InlineBox wrap_box = node->text_box_;
-		wrap_box.children.push_back(&node->text_box_);
-		boxes.push_back(wrap_box);
+		node->inline_box_.type = style::InlineBoxType::WithText;
+		node->text_box_.payload = node->text_layout_.get();
+		boxes.push_back(&node->text_box_);
 	} else if (node->type_ == NodeType::NODE_ELEMENT) {
-		for (style::InlineBox& child_box : node->inline_boxes_) {
-			style::InlineBox wrap_box = child_box;
-			wrap_box.children.push_back(&child_box);
-			boxes.push_back(wrap_box);
-		}
+		boxes.push_back(&node->inline_box_);
 	} else if (node->type_ == NodeType::NODE_COMPONENT) {
 		for (Node* child : node->children())
 			assembleInlineChild(child, boxes);
@@ -515,95 +520,6 @@ void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 			bbb.endInline();
 		}
 	}
-#if 0
-	CHECK(type_ == NodeType::NODE_ELEMENT) << "layoutBlockElement(): expect NODE_ELEMENT";
-
-	block_box_.children.clear();
-	if (anyBlockChildren()) {
-		std::unique_ptr<BlockWidthSolverInterface> solver = createBlockWidthSolver(bfc);
-		if (!solver)
-			return;
-
-		float measure_width = solver->measureWidth();
-		solver->setLayoutWidth(measure_width);
-
-		// Compute width, left and right margins
-		float base_width = solver->containingBlockWidth();
-		block_box_.box.margin.left = solver->marginLeft();
-		block_box_.box.border.left = try_resolve_to_px(computed_style_.border_left_width, base_width).value_or(0);
-		block_box_.box.padding.left = try_resolve_to_px(computed_style_.padding_left, base_width).value_or(0);
-		block_box_.box.content.width = solver->width();
-		block_box_.box.padding.right = try_resolve_to_px(computed_style_.padding_right, base_width).value_or(0);
-		block_box_.box.border.right = try_resolve_to_px(computed_style_.border_right_width, base_width).value_or(0);
-		block_box_.box.margin.right = solver->marginRight();
-
-		// Compute top and bottom margins
-		absl::optional<float> base_height = bfc.contg_block_height;
-		block_box_.box.margin.top = try_resolve_to_px(computed_style_.margin_top, base_width).value_or(0);
-		block_box_.box.border.top = try_resolve_to_px(computed_style_.border_top_width, base_width).value_or(0);
-		block_box_.box.padding.top = try_resolve_to_px(computed_style_.padding_top, base_width).value_or(0);
-
-		block_box_.box.padding.bottom = try_resolve_to_px(computed_style_.padding_bottom, base_width).value_or(0);
-		block_box_.box.border.bottom = try_resolve_to_px(computed_style_.border_bottom_width, base_width).value_or(0);
-		block_box_.box.margin.bottom = try_resolve_to_px(computed_style_.margin_bottom, base_width).value_or(0);
-
-		// Layout children, Normal Flow
-		{
-			base::scoped_setter _1(bfc.contg_block_width, measure_width);
-			base::scoped_setter _2(bfc.contg_block_height,
-				try_resolve_to_px(computed_style_.height, bfc.contg_block_height));
-			eachLayoutChild([&](Node* child) {
-				if (child->computed_style_.position == style::PositionType::Static
-					|| child->computed_style_.position == style::PositionType::Relative) {
-					layoutBlockChild(bfc, block_box_, child, element_depth);
-				}
-				});
-		}
-	} else {
-		std::unique_ptr<BlockWidthSolverInterface> solver = createBlockWidthSolver(bfc);
-		if (!solver)
-			return;
-
-		float measure_width = solver->measureWidth();
-
-		InlineFormatContext ifc(measure_width);
-		for (Node* child : children())
-			layoutInlineChild(child, ifc, 0);
-		ifc.layout();
-
-		float layout_width = ifc.getLayoutWidth();
-		float layout_height = ifc.getLayoutHeight();
-		solver->setLayoutWidth(layout_width);
-
-		// Compute width and margins
-		float base_width = solver->containingBlockWidth();
-		block_box_.box.margin.left = solver->marginLeft();
-		block_box_.box.border.left = try_resolve_to_px(computed_style_.border_left_width, base_width).value_or(0);
-		block_box_.box.padding.left = try_resolve_to_px(computed_style_.padding_left, base_width).value_or(0);
-		block_box_.box.content.width = solver->width();
-		block_box_.box.padding.right = try_resolve_to_px(computed_style_.padding_right, base_width).value_or(0);
-		block_box_.box.border.right = try_resolve_to_px(computed_style_.border_right_width, base_width).value_or(0);
-		block_box_.box.margin.right = solver->marginRight();
-
-		// Compute height and margins
-		absl::optional<float> base_height = bfc.contg_block_height;
-		block_box_.box.margin.top = try_resolve_to_px(computed_style_.margin_top, base_height).value_or(0);
-		block_box_.box.border.top = try_resolve_to_px(computed_style_.border_top_width, base_height).value_or(0);
-		block_box_.box.padding.top = try_resolve_to_px(computed_style_.padding_top, base_height).value_or(0);
-
-		block_box_.box.padding.bottom = try_resolve_to_px(computed_style_.padding_bottom, base_height).value_or(0);
-		block_box_.box.border.bottom = try_resolve_to_px(computed_style_.border_bottom_width, base_height).value_or(0);
-		block_box_.box.margin.bottom = try_resolve_to_px(computed_style_.margin_bottom, base_height).value_or(0);
-
-		absl::optional<float> height = try_resolve_to_px(computed_style_.height, base_height);
-		if (height.has_value()) {
-			block_box_.box.content.height = *height;
-		} else {
-			// Compute 'auto' height
-			block_box_.box.content.height = layout_height;
-		}
-	}
-#endif
 }
 
 void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
@@ -646,12 +562,12 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		}
 	} else if (box.type == style::BlockBoxType::WithInlineChildren) {
 		Node* contg_node = std::get<Node*>(box.payload);
-		style::InlineFormatContext ifc(bfc, bfc.content_left, box.avail_width);
+		contg_node->ifc_.emplace(bfc, bfc.content_left, box.avail_width);
 		for (Node* child : contg_node->children())
-			layoutInlineChild(child, ifc, 0);
-		ifc.layout();
+			layoutMeasure(child, *contg_node->ifc_, 0);
+		contg_node->ifc_->layout();
 		box.content.width = box.avail_width;
-		box.content.height = ifc.getLayoutHeight();
+		box.content.height = contg_node->ifc_->getLayoutHeight();
 		if (box.content.height > 0) {
 			bfc.border_bottom = bfc.margin_bottom + box.content.height;
 			bfc.margin_bottom = bfc.border_bottom;
