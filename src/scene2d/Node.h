@@ -35,6 +35,23 @@ enum class NodeType {
 	NODE_COMPONENT = 3,
 };
 
+template <typename Sink>
+void AbslStringify(Sink& sink, NodeType p) {
+	switch (p) {
+	case NodeType::NODE_TEXT:
+		absl::Format(&sink, "NODE_TEXT");
+		break;
+	case NodeType::NODE_ELEMENT:
+		absl::Format(&sink, "NODE_ELEMENT");
+		break;
+	case NodeType::NODE_COMPONENT:
+		absl::Format(&sink, "NODE_COMPONENT");
+		break;
+	default:
+		absl::Format(&sink, "NODE_CUSTOM(%d)", (int)p);
+	}
+}
+
 enum NodeFlag {
 	NODE_FLAG_FOCUSABLE = 1,
 	NODE_FLAG_HOVERABLE = 2,
@@ -138,6 +155,7 @@ public:
 	void layoutInlineElement(style::InlineFormatContext& ifc, int element_depth);
 
 	bool positioned() const;
+	bool relativePositioned() const;
 	bool absolutelyPositioned() const;
 	Node* absolutelyPositionedParent() const;
 

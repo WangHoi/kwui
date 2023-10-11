@@ -3,6 +3,7 @@
 #include "script/script.h"
 #include "style/style.h"
 #include "style/Layout.h"
+#include "style/StylePaint.h"
 #include "absl/functional/bind_front.h"
 
 namespace scene2d {
@@ -119,6 +120,12 @@ Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_
 			return node;
 	}
 	return pickSelf(node, pos, flag_mask, out_local_pos);
+}
+
+void Scene::paintNode(Node* node, absl::FunctionRef<void(Node*, const PointF&)> painter)
+{
+	style::BlockPaintContext bpc;
+	paintNode(node, bpc, painter);
 }
 
 void Scene::appendStyleRule(std::unique_ptr<style::StyleRule>&& rule)
@@ -245,6 +252,49 @@ void Scene::resolveNodeStyle(Node* node)
 		node->resolveInlineStyle();
 	}
 	node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
+}
+
+void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, absl::FunctionRef<void(Node* node, const scene2d::PointF&)> painter)
+{
+	if (node->type_ == NodeType::NODE_TEXT) {
+		painter(node, bpc.basePos());
+	} else if (node->type_ == NodeType::NODE_ELEMENT) {
+		if (node->relativePositioned()) {
+			PointF offset;
+			if (node->block_box_.rel_offset) {
+				offset.x = node->block_box_.rel_offset->left;
+				offset.y = node->block_box_.rel_offset->top;
+			}
+			bpc.push(node, offset);
+		}
+		painter(node, bpc.basePos());
+
+		if (node->absolutelyPositioned()) {
+			PointF offset;
+			if (node->bfc_) {
+				offset.x = node->block_box_.margin.left + node->block_box_.border.left;
+				offset.x = node->block_box_.margin.top + node->block_box_.border.top;
+			}
+			bpc.pushAbsolute(node, offset);
+		}
+
+		Node::eachLayoutChild(node, [&](Node* child) {
+			paintNode(child, bpc, painter);
+			});
+
+		if (node->absolutelyPositioned()) {
+			bpc.popAbsolute();
+		}
+		if (node->relativePositioned()) {
+			bpc.pop();
+		}
+	} else if (node->type_ == NodeType::NODE_ELEMENT) {
+		Node::eachLayoutChild(node, [&](Node* child) {
+			paintNode(child, bpc, painter);
+			});
+	} else {
+		LOG(WARNING) << "Unsupported paint node type" << node->type_;
+	}
 }
 
 } // namespace scene2d

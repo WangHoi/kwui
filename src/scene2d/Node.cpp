@@ -365,6 +365,11 @@ bool Node::positioned() const
 	return computed_style_.position != style::PositionType::Static;
 }
 
+bool Node::relativePositioned() const
+{
+	return computed_style_.position == style::PositionType::Relative;
+}
+
 bool Node::absolutelyPositioned() const
 {
 	return computed_style_.position != style::PositionType::Static

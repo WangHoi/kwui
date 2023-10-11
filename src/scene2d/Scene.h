@@ -6,6 +6,8 @@
 #include "quickjs.h"
 #include "geom_types.h"
 #include "style/StyleRule.h"
+#include "style/StylePaint.h"
+#include "absl/functional/function_ref.h"
 
 namespace script {
 class Context;
@@ -40,6 +42,7 @@ public:
 		return pickNode(root_, pos, flag_mask, out_local_pos);
 	}
     Node* pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
+	void paintNode(Node* node, absl::FunctionRef<void(Node* node, const scene2d::PointF&)> painter);
 
 	void appendStyleRule(std::unique_ptr<style::StyleRule>&& rule);
 	void resolveStyle();
@@ -51,6 +54,7 @@ private:
 	void setupProps(Node* node, JSValue props);
 	bool match(Node* node, style::Selector* selector);
 	void resolveNodeStyle(Node* node);
+	void paintNode(Node* node, style::BlockPaintContext& bpc, absl::FunctionRef<void(Node* node, const scene2d::PointF&)> painter);
 
 	std::unique_ptr<script::Context> ctx_;
 	Node* root_;
