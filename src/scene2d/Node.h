@@ -25,6 +25,7 @@ class TextLayoutInterface;
 }
 namespace style {
 class BlockWidthSolverInterface;
+class InlineBoxBuilder;
 }
 
 namespace scene2d {
@@ -134,12 +135,11 @@ public:
 	void setAttribute(base::string_atom name, const NodeAttributeValue &value);
 	void setEventHandler(base::string_atom name, JSValue func);
 	void paintControl(windows::graphics::Painter &painter);
+	
 	void resolveDefaultStyle();
 	void resolveStyle(const style::StyleSpec &style);
-	inline void resolveInlineStyle()
-	{
-		resolveStyle(specStyle_);
-	}
+	void resolveInlineStyle();
+	
 	inline const style::Style& computedStyle() const
 	{
 		return computed_style_;
@@ -150,20 +150,13 @@ public:
 	// layout absoluted positioned
 	void reflow(float contg_blk_width, float contg_blk_height);
 
-	void layoutText(style::InlineFormatContext& ifc);
-	// layout self and children
-	void layoutInlineElement(style::InlineFormatContext& ifc, int element_depth);
-
 	bool positioned() const;
 	bool relativePositioned() const;
 	bool absolutelyPositioned() const;
 	Node* absolutelyPositionedParent() const;
 
 protected:
-	static void layoutMeasure(Node* node, style::InlineFormatContext& ifc, int element_depth);
-	static void assembleInlineChild(Node* child, std::vector<style::InlineBox*>& box);
-	bool anyBlockChildren() const;
-	void layoutBlockChild(style::BlockFormatContext& bfc, style::BlockBox& box, Node* child, int element_depth);
+	static void layoutMeasure(Node* node, style::InlineFormatContext& ifc, style::InlineBoxBuilder& ibb);
 	// in-flow layout
 	static void layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
 	// in-flow placing
@@ -195,7 +188,6 @@ protected:
 	// Text
 	std::string text_;
 	std::unique_ptr<graph2d::TextLayoutInterface> text_layout_;
-	style::InlineBox text_box_;
 
 	// Element
 	base::string_atom tag_;
@@ -228,6 +220,7 @@ protected:
 
 	friend class Scene;
 	friend class windows::Dialog;
+	friend class style::InlineBoxBuilder;
 };
 
 template<typename F>

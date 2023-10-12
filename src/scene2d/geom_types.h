@@ -171,7 +171,7 @@ private:
 
     template <typename Sink>
     friend void AbslStringify(Sink& sink, const RectF& p) {
-        absl::Format(&sink, "Rect(%v, %v - %vx%v)",
+        absl::Format(&sink, "RectF(%v,%v-%vx%v)",
             p.left, p.top, p.right - p.left, p.bottom - p.top);
     }
 };

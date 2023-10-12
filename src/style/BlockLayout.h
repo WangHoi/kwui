@@ -132,4 +132,25 @@ struct BlockFormatContext {
 		: owner(owner_) {}
 };
 
+template <typename Sink>
+void AbslStringify(Sink& sink, BlockBoxType p) {
+	switch (p) {
+	case BlockBoxType::Empty:
+		absl::Format(&sink, "BlockBoxType::Empty");
+		break;
+	case BlockBoxType::WithBlockChildren:
+		absl::Format(&sink, "BlockBoxType::WithBlockChildren");
+		break;
+	case BlockBoxType::WithInlineChildren:
+		absl::Format(&sink, "BlockBoxType::WithInlineChildren");
+		break;
+	case BlockBoxType::WithBFC:
+		absl::Format(&sink, "BlockBoxType::WithBFC");
+		break;
+	default:
+		absl::Format(&sink, "BlockBoxType::Custom(%d)", (int)p);
+	}
+}
+
+
 } // namespace style

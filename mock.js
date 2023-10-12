@@ -42,6 +42,9 @@ function Div(props, kids) {
 }
 
 var simple_stylesheet = {
+	"button": {
+		"display": "inline"
+	},
 	".title-bar": {
 		"position": "absolute",
 		"top": 0,
@@ -52,11 +55,11 @@ var simple_stylesheet = {
 		"margin-bottom": 10
 	}
 };
-var hello_world = (<body>
-    <div>橙讯安装程序</div>
-    <div class={"title-bar"}>
+var hello_world_full = (<body>
+    <div style={{"background-color": "#0f0"}}>橙讯安装程序</div>
+    <div class={"title-bar"} style={{"background-color": "#0ff"}}>
         <button>最小化</button>
-        <button>最大化</button>
+        <button style={{"background-color": "#f0f"}}>最大化</button>
         <button>关闭</button>
     </div>
     <div style={{"margin-top": 40, "text-align": "center"}}>
@@ -73,6 +76,15 @@ var hello_world = (<body>
     </div>
 </body>);
 
+var hello_world = (
+    <div style={{"margin-top": 40, "text-align": "center"}}>
+        <span style={{position:"relative", "font-size": 20}}>
+            {"橙讯"}
+            <span style={{position:"absolute", left:"100%", top:-10, "font-size":10}}>2.7.0</span>
+        </span>
+    </div>
+);
+
 console.log(JSON.stringify(hello_world));
 
-app.showDialog(hello_world, simple_stylesheet);
+app.showDialog(hello_world_full, simple_stylesheet);

@@ -257,37 +257,41 @@ void Scene::resolveNodeStyle(Node* node)
 void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, absl::FunctionRef<void(Node* node, const scene2d::PointF&)> painter)
 {
 	if (node->type_ == NodeType::NODE_TEXT) {
-		painter(node, bpc.basePos());
+		LOG(INFO) << "paintText scene pos=" << node->inline_box_.pos << ", text=" << node->text_;
+		painter(node, node->inline_box_.pos);
 	} else if (node->type_ == NodeType::NODE_ELEMENT) {
-		if (node->relativePositioned()) {
-			PointF offset;
-			if (node->block_box_.rel_offset) {
-				offset.x = node->block_box_.rel_offset->left;
-				offset.y = node->block_box_.rel_offset->top;
-			}
-			bpc.push(node, offset);
+		//PointF contg_block_pos = node->absolutelyPositioned()
+		//	? bpc.positioned_contg_pos
+		//	: bpc.contg_pos;
+		if (node->computed_style_.display == style::DisplayType::Block) {
+			LOG(INFO) << "paintBlock scene pos=" << node->block_box_.pos
+				<< ", border-rect " << node->block_box_.borderRect();
+			painter(node, node->block_box_.pos);
+		} else if (node->computed_style_.display == style::DisplayType::Inline) {
+		} else if (node->computed_style_.display == style::DisplayType::None) {
+			;
+		} else {
+			LOG(WARNING) << "paintNode: " << node->computed_style_.display << " not implemented.";
 		}
-		painter(node, bpc.basePos());
-
+		/*
 		if (node->absolutelyPositioned()) {
-			PointF offset;
-			if (node->bfc_) {
-				offset.x = node->block_box_.margin.left + node->block_box_.border.left;
-				offset.x = node->block_box_.margin.top + node->block_box_.border.top;
+			PointF pos;
+			if (node->computed_style_.display == style::DisplayType::Block) {
+				pos += node->block_box_.pos + node->block_box_.paddingRect().origin();
+			} else if (node->computed_style_.display == style::DisplayType::Inline) {
+				//offset = node->inline_box_.boundingRect().origin();
 			}
-			bpc.pushAbsolute(node, offset);
 		}
-
+		*/
 		Node::eachLayoutChild(node, [&](Node* child) {
 			paintNode(child, bpc, painter);
 			});
-
+		/*
 		if (node->absolutelyPositioned()) {
+			LOG(INFO) << "popAbsolute";
 			bpc.popAbsolute();
 		}
-		if (node->relativePositioned()) {
-			bpc.pop();
-		}
+		*/
 	} else if (node->type_ == NodeType::NODE_COMPONENT) {
 		Node::eachLayoutChild(node, [&](Node* child) {
 			paintNode(child, bpc, painter);

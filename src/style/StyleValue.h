@@ -162,6 +162,26 @@ struct Style {
 };
 
 template <typename Sink>
+void AbslStringify(Sink& sink, DisplayType p) {
+	switch (p) {
+	case DisplayType::None:
+		absl::Format(&sink, "None");
+		break;
+	case DisplayType::Block:
+		absl::Format(&sink, "Block");
+		break;
+	case DisplayType::Inline:
+		absl::Format(&sink, "Inline");
+		break;
+	case DisplayType::InlineBlock:
+		absl::Format(&sink, "InlineBox");
+		break;
+	default:
+		absl::Format(&sink, "Custom(%d)", (int)p);
+	}
+}
+
+template <typename Sink>
 void AbslStringify(Sink& sink, PositionType p) {
 	switch (p) {
 	case PositionType::Static:

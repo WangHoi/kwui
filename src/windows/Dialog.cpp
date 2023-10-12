@@ -482,7 +482,8 @@ void Dialog::OnPaint() {
 
         graphics::Painter p(_rt.Get(), _mouse_position);
         p.Clear(theme::BACKGROUND_COLOR);
-        _scene->paintNode(_scene->root(), absl::bind_front(&Dialog::PaintNodeSelf, this, std::ref(p)));
+        _scene->paintNode(_scene->root(),
+            absl::bind_front(&Dialog::PaintNodeSelf, this, std::ref(p)));
 
         HRESULT hr = _rt->EndDraw();
         if (hr == D2DERR_RECREATE_TARGET) {
@@ -512,7 +513,7 @@ void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node, const scen
         p.SetColor(get_color(node->computed_style_.color));
         auto r = text_layout->rect();
         //LOG(INFO) << "Text: " << pos + node->text_box_.offset << ", " << r;
-        p.DrawTextLayout(pos + node->text_box_.offset, *text_layout);
+        p.DrawTextLayout(pos, *text_layout);
     } else if (node->type_ == scene2d::NodeType::NODE_ELEMENT) {
         auto border_rect = node->block_box_.borderRect();
         //LOG(INFO) << "BoxBorder: " << pos + node->block_box_.pos + border_rect.origin()
@@ -525,7 +526,7 @@ void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node, const scen
         p.SetStrokeWidth(bw);
         p.SetStrokeColor(get_color(node->computed_style_.border_color));
         p.SetColor(get_color(node->computed_style_.background_color));
-        p.DrawRect(pos + node->block_box_.pos + border_rect.origin(), border_rect.size());
+        p.DrawRect(pos + border_rect.origin(), border_rect.size());
         node->paintControl(p);
     }
 }

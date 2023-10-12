@@ -276,21 +276,29 @@ public:
 				v.unit = style::ValueUnit::Url;
 			} else {
 				int ret;
+				float f32_val;
 				char dim[32] = {};
-				ret = sscanf(s.c_str(), "%f%32s", &v.f32_val, dim);
+				ret = sscanf(s.c_str(), "%f%32s", &f32_val, dim);
 				if (ret == 1) {
+					v.f32_val = f32_val;
 					v.unit = style::ValueUnit::Raw;
 				} else if (ret == 2) {
-					v.keyword_val = base::string_intern(dim);
 					if (strcmp(dim, "px") == 0) {
+						v.f32_val = f32_val;
 						v.unit = style::ValueUnit::Pixel;
 					} else if (strcmp(dim, "pt") == 0) {
+						v.f32_val = f32_val;
 						v.unit = style::ValueUnit::Point;
 					} else if (strcmp(dim, "%") == 0) {
+						v.f32_val = f32_val;
 						v.unit = style::ValueUnit::Percent;
 					} else {
+						v.keyword_val = base::string_intern(dim);
 						v.unit = style::ValueUnit::Keyword;
 					}
+				} else {
+					v.keyword_val = base::string_intern(s);
+					v.unit = style::ValueUnit::Keyword;
 				}
 			}
 		}

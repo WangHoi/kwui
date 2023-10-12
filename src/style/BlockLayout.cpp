@@ -19,8 +19,10 @@ absl::optional<float> BlockBoxBuilder::containingBlockHeight() const
 
 void BlockBoxBuilder::addText(scene2d::Node* node)
 {
-    contg_->type = BlockBoxType::WithInlineChildren;
-    contg_->payload = node->parent();
+    if (contg_->type == BlockBoxType::Empty) {
+        contg_->type = BlockBoxType::WithInlineChildren;
+        contg_->payload = node->parent();
+    }
 }
 
 void BlockBoxBuilder::beginInline(scene2d::Node* node)
@@ -44,7 +46,7 @@ void BlockBoxBuilder::endInline()
 void BlockBoxBuilder::beginBlock(BlockBox* box)
 {
     if (contg_->type != BlockBoxType::Empty && contg_->type != BlockBoxType::WithBlockChildren) {
-        LOG(WARNING) << "begin Block in containing block type" << (int)contg_->type << "not implemented.";
+        LOG(WARNING) << "begin Block in containing block " << contg_->type << " not implemented.";
     }
 
     if (last_child_) {

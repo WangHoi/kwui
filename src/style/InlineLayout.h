@@ -28,7 +28,7 @@ enum class InlineBoxType {
 	WithInlineChildren,
 };
 struct InlineBox {
-	scene2d::PointF offset; // set by LineBox::layout()
+	scene2d::PointF pos; // BFC coordinates, set by LineBox::layout(),
 	scene2d::DimensionF size;
 	float baseline = 0; // offset from bottom
 
@@ -36,84 +36,48 @@ struct InlineBox {
 	absl::variant<
 		absl::monostate,				// empty
 		graph2d::TextLayoutInterface*,	// text
-		std::vector<InlineBox*> 		// inline boxes
+		InlineBox* 						// first inline child
 	> payload;
+	std::optional<EdgeOffsetF> rel_offset; // Relative positioned box offset
+	InlineBox* parent;
+	InlineBox* next_sibling;
+	InlineBox* prev_sibling;
 
-	LineBox* line_box; // set by IFC::setupBox()
-	float line_box_offset_x; // set by IFC::setupBox()
+	LineBox* line_box = nullptr; // set by IFC::setupBox()
+	float line_box_offset_x = 0; // set by IFC::setupBox()
+
+	scene2d::RectF boundingRect() const;
 };
 
-struct LineBox {
-	scene2d::PointF offset;
+class InlineBoxBuilder {
+public:
+	InlineBoxBuilder(InlineFormatContext& ifc, InlineBox* root);
+	//float containingBlockWidth() const;
+	//absl::optional<float> containingBlockHeight() const;
+	void addText(scene2d::Node* node);
+	void beginInline(InlineBox* box);
+	void endInline();
 
-	float left; // BFC coord: left
-	float avail_width;
-	// float line_gap;  // leading
-
-	scene2d::DimensionF used_size;
-	float used_baseline; // offset from used_size's bottom
-
-	std::vector<InlineBox*> inline_boxes;
-
-	LineBox(float left_, float avail_w);
-	~LineBox();
-	int addInlineBox(InlineBox* box)
-	{
-		int idx = (int)inline_boxes.size();
-		inline_boxes.push_back(box);
-		return idx;
-	}
-	/*
-	std::tuple<float, float> getAvailWidth() const
-	{
-		float x = left;
-		float w = avail_width;
-		for (auto& b : inline_boxes) {
-			x += b->size.width;
-			w -= b->size.width;
-		}
-		return std::make_tuple(x, w);
-	}
-	float remainWidth() const
-	{
-		float w = avail_width;
-		for (auto& b : inline_boxes) {
-			w -= b->size.width;
-		}
-		return w;
-	}
-	*/
-	void layout(float offset_y)
-	{
-		used_size.width = 0;
-		float top = 0, bottom = 0;
-		for (auto& b : inline_boxes) {
-			used_size.width += b->size.width;
-			top = std::max(top, b->size.height - b->baseline);
-			bottom = std::max(bottom, b->baseline);
-		}
-		used_size.height = top + bottom;
-		used_baseline = bottom;
-
-		float x = left;
-		for (auto& b : inline_boxes) {
-			b->offset.x = x;
-			b->offset.y = offset_y + (top - (b->size.height - b->baseline));
-			x += b->size.width;
-		}
-	}
+private:
+	InlineFormatContext& ifc_;
+	InlineBox* root_;
+	InlineBox* contg_;
+	InlineBox* last_child_ = nullptr;
+	std::vector<std::tuple<InlineBox*, InlineBox*>> stack_;
 };
 
 class InlineFormatContext {
 public:
 	InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width);
 	~InlineFormatContext();
+
+	inline BlockFormatContext& bfc() const { return bfc_; }
 	float getAvailWidth() const;
 	void setupBox(InlineBox* box);
 
 	void addBox(InlineBox* box);
 
-	void layout();
+	void layoutArrange();
 	inline float getLayoutHeight() const
 	{
 		return height_;
