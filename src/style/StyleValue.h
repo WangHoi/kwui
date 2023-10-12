@@ -52,7 +52,8 @@ struct Value {
 	}
 	inline float pixelOrZero() const
 	{
-		return isPixel() ? f32_val : 0.0f;
+		return (unit == ValueUnit::Pixel || unit == ValueUnit::Raw)
+			? f32_val : 0.0f;
 	}
 };
 

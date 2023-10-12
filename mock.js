@@ -45,7 +45,7 @@ var simple_stylesheet = {
 	"button": {
 		"display": "inline"
 	},
-	".title-bar": {
+	"divx": {
 		"position": "absolute",
 		"top": 0,
 		"right": 0,
@@ -57,11 +57,17 @@ var simple_stylesheet = {
 };
 var hello_world_full = (<body>
     <div style={{"background-color": "#0f0"}}>橙讯安装程序</div>
-    <div class={"title-bar"} style={{"background-color": "#0ff"}}>
+    <divx class={"title-bar"} style={{position:"absolute", "top": 10,
+		"right": 100,
+		"margin-left": 10,
+		"margin-top": 0,
+		"margin-right": 10,
+		"margin-bottom": 10,
+		"background-color": "#0ff"}}>
         <button>最小化</button>
         <button style={{"background-color": "#f0f"}}>最大化</button>
         <button>关闭</button>
-    </div>
+    </divx>
     <div style={{"margin-top": 40, "text-align": "center"}}>
         <img src={"cx_logo_2.svg"} />
     </div>

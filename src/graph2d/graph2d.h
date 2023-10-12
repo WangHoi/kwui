@@ -1,6 +1,7 @@
 #pragma once
 
 #include "TextLayout.h"
+#include "Painter.h"
 #include <memory>
 #include <string>
 

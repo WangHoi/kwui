@@ -6,6 +6,7 @@
 #include "graphics/Painter.h"
 #include "theme.h"
 #include "absl/functional/bind_front.h"
+#include "graph2d/Painter.h"
 
 namespace windows {
 typedef LRESULT(CALLBACK* WndProc)(HWND, UINT, WPARAM, LPARAM);
@@ -37,6 +38,47 @@ static void PreloadCursor() {
     s_preloaded_cursors[CURSOR_IBEAM] = LoadCursor(NULL, IDC_IBEAM);
     s_preloaded_cursors[CURSOR_WAIT] = LoadCursor(NULL, IDC_WAIT);
 }
+
+class PainterImpl : public graph2d::PainterInterface
+{
+public:
+    PainterImpl(graphics::Painter& p)
+        : p_(p) {}
+    void save() override
+    {
+        p_.Save();
+    }
+    void restore() override
+    {
+        p_.Restore();
+    }
+    void setTranslation(const scene2d::PointF& offset, bool combine) override
+    {
+        if (combine)
+            p_.SetTranslation(offset);
+        else
+            p_.Translate(offset);
+    }
+    void drawBox(const scene2d::RectF& rect, float border_width, const style::Value& background_color, const style::Value& border_color) override
+    {
+        auto rect1 = scene2d::RectF::fromXYWH(
+            rect.left + border_width * 0.5f,
+            rect.top + border_width * 0.5f,
+            rect.width() - border_width,
+            rect.height() - border_width);
+        p_.SetStrokeWidth(border_width);
+        p_.SetStrokeColor(get_color(border_color));
+        p_.SetColor(get_color(background_color));
+        p_.DrawRect(rect1.origin(), rect1.size());
+    }
+    void drawTextLayout(const scene2d::PointF& pos, const graph2d::TextLayoutInterface* text_layout, const style::Value& color) override
+    {
+        p_.SetColor(get_color(color));
+        p_.DrawTextLayout(pos, *(graphics::TextLayout*)text_layout);
+    }
+private:
+    graphics::Painter& p_;
+};
 
 Dialog::Dialog(float width, float height,
     const WCHAR* wnd_class_name,
@@ -482,8 +524,8 @@ void Dialog::OnPaint() {
 
         graphics::Painter p(_rt.Get(), _mouse_position);
         p.Clear(theme::BACKGROUND_COLOR);
-        _scene->paintNode(_scene->root(),
-            absl::bind_front(&Dialog::PaintNodeSelf, this, std::ref(p)));
+        PainterImpl pi(p);
+        _scene->paint(&pi);
 
         HRESULT hr = _rt->EndDraw();
         if (hr == D2DERR_RECREATE_TARGET) {
@@ -506,29 +548,6 @@ void Dialog::OnResize() {
     LOG(INFO) << "OnResize " << _pixel_size.width << "x" << _pixel_size.height << "px";
     UpdateBorderAndRenderTarget();
     RequestPaint();
-}
-void Dialog::PaintNodeSelf(graphics::Painter& p, scene2d::Node* node, const scene2d::PointF& pos) {
-    if (node->type_ == scene2d::NodeType::NODE_TEXT) {
-        auto text_layout = (graphics::TextLayout*)node->text_layout_.get();
-        p.SetColor(get_color(node->computed_style_.color));
-        auto r = text_layout->rect();
-        //LOG(INFO) << "Text: " << pos + node->text_box_.offset << ", " << r;
-        p.DrawTextLayout(pos, *text_layout);
-    } else if (node->type_ == scene2d::NodeType::NODE_ELEMENT) {
-        auto border_rect = node->block_box_.borderRect();
-        //LOG(INFO) << "BoxBorder: " << pos + node->block_box_.pos + border_rect.origin()
-        //    << ", " << border_rect;
-        float bw = node->block_box_.border.top;
-        border_rect.left += 0.5f * bw;
-        border_rect.top += 0.5f * bw;
-        border_rect.right -= 0.5f * bw;
-        border_rect.bottom -= 0.5f * bw;
-        p.SetStrokeWidth(bw);
-        p.SetStrokeColor(get_color(node->computed_style_.border_color));
-        p.SetColor(get_color(node->computed_style_.background_color));
-        p.DrawRect(pos + border_rect.origin(), border_rect.size());
-        node->paintControl(p);
-    }
 }
 void Dialog::Close() {
     if (_animation_timer_id) {

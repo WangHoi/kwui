@@ -77,11 +77,33 @@ float AbsoluteBlockWidthSolver::measureWidth()
 	if (width_.has_value())
 		return std::max(*width_, 0.0f);
 
-	float w = cont_block_width_
-		- left_.value_or(0)
-		- margin_left_.value_or(0)
-		- margin_right_.value_or(0)
-		- right_.value_or(0);
+	float w;
+	if (left_.has_value() && right_.has_value()) {
+		w = cont_block_width_
+			- left_.value_or(0)
+			- margin_left_.value_or(0)
+			- margin_right_.value_or(0)
+			- right_.value_or(0);
+		if (w < 0) {
+			w = cont_block_width_
+				- margin_left_.value_or(0)
+				- margin_right_.value_or(0);
+		}
+	} else if (left_.has_value()) {
+		w = cont_block_width_
+			- *left_
+			- margin_left_.value_or(0)
+			- margin_right_.value_or(0);
+	} else if (right_.has_value()) {
+		w = cont_block_width_
+			- margin_left_.value_or(0)
+			- margin_right_.value_or(0)
+			- *right_;
+	} else {
+		w = cont_block_width_
+			- margin_left_.value_or(0)
+			- margin_right_.value_or(0);
+	}
 	return std::max(w, 0.0f);
 }
 void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
@@ -90,10 +112,10 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 	bool skip1_2 = false;
 	if (!left_.has_value() && !width_.has_value() && !right_.has_value()) {
 		if (!margin_left_.has_value())
-			margin_left_ = 0;
+			margin_left_ = 0.0f;
 		if (!margin_right_.has_value())
-			margin_right_ = 0;
-		left_ = 0; // static position left
+			margin_right_ = 0.0f;
+		left_ = 0.0f; // static position left
 		skip1_2 = true;
 	} else if (left_.has_value() && width_.has_value() && right_.has_value()) {
 		float w = width_.value_or(layout_width);
@@ -120,9 +142,9 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 		skip1_6 = true;
 	} else {
 		if (!margin_left_.has_value())
-			margin_left_ = 0;
+			margin_left_ = 0.0f;
 		if (!margin_right_.has_value())
-			margin_right_ = 0;
+			margin_right_ = 0.0f;
 	}
 
 	CHECK(margin_left_.has_value()) << "margin_left must be set.";
@@ -147,7 +169,7 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 			 * position. Then solve for 'left' (if 'direction is 'rtl') or
 			 * 'right' (if 'direction' is 'ltr'). */
 			if (!left_.has_value() && !right_.has_value() && width_.has_value()) {
-				left_ = 0; // static-position left
+				left_ = 0.0f; // static-position left
 				right_ = cont_block_width_
 					- *left_
 					- *margin_left_

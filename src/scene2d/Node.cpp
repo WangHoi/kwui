@@ -300,11 +300,11 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 		try_resolve_to_px(st.width, contg_blk_width),
 		try_resolve_to_px(st.margin_right, contg_blk_width),
 		try_resolve_to_px(st.right, contg_blk_width));
-	width_solver.setLayoutWidth(width_solver.measureWidth());
+	float avail_width = width_solver.measureWidth();
+	width_solver.setLayoutWidth(avail_width);
 
-	// Compute width, left and right margins
+	// Compute left and right margins
 	auto& b = block_box_;
-	b.pos.x = width_solver.left();
 	b.margin.left = width_solver.marginLeft();
 	b.border.left = try_resolve_to_px(st.border_left_width, contg_blk_width).value_or(0);
 	b.padding.left = try_resolve_to_px(st.padding_left, contg_blk_width).value_or(0);
@@ -329,11 +329,8 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 		layoutMeasure(*bfc_, bbb, child);
 		});
 
-	eachLayoutChild([this, &bbb](Node* child) {
-		layoutArrange(*bfc_, child->block_box_);
-		});
-
-	LOG(INFO) << "reflow border: " << bfc_->border_bottom << ", margin " << bfc_->margin_bottom;
+	layoutArrange(*bfc_, b);
+	b.pos.x = width_solver.left();
 
 	// for absolutely positioned block
 	style::AbsoluteBlockPositionSolver height_solver(contg_blk_height,
@@ -344,6 +341,8 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 	b.pos.y = height_solver.top();
 	b.content.height = height_solver.height();
 	b.content.width = width_solver.width();
+
+	LOG(INFO) << "reflow <" << tag_ << "> border box" << b.borderRect();
 
 	// layout out-of-flow
 	for (Node* node : bfc_->abs_pos_nodes) {
@@ -364,9 +363,15 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 		} else if (pn->computed_style_.display == style::DisplayType::Block) {
 			RectF r = pn->block_box_.paddingRect();
 			node->reflow(r.width(), r.height());
+			if (pn->computed_style_.position == style::PositionType::Relative) {
+				node->block_box_.pos += pn->block_box_.pos + r.origin();
+			}
 		} else if (pn->computed_style_.display == style::DisplayType::Inline) {
 			RectF r = pn->inline_box_.boundingRect();
 			node->reflow(r.width(), r.height());
+			if (pn->computed_style_.position == style::PositionType::Relative) {
+				node->block_box_.pos += pn->inline_box_.pos + r.origin();
+			}
 		} else {
 			LOG(WARNING) << "TODO: not implemented: absolutely element reflow for parent with display " << pn->computed_style_.display;
 		}
@@ -435,6 +440,10 @@ void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 		bbb.addText(node);
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		const auto& st = node->computedStyle();
+		if (node->absolutelyPositioned()) {
+			bfc.abs_pos_nodes.push_back(node);
+			return;
+		}
 		// 'static' or 'relative' positioned
 		if (st.display == style::DisplayType::Block) {
 
@@ -497,15 +506,17 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 
 	box.pos.x = bfc.content_left;
 	if (borpad_top > 0) {
-		box.pos.y = bfc.margin_bottom;
-		bfc.border_bottom = bfc.margin_bottom + borpad_top;
-		bfc.margin_bottom = bfc.border_bottom + box.margin.top;
+		float coll_margin = style::collapse_margin(box.margin.top,
+			(bfc.margin_bottom - bfc.border_bottom));
+		box.pos.y = bfc.border_bottom + coll_margin - box.margin.top;
+		bfc.border_bottom = bfc.border_bottom + coll_margin + borpad_top;
+		bfc.margin_bottom = bfc.border_bottom;
 	} else {
 		float coll_margin = style::collapse_margin(box.margin.top,
 			(bfc.margin_bottom - bfc.border_bottom));
 		box.pos.y = bfc.border_bottom + coll_margin - box.margin.top;
-		bfc.border_bottom += coll_margin + borpad_top;
-		bfc.margin_bottom = bfc.border_bottom;
+		//bfc.border_bottom += coll_margin + borpad_top;
+		bfc.margin_bottom = bfc.border_bottom + coll_margin;
 	}
 
 	base::scoped_setter _(bfc.content_left,
@@ -529,9 +540,6 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 			} else {
 				box.content.height = std::max(0.0f,
 					bfc.border_bottom - box.pos.y - box.margin.top - borpad_top);
-				if (box.content.height > 100) {
-					int k = 0;
-				}
 			}
 		}
 	} else if (box.type == style::BlockBoxType::WithInlineChildren) {
@@ -552,10 +560,7 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 			bfc.border_bottom = bfc.margin_bottom + box.content.height;
 			bfc.margin_bottom = bfc.border_bottom;
 		} else {
-			// check top and bottom margin collapse 
-			float coll_margin = style::collapse_margin(box.margin.bottom,
-				(bfc.margin_bottom - bfc.border_bottom));
-			bfc.margin_bottom = bfc.border_bottom + coll_margin;
+			// check top and bottom margin collapse, below
 		}
 		LOG(INFO)
 			<< "<" << contg_node->tag_ << "> "

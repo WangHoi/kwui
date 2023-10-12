@@ -5,6 +5,8 @@
 #include "style/Layout.h"
 #include "style/StylePaint.h"
 #include "absl/functional/bind_front.h"
+#include "absl/cleanup/cleanup.h"
+#include "graph2d/Painter.h"
 
 namespace scene2d {
 
@@ -122,12 +124,6 @@ Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_
 	return pickSelf(node, pos, flag_mask, out_local_pos);
 }
 
-void Scene::paintNode(Node* node, absl::FunctionRef<void(Node*, const PointF&)> painter)
-{
-	style::BlockPaintContext bpc;
-	paintNode(node, bpc, painter);
-}
-
 void Scene::appendStyleRule(std::unique_ptr<style::StyleRule>&& rule)
 {
 	if (style_rules_.empty()) {
@@ -159,6 +155,12 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 	root_->computed_style_.width = style::Value::fromPixel(size.width);
 	root_->computed_style_.height = style::Value::fromPixel(size.height);
 	root_->reflow(size.width, size.height);
+}
+
+void Scene::paint(graph2d::PainterInterface* painter)
+{
+	style::BlockPaintContext bpc;
+	paintNode(root_, bpc, painter);
 }
 
 Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
@@ -254,11 +256,14 @@ void Scene::resolveNodeStyle(Node* node)
 	node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
 }
 
-void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, absl::FunctionRef<void(Node* node, const scene2d::PointF&)> painter)
+void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::PainterInterface* painter)
 {
 	if (node->type_ == NodeType::NODE_TEXT) {
 		LOG(INFO) << "paintText scene pos=" << node->inline_box_.pos << ", text=" << node->text_;
-		painter(node, node->inline_box_.pos);
+		painter->drawTextLayout(
+			node->inline_box_.pos,
+			node->text_layout_.get(),
+			node->computed_style_.color);
 	} else if (node->type_ == NodeType::NODE_ELEMENT) {
 		//PointF contg_block_pos = node->absolutelyPositioned()
 		//	? bpc.positioned_contg_pos
@@ -266,32 +271,40 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, absl::FunctionR
 		if (node->computed_style_.display == style::DisplayType::Block) {
 			LOG(INFO) << "paintBlock scene pos=" << node->block_box_.pos
 				<< ", border-rect " << node->block_box_.borderRect();
-			painter(node, node->block_box_.pos);
+			RectF border_rect = node->block_box_.borderRect();
+			painter->drawBox(
+				RectF::fromXYWH(node->block_box_.pos.x + border_rect.left,
+					node->block_box_.pos.y + border_rect.top,
+					border_rect.width(),
+					border_rect.height()),
+				node->computed_style_.border_top_width.pixelOrZero(),
+				node->computed_style_.background_color,
+				node->computed_style_.border_color);
 		} else if (node->computed_style_.display == style::DisplayType::Inline) {
 		} else if (node->computed_style_.display == style::DisplayType::None) {
 			;
 		} else {
 			LOG(WARNING) << "paintNode: " << node->computed_style_.display << " not implemented.";
 		}
-		/*
+		
+		bool need_restore = false;
 		if (node->absolutelyPositioned()) {
-			PointF pos;
+			painter->save();
 			if (node->computed_style_.display == style::DisplayType::Block) {
-				pos += node->block_box_.pos + node->block_box_.paddingRect().origin();
+				PointF pos = node->block_box_.pos + node->block_box_.paddingRect().origin();
+				painter->setTranslation(pos, true);
 			} else if (node->computed_style_.display == style::DisplayType::Inline) {
 				//offset = node->inline_box_.boundingRect().origin();
 			}
+			Node::eachLayoutChild(node, [&](Node* child) {
+				paintNode(child, bpc, painter);
+				});
+			painter->restore();
+		} else {
+			Node::eachLayoutChild(node, [&](Node* child) {
+				paintNode(child, bpc, painter);
+				});
 		}
-		*/
-		Node::eachLayoutChild(node, [&](Node* child) {
-			paintNode(child, bpc, painter);
-			});
-		/*
-		if (node->absolutelyPositioned()) {
-			LOG(INFO) << "popAbsolute";
-			bpc.popAbsolute();
-		}
-		*/
 	} else if (node->type_ == NodeType::NODE_COMPONENT) {
 		Node::eachLayoutChild(node, [&](Node* child) {
 			paintNode(child, bpc, painter);
