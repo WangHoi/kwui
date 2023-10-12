@@ -1,12 +1,15 @@
 布局:
-- Absolute的处理
 - Relative的处理
+
+CSS:
+- 多个selector应用有bug
+- class selector有bug
 
 DOM:
 - 鼠标点击坐标处理
 - Control::onPaint需要RenderBox
 - 移植ButtonControl, ImageButtonControl, ProgressBarControl
-- fragment 处理有问题，不透明
+- fragment 处理有问题，没有跳过
 
 测试:
 - 安装程序主界面模拟 js
