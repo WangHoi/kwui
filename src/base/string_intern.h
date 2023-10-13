@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_set>
 #include "absl/strings/string_view.h"
+#include "absl/strings/str_format.h"
 
 namespace base {
 
@@ -31,6 +32,10 @@ private:
 	const char* atom_text_;
 
 	friend string_atom string_intern(absl::string_view s);
+	template <typename Sink>
+	friend void AbslStringify(Sink& sink, const string_atom& p) {
+		absl::Format(&sink, "%s", p.atom_text_);
+	}
 };
 
 inline string_atom string_intern(absl::string_view s)

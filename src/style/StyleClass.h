@@ -59,6 +59,13 @@ public:
 
 private:
     std::set<base::string_atom> set_;
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const Classes& p) {
+        for (auto& atom : p.set_) {
+            absl::Format(&sink, ".%v", atom);
+        }
+    }
 };
 
 }

@@ -602,7 +602,8 @@ void resolve_style(style::PositionType& style, const style::PositionType* parent
 	const style::ValueSpec& spec, const style::PositionType& default_)
 {
 	if (spec.type == style::ValueSpecType::Inherit) {
-		style = parent ? *parent : default_;
+		if (parent)
+			style = *parent;
 	} else if (spec.type == style::ValueSpecType::Specified) {
 		if (spec.value->unit == style::ValueUnit::Keyword) {
 			if (spec.value->keyword_val == base::string_intern("static"))
@@ -613,11 +614,7 @@ void resolve_style(style::PositionType& style, const style::PositionType* parent
 				style = style::PositionType::Absolute;
 			else if (spec.value->keyword_val == base::string_intern("fixed"))
 				style = style::PositionType::Fixed;
-		} else {
-			style = default_;
 		}
-	} else {
-		style = default_;
 	}
 }
 

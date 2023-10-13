@@ -192,6 +192,11 @@ void Scene::setupProps(Node* node, JSValue props)
 		} else if (name == base::string_intern("id")) {
 			node->setId(ctx_->parse<base::string_atom>(value));
 		} else if (name == base::string_intern("class")) {
+			const char* s = JS_ToCString(jctx, value);
+			if (s) {
+				node->setClass(style::Classes::parse(s));
+			}
+			JS_FreeCString(jctx, s);
 		} else if (JS_IsFunction(ctx_->get(), value)) {
 			node->setEventHandler(name, JS_DupValue(jctx, value));
 		} else if (JS_IsNumber(value)) {
@@ -248,8 +253,9 @@ void Scene::resolveNodeStyle(Node* node)
 	} else {
 		node->resolveDefaultStyle();
 		for (auto& rule : style_rules_) {
-			if (match(node, rule->selector.get()))
+			if (match(node, rule->selector.get())) {
 				node->resolveStyle(rule->spec);
+			}
 		}
 		node->resolveInlineStyle();
 	}

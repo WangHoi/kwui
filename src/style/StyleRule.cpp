@@ -123,7 +123,7 @@ absl::StatusOr<IResult<std::unique_ptr<Selector>>> selector_item(absl::string_vi
 
     Selector sel;
     auto id = seq(tag("#"), token);
-    auto klass = seq(tag("#"), token);
+    auto klass = seq(tag("."), token);
 
     int count = 0;
     int n = 0;

@@ -2,6 +2,7 @@
 #include "base/string_intern.h"
 #include "StyleValue.h"
 #include "StyleClass.h"
+#include "absl/strings/str_format.h"
 
 namespace style {
 
@@ -22,6 +23,23 @@ public:
     static absl::StatusOr<std::unique_ptr<Selector>> parse(absl::string_view input); 
     static absl::StatusOr<std::vector<std::unique_ptr<Selector>>> parseGroup(absl::string_view input); 
     int specificity() const;
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const Selector& p) {
+        if (p.dep_selector) {
+            AbslStringify(sink, *p.dep_selector);
+            if (p.dep_type == SelectorDependency::DirectParent) {
+                absl::Format(&sink, ">");
+            } else if (p.dep_type == SelectorDependency::Ancestor) {
+                absl::Format(&sink, " ");
+            }
+        }
+        absl::Format(&sink, "%v", p.tag);
+        absl::Format(&sink, "%v", p.klass);
+        if (p.id != base::string_atom()) {
+            absl::Format(&sink, "#%v", p.id);
+        }
+    }
 };
 
 class StyleRule {

@@ -46,15 +46,6 @@ void Context::initSceneClass()
     JS_FreeValue(ctx_, proto);
 }
 
-JSValue Context::wrapScene(scene2d::Scene* scene)
-{
-    JSValue j = JS_NewObjectClass(ctx_, scene_class_id);
-    auto scene_weakptr = scene->weakProxy();
-    scene_weakptr->retain();
-    JS_SetOpaque(j, scene_weakptr);
-    return j;
-}
-
 void scene_finalizer(JSRuntime* rt, JSValue val)
 {
     auto scene_weakptr = (base::WeakObjectProxy<scene2d::Scene> *)JS_GetOpaque(val, scene_class_id);
@@ -108,6 +99,38 @@ Context::~Context()
     ctx_ = nullptr;
 }
 
+void Context::loadFile(const std::string& fname)
+{
+    FILE* f = fopen(fname.c_str(), "rb");
+    if (!f)
+        return;
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    if (size <= 0)
+        return;
+    std::string content;
+    content.resize(size);
+    fseek(f, 0, SEEK_SET);
+    fread(content.data(), 1, size, f);
+    int eval_type = JS_DetectModule(content.data(), content.size())
+        ? JS_EVAL_TYPE_MODULE
+        : JS_EVAL_TYPE_GLOBAL;
+    JSValue ret = JS_Eval(ctx_, content.data(), size, fname.c_str(), eval_type);
+    if (JS_IsException(ret)) {
+        js_std_dump_error(ctx_);
+    }
+    JS_FreeValue(ctx_, ret);
+}
+
+JSValue Context::wrapScene(scene2d::Scene* scene)
+{
+    JSValue j = JS_NewObjectClass(ctx_, scene_class_id);
+    auto scene_weakptr = scene->weakProxy();
+    scene_weakptr->retain();
+    JS_SetOpaque(j, scene_weakptr);
+    return j;
+}
+
 JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
     auto dialog = new windows::Dialog(
@@ -124,6 +147,8 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
                     auto rule = std::make_unique<style::StyleRule>(std::move(selector), style_spec);
                     scene->appendStyleRule(std::move(rule));
                 }
+            } else {
+                LOG(WARNING) << "parse selector '" << name << "' failed";
             }
         });
     }
@@ -134,6 +159,5 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
     dialog->Show();
     return JS_UNDEFINED;
 }
-
 
 }
