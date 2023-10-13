@@ -300,15 +300,13 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 		try_resolve_to_px(st.width, contg_blk_width),
 		try_resolve_to_px(st.margin_right, contg_blk_width),
 		try_resolve_to_px(st.right, contg_blk_width));
-	float avail_width = width_solver.measureWidth();
-	width_solver.setLayoutWidth(avail_width);
 
 	// Compute left and right margins
 	auto& b = block_box_;
 	b.margin.left = width_solver.marginLeft();
 	b.border.left = try_resolve_to_px(st.border_left_width, contg_blk_width).value_or(0);
 	b.padding.left = try_resolve_to_px(st.padding_left, contg_blk_width).value_or(0);
-	b.avail_width = width_solver.width();
+	b.avail_width = width_solver.measureWidth();
 	b.padding.right = try_resolve_to_px(st.padding_right, contg_blk_width).value_or(0);
 	b.border.right = try_resolve_to_px(st.border_right_width, contg_blk_width).value_or(0);
 	b.margin.right = width_solver.marginRight();
@@ -340,6 +338,9 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 	height_solver.setLayoutHeight(b.marginRect().size().height);
 	b.pos.y = height_solver.top();
 	b.content.height = height_solver.height();
+
+	LOG(WARNING) << "TODO: calculate shrink-to-fit width";
+	width_solver.setLayoutWidth(b.avail_width);
 	b.content.width = width_solver.width();
 
 	LOG(INFO) << "reflow <" << tag_ << "> border box" << b.borderRect();
@@ -453,22 +454,23 @@ void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 				- try_resolve_to_px(st.padding_left, contg_width).value_or(0)
 				- try_resolve_to_px(st.padding_right, contg_width).value_or(0)
 				- try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
-			auto solver = std::make_unique<style::StaticBlockWidthSolver>(
+			style::StaticBlockWidthSolver solver(
 				clean_contg_width,
 				try_resolve_to_px(st.margin_left, contg_width),
 				try_resolve_to_px(st.width, contg_width),
 				try_resolve_to_px(st.margin_right, contg_width));
-			solver->setLayoutWidth(solver->measureWidth());
+			float avail_width = solver.measureWidth();
+			solver.setLayoutWidth(avail_width);
 
 			// Compute width, left and right margins
 			auto& b = node->block_box_;
-			b.margin.left = solver->marginLeft();
+			b.margin.left = solver.marginLeft();
 			b.border.left = try_resolve_to_px(st.border_left_width, contg_width).value_or(0);
 			b.padding.left = try_resolve_to_px(st.padding_left, contg_width).value_or(0);
-			b.avail_width = solver->width();
+			b.avail_width = solver.width();
 			b.padding.right = try_resolve_to_px(st.padding_right, contg_width).value_or(0);
 			b.border.right = try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
-			b.margin.right = solver->marginRight();
+			b.margin.right = solver.marginRight();
 
 			// Compute height, top and bottom margins
 			absl::optional<float> base_height = bbb.containingBlockHeight();
