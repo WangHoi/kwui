@@ -47,12 +47,12 @@ var simple_stylesheet = {
 	},
 	".title-bar": {
 		"position": "absolute",
-		"top": 0,
-		"right": 0,
-		"margin-left": 10,
-		"margin-top": 10,
-		"margin-right": 10,
-		"margin-bottom": 10
+		"top": 10,
+		"right": 10,
+		"margin-left": 0,
+		"margin-top": 0,
+		"margin-right": 0,
+		"margin-bottom": 0
 	}
 };
 var hello_world_full = (<body>

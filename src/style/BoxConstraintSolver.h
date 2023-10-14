@@ -1,7 +1,19 @@
 #pragma once
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 namespace style {
+
+enum class WidthConstraintType {
+    MinContent,
+    MaxContent,
+    FitContent,
+    Fixed,
+};
+struct WidthConstraint {
+    WidthConstraintType type = WidthConstraintType::Fixed;
+    float value;
+};
 
 class StaticBlockWidthSolver {
 public:
@@ -43,7 +55,7 @@ public:
         return false;
     }
     float containingBlockWidth() const;
-    float measureWidth();
+    WidthConstraint measureWidth();
     void setLayoutWidth(float layout_width);
 
     float left();
@@ -53,7 +65,9 @@ public:
     float right();
 
 private:
-    float cont_block_width_;
+    float availWidth();
+
+    float contg_block_width_;
     absl::optional<float> left_;
     absl::optional<float> margin_left_;
     absl::optional<float> width_;

@@ -156,7 +156,10 @@ public:
 	Node* absolutelyPositionedParent() const;
 
 protected:
-	static void layoutMeasure(Node* node, style::InlineFormatContext& ifc, style::InlineBoxBuilder& ibb);
+	static void layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
+	static std::tuple<float, float> layoutMeasureWidth(style::BlockBox& box);
+	static std::tuple<float, float> layoutMeasureInlineWidth(Node* node);
+	static void layoutMeasure(style::InlineFormatContext& ifc, style::InlineBoxBuilder& ibb, Node* node);
 	// in-flow layout
 	static void layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
 	// in-flow placing

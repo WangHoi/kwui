@@ -9,7 +9,7 @@ BlockBoxBuilder::BlockBoxBuilder(BlockBox* root)
 
 float BlockBoxBuilder::containingBlockWidth() const
 {
-    return contg_->avail_width;
+    return contg_->content.width;
 }
 
 absl::optional<float> BlockBoxBuilder::containingBlockHeight() const

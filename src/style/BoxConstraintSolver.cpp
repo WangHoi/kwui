@@ -60,7 +60,7 @@ float StaticBlockWidthSolver::marginRight()
 	return margin_right_.value_or(0);
 }
 AbsoluteBlockWidthSolver::AbsoluteBlockWidthSolver(float cont_block_width, absl::optional<float> left, absl::optional<float> margin_left, absl::optional<float> width, absl::optional<float> margin_right, absl::optional<float> right)
-	: cont_block_width_(cont_block_width)
+	: contg_block_width_(cont_block_width)
 	, left_(left)
 	, margin_left_(margin_left)
 	, width_(width)
@@ -70,41 +70,38 @@ AbsoluteBlockWidthSolver::AbsoluteBlockWidthSolver(float cont_block_width, absl:
 }
 float AbsoluteBlockWidthSolver::containingBlockWidth() const
 {
-	return cont_block_width_;
+	return contg_block_width_;
 }
-float AbsoluteBlockWidthSolver::measureWidth()
+WidthConstraint AbsoluteBlockWidthSolver::measureWidth()
 {
-	if (width_.has_value())
-		return std::max(*width_, 0.0f);
-
-	float w;
-	if (left_.has_value() && right_.has_value()) {
-		w = cont_block_width_
-			- left_.value_or(0)
-			- margin_left_.value_or(0)
-			- margin_right_.value_or(0)
-			- right_.value_or(0);
-		if (w < 0) {
-			w = cont_block_width_
-				- margin_left_.value_or(0)
-				- margin_right_.value_or(0);
-		}
-	} else if (left_.has_value()) {
-		w = cont_block_width_
-			- *left_
-			- margin_left_.value_or(0)
-			- margin_right_.value_or(0);
-	} else if (right_.has_value()) {
-		w = cont_block_width_
-			- margin_left_.value_or(0)
-			- margin_right_.value_or(0)
-			- *right_;
+	WidthConstraint c;
+	if (width_.has_value()) {
+		c.type = WidthConstraintType::Fixed;
+		c.value = std::max(0.0f, *width_);
 	} else {
-		w = cont_block_width_
-			- margin_left_.value_or(0)
-			- margin_right_.value_or(0);
+		if (left_.has_value() && right_.has_value()) {
+			c.type = WidthConstraintType::Fixed;
+			float w = contg_block_width_
+				- left_.value_or(0)
+				- margin_left_.value_or(0)
+				- margin_right_.value_or(0)
+				- right_.value_or(0);
+			if (w < 0) {
+				// over-constrained, ignore right value
+				w += right_.value_or(0);
+			}
+			c.value = std::max(0.0f, w);
+		} else {
+			c.type = WidthConstraintType::FitContent;
+			float w = contg_block_width_
+				- left_.value_or(0)
+				- margin_left_.value_or(0)
+				- margin_right_.value_or(0)
+				- right_.value_or(0);
+			c.value = std::max(0.0f, w);
+		}
 	}
-	return std::max(w, 0.0f);
+	return c;
 }
 void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 {
@@ -120,20 +117,20 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 	} else if (left_.has_value() && width_.has_value() && right_.has_value()) {
 		float w = width_.value_or(layout_width);
 		if (!margin_left_.has_value() && !margin_right_.has_value()) {
-			float remain = cont_block_width_ - *left_ - w - *right_;
+			float remain = contg_block_width_ - *left_ - w - *right_;
 			if (remain >= 0) {
 				margin_left_ = *margin_right_ = 0.5f * remain;
 			} else {
 				margin_left_ = 0.0f;
-				margin_right_ = cont_block_width_ - *left_ - w - *right_;
+				margin_right_ = contg_block_width_ - *left_ - w - *right_;
 			}
 		} else if (!margin_left_.has_value()) {
-			margin_left_ = cont_block_width_ - *left_ - w - margin_right_.value_or(0) - *right_;
+			margin_left_ = contg_block_width_ - *left_ - w - margin_right_.value_or(0) - *right_;
 		} else if (!margin_right_.has_value()) {
-			margin_right_ = cont_block_width_ - *left_ - margin_left_.value_or(0) - w - *right_;
+			margin_right_ = contg_block_width_ - *left_ - margin_left_.value_or(0) - w - *right_;
 		} else {
 			// may over-constrained
-			right_ = cont_block_width_
+			right_ = contg_block_width_
 				- *left_
 				- *margin_left_
 				- w
@@ -156,7 +153,7 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 			 * then the width is shrink-to-fit. Then solve for 'left' */
 			if (!left_.has_value() && !width_.has_value() && right_.has_value()) {
 				width_ = layout_width;
-				left_ = cont_block_width_
+				left_ = contg_block_width_
 					- *margin_left_
 					- *width_
 					- *margin_right_
@@ -170,7 +167,7 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 			 * 'right' (if 'direction' is 'ltr'). */
 			if (!left_.has_value() && !right_.has_value() && width_.has_value()) {
 				left_ = 0.0f; // static-position left
-				right_ = cont_block_width_
+				right_ = contg_block_width_
 					- *left_
 					- *margin_left_
 					- *width_
@@ -181,7 +178,7 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 		 * then the width is shrink-to-fit . Then solve for 'right'*/
 		if (!width_.has_value() && !right_.has_value() && left_.has_value()) {
 			width_ = layout_width;
-			right_ = cont_block_width_
+			right_ = contg_block_width_
 				- *left_
 				- *margin_left_
 				- *width_
@@ -189,7 +186,7 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 		}
 		/* 4. 'left' is 'auto', 'width' and 'right' are not 'auto', then solve for 'left' */
 		if (!left_.has_value() && width_.has_value() && right_.has_value()) {
-			left_ = cont_block_width_
+			left_ = contg_block_width_
 				- *margin_left_
 				- *width_
 				- *margin_right_
@@ -197,7 +194,7 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 		}
 		/* 5. 'width' is 'auto', 'left' and 'right' are not 'auto', then solve for 'width' */
 		if (!width_.has_value() && left_.has_value() && right_.has_value()) {
-			width_ = cont_block_width_
+			width_ = contg_block_width_
 				- *left_
 				- *margin_left_
 				- *margin_right_
@@ -205,7 +202,7 @@ void AbsoluteBlockWidthSolver::setLayoutWidth(float layout_width)
 		}
 		/* 6. 'right' is 'auto', 'left' and 'width' are not 'auto', then solve for 'right' */
 		if (!right_.has_value() && left_.has_value() && width_.has_value()) {
-			right_ = cont_block_width_
+			right_ = contg_block_width_
 				- *left_
 				- *margin_left_
 				- *width_
@@ -232,6 +229,41 @@ float AbsoluteBlockWidthSolver::marginRight()
 float AbsoluteBlockWidthSolver::right()
 {
 	return right_.value_or(0);
+}
+
+float AbsoluteBlockWidthSolver::availWidth()
+{
+	if (width_.has_value())
+		return std::max(*width_, 0.0f);
+
+	float w;
+	if (left_.has_value() && right_.has_value()) {
+		w = contg_block_width_
+			- left_.value_or(0)
+			- margin_left_.value_or(0)
+			- margin_right_.value_or(0)
+			- right_.value_or(0);
+		if (w < 0) {
+			w = contg_block_width_
+				- margin_left_.value_or(0)
+				- margin_right_.value_or(0);
+		}
+	} else if (left_.has_value()) {
+		w = contg_block_width_
+			- *left_
+			- margin_left_.value_or(0)
+			- margin_right_.value_or(0);
+	} else if (right_.has_value()) {
+		w = contg_block_width_
+			- margin_left_.value_or(0)
+			- margin_right_.value_or(0)
+			- *right_;
+	} else {
+		w = contg_block_width_
+			- margin_left_.value_or(0)
+			- margin_right_.value_or(0);
+	}
+	return std::max(w, 0.0f);
 }
 
 AbsoluteBlockPositionSolver::AbsoluteBlockPositionSolver(float cont_block_height,

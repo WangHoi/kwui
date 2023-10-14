@@ -35,7 +35,6 @@ struct BlockBox {
 	EdgeOffsetF padding; // padding edges
 	scene2d::DimensionF content; // content size
 
-	float avail_width = 0;
 	absl::optional<float> prefer_height;
 
 	BlockBoxType type = BlockBoxType::Empty;
@@ -45,13 +44,15 @@ struct BlockBox {
 		scene2d::Node*,		// Node containing inlines
 		std::unique_ptr<BlockFormatContext>		// nested BFC, in-flow
 	> payload;
+	const Style* style;
+	absl::optional<std::tuple<float, float>> measure_width;
 	std::optional<EdgeOffsetF> rel_offset; // Relative positioned box offset
 	BlockBox* parent;
 	BlockBox* next_sibling;
 	BlockBox* prev_sibling;
 
 	BlockBox()
-		: parent(nullptr), next_sibling(this), prev_sibling(this) {}
+		: style(nullptr), parent(nullptr), next_sibling(this), prev_sibling(this) {}
 
 	inline scene2d::RectF marginRect() const
 	{

@@ -42,6 +42,10 @@ struct Value {
 	{
 		return unit == ValueUnit::Pixel;
 	}
+	inline bool isRaw() const
+	{
+		return unit == ValueUnit::Raw;
+	}
 	inline bool isAuto() const
 	{
 		return isKeyword("auto");
