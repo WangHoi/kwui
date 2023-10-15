@@ -6,6 +6,7 @@
 #include "script/script.h"
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/Dialog.h"
+#include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"
 
 int main()
@@ -20,6 +21,7 @@ int main()
     PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
 
     windows::graphics::GraphicDevice::get()->Init();
+    windows::control::register_line_edit_control();
     windows::control::register_progress_bar_control();
 
     script::Context ctx;

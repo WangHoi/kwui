@@ -12,6 +12,15 @@ class Painter;
 
 namespace scene2d {
 
+class EventContext {
+public:
+    virtual scene2d::PointF GetMousePosition() const = 0;
+
+    virtual void RequestPaint() = 0;
+    virtual void RequestUpdate() = 0;
+    virtual void RequestAnimationFrame(scene2d::Node* node) = 0;
+};
+
 class Node;
 class Control {
 public:

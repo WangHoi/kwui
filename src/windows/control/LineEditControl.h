@@ -59,8 +59,10 @@ class LineEditControl : public scene2d::Control {
 public:
     LineEditControl();
     ~LineEditControl();
+    base::string_atom name() override;
     void onAttach(scene2d::Node* node) override;
     void onDetach(scene2d::Node* node) override;
+    bool testFlags(int flags) const override;
     void onPaint(windows::graphics::Painter& p, const scene2d::RectF& rect) override;
     void onFocusEvent(scene2d::FocusEvent& evt) override;
     void onMouseEvent(scene2d::MouseEvent& evt) override;
@@ -154,6 +156,6 @@ private:
     TextChangedCallback _text_changed_callback;
 };
 
-
+void register_line_edit_control();
 }
 }

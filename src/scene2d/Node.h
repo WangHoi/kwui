@@ -119,10 +119,7 @@ public:
 
 	bool testFlags(int flags) const;
 
-	inline bool hitTestNode(const PointF& p) {
-		return origin_.x <= p.x && p.x < origin_.x + size_.width
-			&& origin_.y <= p.y && p.y < origin_.y + size_.height;
-	}
+	absl::optional<PointF> hitTestNode(const PointF& p);
 
 	void onEvent(MouseEvent &event);
 	void onEvent(KeyEvent &event);

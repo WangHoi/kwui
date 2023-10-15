@@ -710,6 +710,7 @@ void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers
     scene2d::PointF local_pos;
     node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_CLICKABLE, &local_pos);
     if (node) {
+        LOG(INFO) << "mouse down " << local_pos;
         scene2d::MouseEvent mouse_down(node, scene2d::MOUSE_DOWN, _mouse_position, local_pos, button, buttons, modifiers);
         node->onEvent(mouse_down);
     }
@@ -761,7 +762,7 @@ void Dialog::UpdateHoveredNode() {
         _hovered_node = node ? node->weaken() : base::object_weakptr<scene2d::Node>();
         if (node) {
             // node->_under_mouse = true;
-            scene2d::MouseEvent hover_enter(old_hovered.get(), scene2d::MOUSE_ENTER);
+            scene2d::MouseEvent hover_enter(node, scene2d::MOUSE_ENTER);
             node->onEvent(hover_enter);
         }
     }

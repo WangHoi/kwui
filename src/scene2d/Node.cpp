@@ -34,6 +34,8 @@ Node::Node(NodeType type)
 	, size_(DimensionF::fromZeros())
 {
 	block_box_.style = &computed_style_;
+	weakptr_ = new base::WeakObjectProxy<Node>(this);
+	weakptr_->retain();
 }
 
 Node::Node(NodeType type, const std::string& text)
@@ -85,6 +87,18 @@ bool Node::testFlags(int flags) const
 	if (control_)
 		return control_->testFlags(flags);
 	return false;
+}
+
+absl::optional<PointF> Node::hitTestNode(const PointF& p) {
+	if (type_ == NodeType::NODE_ELEMENT && computed_style_.display == style::DisplayType::Block) {
+		RectF border_rect = block_box_.borderRect();
+		PointF pos = p - border_rect.origin();
+		if (0.0f <= pos.x && pos.x < border_rect.width()
+			&& 0.0f <= pos.y && pos.y < border_rect.height()) {
+			return pos;
+		}
+	}
+	return absl::nullopt;
 }
 
 void Node::onEvent(MouseEvent& event)
@@ -618,12 +632,11 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 
 	base::scoped_setter _(bfc.content_left,
 		bfc.content_left + box.margin.left + box.border.left + box.padding.left);
-	if (box.type == style::BlockBoxType::WithBlockChildren) {
+	if (box.type == style::BlockBoxType::WithBlockChildren || box.type == style::BlockBoxType::Empty) {
 		float saved_bfc_margin_bottom = bfc.margin_bottom;
 		box.eachChild([&](style::BlockBox* child) {
 			Node::layoutArrange(bfc, *child);
 			});
-
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
 			bfc.border_bottom = saved_bfc_margin_bottom + *box.prefer_height;
@@ -650,12 +663,18 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 			layoutMeasure(*contg_node->ifc_, ibb, child);
 			});
 		contg_node->ifc_->layoutArrange();
-		box.content.height = contg_node->ifc_->getLayoutHeight();
-		if (box.content.height > 0) {
-			bfc.border_bottom = bfc.margin_bottom + box.content.height;
+		if (box.prefer_height.has_value()) {
+			box.content.height = *box.prefer_height;
+			bfc.border_bottom = bfc.margin_bottom + *box.prefer_height;
 			bfc.margin_bottom = bfc.border_bottom;
 		} else {
-			// check top and bottom margin collapse, below
+			box.content.height = contg_node->ifc_->getLayoutHeight();
+			if (box.content.height > 0) {
+				bfc.border_bottom = bfc.margin_bottom + box.content.height;
+				bfc.margin_bottom = bfc.border_bottom;
+			} else {
+				// check top and bottom margin collapse, below
+			}
 		}
 		LOG(INFO)
 			<< "<" << contg_node->tag_ << "> "

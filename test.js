@@ -42,6 +42,7 @@ function Div(props, kids) {
 }
 
 var simple_stylesheet = {
+	/*
 	"p": {
 		"margin-left": 10,
 		"margin-top": 10,
@@ -57,7 +58,15 @@ var simple_stylesheet = {
 		"padding-bottom": 10,
 		"border-color": "#0f0",
 		"background-color": "#0ff",
-	}
+	},
+	*/
+	"line-edit": {
+		"width": 100,
+		"height": 30,
+	},
+	"progress-bar, line-edit": {
+		"height": 50
+	},
 };
 
 var simple = <p style={{ left: 30, top: 100 }}>第一栏<p style={{ left: 20, top: 30 }}>测试2</p></p>;
@@ -65,6 +74,8 @@ var complex = <Div a="f1"><p>aa</p><p>bb</p></Div>;
 var edit = <line-edit style={{ left: 20, top: 20, width: 200, height: 40 }}></line-edit>
 // console.log(JSON.stringify(complex.render()));
 
-var hello_world = <div><div><p>hello</p></div><progress-bar value={0.3}>world</progress-bar></div>;
+var hello_world = (<div>
+	<line-edit>a</line-edit>
+</div>);
 
 app.showDialog(hello_world, simple_stylesheet);

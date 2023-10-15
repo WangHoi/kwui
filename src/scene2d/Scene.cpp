@@ -157,14 +157,20 @@ Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_
 {
 	if (!node->visible())
 		return nullptr;
-	if (node->testFlags(flag_mask) && node->hitTestNode(pos)) {
-		if (out_local_pos)
-			*out_local_pos = pos - node->origin();
-		return node;
+	if (node->testFlags(flag_mask)) {
+		auto local_pos = node->hitTestNode(pos);
+		if (local_pos) {
+			if (out_local_pos) {
+				auto kk = node->hitTestNode(pos);
+				*out_local_pos = *local_pos;
+			}
+			return node;
+		} else {
+			return nullptr;
+		}
 	} else {
 		return nullptr;
 	}
-
 }
 
 Node* Scene::createComponentNodeWithState(JSValue comp_state)
@@ -320,13 +326,23 @@ Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_
 	if (!node->visible()) {
 		return nullptr;
 	}
-	scene2d::PointF local_pos = pos - node->origin();
+	
+	scene2d::PointF local_pos = pos;
+	if (node->type() == NodeType::NODE_ELEMENT && node->absolutelyPositioned()
+		&& node->computedStyle().display == style::DisplayType::Block) {
+		local_pos -= node->block_box_.pos;
+	}
 	const auto& children = node->children_;
 	for (auto it = children.rbegin(); it != children.rend(); ++it) {
 		Node* node = pickNode(*it, local_pos, flag_mask, out_local_pos);
-		if (node)
+		if (node) {
+			if (out_local_pos) {
+				int kk = 1;
+			}
 			return node;
+		}
 	}
+	
 	return pickSelf(node, pos, flag_mask, out_local_pos);
 }
 

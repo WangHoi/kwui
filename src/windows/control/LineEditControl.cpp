@@ -263,6 +263,10 @@ LineEditControl::LineEditControl()
     MoveCaret(0, false, false);
 }
 LineEditControl::~LineEditControl() = default;
+base::string_atom LineEditControl::name()
+{
+    return base::string_intern("line-edit");
+}
 void LineEditControl::onAttach(scene2d::Node* node)
 {
     _node = node;
@@ -271,10 +275,17 @@ void LineEditControl::onDetach(scene2d::Node* node)
 {
     _node = nullptr;
 }
+bool LineEditControl::testFlags(int flags) const
+{
+    return true;
+}
 void LineEditControl::onPaint(windows::graphics::Painter &p, const scene2d::RectF& rect) {
+    p.Save();
+    p.Translate(rect.origin());
+
     scene2d::DimensionF node_size = rect.size();
     p.SetColor(_bg_color);
-    p.DrawRoundedRect(rect.origin(), node_size, _border_radius);
+    p.DrawRoundedRect(scene2d::PointF(), node_size, _border_radius);
 
     scene2d::PointF clip_origin(_padding, 0);
     scene2d::DimensionF clip_size(node_size.width - 2 * _padding, node_size.height);
@@ -315,6 +326,8 @@ void LineEditControl::onPaint(windows::graphics::Painter &p, const scene2d::Rect
         p.SetColor(_caret_color);
         p.DrawRect(_scroll_offset + _padding + _caret_rect.origin(), _caret_rect.size());
     }
+
+    p.Restore();
 }
 void LineEditControl::onFocusEvent(scene2d::FocusEvent& evt)
 {
@@ -605,7 +618,8 @@ void LineEditControl::UpdateCaretAndScroll() {
     int disp_caret_pos = GetDisplayCaretPos();
     _caret_rect = _layout->caretRect(disp_caret_pos);
     scene2d::RectF content_rect = _layout->rect();
-    float avail_width = _node->size().width - _padding * 2;
+    // TODO: _node为空
+    float avail_width = 100;//_node->size().width - _padding * 2;
 
     float caret_x = _caret_rect.left + 0.5f * _caret_rect.width() + _scroll_offset.x;
     if (caret_x < 0) {
@@ -765,6 +779,13 @@ std::wstring LineEditControl::GetSelectionText() const {
 void LineEditControl::ResetCaretBlink() {
     _caret_blink_helper->Reset();
 }
-
+void register_line_edit_control()
+{
+    scene2d::ControlRegistry::get()
+        ->registerControl(base::string_intern("line-edit"),
+            []() -> scene2d::Control* {
+                return new LineEditControl();
+            });
+}
 }
 }
