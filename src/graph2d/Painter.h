@@ -2,6 +2,10 @@
 #include "scene2d/geom_types.h"
 #include "style/StyleValue.h"
 
+namespace scene2d {
+class Control;
+}
+
 namespace graph2d {
 class TextLayoutInterface;
 class PainterInterface {
@@ -16,5 +20,7 @@ public:
 	virtual void drawTextLayout(const scene2d::PointF& pos,
 		const TextLayoutInterface* text_layout,
 		const style::Value& color) = 0;
+	virtual void drawControl(const scene2d::RectF& rect,
+		scene2d::Control* control) = 0;
 };
 }

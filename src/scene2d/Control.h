@@ -20,7 +20,7 @@ public:
     virtual void onAttach(Node *node) {}
     virtual void onDetach(Node *node) {}
     virtual bool testFlags(int flags) const { return false; }
-    virtual void onPaint(windows::graphics::Painter &p) {}
+    virtual void onPaint(windows::graphics::Painter &p, const scene2d::RectF& rect) {}
     virtual void onMouseEvent(MouseEvent &evt) {}
     virtual void onKeyEvent(KeyEvent &evt) {}
     virtual void onFocusEvent(FocusEvent &evt) {}

@@ -1,19 +1,24 @@
 布局:
+- text-align 居中
+- 盒子生成：文本的anon-inline-box
 - Relative的处理
-- Absolute的宽度计算有bug，title-bar
+- 盒子生成：inline中包含block，需要生成临时anon-block-box包裹;
+- AbsoluteBlockPositionSolver
 
 CSS:
-- 多个selector应用有bug
-- class selector有bug
+- font-family, font-size 支持
+- shorthand 支持
 
 DOM:
 - 鼠标点击坐标处理
-- Control::onPaint需要RenderBox
-- 移植ButtonControl, ImageButtonControl, ProgressBarControl
 - fragment 处理有问题，没有跳过
 
+Control:
+- RenderRect 需要为 content rect
+- NodeAttributeValue 增加toString, toNumber
+- 移植ButtonControl, ImageButtonControl
+
 测试:
-- 安装程序主界面模拟 js
 - 确定对话框模拟 js
 - 测试 js 放单独目录
 - 脚本转换 html 为 js

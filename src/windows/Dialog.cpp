@@ -76,6 +76,10 @@ public:
         p_.SetColor(get_color(color));
         p_.DrawTextLayout(pos, *(graphics::TextLayout*)text_layout);
     }
+    void drawControl(const scene2d::RectF& rect, scene2d::Control* control) override
+    {
+        control->onPaint(p_, rect);
+    }
 private:
     graphics::Painter& p_;
 };

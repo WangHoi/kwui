@@ -4,4 +4,7 @@ target_sources(kwui PRIVATE
     ImageControl.h    
     ImageControl.cpp
     LineEditControl.h
-    LineEditControl.cpp)
+    LineEditControl.cpp
+    ProgressBarControl.h
+    ProgressBarControl.cpp
+)

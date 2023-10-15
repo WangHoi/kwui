@@ -271,10 +271,10 @@ void LineEditControl::onDetach(scene2d::Node* node)
 {
     _node = nullptr;
 }
-void LineEditControl::onPaint(windows::graphics::Painter &p) {
-    scene2d::DimensionF node_size = _node->size();
+void LineEditControl::onPaint(windows::graphics::Painter &p, const scene2d::RectF& rect) {
+    scene2d::DimensionF node_size = rect.size();
     p.SetColor(_bg_color);
-    p.DrawRoundedRect(scene2d::PointF(0, 0), node_size, _border_radius);
+    p.DrawRoundedRect(rect.origin(), node_size, _border_radius);
 
     scene2d::PointF clip_origin(_padding, 0);
     scene2d::DimensionF clip_size(node_size.width - 2 * _padding, node_size.height);

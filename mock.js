@@ -47,12 +47,12 @@ var simple_stylesheet = {
 	},
 	".title-bar": {
 		"position": "absolute",
-		"top": 10,
-		"right": 10,
-		"margin-left": 0,
-		"margin-top": 0,
-		"margin-right": 0,
-		"margin-bottom": 0
+		"top": 0,
+		"right": 0,
+		"margin-left": 10,
+		"margin-top": 10,
+		"margin-right": 10,
+		"margin-bottom": 10
 	}
 };
 var hello_world_full = (<body>
@@ -85,6 +85,14 @@ var hello_world = (
     </div>
 );
 
+var title_bar = (
+	<div class={"title-bar"} style={{ "background-color": "#0ff"}}>
+        <button>最小化</button>
+        <button style={{"background-color": "#f0f"}}>最大化</button>
+        <button>关闭</button>
+    </div>
+);
+
 console.log(JSON.stringify(hello_world));
 
-app.showDialog(hello_world_full, simple_stylesheet);
+app.showDialog(title_bar, simple_stylesheet);

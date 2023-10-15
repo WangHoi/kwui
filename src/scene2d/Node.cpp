@@ -140,12 +140,6 @@ void Node::setEventHandler(base::string_atom name, JSValue func)
 		control_->onSetEventHandler(name, func);
 }
 
-void Node::paintControl(windows::graphics::Painter& painter)
-{
-	if (control_)
-		control_->onPaint(painter);
-}
-
 void Node::resolveDefaultStyle()
 {
 	CHECK(type_ == NodeType::NODE_ELEMENT);
@@ -354,13 +348,15 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 	b.pos.x = width_solver.left();
 
 	// for absolutely positioned block
+	// TODO: improve AbsoluteBlockPositionSolver
 	style::AbsoluteBlockPositionSolver height_solver(contg_blk_height,
 		try_resolve_to_px(st.top, contg_blk_height),
 		try_resolve_to_px(st.height, contg_blk_height),
 		try_resolve_to_px(st.bottom, contg_blk_height));
 	height_solver.setLayoutHeight(b.marginRect().size().height);
 	b.pos.y = height_solver.top();
-	b.content.height = height_solver.height();
+	//b.content.height = height_solver.height();
+	b.content.height = std::max(0.0f, height_solver.height() - b.margin.top - b.margin.bottom);
 
 	LOG(INFO) << "reflow <" << tag_ << "> border box" << b.borderRect();
 

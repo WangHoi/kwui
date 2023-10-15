@@ -109,19 +109,9 @@ void Scene::updateComponent(JSValue comp_state)
 
 }
 
-Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos/* = nullptr */)
+Node* Scene::pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos)
 {
-	if (!node->visible()) {
-		return nullptr;
-	}
-	scene2d::PointF local_pos = pos - node->origin();
-	const auto& children = node->children_;
-	for (auto it = children.rbegin(); it != children.rend(); ++it) {
-		Node* node = pickNode(*it, local_pos, flag_mask, out_local_pos);
-		if (node)
-			return node;
-	}
-	return pickSelf(node, pos, flag_mask, out_local_pos);
+	return pickNode(root_, pos, flag_mask, out_local_pos);
 }
 
 void Scene::appendStyleRule(std::unique_ptr<style::StyleRule>&& rule)
@@ -278,14 +268,18 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::Painte
 			LOG(INFO) << "paintBlock scene pos=" << node->block_box_.pos
 				<< ", border-rect " << node->block_box_.borderRect();
 			RectF border_rect = node->block_box_.borderRect();
+			RectF render_rect = RectF::fromXYWH(
+				node->block_box_.pos.x + border_rect.left,
+				node->block_box_.pos.y + border_rect.top,
+				border_rect.width(),
+				border_rect.height());
 			painter->drawBox(
-				RectF::fromXYWH(node->block_box_.pos.x + border_rect.left,
-					node->block_box_.pos.y + border_rect.top,
-					border_rect.width(),
-					border_rect.height()),
+				render_rect,
 				node->computed_style_.border_top_width.pixelOrZero(),
 				node->computed_style_.background_color,
 				node->computed_style_.border_color);
+			if (node->control_)
+				painter->drawControl(render_rect, node->control_.get());
 		} else if (node->computed_style_.display == style::DisplayType::Inline) {
 		} else if (node->computed_style_.display == style::DisplayType::None) {
 			;
@@ -297,7 +291,8 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::Painte
 		if (node->absolutelyPositioned()) {
 			painter->save();
 			if (node->computed_style_.display == style::DisplayType::Block) {
-				PointF pos = node->block_box_.pos + node->block_box_.paddingRect().origin();
+				PointF pos = node->block_box_.pos;
+				LOG(INFO) << "paint setTranslation " << pos;
 				painter->setTranslation(pos, true);
 			} else if (node->computed_style_.display == style::DisplayType::Inline) {
 				//offset = node->inline_box_.boundingRect().origin();
@@ -318,6 +313,21 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::Painte
 	} else {
 		LOG(WARNING) << "Unsupported paint node type" << node->type_;
 	}
+}
+
+Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos/* = nullptr */)
+{
+	if (!node->visible()) {
+		return nullptr;
+	}
+	scene2d::PointF local_pos = pos - node->origin();
+	const auto& children = node->children_;
+	for (auto it = children.rbegin(); it != children.rend(); ++it) {
+		Node* node = pickNode(*it, local_pos, flag_mask, out_local_pos);
+		if (node)
+			return node;
+	}
+	return pickSelf(node, pos, flag_mask, out_local_pos);
 }
 
 } // namespace scene2d

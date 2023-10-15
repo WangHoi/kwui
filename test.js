@@ -65,6 +65,6 @@ var complex = <Div a="f1"><p>aa</p><p>bb</p></Div>;
 var edit = <line-edit style={{ left: 20, top: 20, width: 200, height: 40 }}></line-edit>
 // console.log(JSON.stringify(complex.render()));
 
-var hello_world = <div><div><p>hello</p></div><p>world</p></div>;
+var hello_world = <div><div><p>hello</p></div><progress-bar value={0.3}>world</progress-bar></div>;
 
 app.showDialog(hello_world, simple_stylesheet);

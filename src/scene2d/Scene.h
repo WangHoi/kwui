@@ -40,11 +40,7 @@ public:
 	{
 		return root_;
 	}
-    inline Node* pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr)
-	{
-		return pickNode(root_, pos, flag_mask, out_local_pos);
-	}
-    Node* pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
+    Node* pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
 	
 	void appendStyleRule(std::unique_ptr<style::StyleRule>&& rule);
 	void resolveStyle();
@@ -59,6 +55,7 @@ private:
 	bool match(Node* node, style::Selector* selector);
 	void resolveNodeStyle(Node* node);
 	void paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::PainterInterface* painter);
+	Node* pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
 
 	std::unique_ptr<script::Context> ctx_;
 	Node* root_;

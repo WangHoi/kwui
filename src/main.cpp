@@ -6,6 +6,7 @@
 #include "script/script.h"
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/Dialog.h"
+#include "windows/control/ProgressBarControl.h"
 
 int main()
 {
@@ -13,14 +14,16 @@ int main()
 
     base::initialize_log();
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    windows::graphics::GraphicDevice::get()->Init();
 
     int exit_code = 0;
     MSG msg;
     PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
 
+    windows::graphics::GraphicDevice::get()->Init();
+    windows::control::register_progress_bar_control();
+
     script::Context ctx;
-    ctx.loadFile("d:/projects/kwui/mock.js");
+    ctx.loadFile("d:/projects/kwui/test.js");
 
     while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
