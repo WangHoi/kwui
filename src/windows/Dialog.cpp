@@ -6,6 +6,7 @@
 #include "graphics/Painter.h"
 #include "theme.h"
 #include "absl/functional/bind_front.h"
+#include "absl/time/clock.h"
 #include "graph2d/Painter.h"
 
 namespace windows {
@@ -920,20 +921,18 @@ void Dialog::UpdateBorderAndRenderTarget() {
     }
 }
 void Dialog::OnAnimationTimerEvent() {
-    /*
-    double timestamp = get_timestamp();
+    absl::Time timestamp = absl::Now();
     auto nodes = move(_animating_nodes);
     _animating_nodes.clear();
     for (auto& link : nodes) {
-        Node2DRef node = link.lock();
+        auto node = link.upgrade();
         if (node)
-            node->OnAnimationFrame(timestamp, *this);
+            node->onAnimationFrame(timestamp);
     }
     if (_animating_nodes.empty() && _animation_timer_id) {
         KillTimer(_hwnd, _animation_timer_id);
         _animation_timer_id = 0;
     }
-    */
 }
 
 } // namespace windows

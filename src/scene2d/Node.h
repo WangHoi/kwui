@@ -125,7 +125,8 @@ public:
 	void onEvent(KeyEvent &event);
 	void onEvent(FocusEvent &event);
 	void onEvent(ImeEvent &event);
-	
+	void onAnimationFrame(absl::Time timestamp);
+
 	void setId(base::string_atom id);
 	void setClass(const style::Classes &klass);
 	void setStyle(const style::StyleSpec &style);

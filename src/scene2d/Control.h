@@ -30,10 +30,11 @@ public:
     virtual void onDetach(Node *node) {}
     virtual bool testFlags(int flags) const { return false; }
     virtual void onPaint(windows::graphics::Painter &p, const scene2d::RectF& rect) {}
-    virtual void onMouseEvent(MouseEvent &evt) {}
-    virtual void onKeyEvent(KeyEvent &evt) {}
-    virtual void onFocusEvent(FocusEvent &evt) {}
+    virtual void onMouseEvent(Node* node, MouseEvent &evt) {}
+    virtual void onKeyEvent(Node* node, KeyEvent &evt) {}
+    virtual void onFocusEvent(Node* node, FocusEvent &evt) {}
     virtual void onImeEvent(Node* node, ImeEvent &evt) {}
+    virtual void onAnimationFrame(Node* node, absl::Time timestamp) {}
     virtual void onSetAttribute(base::string_atom name, const NodeAttributeValue &value) {}
     virtual void onSetEventHandler(base::string_atom name, JSValue func) {}
 };

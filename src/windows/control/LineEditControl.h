@@ -64,11 +64,11 @@ public:
     void onDetach(scene2d::Node* node) override;
     bool testFlags(int flags) const override;
     void onPaint(windows::graphics::Painter& p, const scene2d::RectF& rect) override;
-    void onFocusEvent(scene2d::FocusEvent& evt) override;
-    void onMouseEvent(scene2d::MouseEvent& evt) override;
-    void onKeyEvent(scene2d::KeyEvent& evt) override;
+    void onFocusEvent(scene2d::Node* node, scene2d::FocusEvent& evt) override;
+    void onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt) override;
+    void onKeyEvent(scene2d::Node* node, scene2d::KeyEvent& evt) override;
     void onImeEvent(scene2d::Node* node, scene2d::ImeEvent& evt) override;
-
+    void onAnimationFrame(scene2d::Node* node, absl::Time timestamp) override;
     void SetColor(const windows::graphics::Color& c) { _color = c; }
     void SetBackgroundColor(const windows::graphics::Color& c) { _bg_color = c; }
     void SetBackgroundPadding(float padding) { _padding = padding; }
@@ -87,8 +87,8 @@ public:
     }
 
 private:
-    void OnFocusIn(scene2d::FocusEvent& evt);
-    void OnFocusOut(scene2d::FocusEvent& evt);
+    void OnFocusIn(scene2d::Node* node, scene2d::FocusEvent& evt);
+    void OnFocusOut(scene2d::Node* node, scene2d::FocusEvent& evt);
     void OnCharacter(std::wstring ch);
     void OnImeComposition(const std::wstring& text,
                           absl::optional<int> caret_pos);
@@ -96,11 +96,10 @@ private:
     void OnImeCommit(const std::wstring& text);
     bool QueryImeCaretRect(scene2d::PointF& origin, scene2d::DimensionF& size);
 
-    void OnKeyDown(int key, int modifiers);
-    void OnKeyUp(int key, int modifiers) {}
-    void OnMouseDown(const scene2d::PointF& local_pos);
+    void OnKeyDown(scene2d::Node* node, int key, int modifiers);
+    void OnKeyUp(scene2d::Node* node, int key, int modifiers) {}
+    void OnMouseDown(scene2d::Node* node, const scene2d::PointF& local_pos);
     void OnSizeChanged();
-    void OnAnimationFrame(double timestamp);
 
     void UpdateTextLayout();
     // 更新文本偏移：插入文字、光标移动、插入输入法Composing文本
@@ -146,7 +145,7 @@ private:
     // 输入法的临时文本：如拼音
     struct ComposeState {
         std::wstring text;
-        int caret_pos;	// 内部光标位置
+        int caret_pos = 0;	// 内部光标位置
     };
     absl::optional<ComposeState> _composing;
     absl::optional<int> _sel_anchor;	// 选择区域的另一端位置

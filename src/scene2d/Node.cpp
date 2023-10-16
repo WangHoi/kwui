@@ -105,25 +105,31 @@ absl::optional<PointF> Node::hitTestNode(const PointF& p) {
 void Node::onEvent(MouseEvent& event)
 {
 	if (control_)
-		control_->onMouseEvent(event);
+		control_->onMouseEvent(this, event);
 }
 
 void Node::onEvent(KeyEvent& event)
 {
 	if (control_)
-		control_->onKeyEvent(event);
+		control_->onKeyEvent(this, event);
 }
 
 void Node::onEvent(FocusEvent& event)
 {
 	if (control_)
-		control_->onFocusEvent(event);
+		control_->onFocusEvent(this, event);
 }
 
 void Node::onEvent(ImeEvent& event)
 {
 	if (control_)
 		control_->onImeEvent(this, event);
+}
+
+void Node::onAnimationFrame(absl::Time timestamp)
+{
+	if (control_)
+		control_->onAnimationFrame(this, timestamp);
 }
 
 void Node::setId(base::string_atom id)

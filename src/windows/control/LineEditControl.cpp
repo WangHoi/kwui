@@ -138,11 +138,8 @@ public:
     bool Update(absl::Time timestamp) {
         if (_blink_time_ms == INFINITY)
             return false;
-        /*
-        UINT i = static_cast<UINT>((timestamp - _reset_time) * 1000.0)
-            / _blink_time_ms;
-        */
-        UINT i = 0;
+        absl::Duration rem;
+        int64_t i = absl::IDivDuration(timestamp - _reset_time, absl::Milliseconds(_blink_time_ms), &rem);
         bool new_visible = (i % 2 == 0);
         if (_visible.has_value() && _visible.value() == new_visible)
             return false;
@@ -329,24 +326,24 @@ void LineEditControl::onPaint(windows::graphics::Painter &p, const scene2d::Rect
 
     p.Restore();
 }
-void LineEditControl::onFocusEvent(scene2d::FocusEvent& evt)
+void LineEditControl::onFocusEvent(scene2d::Node* node, scene2d::FocusEvent& evt)
 {
     if (evt.cmd == scene2d::FOCUS_IN)
-        OnFocusIn(evt);
+        OnFocusIn(node, evt);
     else if (evt.cmd == scene2d::FOCUS_OUT)
-        OnFocusOut(evt);
+        OnFocusOut(node, evt);
 }
-void LineEditControl::onMouseEvent(scene2d::MouseEvent& evt)
+void LineEditControl::onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt)
 {
     if (evt.cmd == scene2d::MOUSE_DOWN)
-        OnMouseDown(evt.pos);
+        OnMouseDown(node, evt.pos);
 }
-void LineEditControl::onKeyEvent(scene2d::KeyEvent& evt)
+void LineEditControl::onKeyEvent(scene2d::Node* node, scene2d::KeyEvent& evt)
 {
     if (evt.cmd == scene2d::KEY_DOWN)
-        OnKeyDown(evt.key, evt.modifiers);
+        OnKeyDown(node, evt.key, evt.modifiers);
     else if (evt.cmd == scene2d::KEY_UP)
-        OnKeyUp(evt.key, evt.modifiers);
+        OnKeyUp(node, evt.key, evt.modifiers);
 }
 void LineEditControl::onImeEvent(scene2d::Node* node, scene2d::ImeEvent& evt)
 {
@@ -360,26 +357,31 @@ void LineEditControl::onImeEvent(scene2d::Node* node, scene2d::ImeEvent& evt)
         OnImeCommit(evt.wtext_);
     node->requestPaint();
 }
-
+void LineEditControl::onAnimationFrame(scene2d::Node* node, absl::Time timestamp) {
+    if (!_is_focused)
+        return;
+    if (_caret_blink_helper->Update(timestamp))
+        node->requestPaint();
+    node->requestAnimationFrame(node);
+}
 void LineEditControl::UpdateTextLayout() {
     std::wstring disp_text = GetDisplayText();
     _layout = windows::graphics::TextLayoutBuilder(disp_text)
         .FontSize(_font_size)
         .Build();
 }
-void LineEditControl::OnFocusIn(scene2d::FocusEvent& evt) {
+void LineEditControl::OnFocusIn(scene2d::Node* node, scene2d::FocusEvent& evt) {
     _is_focused = true;
     ResetCaretBlink();
-    // ctx.RequestAnimationFrame(this);
-    // ctx.RequestPaint();
+    node->requestAnimationFrame(node);
+    node->requestPaint();
 }
-void LineEditControl::OnFocusOut(scene2d::FocusEvent& ctx) {
+void LineEditControl::OnFocusOut(scene2d::Node* node, scene2d::FocusEvent& ctx) {
     _is_focused = false;
-    // ctx.RequestPaint();
+    node->requestPaint();
 }
 void LineEditControl::OnCharacter(std::wstring ch) {
     InsertText(ch, false);
-    // ctx.RequestPaint();
 }
 void LineEditControl::OnImeComposition(const std::wstring& text,
     absl::optional<int> caret_pos) {
@@ -396,18 +398,15 @@ void LineEditControl::OnImeComposition(const std::wstring& text,
     UpdateTextLayout();
     ResetCaretBlink();
     UpdateCaretAndScroll();
-    // ctx.RequestPaint();
 }
 void LineEditControl::OnImeEndComposition() {
     _composing = absl::nullopt;
     UpdateTextLayout();
     ResetCaretBlink();
     UpdateCaretAndScroll();
-    // ctx.RequestPaint();
 }
 void LineEditControl::OnImeCommit(const std::wstring& text) {
     InsertText(text, true);
-    // ctx.RequestPaint();
 }
 bool LineEditControl::QueryImeCaretRect(scene2d::PointF& origin, scene2d::DimensionF& size) {
     //UpdateTextLayout();
@@ -416,7 +415,7 @@ bool LineEditControl::QueryImeCaretRect(scene2d::PointF& origin, scene2d::Dimens
     size = _caret_rect.size();
     return true;
 }
-void LineEditControl::OnKeyDown(int key, int modifiers) {
+void LineEditControl::OnKeyDown(scene2d::Node* node, int key, int modifiers) {
     switch (key) {
     case VK_LEFT:
         if (modifiers) {
@@ -498,7 +497,7 @@ void LineEditControl::OnKeyDown(int key, int modifiers) {
         break;
     }
     ResetCaretBlink();
-    // ctx.RequestPaint();
+    node->requestPaint();
 }
 void LineEditControl::InsertText(const std::wstring& text, bool from_ime) {
     ClearComposingText();
@@ -642,22 +641,15 @@ void LineEditControl::UpdateCaretAndScroll() {
         return;
     }
 }
-void LineEditControl::OnMouseDown(const scene2d::PointF& local_pos) {
+void LineEditControl::OnMouseDown(scene2d::Node* node, const scene2d::PointF& local_pos) {
     int pos = _layout->hitTest(local_pos - _scroll_offset - _padding);
     if (pos != -1)
         MoveCaret(pos, false, false);
     ResetCaretBlink();
-    // ctx.RequestPaint();
+    node->requestPaint();
 }
 void LineEditControl::OnSizeChanged() {
     MoveCaret(_caret_pos, true, true);
-}
-void LineEditControl::OnAnimationFrame(double timestamp) {
-    if (!_is_focused)
-        return;
-    // if (_caret_blink_helper->Update(timestamp))
-    //     ctx.RequestPaint();
-    // ctx.RequestAnimationFrame(this);
 }
 std::string LineEditControl::GetText() const {
     return EncodingManager::WideToUTF8(_text);
