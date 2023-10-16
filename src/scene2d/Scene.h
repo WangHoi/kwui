@@ -7,6 +7,7 @@
 #include "geom_types.h"
 #include "style/StyleRule.h"
 #include "style/StylePaint.h"
+#include "Control.h"
 #include "absl/functional/function_ref.h"
 
 namespace script {
@@ -21,7 +22,7 @@ namespace scene2d {
 class Node;
 class Scene : public base::Object {
 public:
-	Scene();
+	Scene(EventContext& ctx);
 	~Scene();
 	inline base::WeakObjectProxy<Scene> *weakProxy() const
 	{
@@ -48,6 +49,11 @@ public:
 
 	void paint(graph2d::PainterInterface* painter);
 
+	scene2d::PointF getMousePosition() const;
+	void requestPaint();
+	void requestUpdate();
+	void requestAnimationFrame(scene2d::Node* node);
+
 private:
 	Node* createComponentNodeWithState(JSValue comp_data);
     Node* pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos);
@@ -57,6 +63,7 @@ private:
 	void paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::PainterInterface* painter);
 	Node* pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
 
+	EventContext& event_ctx_;
 	std::unique_ptr<script::Context> ctx_;
 	Node* root_;
 	base::WeakObjectProxy<Scene> *weakptr_;

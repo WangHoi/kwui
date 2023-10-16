@@ -480,7 +480,7 @@ LRESULT CALLBACK Dialog::WndProcMain(HWND hWnd, UINT message, WPARAM wParam, LPA
     return me->WindowProc(hWnd, message, wParam, lParam);
 }
 void Dialog::OnCreate() {
-    _scene = std::make_unique<scene2d::Scene>();
+    _scene = std::make_unique<scene2d::Scene>(*this);
     /*
     _root = make_shared<Node2D>();
 

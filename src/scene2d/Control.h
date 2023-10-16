@@ -33,7 +33,7 @@ public:
     virtual void onMouseEvent(MouseEvent &evt) {}
     virtual void onKeyEvent(KeyEvent &evt) {}
     virtual void onFocusEvent(FocusEvent &evt) {}
-    virtual void onImeEvent(ImeEvent &evt) {}
+    virtual void onImeEvent(Node* node, ImeEvent &evt) {}
     virtual void onSetAttribute(base::string_atom name, const NodeAttributeValue &value) {}
     virtual void onSetEventHandler(base::string_atom name, JSValue func) {}
 };

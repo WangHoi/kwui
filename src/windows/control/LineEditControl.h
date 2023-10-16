@@ -67,7 +67,7 @@ public:
     void onFocusEvent(scene2d::FocusEvent& evt) override;
     void onMouseEvent(scene2d::MouseEvent& evt) override;
     void onKeyEvent(scene2d::KeyEvent& evt) override;
-    void onImeEvent(scene2d::ImeEvent& evt) override;
+    void onImeEvent(scene2d::Node* node, scene2d::ImeEvent& evt) override;
 
     void SetColor(const windows::graphics::Color& c) { _color = c; }
     void SetBackgroundColor(const windows::graphics::Color& c) { _bg_color = c; }

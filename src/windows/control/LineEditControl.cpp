@@ -348,7 +348,7 @@ void LineEditControl::onKeyEvent(scene2d::KeyEvent& evt)
     else if (evt.cmd == scene2d::KEY_UP)
         OnKeyUp(evt.key, evt.modifiers);
 }
-void LineEditControl::onImeEvent(scene2d::ImeEvent& evt)
+void LineEditControl::onImeEvent(scene2d::Node* node, scene2d::ImeEvent& evt)
 {
     if (evt.cmd == scene2d::CHARS)
         OnCharacter(evt.wtext_);
@@ -358,6 +358,7 @@ void LineEditControl::onImeEvent(scene2d::ImeEvent& evt)
         OnImeEndComposition();
     else if (evt.cmd == scene2d::COMMIT)
         OnImeCommit(evt.wtext_);
+    node->requestPaint();
 }
 
 void LineEditControl::UpdateTextLayout() {

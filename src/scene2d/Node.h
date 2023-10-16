@@ -64,10 +64,10 @@ class Scene;
 class BlockWidthSolverInterface;
 class Node : public base::Object {
 public:
-	Node(NodeType type);
-	Node(NodeType type, const std::string& text);
-	Node(NodeType type, base::string_atom tag);
-	Node(NodeType type, JSValue comp_state);
+	Node(Scene* scene, NodeType type);
+	Node(Scene* scene, NodeType type, const std::string& text);
+	Node(Scene* scene, NodeType type, base::string_atom tag);
+	Node(Scene* scene, NodeType type, JSValue comp_state);
 	~Node();
 
 	NodeType type() const
@@ -151,6 +151,11 @@ public:
 	bool absolutelyPositioned() const;
 	Node* absolutelyPositionedParent() const;
 
+	scene2d::PointF getMousePosition() const;
+	void requestPaint();
+	void requestUpdate();
+	void requestAnimationFrame(scene2d::Node* node);
+
 protected:
 	static void layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
 	static std::tuple<float, float> layoutMeasureWidth(style::BlockBox& box);
@@ -176,7 +181,7 @@ protected:
 	static void eachLayoutChild(Node* node, F&& f);
 
 	// Tree nodes
-	Scene* stage_ = nullptr;
+	Scene* scene_ = nullptr;
 
 	Node* parent_ = nullptr;
 	int child_index = -1;

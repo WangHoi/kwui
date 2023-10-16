@@ -10,7 +10,8 @@
 
 namespace scene2d {
 
-Scene::Scene()
+Scene::Scene(EventContext& ctx)
+	: event_ctx_(ctx)
 {
 	ctx_ = std::make_unique<script::Context>();
 	root_ = createElementNode(base::string_intern("kml"));
@@ -31,14 +32,14 @@ Scene::~Scene()
 
 Node* Scene::createTextNode(const std::string& text)
 {
-	auto actor = new Node(NodeType::NODE_TEXT, text);
+	auto actor = new Node(this, NodeType::NODE_TEXT, text);
 	actor->retain();
 	return actor;
 }
 
 Node* Scene::createElementNode(base::string_atom tag)
 {
-	auto actor = new Node(NodeType::NODE_ELEMENT, tag);
+	auto actor = new Node(this, NodeType::NODE_ELEMENT, tag);
 	actor->retain();
 	return actor;
 }
@@ -153,6 +154,26 @@ void Scene::paint(graph2d::PainterInterface* painter)
 	paintNode(root_, bpc, painter);
 }
 
+scene2d::PointF Scene::getMousePosition() const
+{
+	return event_ctx_.GetMousePosition();
+}
+
+void Scene::requestPaint()
+{
+	event_ctx_.RequestPaint();
+}
+
+void Scene::requestUpdate()
+{
+	event_ctx_.RequestUpdate();
+}
+
+void Scene::requestAnimationFrame(scene2d::Node* node)
+{
+	event_ctx_.RequestAnimationFrame(node);
+}
+
 Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
 {
 	if (!node->visible())
@@ -175,7 +196,7 @@ Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_
 
 Node* Scene::createComponentNodeWithState(JSValue comp_state)
 {
-	return new Node(NodeType::NODE_COMPONENT, comp_state);
+	return new Node(this, NodeType::NODE_COMPONENT, comp_state);
 }
 
 void Scene::setupProps(Node* node, JSValue props)

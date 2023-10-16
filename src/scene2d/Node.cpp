@@ -28,8 +28,9 @@ static void resolve_style(style::DisplayType& style, const style::DisplayType* p
 static void resolve_style(style::PositionType& style, const style::PositionType* parent,
 	const style::ValueSpec& spec, const style::PositionType& default_);
 
-Node::Node(NodeType type)
-	: type_(type)
+Node::Node(Scene* scene, NodeType type)
+	: scene_(scene)
+	, type_(type)
 	, origin_(PointF::fromZeros())
 	, size_(DimensionF::fromZeros())
 {
@@ -38,15 +39,15 @@ Node::Node(NodeType type)
 	weakptr_->retain();
 }
 
-Node::Node(NodeType type, const std::string& text)
-	: Node(type)
+Node::Node(Scene* scene, NodeType type, const std::string& text)
+	: Node(scene, type)
 {
 	text_ = text;
 	text_layout_ = graph2d::createTextLayout(text);
 }
 
-Node::Node(NodeType type, base::string_atom tag)
-	: Node(type)
+Node::Node(Scene* scene, NodeType type, base::string_atom tag)
+	: Node(scene, type)
 {
 	tag_ = tag;
 	control_.reset(ControlRegistry::get()->createControl(tag));
@@ -54,8 +55,8 @@ Node::Node(NodeType type, base::string_atom tag)
 		control_->onAttach(this);
 }
 
-Node::Node(NodeType type, JSValue comp_state)
-	: Node(type)
+Node::Node(Scene* scene, NodeType type, JSValue comp_state)
+	: Node(scene, type)
 {
 	comp_state_ = comp_state;
 	weakptr_ = new base::WeakObjectProxy<Node>(this);
@@ -122,7 +123,7 @@ void Node::onEvent(FocusEvent& event)
 void Node::onEvent(ImeEvent& event)
 {
 	if (control_)
-		control_->onImeEvent(event);
+		control_->onImeEvent(this, event);
 }
 
 void Node::setId(base::string_atom id)
@@ -441,6 +442,26 @@ Node* Node::absolutelyPositionedParent() const
 		p = p->parent_;
 	}
 	return nullptr;
+}
+
+scene2d::PointF Node::getMousePosition() const
+{
+	return scene_->getMousePosition();
+}
+
+void Node::requestPaint()
+{
+	scene_->requestPaint();
+}
+
+void Node::requestUpdate()
+{
+	scene_->requestUpdate();
+}
+
+void Node::requestAnimationFrame(scene2d::Node* node)
+{
+	scene_->requestAnimationFrame(node);
 }
 
 void Node::layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node)
