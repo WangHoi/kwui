@@ -10,13 +10,13 @@ CSS:
 - shorthand 支持
 
 DOM:
-- 鼠标点击坐标处理
 - fragment 处理有问题，没有跳过
 
 Control:
 - RenderRect 需要为 content rect
 - NodeAttributeValue 增加toString, toNumber
 - 移植ButtonControl, ImageButtonControl
+- LineEditControl 剪贴板支持
 
 测试:
 - 确定对话框模拟 js

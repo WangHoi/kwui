@@ -54,6 +54,8 @@ public:
 	void requestUpdate();
 	void requestAnimationFrame(scene2d::Node* node);
 
+	PointF mapPointToScene(Node* node, const PointF& pos) const;
+
 private:
 	Node* createComponentNodeWithState(JSValue comp_data);
     Node* pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos);

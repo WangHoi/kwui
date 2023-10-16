@@ -349,6 +349,8 @@ void LineEditControl::onImeEvent(scene2d::Node* node, scene2d::ImeEvent& evt)
 {
     if (evt.cmd == scene2d::CHARS)
         OnCharacter(evt.wtext_);
+    else if (evt.cmd == scene2d::START_COMPOSE)
+        OnImeStartComposition(node, evt);
     else if (evt.cmd == scene2d::COMPOSING)
         OnImeComposition(evt.wtext_, evt.caret_pos_);
     else if (evt.cmd == scene2d::END_COMPOSE)
@@ -382,6 +384,13 @@ void LineEditControl::OnFocusOut(scene2d::Node* node, scene2d::FocusEvent& ctx) 
 }
 void LineEditControl::OnCharacter(std::wstring ch) {
     InsertText(ch, false);
+}
+void LineEditControl::OnImeStartComposition(scene2d::Node* node, scene2d::ImeEvent& evt)
+{
+    scene2d::PointF o;
+    scene2d::DimensionF s;
+    QueryImeCaretRect(o, s);
+    evt.caret_rect_ = scene2d::RectF::fromOriginSize(o, s);
 }
 void LineEditControl::OnImeComposition(const std::wstring& text,
     absl::optional<int> caret_pos) {

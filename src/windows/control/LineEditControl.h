@@ -90,6 +90,7 @@ private:
     void OnFocusIn(scene2d::Node* node, scene2d::FocusEvent& evt);
     void OnFocusOut(scene2d::Node* node, scene2d::FocusEvent& evt);
     void OnCharacter(std::wstring ch);
+    void OnImeStartComposition(scene2d::Node* node, scene2d::ImeEvent& evt);
     void OnImeComposition(const std::wstring& text,
                           absl::optional<int> caret_pos);
     void OnImeEndComposition();

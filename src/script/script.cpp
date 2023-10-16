@@ -85,10 +85,10 @@ Context::Context(Runtime* rt)
 
     auto global_obj = JS_GetGlobalObject(ctx_);
 
-    auto app = JS_NewObject(ctx_);
-    JS_SetPropertyStr(ctx_, app, "showDialog",
+    app_ = JS_NewObject(ctx_);
+    JS_SetPropertyStr(ctx_, app_, "showDialog",
         JS_NewCFunction(ctx_, app_show_dialog, "app_show_dialog", 1));
-    JS_SetPropertyStr(ctx_, global_obj, "app", app);
+    JS_SetPropertyStr(ctx_, global_obj, "app", app_);
 
     JS_FreeValue(ctx_, global_obj);
 }

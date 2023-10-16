@@ -162,6 +162,7 @@ private:
 	void initSceneClass();
 
 	JSContext* ctx_;
+	JSValue app_ = JS_UNINITIALIZED;
 };
 
 template<>

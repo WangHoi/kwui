@@ -144,6 +144,9 @@ struct DimensionF {
 struct RectF {
     RectF()
         : left(0), top(0), right(0), bottom(0) {}
+    static inline RectF fromOriginSize(const PointF& o, const DimensionF& s) {
+        return RectF(o.x, o.y, o.x + s.width, o.y + s.height);
+    }
     static inline RectF fromZeros() {
         return RectF(0.0f, 0.0f, 0.0f, 0.0f);
     }

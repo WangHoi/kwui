@@ -33,14 +33,12 @@ Scene::~Scene()
 Node* Scene::createTextNode(const std::string& text)
 {
 	auto actor = new Node(this, NodeType::NODE_TEXT, text);
-	actor->retain();
 	return actor;
 }
 
 Node* Scene::createElementNode(base::string_atom tag)
 {
 	auto actor = new Node(this, NodeType::NODE_ELEMENT, tag);
-	actor->retain();
 	return actor;
 }
 
@@ -64,6 +62,7 @@ Node* Scene::createComponentNode(JSValue comp_data)
 		return node;
 	} else if (JS_IsObject(comp_data)) {
 		JSValue render = JS_GetPropertyStr(jctx, comp_data, "render");
+		absl::Cleanup _ = [&]() { JS_FreeValue(jctx, render); };
 		if (JS_IsFunction(jctx, render)) {
 			//LOG(INFO) << "createComponentNode";
 			Node* node = createComponentNodeWithState(comp_data);
@@ -90,6 +89,8 @@ Node* Scene::createComponentNode(JSValue comp_data)
 				for (uint32_t i = 0; i < (uint32_t)length; ++i) {
 					JSValue child_comp_data = JS_GetPropertyUint32(jctx, kids, i);
 					Node* child = createComponentNode(child_comp_data);
+					JS_FreeValue(jctx, child_comp_data);
+
 					node->appendChild(child);
 				}
 
@@ -97,8 +98,12 @@ Node* Scene::createComponentNode(JSValue comp_data)
 			} else {
 				auto a = JS_JSONStringify(jctx, comp_data, JS_UNDEFINED, JS_UNDEFINED);
 				LOG(WARNING) << "Unknown: " << ctx_->parse<std::string>(a);
+				JS_FreeValue(jctx, a);
 				return nullptr;
 			}
+			JS_FreeValue(jctx, tag);
+			JS_FreeValue(jctx, atts);
+			JS_FreeValue(jctx, kids);
 		}
 	}
 	LOG(WARNING) << "Unknown: " << ctx_->parse<std::string>(comp_data);
@@ -172,6 +177,31 @@ void Scene::requestUpdate()
 void Scene::requestAnimationFrame(scene2d::Node* node)
 {
 	event_ctx_.RequestAnimationFrame(node);
+}
+
+PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
+{
+	if (node->scene_ != this) {
+		LOG(WARNING) << "failed to map point to this scene.";
+		return pos;
+	}
+	PointF p = pos;
+	if (node->computed_style_.display == style::DisplayType::Block) {
+		p += node->block_box_.pos + node->block_box_.borderRect().origin();
+	} else if (node->computed_style_.display == style::DisplayType::Inline) {
+		p += node->inline_box_.boundingRect().origin();
+	}
+
+	Node* pn = node->absolutelyPositionedParent();
+	while (pn) {
+		if (pn->computed_style_.display == style::DisplayType::Block) {
+			p += pn->block_box_.pos;
+		} else if (node->computed_style_.display == style::DisplayType::Inline) {
+			p += pn->inline_box_.boundingRect().origin();
+		}
+		pn = pn->absolutelyPositionedParent();
+	}
+	return p;
 }
 
 Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)

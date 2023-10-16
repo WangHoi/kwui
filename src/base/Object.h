@@ -9,6 +9,7 @@ public:
 	Object()
 		: ref_count_(0)
 	{}
+	inline virtual ~Object() {}
 	inline void retain()
 	{
 		++ref_count_;

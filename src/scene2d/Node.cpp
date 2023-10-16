@@ -73,6 +73,14 @@ Node::~Node()
 		weakptr_->release();
 		weakptr_ = nullptr;
 	}
+	for (Node* child : children_) {
+		child->release();
+	}
+	children_.clear();
+	if (comp_state_ != JS_UNINITIALIZED) {
+		JS_FreeValue(scene_->ctx_->get(), comp_state_);
+		comp_state_ = JS_UNINITIALIZED;
+	}
 }
 
 void Node::appendChild(Node* child)
