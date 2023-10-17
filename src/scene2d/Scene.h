@@ -66,7 +66,7 @@ private:
 	Node* pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
 
 	EventContext& event_ctx_;
-	std::unique_ptr<script::Context> ctx_;
+	std::unique_ptr<script::Context> script_ctx_;
 	Node* root_;
 	base::WeakObjectProxy<Scene> *weakptr_;
 	std::vector<std::unique_ptr<style::StyleRule>> style_rules_;

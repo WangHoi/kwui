@@ -20,7 +20,7 @@ int main()
     MSG msg;
     PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
 
-    windows::graphics::GraphicDevice::get()->Init();
+    windows::graphics::GraphicDevice::createInstance()->Init();
     windows::control::register_line_edit_control();
     windows::control::register_progress_bar_control();
 
@@ -31,6 +31,8 @@ int main()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+    windows::graphics::GraphicDevice::releaseInstance();
 
     CoUninitialize();
     return exit_code;

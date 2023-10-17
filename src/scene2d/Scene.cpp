@@ -13,7 +13,7 @@ namespace scene2d {
 Scene::Scene(EventContext& ctx)
 	: event_ctx_(ctx)
 {
-	ctx_ = std::make_unique<script::Context>();
+	script_ctx_ = std::make_unique<script::Context>();
 	root_ = createElementNode(base::string_intern("kml"));
 	root_->retain();
 	weakptr_ = new base::WeakObjectProxy<Scene>(this);
@@ -44,9 +44,9 @@ Node* Scene::createElementNode(base::string_atom tag)
 
 Node* Scene::createComponentNode(JSValue comp_data)
 {
-	JSContext* jctx = ctx_->get();
+	JSContext* jctx = script_ctx_->get();
 	if (JS_IsString(comp_data)) {
-		std::string text = ctx_->parse<std::string>(comp_data);
+		std::string text = script_ctx_->parse<std::string>(comp_data);
 		//LOG(INFO) << "createTextNode: " << text;
 		return createTextNode(text);
 	} else if (JS_IsArray(jctx, comp_data)) {
@@ -75,8 +75,13 @@ Node* Scene::createComponentNode(JSValue comp_data)
 			JSValue tag = JS_GetPropertyStr(jctx, comp_data, "tag");
 			JSValue atts = JS_GetPropertyStr(jctx, comp_data, "atts");
 			JSValue kids = JS_GetPropertyStr(jctx, comp_data, "kids");
+			absl::Cleanup _ = [&]() {
+				JS_FreeValue(jctx, tag);
+				JS_FreeValue(jctx, atts);
+				JS_FreeValue(jctx, kids);
+				};
 			if (JS_IsString(tag) && JS_IsObject(atts) && JS_IsArray(jctx, kids)) {
-				std::string tagName = ctx_->parse<std::string>(tag);
+				std::string tagName = script_ctx_->parse<std::string>(tag);
 				//LOG(INFO) << "createElementNode: " << tagName;
 				Node* node = createElementNode(base::string_intern(tagName));
 
@@ -97,16 +102,13 @@ Node* Scene::createComponentNode(JSValue comp_data)
 				return node;
 			} else {
 				auto a = JS_JSONStringify(jctx, comp_data, JS_UNDEFINED, JS_UNDEFINED);
-				LOG(WARNING) << "Unknown: " << ctx_->parse<std::string>(a);
+				LOG(WARNING) << "Unknown: " << script_ctx_->parse<std::string>(a);
 				JS_FreeValue(jctx, a);
 				return nullptr;
 			}
-			JS_FreeValue(jctx, tag);
-			JS_FreeValue(jctx, atts);
-			JS_FreeValue(jctx, kids);
 		}
 	}
-	LOG(WARNING) << "Unknown: " << ctx_->parse<std::string>(comp_data);
+	LOG(WARNING) << "Unknown: " << script_ctx_->parse<std::string>(comp_data);
 	return nullptr;
 }
 
@@ -231,20 +233,20 @@ Node* Scene::createComponentNodeWithState(JSValue comp_state)
 
 void Scene::setupProps(Node* node, JSValue props)
 {
-	ctx_->eachObjectField(props, [&](const char* name_str, JSValue value) {
-		JSContext* jctx = ctx_->get();
+	script_ctx_->eachObjectField(props, [&](const char* name_str, JSValue value) {
+		JSContext* jctx = script_ctx_->get();
 		auto name = base::string_intern(name_str);
 		if (name == base::string_intern("style")) {
-			node->setStyle(ctx_->parse<style::StyleSpec>(value));
+			node->setStyle(script_ctx_->parse<style::StyleSpec>(value));
 		} else if (name == base::string_intern("id")) {
-			node->setId(ctx_->parse<base::string_atom>(value));
+			node->setId(script_ctx_->parse<base::string_atom>(value));
 		} else if (name == base::string_intern("class")) {
 			const char* s = JS_ToCString(jctx, value);
 			if (s) {
 				node->setClass(style::Classes::parse(s));
 			}
 			JS_FreeCString(jctx, s);
-		} else if (JS_IsFunction(ctx_->get(), value)) {
+		} else if (JS_IsFunction(script_ctx_->get(), value)) {
 			node->setEventHandler(name, JS_DupValue(jctx, value));
 		} else if (JS_IsNumber(value)) {
 			double f64;

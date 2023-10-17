@@ -37,6 +37,12 @@ static const JSCFunctionListEntry scene_methods[] = {
     func_def("render", 1, scene_render),
     func_def("updateComponent", 1, scene_update_component),
 };
+
+void Runtime::gc()
+{
+    JS_RunGC(rt_);
+}
+
 void Context::initSceneClass()
 {
     JS_NewClassID(&scene_class_id);
@@ -136,7 +142,6 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
     auto dialog = new windows::Dialog(
         640, 480, L"dialog", NULL, windows::DIALOG_FLAG_MAIN,
         absl::nullopt, absl::nullopt);
-    
     if (argc >= 2 && JS_IsObject(argv[1])) {
         auto scene = dialog->GetScene();
         Context::eachObjectField(ctx, argv[1], [ctx, scene](const char *name, JSValue value) {
@@ -152,7 +157,6 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
             }
         });
     }
-    
     dialog->GetScene()->root()->appendChild(
         dialog->GetScene()->createComponentNode(argv[0]));
     LOG(INFO) << "show dialog";

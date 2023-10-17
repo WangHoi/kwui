@@ -28,6 +28,8 @@ public:
 		static Runtime rt;
 		return &rt;
 	}
+	void gc();
+
 private:
 	Runtime()
 	{

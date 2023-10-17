@@ -78,7 +78,7 @@ Node::~Node()
 	}
 	children_.clear();
 	if (comp_state_ != JS_UNINITIALIZED) {
-		JS_FreeValue(scene_->ctx_->get(), comp_state_);
+		JS_FreeValue(scene_->script_ctx_->get(), comp_state_);
 		comp_state_ = JS_UNINITIALIZED;
 	}
 }

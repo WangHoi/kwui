@@ -198,7 +198,7 @@ void PopupShadow::OnPaint() {
 	graphics::Painter p(_rt.target.Get(), scene2d::PointF::fromAll(-1));
 	p.Clear(NO_COLOR);
 	if (!_bitmap) {
-		graphics::BitmapSubItem item = graphics::GraphicDevice::get()
+		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
 			->GetBitmap(_data.image_name, _render_dpi_scale);
 		if (item)
 			_bitmap = p.CreateBitmap(item);
@@ -252,7 +252,7 @@ void PopupShadow::Close() {
 	SendMessageW(_hwnd, WM_CLOSE, 0, 0);
 }
 void PopupShadow::RecreateRenderTarget() {
-	_rt = graphics::GraphicDevice::get()
+	_rt = graphics::GraphicDevice::instance()
 		->CreateWicBitmapRenderTarget(_pixel_size.width, _pixel_size.height, 1.0f);
 }
 void PopupShadow::OnDestroy() {

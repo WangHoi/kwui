@@ -33,7 +33,9 @@ struct WicBitmapRenderTarget {
 };
 class GraphicDevice {
 public:
-	static GraphicDevice* get();
+	static GraphicDevice* createInstance();
+	static void releaseInstance();
+	static GraphicDevice* instance();
 	bool Init();
 	ComPtr<ID2D1HwndRenderTarget> CreateHwndRenderTarget(
 		HWND hwnd, const scene2d::DimensionF& size, float dpi_scale);

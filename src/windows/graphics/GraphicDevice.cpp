@@ -8,11 +8,27 @@ namespace windows {
 namespace graphics {
 
 static const wchar_t* DEFAULT_LOCALE = L"zh-CN";
+static GraphicDevice *gdev = nullptr;
 
-GraphicDevice* GraphicDevice::get()
+GraphicDevice* GraphicDevice::createInstance()
 {
-	static GraphicDevice gdev;
-	return &gdev;
+	if (!gdev) {
+		gdev = new GraphicDevice();
+	}
+	return gdev;
+}
+
+void GraphicDevice::releaseInstance()
+{
+	if (gdev) {
+		delete gdev;
+		gdev = nullptr;
+	}
+}
+
+GraphicDevice* GraphicDevice::instance()
+{
+	return gdev;
 }
 
 bool GraphicDevice::Init() {
