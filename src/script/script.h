@@ -218,6 +218,12 @@ inline style::StyleSpec Context::parse<style::StyleSpec>(JSContext* ctx_, JSValu
 		CHECK_VALUE2(border_color, "border-color");
 		CHECK_VALUE2(background_color, "background-color");
 		CHECK_VALUE(color);
+
+		CHECK_VALUE2(line_height, "line-height");
+		CHECK_VALUE2(font_family, "font-family");
+		CHECK_VALUE2(font_size, "font-size");
+		CHECK_VALUE2(font_style, "font-style");
+		CHECK_VALUE2(font_weight, "font-weight");
 #undef CHECK_VALUE
 #undef CHECK_VALUE2
 		});

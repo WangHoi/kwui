@@ -110,6 +110,12 @@ struct StyleSpec {
 	ValueSpec border_color;
 	ValueSpec background_color;
 	ValueSpec color;
+
+	ValueSpec line_height;
+	ValueSpec font_family;
+	ValueSpec font_size;
+	ValueSpec font_style;
+	ValueSpec font_weight;
 };
 
 enum class DisplayType {
@@ -164,6 +170,12 @@ struct Style {
 	Value border_color;
 	Value background_color;
 	Value color;
+
+	Value line_height;
+	Value font_family;
+	Value font_size;
+	Value font_style;
+	Value font_weight;
 };
 
 template <typename Sink>
