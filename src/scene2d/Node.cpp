@@ -13,8 +13,7 @@ namespace scene2d {
 
 static inline void resolve_style(style::Value& style,
 	const style::Value* parent,
-	const style::ValueSpec& spec,
-	const style::Value& default_)
+	const style::ValueSpec& spec)
 {
 	if (spec.type == style::ValueSpecType::Inherit) {
 		if (parent)
@@ -24,9 +23,13 @@ static inline void resolve_style(style::Value& style,
 	}
 }
 static void resolve_style(style::DisplayType& style, const style::DisplayType* parent,
-	const style::ValueSpec& spec, const style::DisplayType& default_);
+	const style::ValueSpec& spec);
 static void resolve_style(style::PositionType& style, const style::PositionType* parent,
-	const style::ValueSpec& spec, const style::PositionType& default_);
+	const style::ValueSpec& spec);
+static void resolve_style(style::FontStyle& style, const style::FontStyle* parent,
+	const style::ValueSpec& spec);
+static void resolve_style(style::FontWeight& style, const style::FontWeight* parent,
+	const style::ValueSpec& spec);
 
 Node::Node(Scene* scene, NodeType type)
 	: scene_(scene)
@@ -43,7 +46,6 @@ Node::Node(Scene* scene, NodeType type, const std::string& text)
 	: Node(scene, type)
 {
 	text_ = text;
-	text_layout_ = graph2d::createTextLayout(text);
 }
 
 Node::Node(Scene* scene, NodeType type, base::string_atom tag)
@@ -225,52 +227,56 @@ void Node::resolveDefaultStyle()
 	RESOLVE_STYLE_DEFAULT_INHERIT(line_height, style::Value::fromPixel(18));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_family, style::Value::fromKeyword(base::string_intern("sans-serif")));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_size, style::Value::fromPixel(12));
-	RESOLVE_STYLE_DEFAULT_INHERIT(font_style, style::Value::fromKeyword(base::string_intern("normal")));
-	RESOLVE_STYLE_DEFAULT_INHERIT(font_weight, style::Value::fromKeyword(base::string_intern("normal")));
+	RESOLVE_STYLE_DEFAULT_INHERIT(font_style, style::FontStyle::Normal);
+	RESOLVE_STYLE_DEFAULT_INHERIT(font_weight, style::FontWeight());
 #undef RESOLVE_STYLE_DEFAULT_INHERIT
 }
 
 void Node::resolveStyle(const style::StyleSpec& spec)
 {
 	CHECK(type_ == NodeType::NODE_ELEMENT);
-#define RESOLVE_STYLE(x, def) \
+#define RESOLVE_STYLE(x) \
     resolve_style(computed_style_.x, \
         parent_ ? &parent_->computed_style_.x : nullptr, \
-        spec.x,\
-        def)
-	RESOLVE_STYLE(display, style::DisplayType::Block);
-	RESOLVE_STYLE(position, style::PositionType::Static);
-	RESOLVE_STYLE(margin_left, style::Value::auto_());
-	RESOLVE_STYLE(margin_top, style::Value::auto_());
-	RESOLVE_STYLE(margin_right, style::Value::auto_());
-	RESOLVE_STYLE(margin_bottom, style::Value::auto_());
-	RESOLVE_STYLE(border_left_width, style::Value::auto_());
-	RESOLVE_STYLE(border_top_width, style::Value::auto_());
-	RESOLVE_STYLE(border_right_width, style::Value::auto_());
-	RESOLVE_STYLE(border_bottom_width, style::Value::auto_());
-	RESOLVE_STYLE(border_top_left_radius, style::Value::auto_());
-	RESOLVE_STYLE(border_top_right_radius, style::Value::auto_());
-	RESOLVE_STYLE(border_bottom_right_radius, style::Value::auto_());
-	RESOLVE_STYLE(border_bottom_left_radius, style::Value::auto_());
-	RESOLVE_STYLE(padding_left, style::Value::auto_());
-	RESOLVE_STYLE(padding_top, style::Value::auto_());
-	RESOLVE_STYLE(padding_right, style::Value::auto_());
-	RESOLVE_STYLE(padding_bottom, style::Value::auto_());
-	RESOLVE_STYLE(left, style::Value::auto_());
-	RESOLVE_STYLE(top, style::Value::auto_());
-	RESOLVE_STYLE(right, style::Value::auto_());
-	RESOLVE_STYLE(bottom, style::Value::auto_());
+        spec.x)
+	RESOLVE_STYLE(display);
+	RESOLVE_STYLE(position);
+	RESOLVE_STYLE(margin_left);
+	RESOLVE_STYLE(margin_top);
+	RESOLVE_STYLE(margin_right);
+	RESOLVE_STYLE(margin_bottom);
+	RESOLVE_STYLE(border_left_width);
+	RESOLVE_STYLE(border_top_width);
+	RESOLVE_STYLE(border_right_width);
+	RESOLVE_STYLE(border_bottom_width);
+	RESOLVE_STYLE(border_top_left_radius);
+	RESOLVE_STYLE(border_top_right_radius);
+	RESOLVE_STYLE(border_bottom_right_radius);
+	RESOLVE_STYLE(border_bottom_left_radius);
+	RESOLVE_STYLE(padding_left);
+	RESOLVE_STYLE(padding_top);
+	RESOLVE_STYLE(padding_right);
+	RESOLVE_STYLE(padding_bottom);
+	RESOLVE_STYLE(left);
+	RESOLVE_STYLE(top);
+	RESOLVE_STYLE(right);
+	RESOLVE_STYLE(bottom);
 
-	RESOLVE_STYLE(min_width, style::Value::auto_());
-	RESOLVE_STYLE(min_height, style::Value::auto_());
-	RESOLVE_STYLE(max_width, style::Value::auto_());
-	RESOLVE_STYLE(max_height, style::Value::auto_());
-	RESOLVE_STYLE(width, style::Value::auto_());
-	RESOLVE_STYLE(height, style::Value::auto_());
+	RESOLVE_STYLE(min_width);
+	RESOLVE_STYLE(min_height);
+	RESOLVE_STYLE(max_width);
+	RESOLVE_STYLE(max_height);
+	RESOLVE_STYLE(width);
+	RESOLVE_STYLE(height);
 
-	RESOLVE_STYLE(border_color, style::Value::auto_());
-	RESOLVE_STYLE(background_color, style::Value::auto_());
-	RESOLVE_STYLE(color, style::Value::auto_());
+	RESOLVE_STYLE(border_color);
+	RESOLVE_STYLE(background_color);
+	RESOLVE_STYLE(color);
+	RESOLVE_STYLE(line_height);
+	RESOLVE_STYLE(font_family);
+	RESOLVE_STYLE(font_size);
+	RESOLVE_STYLE(font_style);
+	RESOLVE_STYLE(font_weight);
 #undef RESOLVE_STYLE
 }
 
@@ -481,6 +487,16 @@ void Node::requestUpdate()
 void Node::requestAnimationFrame(scene2d::Node* node)
 {
 	scene_->requestAnimationFrame(node);
+}
+
+void Node::updateTextLayout()
+{
+	text_layout_ = graph2d::createTextLayout(
+		text_,
+		computed_style_.font_family.keyword_val.c_str(),
+		computed_style_.font_style,
+		computed_style_.font_weight,
+		computed_style_.font_size.pixelOrZero());
 }
 
 void Node::layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node)
@@ -735,7 +751,7 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 }
 
 void resolve_style(style::DisplayType& style, const style::DisplayType* parent,
-	const style::ValueSpec& spec, const style::DisplayType& default_)
+	const style::ValueSpec& spec)
 {
 	if (spec.type == style::ValueSpecType::Inherit) {
 		if (parent)
@@ -753,7 +769,7 @@ void resolve_style(style::DisplayType& style, const style::DisplayType* parent,
 }
 
 void resolve_style(style::PositionType& style, const style::PositionType* parent,
-	const style::ValueSpec& spec, const style::PositionType& default_)
+	const style::ValueSpec& spec)
 {
 	if (spec.type == style::ValueSpecType::Inherit) {
 		if (parent)
@@ -768,6 +784,55 @@ void resolve_style(style::PositionType& style, const style::PositionType* parent
 				style = style::PositionType::Absolute;
 			else if (spec.value->keyword_val == base::string_intern("fixed"))
 				style = style::PositionType::Fixed;
+		}
+	}
+}
+
+void resolve_style(style::FontStyle& style, const style::FontStyle* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Keyword) {
+			if (spec.value->keyword_val == base::string_intern("normal"))
+				style = style::FontStyle::Normal;
+			else if (spec.value->keyword_val == base::string_intern("italic"))
+				style = style::FontStyle::Italic;
+		}
+	}
+}
+
+void resolve_style(style::FontWeight& style, const style::FontWeight* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Keyword) {
+			if (spec.value->keyword_val == base::string_intern("normal")) {
+				style = style::FontWeight(400);
+			} else if (spec.value->keyword_val == base::string_intern("bold")) {
+				style = style::FontWeight(600);
+			} else if (spec.value->keyword_val == base::string_intern("lighter")) {
+				if (style.raw() <= 500) {
+					style = style::FontWeight(100);
+				} else if (style.raw() <= 700) {
+					style = style::FontWeight(400);
+				} else {
+					style = style::FontWeight(400);
+				}
+			} else if (spec.value->keyword_val == base::string_intern("bolder")) {
+				if (style.raw() <= 300) {
+					style = style::FontWeight(400);
+				} else if (style.raw() <= 500) {
+					style = style::FontWeight(700);
+				} else {
+					style = style::FontWeight(900);
+				}
+			}
 		}
 	}
 }

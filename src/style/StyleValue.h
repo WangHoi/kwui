@@ -150,16 +150,6 @@ public:
 	inline bool operator<(const FontWeight& rhs) {
 		return rhs.raw_ < this->raw_;
 	}
-	static FontWeight THIN;			// 100
-	static FontWeight EXTRA_LIGHT;	// 200
-	static FontWeight LIGHT;		// 300
-	//static FontWeight SEMI_LIGHT;	// 400
-	static FontWeight NORMAL;		// 400
-	static FontWeight MEDIUM;		// 500
-	static FontWeight SEMI_BOLD;	// 600
-	static FontWeight BOLD;			// 700
-	static FontWeight EXTRA_BOLD;	// 800
-	static FontWeight HEAVY;		// 900
 private:
 	uint16_t raw_;
 };

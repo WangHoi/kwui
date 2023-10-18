@@ -299,6 +299,9 @@ void Scene::resolveNodeStyle(Node* node)
 	if (node->type() != NodeType::NODE_ELEMENT) {
 		if (node->parent_)
 			node->computed_style_ = node->parent_->computed_style_;
+		if (node->type() == NodeType::NODE_TEXT) {
+			node->updateTextLayout();
+		}
 	} else {
 		node->resolveDefaultStyle();
 		for (auto& rule : style_rules_) {

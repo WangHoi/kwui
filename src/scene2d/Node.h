@@ -157,6 +157,8 @@ public:
 	void requestUpdate();
 	void requestAnimationFrame(scene2d::Node* node);
 
+	void updateTextLayout();
+
 protected:
 	static void layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
 	static std::tuple<float, float> layoutMeasureWidth(style::BlockBox& box);
