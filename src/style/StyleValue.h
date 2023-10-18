@@ -132,6 +132,38 @@ enum class PositionType {
 	Fixed,
 };
 
+enum class FontStyle {
+	Normal,
+	Italic,
+};
+
+class FontWeight {
+public:
+	FontWeight(): raw_(400) {}
+	FontWeight(uint16_t raw) : raw_(raw) {}
+	inline uint16_t raw() const {
+		return raw_;
+	}
+	inline bool operator==(const FontWeight& rhs) {
+		return rhs.raw_ == this->raw_;
+	}
+	inline bool operator<(const FontWeight& rhs) {
+		return rhs.raw_ < this->raw_;
+	}
+	static FontWeight THIN;			// 100
+	static FontWeight EXTRA_LIGHT;	// 200
+	static FontWeight LIGHT;		// 300
+	//static FontWeight SEMI_LIGHT;	// 400
+	static FontWeight NORMAL;		// 400
+	static FontWeight MEDIUM;		// 500
+	static FontWeight SEMI_BOLD;	// 600
+	static FontWeight BOLD;			// 700
+	static FontWeight EXTRA_BOLD;	// 800
+	static FontWeight HEAVY;		// 900
+private:
+	uint16_t raw_;
+};
+
 struct Style {
 	DisplayType display = DisplayType::Block;
 	PositionType position = PositionType::Static;
@@ -174,8 +206,8 @@ struct Style {
 	Value line_height;
 	Value font_family;
 	Value font_size;
-	Value font_style;
-	Value font_weight;
+	FontStyle font_style;
+	FontWeight font_weight;
 };
 
 template <typename Sink>
