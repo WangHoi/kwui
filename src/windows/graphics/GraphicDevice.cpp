@@ -2,6 +2,7 @@
 #include "GraphicDevice.h"
 #include "base/log.h"
 #include "windows/EncodingManager.h"
+#include "TextAnalysis.h"
 #include <numeric>
 
 namespace windows {
@@ -145,6 +146,42 @@ ComPtr<IDWriteTextLayout> GraphicDevice::CreateTextLayout(
 	hr = _dwrite->CreateTextLayout(text.c_str(), text.length(), format.Get(),
 		std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), layout.GetAddressOf());
 	return layout;
+}
+
+ComPtr<IDWriteTextLayout> GraphicDevice::CreateTextLayout2(
+	const std::wstring& text,
+	const std::string& font_family,
+	float font_size,
+	FontWeight font_weight,
+	FontStyle font_style)
+{
+	std::wstring utf16_font_family = EncodingManager::UTF8ToWide(font_family);
+	HRESULT hr;
+	UINT index = 0;
+	BOOL exists = FALSE;
+	hr = _font_collection->FindFamilyName(utf16_font_family.c_str(), &index, &exists);
+	ComPtr<IDWriteFontFamily> family;
+	hr = _font_collection->GetFontFamily(index, family.GetAddressOf());
+	ComPtr<IDWriteFont> font;
+	DWRITE_FONT_STYLE dw_font_style;
+	if (font_style == FontStyle::ITALIC) {
+		dw_font_style = DWRITE_FONT_STYLE_ITALIC;
+	} else {
+		dw_font_style = DWRITE_FONT_STYLE_NORMAL;
+	}
+	hr = family->GetFirstMatchingFont(
+		(DWRITE_FONT_WEIGHT)font_weight.GetRaw(),
+		DWRITE_FONT_STRETCH_NORMAL,
+		dw_font_style,
+		font.GetAddressOf());
+	ComPtr<IDWriteFontFace> font_face;
+	hr = font->CreateFontFace(font_face.GetAddressOf());
+	ComPtr<IDWriteTextAnalyzer> analyzer;
+	hr = _dwrite->CreateTextAnalyzer(analyzer.GetAddressOf());
+	ComPtr<TextAnalysis> text_analysis;
+	hr = WRL::MakeAndInitialize<TextAnalysis>(&text_analysis, text, font_face, analyzer);
+	text_analysis->buildLayout();
+	return nullptr;
 }
 
 bool GraphicDevice::GetFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics) {

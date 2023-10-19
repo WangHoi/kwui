@@ -64,7 +64,7 @@ var simple_stylesheet = {
 
 
 var hello_world = (<div>
-	<span class="bold">bold </span>
+	<span class="bold">bold text test </span>
 	<span class="italic">italic </span>
 	<span class="bold italic">bold italic </span>
 	<span class="fs-20">20 pixel size</span>

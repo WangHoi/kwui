@@ -46,7 +46,7 @@
 #pragma warning(default:5043)
 #include <ShlObj.h>
 using Microsoft::WRL::ComPtr;
-
+namespace WRL = Microsoft::WRL;
 // #undef near
 // #undef far
 #undef GetWindowFont

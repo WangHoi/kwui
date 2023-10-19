@@ -47,6 +47,12 @@ public:
 		float font_size,
 		FontWeight font_weight = FontWeight(),
 		FontStyle font_style = FontStyle());
+	ComPtr<IDWriteTextLayout> CreateTextLayout2(
+		const std::wstring& text,
+		const std::string& font_family,
+		float font_size,
+		FontWeight font_weight = FontWeight(),
+		FontStyle font_style = FontStyle());
 	bool GetFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics);
 	void LoadBitmapToCache(const std::string& name, absl::Span<uint8_t> res_x1);
 	void LoadBitmapToCache(const std::string& name, absl::Span<uint8_t> res_x1,

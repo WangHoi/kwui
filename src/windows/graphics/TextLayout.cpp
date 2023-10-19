@@ -41,6 +41,8 @@ void TextLayoutBuilder::Init(const std::wstring& text) {
 }
 
 std::unique_ptr<TextLayout> TextLayoutBuilder::Build() {
+    ComPtr<IDWriteTextLayout> layout2 = GraphicDevice::instance()
+        ->CreateTextLayout2(_text, _font_family, _font_size, _font_weight, _font_style);
     ComPtr<IDWriteTextLayout> layout = GraphicDevice::instance()
         ->CreateTextLayout(_text, _font_family, _font_size, _font_weight, _font_style);
     layout->SetMaxWidth(_max_width);
