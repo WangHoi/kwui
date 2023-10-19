@@ -109,8 +109,8 @@ struct LineBox {
 		float top = 0, bottom = 0;
 		for (InlineBox* b : inline_boxes) {
 			used_size.width += b->size.width;
-			top = std::max(top, b->size.height - b->baseline);
-			bottom = std::max(bottom, b->baseline);
+			top = std::max(top, b->baseline);
+			bottom = std::max(bottom, b->size.height - b->baseline);
 		}
 		used_size.height = top + bottom;
 		used_baseline = bottom;
@@ -118,7 +118,7 @@ struct LineBox {
 		float x = left;
 		for (style::InlineBox* b : inline_boxes) {
 			b->pos.x = x;
-			b->pos.y = offset_y + (top - (b->size.height - b->baseline));
+			b->pos.y = offset_y + top - b->baseline;
 			x += b->size.width;
 		}
 	}

@@ -225,7 +225,7 @@ void Node::resolveDefaultStyle()
 	
 	RESOLVE_STYLE_DEFAULT_INHERIT(color, style::Value::fromHexColor("#000000"));
 	RESOLVE_STYLE_DEFAULT_INHERIT(line_height, style::Value::fromPixel(18));
-	RESOLVE_STYLE_DEFAULT_INHERIT(font_family, style::Value::fromKeyword(base::string_intern("sans-serif")));
+	RESOLVE_STYLE_DEFAULT_INHERIT(font_family, style::Value::fromKeyword(base::string_intern("Microsoft YaHei")));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_size, style::Value::fromPixel(12));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_style, style::FontStyle::Normal);
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_weight, style::FontWeight());

@@ -25,7 +25,7 @@ int main()
     windows::control::register_progress_bar_control();
 
     script::Context ctx;
-    ctx.loadFile("d:/projects/kwui/text_style.js");
+    ctx.loadFile("d:/projects/kwui/text_layout.js");
 
     while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
