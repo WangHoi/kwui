@@ -1,167 +1,348 @@
 #include "TextAnalysis.h"
-#include "base/log.h"
 
 namespace windows {
 namespace graphics {
 
-static inline UINT32 estimate_glyph_count(size_t text_length)
-{
-    return 3 * (UINT32)text_length / 2 + 16;
-}
-
 HRESULT TextAnalysis::RuntimeClassInitialize(
-    const std::wstring& text,
-    ComPtr<IDWriteFontFace> font_face, 
-    ComPtr<IDWriteTextAnalyzer> analyzer)
+	const wchar_t* text,
+	UINT32 textLength,
+	const wchar_t* localeName,
+	IDWriteNumberSubstitution* numberSubstitution,
+	DWRITE_READING_DIRECTION readingDirection
+)
 {
-    text_ = text;
-    font_face_ = font_face;
-    analyzer_ = analyzer;
-    return S_OK;
-}
-void TextAnalysis::buildLayout()
-{
-    line_breakpoints_.resize(text_.length());
-
-    HRESULT hr;
-    hr = analyzer_->AnalyzeLineBreakpoints(this, 0, (UINT32)text_.length(), this);
-    hr = analyzer_->AnalyzeBidi(this, 0, (UINT32)text_.length(), this);
-    hr = analyzer_->AnalyzeScript(this, 0, (UINT32)text_.length(), this);
-
-    cluster_maps_.resize(text_.length());
-    text_props_.resize(text_.length());
-    glyph_indices_.resize(estimate_glyph_count(text_.length()));
-    glyph_props_.resize(estimate_glyph_count(text_.length()));
-    UINT32 glyph_start = 0;
-    for (auto& sr : script_analysis_results_) {
-        UINT32 max_glyph_count = (UINT32)glyph_indices_.size() - glyph_start;
-        UINT32 actual_glyph_count = 0;
-        hr = analyzer_->GetGlyphs(
-            text_.c_str(),
-            (UINT32)text_.length(),
-            font_face_.Get(),
-            FALSE,
-            FALSE,
-            &sr.script_analysis,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
-            0,
-            max_glyph_count,
-            &cluster_maps_[sr.text_position],
-            &text_props_[sr.text_position],
-            &glyph_indices_[glyph_start],
-            &glyph_props_[glyph_start],
-            &actual_glyph_count);
-        if (FAILED(hr))
-            break;
-        glyph_start += actual_glyph_count;
-    }
-    glyph_indices_.resize(glyph_start);
-    glyph_props_.resize(glyph_start);
-}
-IFACEMETHODIMP TextAnalysis::GetTextAtPosition(UINT32 text_position,
-    OUT WCHAR const** text_string,
-    OUT UINT32* text_length) throw()
-{
-    if (text_position >= (UINT32)text_.length()) {
-        // Return no text if a query comes for a position at the end of
-        // the range. Note that is not an error and we should not return
-        // a failing HRESULT. Although the application is not expected
-        // to return any text that is outside of the given range, the
-        // analyzers may probe the ends to see if text exists.
-        *text_string = NULL;
-        *text_length = 0;
-    } else {
-        *text_string = &text_[text_position];
-        *text_length = (UINT32)text_.length() - text_position;
-    }
-    return S_OK;
-}
-IFACEMETHODIMP TextAnalysis::GetTextBeforePosition(UINT32 text_position,
-    OUT WCHAR const** text_string,
-    OUT UINT32* text_length) throw()
-{
-    if (text_position == 0 || text_position > (UINT32)text_.length()) {
-        // Return no text if a query comes for a position at the end of
-        // the range. Note that is not an error and we should not return
-        // a failing HRESULT. Although the application is not expected
-        // to return any text that is outside of the given range, the
-        // analyzers may probe the ends to see if text exists.
-        *text_string = NULL;
-        *text_length = 0;
-    } else {
-        *text_string = &text_[0];
-        *text_length = text_position -
-            0; // text length is valid from current position backward
-    }
-    return S_OK;
-}
-IFACEMETHODIMP_(DWRITE_READING_DIRECTION)
-TextAnalysis::GetParagraphReadingDirection() throw()
-{
-    return DWRITE_READING_DIRECTION_LEFT_TO_RIGHT;
-}
-IFACEMETHODIMP TextAnalysis::GetLocaleName(UINT32 text_position, OUT UINT32* text_length,
-    OUT WCHAR const** localeName) throw()
-{
-    *localeName = L"";
-    *text_length = (UINT32)text_.length() - text_position;
-
-    return S_OK;
-}
-IFACEMETHODIMP TextAnalysis::GetNumberSubstitution(
-    UINT32 text_position, OUT UINT32* text_length,
-    OUT IDWriteNumberSubstitution** numberSubstitution) throw()
-{
-    *numberSubstitution = NULL;
-    *text_length = (UINT32)text_.length() - text_position;
-
-    return S_OK;
+	text_ = text;
+	textLength_ = textLength;
+	localeName_ = localeName;
+	readingDirection_ = readingDirection;
+	numberSubstitution_ = numberSubstitution;
+	currentPosition_ = 0;
+	currentRunIndex_ = 0;
+	return S_OK;
 }
 
-IFACEMETHODIMP
-TextAnalysis::SetScriptAnalysis(UINT32 text_position, UINT32 text_length,
-    DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) throw()
+STDMETHODIMP TextAnalysis::GenerateResults(
+	IDWriteTextAnalyzer* textAnalyzer,
+	OUT std::vector<TextAnalysis::Run>& runs,
+	OUT std::vector<DWRITE_LINE_BREAKPOINT>& breakpoints
+)
 {
-    LOG(INFO)
-        << "TextAnalysis::SetScriptAnalysis " << text_position << "/" << text_length
-        << " uid " << scriptAnalysis->script;
-    script_analysis_results_.emplace_back(TextSpanScriptAnalysisResult { text_position, text_length, *scriptAnalysis });
-    return S_OK;
+	// Analyzes the text using each of the analyzers and returns
+	// their results as a series of runs.
 
+	HRESULT hr = S_OK;
+
+	try
+	{
+		// Initially start out with one result that covers the entire range.
+		// This result will be subdivided by the analysis processes.
+		runs_.resize(1);
+		LinkedRun& initialRun = runs_[0];
+		initialRun.nextRunIndex = 0;
+		initialRun.textStart = 0;
+		initialRun.textLength = textLength_;
+		initialRun.bidiLevel = (readingDirection_ == DWRITE_READING_DIRECTION_RIGHT_TO_LEFT);
+
+		// Allocate enough room to have one breakpoint per code unit.
+		breakpoints_.resize(textLength_);
+
+		// Call each of the analyzers in sequence, recording their results.
+		if (SUCCEEDED(hr = textAnalyzer->AnalyzeLineBreakpoints(this, 0, textLength_, this))
+			&& SUCCEEDED(hr = textAnalyzer->AnalyzeBidi(this, 0, textLength_, this))
+			&& SUCCEEDED(hr = textAnalyzer->AnalyzeScript(this, 0, textLength_, this))
+			&& SUCCEEDED(hr = textAnalyzer->AnalyzeNumberSubstitution(this, 0, textLength_, this))
+			)
+		{
+			// Exchange our results with the caller's.
+			breakpoints.swap(breakpoints_);
+
+			// Resequence the resulting runs in order before returning to caller.
+			size_t totalRuns = runs_.size();
+			runs.resize(totalRuns);
+
+			UINT32 nextRunIndex = 0;
+			for (size_t i = 0; i < totalRuns; ++i)
+			{
+				runs[i] = runs_[nextRunIndex];
+				nextRunIndex = runs_[nextRunIndex].nextRunIndex;
+			}
+		}
+	} catch (...)
+	{
+		return E_FAIL;
+	}
+
+	return hr;
 }
 
-IFACEMETHODIMP TextAnalysis::SetLineBreakpoints(
-    UINT32 text_position, UINT32 text_length,
-    const DWRITE_LINE_BREAKPOINT* lineBreakpoints // [text_length]
+
+////////////////////////////////////////////////////////////////////////////////
+// IDWriteTextAnalysisSource source implementation
+
+IFACEMETHODIMP TextAnalysis::GetTextAtPosition(
+	UINT32 textPosition,
+	OUT WCHAR const** textString,
+	OUT UINT32* textLength
 ) throw()
 {
-    LOG(INFO) << "TextAnalysis::SetLineBreakpoints " << text_position << "/" << text_length;
-    if (text_length > 0) {
-        memcpy(&line_breakpoints_[text_position], lineBreakpoints, text_length * sizeof(lineBreakpoints[0]));
-    }
-    return S_OK;
+	if (textPosition >= textLength_)
+	{
+		// Return no text if a query comes for a position at the end of
+		// the range. Note that is not an error and we should not return
+		// a failing HRESULT. Although the application is not expected
+		// to return any text that is outside of the given range, the
+		// analyzers may probe the ends to see if text exists.
+		*textString = NULL;
+		*textLength = 0;
+	} else
+	{
+		*textString = &text_[textPosition];
+		*textLength = textLength_ - textPosition;
+	}
+	return S_OK;
 }
 
-IFACEMETHODIMP TextAnalysis::SetBidiLevel(UINT32 text_position, UINT32 text_length,
-    UINT8 explicitLevel,
-    UINT8 resolvedLevel) throw()
+
+IFACEMETHODIMP TextAnalysis::GetTextBeforePosition(
+	UINT32 textPosition,
+	OUT WCHAR const** textString,
+	OUT UINT32* textLength
+) throw()
 {
-    LOG(INFO)
-        << "TextAnalysis::SetBidiLevel " << text_position << "/" << text_length
-        << " level " << explicitLevel << "/" << resolvedLevel;
-    return S_OK;
+	if (textPosition == 0 || textPosition > textLength_)
+	{
+		// Return no text if a query comes for a position at the end of
+		// the range. Note that is not an error and we should not return
+		// a failing HRESULT. Although the application is not expected
+		// to return any text that is outside of the given range, the
+		// analyzers may probe the ends to see if text exists.
+		*textString = NULL;
+		*textLength = 0;
+	} else
+	{
+		*textString = &text_[0];
+		*textLength = textPosition - 0; // text length is valid from current position backward
+	}
+	return S_OK;
 }
+
+
+DWRITE_READING_DIRECTION STDMETHODCALLTYPE TextAnalysis::GetParagraphReadingDirection() throw()
+{
+	return readingDirection_;
+}
+
+
+IFACEMETHODIMP TextAnalysis::GetLocaleName(
+	UINT32 textPosition,
+	OUT UINT32* textLength,
+	OUT WCHAR const** localeName
+) throw()
+{
+	// The pointer returned should remain valid until the next call,
+	// or until analysis ends. Since only one locale name is supported,
+	// the text length is valid from the current position forward to
+	// the end of the string.
+
+	*localeName = localeName_;
+	*textLength = textLength_ - textPosition;
+
+	return S_OK;
+}
+
+
+IFACEMETHODIMP TextAnalysis::GetNumberSubstitution(
+	UINT32 textPosition,
+	OUT UINT32* textLength,
+	OUT IDWriteNumberSubstitution** numberSubstitution
+) throw()
+{
+	if (numberSubstitution_ != NULL)
+		numberSubstitution_->AddRef();
+
+	*numberSubstitution = numberSubstitution_;
+	*textLength = textLength_ - textPosition;
+
+	return S_OK;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// IDWriteTextAnalysisSink implementation
+
+IFACEMETHODIMP TextAnalysis::SetLineBreakpoints(
+	UINT32 textPosition,
+	UINT32 textLength,
+	DWRITE_LINE_BREAKPOINT const* lineBreakpoints   // [textLength]
+) throw()
+{
+	if (textLength > 0)
+	{
+		memcpy(&breakpoints_[textPosition], lineBreakpoints, textLength * sizeof(lineBreakpoints[0]));
+	}
+	return S_OK;
+}
+
+
+IFACEMETHODIMP TextAnalysis::SetScriptAnalysis(
+	UINT32 textPosition,
+	UINT32 textLength,
+	DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis
+) throw()
+{
+	try
+	{
+		SetCurrentRun(textPosition);
+		SplitCurrentRun(textPosition);
+		while (textLength > 0)
+		{
+			LinkedRun& run = FetchNextRun(&textLength);
+			run.script = *scriptAnalysis;
+		}
+	} catch (...)
+	{
+		return E_FAIL; // Unknown error, probably out of memory.
+	}
+
+	return S_OK;
+}
+
+
+IFACEMETHODIMP TextAnalysis::SetBidiLevel(
+	UINT32 textPosition,
+	UINT32 textLength,
+	UINT8 explicitLevel,
+	UINT8 resolvedLevel
+) throw()
+{
+	try
+	{
+		SetCurrentRun(textPosition);
+		SplitCurrentRun(textPosition);
+		while (textLength > 0)
+		{
+			LinkedRun& run = FetchNextRun(&textLength);
+			run.bidiLevel = resolvedLevel;
+		}
+	} catch (...)
+	{
+		return E_FAIL; // Unknown error, probably out of memory.
+	}
+
+	return S_OK;
+}
+
 
 IFACEMETHODIMP TextAnalysis::SetNumberSubstitution(
-    UINT32 text_position, UINT32 text_length,
-    IDWriteNumberSubstitution* numberSubstitution) throw()
+	UINT32 textPosition,
+	UINT32 textLength,
+	IDWriteNumberSubstitution* numberSubstitution
+) throw()
 {
-    LOG(INFO)
-        << "TextAnalysis::SetNumberSubstitution " << text_position << "/" << text_length;
-    return S_OK;
+	try
+	{
+		SetCurrentRun(textPosition);
+		SplitCurrentRun(textPosition);
+		while (textLength > 0)
+		{
+			LinkedRun& run = FetchNextRun(&textLength);
+			run.isNumberSubstituted = (numberSubstitution != NULL);
+		}
+	} catch (...)
+	{
+		return E_FAIL; // Unknown error, probably out of memory.
+	}
+
+	return S_OK;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Run modification.
+
+TextAnalysis::LinkedRun& TextAnalysis::FetchNextRun(
+	IN OUT UINT32* textLength
+)
+{
+	// Used by the sink setters, this returns a reference to the next run.
+	// Position and length are adjusted to now point after the current run
+	// being returned.
+
+	UINT32 runIndex = currentRunIndex_;
+	UINT32 runTextLength = runs_[currentRunIndex_].textLength;
+
+	// Split the tail if needed (the length remaining is less than the
+	// current run's size).
+	if (*textLength < runTextLength)
+	{
+		runTextLength = *textLength; // Limit to what's actually left.
+		UINT32 runTextStart = runs_[currentRunIndex_].textStart;
+
+		SplitCurrentRun(runTextStart + runTextLength);
+	} else
+	{
+		// Just advance the current run.
+		currentRunIndex_ = runs_[currentRunIndex_].nextRunIndex;
+	}
+	*textLength -= runTextLength;
+
+
+	// Return a reference to the run that was just current.
+	return runs_[runIndex];
+}
+
+
+void TextAnalysis::SetCurrentRun(UINT32 textPosition)
+{
+	// Move the current run to the given position.
+	// Since the analyzers generally return results in a forward manner,
+	// this will usually just return early. If not, find the
+	// corresponding run for the text position.
+
+	if (currentRunIndex_ < runs_.size()
+		&& runs_[currentRunIndex_].ContainsTextPosition(textPosition))
+	{
+		return;
+	}
+
+	currentRunIndex_ = static_cast<UINT32>(
+		std::find(runs_.begin(), runs_.end(), textPosition)
+		- runs_.begin()
+		);
+}
+
+
+void TextAnalysis::SplitCurrentRun(UINT32 splitPosition)
+{
+	// Splits the current run and adjusts the run values accordingly.
+
+	UINT32 runTextStart = runs_[currentRunIndex_].textStart;
+
+	if (splitPosition <= runTextStart)
+		return; // no change
+
+	// Grow runs by one.
+	size_t totalRuns = runs_.size();
+	try
+	{
+		runs_.resize(totalRuns + 1);
+	} catch (...)
+	{
+		return; // Can't increase size. Return same run.
+	}
+
+	// Copy the old run to the end.
+	LinkedRun& frontHalf = runs_[currentRunIndex_];
+	LinkedRun& backHalf = runs_.back();
+	backHalf = frontHalf;
+
+	// Adjust runs' text positions and lengths.
+	UINT32 splitPoint = splitPosition - runTextStart;
+	backHalf.textStart += splitPoint;
+	backHalf.textLength -= splitPoint;
+	frontHalf.textLength = splitPoint;
+	frontHalf.nextRunIndex = static_cast<UINT32>(totalRuns);
+	currentRunIndex_ = static_cast<UINT32>(totalRuns);
 }
 
 }

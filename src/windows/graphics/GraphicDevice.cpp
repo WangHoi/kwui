@@ -179,8 +179,7 @@ ComPtr<IDWriteTextLayout> GraphicDevice::CreateTextLayout2(
 	ComPtr<IDWriteTextAnalyzer> analyzer;
 	hr = _dwrite->CreateTextAnalyzer(analyzer.GetAddressOf());
 	ComPtr<TextAnalysis> text_analysis;
-	hr = WRL::MakeAndInitialize<TextAnalysis>(&text_analysis, text, font_face, analyzer);
-	text_analysis->buildLayout();
+	//hr = WRL::MakeAndInitialize<TextAnalysis>(&text_analysis, text, font_face, analyzer);
 	return nullptr;
 }
 

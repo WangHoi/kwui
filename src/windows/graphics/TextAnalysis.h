@@ -1,74 +1,158 @@
 #pragma once
 #include "windows/windows_header.h"
-#include "absl/types/span.h"
-#include <string>
+#include <vector>
 
 namespace windows {
 namespace graphics {
 
-struct TextSpanScriptAnalysisResult {
-    UINT32 text_position = 0;
-    UINT32 text_length = 0;
-    DWRITE_SCRIPT_ANALYSIS script_analysis = {};
-};
-
-struct GlyphRun {
-    UINT32 text_position = 0;
-    UINT32 text_length = 0;
-    const DWRITE_SCRIPT_ANALYSIS* script_analysis = nullptr;
-};
-
-class TextAnalysis : public WRL::RuntimeClass<
+// Helper source/sink class for text analysis.
+class TextAnalysis
+	: public WRL::RuntimeClass<
 	WRL::RuntimeClassFlags<WRL::ClassicCom>,
 	IDWriteTextAnalysisSource, IDWriteTextAnalysisSink
-> {
+	>
+{
 public:
-    HRESULT RuntimeClassInitialize(
-        const std::wstring& text,
-        ComPtr<IDWriteFontFace> font_face,
-        ComPtr<IDWriteTextAnalyzer> analyzer);
-    void buildLayout();
-    // IDWriteTextAnalysisSource implementation
-    IFACEMETHODIMP GetTextAtPosition(UINT32 text_position,
-        OUT WCHAR const** text_string,
-        OUT UINT32* text_length) throw();
-    IFACEMETHODIMP GetTextBeforePosition(UINT32 text_position,
-        OUT WCHAR const** text_string,
-        OUT UINT32* text_length) throw();
-    IFACEMETHODIMP_(DWRITE_READING_DIRECTION)
-        GetParagraphReadingDirection() throw();
-    IFACEMETHODIMP GetLocaleName(UINT32 text_position, OUT UINT32* text_length,
-        OUT WCHAR const** localeName) throw();
-    IFACEMETHODIMP GetNumberSubstitution(
-        UINT32 text_position, OUT UINT32* text_length,
-        OUT IDWriteNumberSubstitution** numberSubstitution) throw();
+	// A single contiguous run of characters containing the same analysis results.
+	struct Run
+	{
+		Run() throw()
+			: textStart(),
+			textLength(),
+			glyphStart(),
+			glyphCount(),
+			bidiLevel(),
+			script(),
+			isNumberSubstituted(),
+			isSideways()
+		{ }
 
-    // IDWriteTextAnalysisSink implementation
-    IFACEMETHODIMP
-        SetScriptAnalysis(UINT32 text_position, UINT32 text_length,
-            DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) throw();
-    IFACEMETHODIMP SetLineBreakpoints(
-        UINT32 text_position, UINT32 text_length,
-        const DWRITE_LINE_BREAKPOINT* lineBreakpoints // [text_length]
-    ) throw();
-    IFACEMETHODIMP SetBidiLevel(UINT32 text_position, UINT32 text_length,
-        UINT8 explicitLevel,
-        UINT8 resolvedLevel) throw();
-    IFACEMETHODIMP SetNumberSubstitution(
-        UINT32 text_position, UINT32 text_length,
-        IDWriteNumberSubstitution* numberSubstitution) throw();
+		UINT32 textStart;   // starting text position of this run
+		UINT32 textLength;  // number of contiguous code units covered
+		UINT32 glyphStart;  // starting glyph in the glyphs array
+		UINT32 glyphCount;  // number of glyphs associated with this run of text
+		DWRITE_SCRIPT_ANALYSIS script;
+		UINT8 bidiLevel;
+		bool isNumberSubstituted;
+		bool isSideways;
 
-private:
-    std::wstring text_;
-    ComPtr<IDWriteFontFace> font_face_;
-    ComPtr<IDWriteTextAnalyzer> analyzer_;
-    std::vector<DWRITE_LINE_BREAKPOINT> line_breakpoints_;
-    std::vector<TextSpanScriptAnalysisResult> script_analysis_results_;
+		inline bool ContainsTextPosition(UINT32 desiredTextPosition) const throw()
+		{
+			return desiredTextPosition >= textStart
+				&& desiredTextPosition < textStart + textLength;
+		}
 
-    std::vector<UINT16> cluster_maps_;
-    std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> text_props_;
-    std::vector<UINT16> glyph_indices_;
-    std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyph_props_;
+		inline bool operator==(UINT32 desiredTextPosition) const throw()
+		{
+			// Search by text position using std::find
+			return ContainsTextPosition(desiredTextPosition);
+		}
+	};
+
+	// Single text analysis run, which points to the next run.
+	struct LinkedRun : Run
+	{
+		LinkedRun() throw()
+			: nextRunIndex(0)
+		{ }
+
+		UINT32 nextRunIndex;  // index of next run
+	};
+
+public:
+	HRESULT RuntimeClassInitialize(
+		const wchar_t* text,
+		UINT32 textLength,
+		const wchar_t* localeName,
+		IDWriteNumberSubstitution* numberSubstitution,
+		DWRITE_READING_DIRECTION readingDirection
+	);
+
+	STDMETHODIMP GenerateResults(
+		IDWriteTextAnalyzer* textAnalyzer,
+		OUT std::vector<Run>& runs,
+		OUT std::vector<DWRITE_LINE_BREAKPOINT>& breakpoints_
+	) throw();
+
+	// IDWriteTextAnalysisSource implementation
+
+	IFACEMETHODIMP GetTextAtPosition(
+		UINT32 textPosition,
+		OUT WCHAR const** textString,
+		OUT UINT32* textLength
+	) throw();
+
+	IFACEMETHODIMP GetTextBeforePosition(
+		UINT32 textPosition,
+		OUT WCHAR const** textString,
+		OUT UINT32* textLength
+	) throw();
+
+	IFACEMETHODIMP_(DWRITE_READING_DIRECTION) GetParagraphReadingDirection() throw();
+
+	IFACEMETHODIMP GetLocaleName(
+		UINT32 textPosition,
+		OUT UINT32* textLength,
+		OUT WCHAR const** localeName
+	) throw();
+
+	IFACEMETHODIMP GetNumberSubstitution(
+		UINT32 textPosition,
+		OUT UINT32* textLength,
+		OUT IDWriteNumberSubstitution** numberSubstitution
+	) throw();
+
+	// IDWriteTextAnalysisSink implementation
+
+	IFACEMETHODIMP SetScriptAnalysis(
+		UINT32 textPosition,
+		UINT32 textLength,
+		DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis
+	) throw();
+
+	IFACEMETHODIMP SetLineBreakpoints(
+		UINT32 textPosition,
+		UINT32 textLength,
+		const DWRITE_LINE_BREAKPOINT* lineBreakpoints // [textLength]
+	) throw();
+
+	IFACEMETHODIMP SetBidiLevel(
+		UINT32 textPosition,
+		UINT32 textLength,
+		UINT8 explicitLevel,
+		UINT8 resolvedLevel
+	) throw();
+
+	IFACEMETHODIMP SetNumberSubstitution(
+		UINT32 textPosition,
+		UINT32 textLength,
+		IDWriteNumberSubstitution* numberSubstitution
+	) throw();
+
+protected:
+	LinkedRun& FetchNextRun(IN OUT UINT32* textLength);
+
+	void SetCurrentRun(UINT32 textPosition);
+
+	void SplitCurrentRun(UINT32 splitPosition);
+
+protected:
+	// Input
+	// (weak references are fine here, since this class is a transient
+	//  stack-based helper that doesn't need to copy data)
+	UINT32 textLength_;
+	const wchar_t* text_; // [textLength_]
+	const wchar_t* localeName_;
+	IDWriteNumberSubstitution* numberSubstitution_;
+	DWRITE_READING_DIRECTION readingDirection_;
+
+	// Current processing state
+	UINT32 currentPosition_;
+	UINT32 currentRunIndex_;
+
+	// Output
+	std::vector<LinkedRun> runs_;
+	std::vector<DWRITE_LINE_BREAKPOINT> breakpoints_;
 };
 
 }
