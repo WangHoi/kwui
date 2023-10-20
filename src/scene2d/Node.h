@@ -194,7 +194,7 @@ protected:
 
 	// Text
 	std::string text_;
-	std::unique_ptr<graph2d::TextLayoutInterface> text_layout_;
+	std::unique_ptr<graph2d::TextFlowInterface> text_flow_;
 
 	// Element
 	base::string_atom tag_;

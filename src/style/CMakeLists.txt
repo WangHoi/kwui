@@ -13,6 +13,8 @@ target_sources(kwui PRIVATE
   BlockLayout.cpp
   InlineLayout.h
   InlineLayout.cpp
+  TextLayout.h
+  TextLayout.cpp
   StylePaint.h
   StylePaint.cpp
   BoxConstraintSolver.h

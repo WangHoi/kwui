@@ -26,9 +26,9 @@ HRESULT FlowLayoutSource::SetShape(FlowShape flowShape)
 }
 
 
-HRESULT FlowLayoutSource::GetNextRect(float fontHeight, OUT RectF* nextRect)
+HRESULT FlowLayoutSource::GetNextRect(float fontHeight, OUT scene2d::RectF* nextRect)
 {
-    RectF& rect = *nextRect;
+    scene2d::RectF& rect = *nextRect;
 
     // Set defaults.
     rect.left   = 0;

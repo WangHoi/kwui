@@ -318,10 +318,10 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::Painte
 {
 	if (node->type_ == NodeType::NODE_TEXT) {
 		LOG(INFO) << "paintText scene pos=" << node->inline_box_.pos << ", text=" << node->text_;
-		painter->drawTextLayout(
-			node->inline_box_.pos,
-			node->text_layout_.get(),
-			node->computed_style_.color);
+		//painter->drawTextLayout(
+		//	node->inline_box_.pos,
+		//	node->text_layout_.get(),
+		//	node->computed_style_.color);
 	} else if (node->type_ == NodeType::NODE_ELEMENT) {
 		//PointF contg_block_pos = node->absolutelyPositioned()
 		//	? bpc.positioned_contg_pos

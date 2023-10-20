@@ -66,8 +66,8 @@ public:
 
     // Reflow the text analysis into 
     HRESULT FlowText(
-        FlowLayoutSource* flowSource,
-        FlowLayoutSink* flowSink
+        FlowLayoutSourceInterface* flowSource,
+        FlowLayoutSinkInterface* flowSink
     );
 
 protected:
@@ -87,14 +87,14 @@ protected:
     );
 
     HRESULT ProduceGlyphRuns(
-        FlowLayoutSink* flowSink,
-        const FlowLayoutSource::RectF& rect,
+        FlowLayoutSinkInterface* flowSink,
+        const scene2d::RectF& rect,
         const ClusterPosition& clusterStart,
         const ClusterPosition& clusterEnd
     ) const throw();
 
     HRESULT ProduceJustifiedAdvances(
-        const FlowLayoutSource::RectF& rect,
+        const scene2d::RectF& rect,
         const ClusterPosition& clusterStart,
         const ClusterPosition& clusterEnd,
         OUT std::vector<float>& justifiedAdvances

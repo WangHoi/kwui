@@ -2,7 +2,26 @@
 #include "windows/windows_header.h"
 #include <vector>
 
-class FlowLayoutSink {
+class FlowLayoutSinkInterface
+{
+public:
+    virtual HRESULT Prepare(UINT32 glyphCount) = 0;
+    virtual HRESULT SetGlyphRun(
+        float x,
+        float y,
+        UINT32 glyphCount,
+        const UINT16* glyphIndices, // [glyphCount]
+        const float* glyphAdvances, // [glyphCount]
+        const DWRITE_GLYPH_OFFSET* glyphOffsets, // [glyphCount]
+        ComPtr<IDWriteFontFace> fontFace,
+        float fontEmSize,
+        UINT8 bidiLevel,
+        bool isSideways
+    ) = 0;
+};
+
+class FlowLayoutSink : public FlowLayoutSinkInterface
+{
 public:
     FlowLayoutSink()
     { }

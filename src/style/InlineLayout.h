@@ -22,23 +22,24 @@ class BlockFormatContext;
 class InlineFormatContext;
 class InlineBox;
 struct LineBox;
+struct TextBoxes;
 enum class InlineBoxType {
 	Empty,
-	WithText,
+	WithTextBoxes,
+	WithGlyphRun,
 	WithInlineChildren,
 };
 struct InlineBox {
 	scene2d::PointF pos; // BFC coordinates, set by LineBox::layout(),
 	scene2d::DimensionF size;
-	float baseline = 0; // offset from bottom
+	float baseline = 0; // offset from top
 
 	InlineBoxType type = InlineBoxType::Empty;
 	absl::variant<
-		absl::monostate,				// empty
-		graph2d::TextLayoutInterface*,	// text
-		InlineBox* 						// first inline child
+		absl::monostate,			// empty
+		TextBoxes*,					// text boxes
+		InlineBox* 					// first inline child
 	> payload;
-	std::optional<EdgeOffsetF> rel_offset; // Relative positioned box offset
 	InlineBox* parent;
 	InlineBox* next_sibling;
 	InlineBox* prev_sibling;
@@ -74,6 +75,7 @@ public:
 	inline BlockFormatContext& bfc() const { return bfc_; }
 	float getAvailWidth() const;
 	void setupBox(InlineBox* box);
+	void layoutText(const std::string& text, InlineBox& inline_box, TextBoxes& text_boxes);
 
 	void addBox(InlineBox* box);
 

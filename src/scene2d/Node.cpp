@@ -491,12 +491,12 @@ void Node::requestAnimationFrame(scene2d::Node* node)
 
 void Node::updateTextLayout()
 {
-	text_layout_ = graph2d::createTextLayout(
-		text_,
-		computed_style_.font_family.keyword_val.c_str(),
-		computed_style_.font_style,
-		computed_style_.font_weight,
-		computed_style_.font_size.pixelOrZero());
+	//text_layout_ = graph2d::createTextLayout(
+	//	text_,
+	//	computed_style_.font_family.keyword_val.c_str(),
+	//	computed_style_.font_style,
+	//	computed_style_.font_weight,
+	//	computed_style_.font_size.pixelOrZero());
 }
 
 void Node::layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node)
@@ -566,8 +566,7 @@ std::tuple<float, float> Node::layoutMeasureInlineWidth(Node* node)
 {
 	const auto& st = node->computedStyle();
 	if (node->type() == NodeType::NODE_TEXT) {
-		float w = node->text_layout_->rect().width();
-		return { w, w };
+		return node->text_flow_->measureWidth();
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		float min_width = 0.0f, max_width = 0.0f;
 		node->eachLayoutChild([&](Node* child) {
@@ -583,8 +582,6 @@ std::tuple<float, float> Node::layoutMeasureInlineWidth(Node* node)
 void Node::layoutMeasure(style::InlineFormatContext& ifc, style::InlineBoxBuilder& ibb, Node* node)
 {
 	if (node->type() == NodeType::NODE_TEXT) {
-		node->inline_box_.size = node->text_layout_->rect().size();
-		node->inline_box_.baseline = node->text_layout_->baseline();
 		ibb.addText(node);
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		if (node->absolutelyPositioned()) {

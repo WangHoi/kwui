@@ -5,26 +5,61 @@
 
 namespace style {
 
+struct LineBox {
+	scene2d::PointF offset; // used while building
+
+	float left; // BFC coord: left
+	float avail_width;
+	// float line_gap;  // leading
+
+	scene2d::DimensionF used_size;
+	float used_baseline; // offset from used_size's top
+
+	std::vector<InlineBox*> inline_boxes;
+
+	LineBox(float left_, float avail_w)
+		: left(left_)
+		, avail_width(avail_w)
+		, used_baseline(0)
+	{
+	}
+	~LineBox() = default;
+	int addInlineBox(InlineBox* box)
+	{
+		int idx = (int)inline_boxes.size();
+		inline_boxes.push_back(box);
+		return idx;
+	}
+	void layoutArrange(float offset_y)
+	{
+		used_size.width = 0;
+		float top = 0, bottom = 0;
+		for (InlineBox* b : inline_boxes) {
+			used_size.width += b->size.width;
+			top = std::max(top, b->baseline);
+			bottom = std::max(bottom, b->size.height - b->baseline);
+		}
+		used_size.height = top + bottom;
+		used_baseline = bottom;
+
+		float x = left;
+		for (style::InlineBox* b : inline_boxes) {
+			b->pos.x = x;
+			b->pos.y = offset_y + top - b->baseline;
+			x += b->size.width;
+		}
+	}
+};
+
 InlineBoxBuilder::InlineBoxBuilder(InlineFormatContext& ifc, InlineBox* root)
     : ifc_(ifc), root_(root), contg_(root) {}
-#if 0
-float InlineBoxBuilder::containingBlockWidth() const
-{
-    return contg_->avail_width;
-}
-
-absl::optional<float> InlineBoxBuilder::containingBlockHeight() const
-{
-    return contg_->prefer_height;
-}
-#endif
 void InlineBoxBuilder::addText(scene2d::Node* node)
 {
-    InlineBox* box = &node->inline_box_;
-    box->type = InlineBoxType::WithText;
-    box->payload = node->text_layout_.get();
-	ifc_.setupBox(box);
-	beginInline(box);
+    InlineBox* inline_box = &node->inline_box_;
+    inline_box->type = InlineBoxType::WithTextBoxes;
+    //inline_box->payload = &node->text_boxes_;
+	//ifc_.setupBox(box);
+	beginInline(inline_box);
 	endInline();
 }
 
@@ -51,78 +86,12 @@ void InlineBoxBuilder::beginInline(InlineBox* box)
 
 void InlineBoxBuilder::endInline()
 {
-	if (contg_->type == InlineBoxType::WithText)
+	if (contg_->type == InlineBoxType::WithTextBoxes)
 		ifc_.addBox(contg_);
 
 	std::tie(contg_, last_child_) = stack_.back();
     stack_.pop_back();
 }
-
-struct LineBox {
-	scene2d::PointF offset;
-
-	float left; // BFC coord: left
-	float avail_width;
-	// float line_gap;  // leading
-
-	scene2d::DimensionF used_size;
-	float used_baseline; // offset from used_size's bottom
-
-	std::vector<InlineBox*> inline_boxes;
-
-	LineBox(float left_, float avail_w)
-		: left(left_)
-		, avail_width(avail_w)
-		, used_baseline(0)
-	{
-	}
-	~LineBox() = default;
-	int addInlineBox(InlineBox* box)
-	{
-		int idx = (int)inline_boxes.size();
-		inline_boxes.push_back(box);
-		return idx;
-	}
-	/*
-	std::tuple<float, float> getAvailWidth() const
-	{
-		float x = left;
-		float w = avail_width;
-		for (auto& b : inline_boxes) {
-			x += b->size.width;
-			w -= b->size.width;
-		}
-		return std::make_tuple(x, w);
-	}
-	float remainWidth() const
-	{
-		float w = avail_width;
-		for (auto& b : inline_boxes) {
-			w -= b->size.width;
-		}
-		return w;
-	}
-	*/
-	void layoutArrange(float offset_y)
-	{
-		used_size.width = 0;
-		float top = 0, bottom = 0;
-		for (InlineBox* b : inline_boxes) {
-			used_size.width += b->size.width;
-			top = std::max(top, b->baseline);
-			bottom = std::max(bottom, b->size.height - b->baseline);
-		}
-		used_size.height = top + bottom;
-		used_baseline = bottom;
-
-		float x = left;
-		for (style::InlineBox* b : inline_boxes) {
-			b->pos.x = x;
-			b->pos.y = offset_y + top - b->baseline;
-			x += b->size.width;
-		}
-	}
-};
 
 InlineFormatContext::InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width)
     : bfc_(bfc), left_(left), avail_width_(avail_width), height_(0)
@@ -144,6 +113,10 @@ void InlineFormatContext::setupBox(InlineBox* box)
     box->line_box = lb;
     box->line_box_offset_x = lb->offset.x;
     lb->offset.x += box->size.width;
+}
+
+void InlineFormatContext::layoutText(const std::string& text, InlineBox& inline_box, TextBoxes& text_boxes)
+{
 }
 
 void InlineFormatContext::addBox(InlineBox* box)
@@ -190,7 +163,7 @@ void InlineFormatContext::layoutArrange()
 
 scene2d::RectF InlineBox::boundingRect() const
 {
-	if (type == InlineBoxType::WithText) {
+	if (type == InlineBoxType::WithTextBoxes) {
 		return scene2d::RectF::fromXYWH(pos.x, pos.y, size.width, size.height);
 	} else if (type == InlineBoxType::WithInlineChildren) {
 		InlineBox* first_child = absl::get<InlineBox*>(payload);
