@@ -21,7 +21,7 @@ class TextFlowSource : public graph2d::TextFlowSourceInterface
 public:
 	TextFlowSource(InlineBoxBuilder& ibb);
 	// 通过 TextFlowSourceInterface 继承
-	void getNextLine(float fontHeight, float& left, float& width, bool& allow_overflow) override;
+	void getNextLine(float pref_min_width, float fontHeight, float& left, float& width, bool& allow_overflow) override;
 
 private:
 	InlineBoxBuilder& ibb_;

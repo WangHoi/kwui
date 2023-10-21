@@ -4,6 +4,7 @@
 #include "windows/windows_header.h"
 #include "Color.h"
 #include "TextLayout.h"
+#include "TextFlow.h"
 #include "GraphicDevice.h"
 #include <vector>
 
@@ -25,6 +26,8 @@ public:
     void DrawRoundedRect(const scene2d::PointF& origin, const scene2d::DimensionF& size, float r) { DrawRoundedRect(origin.x, origin.y, size.width, size.height, r); }
     void DrawTextLayout(const scene2d::PointF& origin, const TextLayout& layout) { DrawTextLayout(origin.x, origin.y, layout); }
     void DrawTextLayout(float x, float y, const TextLayout& layout);
+    void DrawGlyphRun(const scene2d::PointF& origin, const GlyphRun& gr) { DrawGlyphRun(origin.x, origin.y, gr); }
+    void DrawGlyphRun(float x, float y, const GlyphRun& gr);
     void Translate(float x, float y) { Translate({ x, y }); }
     void Translate(const scene2d::PointF& offset) { _current.offset += offset; }
     void SetTranslation(const scene2d::PointF& abs_offset) { _current.offset = abs_offset; }

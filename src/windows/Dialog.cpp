@@ -77,6 +77,12 @@ public:
         p_.SetColor(get_color(color));
         p_.DrawTextLayout(pos, *(graphics::TextLayout*)text_layout);
     }
+    void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* gr, const style::Value& color) override
+    {
+        p_.SetColor(get_color(color));
+        auto glyph_run = (graphics::GlyphRun*)gr;
+        p_.DrawGlyphRun(pos, *glyph_run);
+    }
     void drawControl(const scene2d::RectF& rect, scene2d::Control* control) override
     {
         control->onPaint(p_, rect);

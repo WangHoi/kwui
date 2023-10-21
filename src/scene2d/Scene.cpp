@@ -318,10 +318,14 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::Painte
 {
 	if (node->type_ == NodeType::NODE_TEXT) {
 		LOG(INFO) << "paintText scene pos=" << node->inline_box_.pos << ", text=" << node->text_;
-		//painter->drawTextLayout(
-		//	node->inline_box_.pos,
-		//	node->text_layout_.get(),
-		//	node->computed_style_.color);
+		size_t n = node->text_boxes_.glyph_runs.size();
+		for (size_t i = 0; i < n; ++i) {
+			style::InlineBox* ibox = node->text_boxes_.inline_boxes[i].get();
+			graph2d::GlyphRunInterface* gr = node->text_boxes_.glyph_runs[i].get();
+			PointF baseline_origin = ibox->pos;
+			baseline_origin.y += ibox->baseline;
+			painter->drawGlyphRun(baseline_origin, gr, node->computed_style_.color);
+		}
 	} else if (node->type_ == NodeType::NODE_ELEMENT) {
 		//PointF contg_block_pos = node->absolutelyPositioned()
 		//	? bpc.positioned_contg_pos

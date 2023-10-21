@@ -27,22 +27,24 @@ GlyphRun::GlyphRun(const TextFlow* flow,
     UINT8 bidiLevel,
     bool isSideway)
     : flow_(flow)
-    , glyphCount_(glyphCount)
-    , glyphIndices_(glyphIndices)
-    , glyphAdvances_(glyphAdvances)
-    , glyphOffsets_(glyphOffsets)
-    , fontFace_(fontFace)
-    , fontEmSize_(fontEmSize)
-    , bidiLevel_(bidiLevel)
-    , isSideway_(isSideway)
 {
+    glyph_advances_.assign(glyphAdvances, glyphAdvances + glyphCount);
+
+    raw_.glyphIndices = glyphIndices;
+    raw_.glyphAdvances = glyph_advances_.data();
+    raw_.glyphOffsets = glyphOffsets;
+    raw_.glyphCount = glyphCount;
+    raw_.fontEmSize = fontEmSize;
+    raw_.fontFace = fontFace.Get();
+    raw_.bidiLevel = bidiLevel;
+    raw_.isSideways = isSideway;
 }
 
 scene2d::RectF GlyphRun::boundingRect()
 {
     scene2d::RectF rect;
     rect.bottom = flow_->flow_metrics_.line_height;
-    rect.right = std::accumulate(glyphAdvances_, glyphAdvances_ + glyphCount_, 0.0f);
+    rect.right = std::accumulate(raw_.glyphAdvances, raw_.glyphAdvances + raw_.glyphCount, 0.0f);
     return rect;
 }
 
@@ -434,20 +436,29 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 
         // Iteratively pull rect's from the source,
         // and push as much text will fit to the sink.
+        float min_width = 0.0f;
         while (cluster.textPosition < textLength)
         {
             // Pull the next rect from the source.
             float width;
             bool allow_overflow;
-            flowSource->getNextLine(fontHeight, rect.left, width, allow_overflow);
+            flowSource->getNextLine(min_width, fontHeight, rect.left, width, allow_overflow);
+            LOG(INFO) << "nextLine: min_width=" << min_width << ", left=" << rect.left << ", width=" << width << ", allow_overflow=" << allow_overflow;
             rect.right = rect.left + width;
 
             if (rect.right - rect.left <= 0)
                 break; // Stop upon reaching zero sized rects.
 
             // Fit as many clusters between breakpoints that will go in.
-            if (FAILED(FitText(cluster, textLength, rect.right - rect.left, &nextCluster)))
-                break;
+            bool overflow = FitText(cluster, textLength, rect.right - rect.left, &nextCluster);
+            LOG(INFO) << "overflow=" << overflow;
+            
+            // Check overflow
+            if (!allow_overflow && overflow) {
+                min_width = 65536;
+                continue;
+            }
+            min_width = 0.0f;
 
             // Push the glyph runs to the sink.
             if (FAILED(ProduceGlyphRuns(flowSink, rect, cluster, nextCluster)))
@@ -459,7 +470,7 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 }
 
 
-HRESULT TextFlow::FitText(
+bool TextFlow::FitText(
     const ClusterPosition& clusterStart,
     UINT32 textEnd,
     float maxWidth,
@@ -478,6 +489,7 @@ HRESULT TextFlow::FitText(
     UINT32 validBreakPosition = cluster.textPosition;
     UINT32 bestBreakPosition = cluster.textPosition;
     float textWidth = 0;
+    bool overflow = false;
 
     while (cluster.textPosition < textEnd)
     {
@@ -491,9 +503,14 @@ HRESULT TextFlow::FitText(
         textWidth += GetClusterRangeWidth(cluster, nextCluster);
         if (textWidth > maxWidth && !breakpoint.isWhitespace)
         {
+#if 0
             // Want a minimum of one cluster.
-            if (validBreakPosition > clusterStart.textPosition)
+            if (validBreakPosition > clusterStart.textPosition) {
                 break;
+            }
+#endif
+            overflow = (bestBreakPosition == clusterStart.textPosition);
+            break;
         }
 
         validBreakPosition = nextCluster.textPosition;
@@ -519,7 +536,7 @@ HRESULT TextFlow::FitText(
 
     *clusterEnd = cluster;
 
-    return S_OK;
+    return overflow;
 }
 
 

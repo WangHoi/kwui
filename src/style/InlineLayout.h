@@ -81,7 +81,7 @@ public:
 		const scene2d::PointF& pos,
 		std::unique_ptr<graph2d::GlyphRunInterface> glyph_run);
 	void appendGlyphRun(InlineBox* box);
-	LineBox* getNextLine();
+	LineBox* getNextLine(float pref_min_width);
 	void beginInline(InlineBox* box);
 	void endInline();
 
@@ -103,7 +103,7 @@ public:
 	inline BlockFormatContext& bfc() const { return bfc_; }
 	float getAvailWidth() const;
 	void setupBox(InlineBox* box);
-	LineBox* getNextLine();
+	LineBox* getLineBox(float pref_min_width);
 
 	// Add inline box to LineBox
 	void addBox(InlineBox* box);
@@ -117,7 +117,6 @@ public:
 
 private:
 	LineBox* newLineBox();
-	LineBox* getLineBox(float pref_min_width);
 
 	BlockFormatContext& bfc_;
 	float left_;

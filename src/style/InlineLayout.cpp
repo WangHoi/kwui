@@ -35,9 +35,9 @@ void InlineBoxBuilder::addGlyphRun(const scene2d::PointF& pos, std::unique_ptr<g
     text_node_->text_boxes_.glyph_runs.push_back(std::move(glyph_run));
 }
 
-LineBox* InlineBoxBuilder::getNextLine()
+LineBox* InlineBoxBuilder::getNextLine(float pref_min_width)
 {
-    line_ = ifc_.getNextLine();
+    line_ = ifc_.getLineBox(pref_min_width);
     return line_;
 }
 
@@ -112,11 +112,6 @@ void InlineFormatContext::setupBox(InlineBox* box)
     lb->offset_x += box->size.width;
 }
 
-LineBox* InlineFormatContext::getNextLine()
-{
-    return getLineBox(0.0f);
-}
-
 void InlineFormatContext::addBox(InlineBox* box)
 {
     box->line_box->addInlineBox(box);
@@ -184,9 +179,10 @@ scene2d::RectF InlineBox::boundingRect() const
 }
 
 LineBox::LineBox(float left_, float avail_w)
-    : left(left_)
+    : offset_x(0.0f)
+    , left(left_)
     , avail_width(avail_w)
-    , used_baseline(0)
+    , used_baseline(0.0f)
 {
 }
 

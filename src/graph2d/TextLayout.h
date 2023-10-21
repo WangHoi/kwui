@@ -11,7 +11,7 @@ public:
 
 class TextFlowSourceInterface {
 public:
-    virtual void getNextLine(float fontHeight, float& left, float& width, bool& allow_overflow) = 0;
+    virtual void getNextLine(float pref_min_width, float fontHeight, float& left, float& width, bool& allow_overflow) = 0;
 };
 
 class TextFlowSinkInterface {

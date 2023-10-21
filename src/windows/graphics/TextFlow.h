@@ -22,17 +22,12 @@ public:
 		UINT8 bidiLevel,
 		bool isSideway);
 	scene2d::RectF boundingRect() override;
+	inline const DWRITE_GLYPH_RUN* raw() const { return &raw_; }
 
 private:
 	const TextFlow* flow_;
-	UINT32 glyphCount_;
-	const UINT16* glyphIndices_; // [glyphCount]
-	const float* glyphAdvances_; // [glyphCount]
-	const DWRITE_GLYPH_OFFSET* glyphOffsets_; // [glyphCount]
-	ComPtr<IDWriteFontFace> fontFace_;
-	float fontEmSize_;
-	UINT8 bidiLevel_;
-	bool isSideway_;
+	DWRITE_GLYPH_RUN raw_;
+	std::vector<float> glyph_advances_;
 };
 
 class TextFlow : public graph2d::TextFlowInterface
@@ -109,7 +104,7 @@ protected:
 		IN OUT UINT32& glyphStart
 	);
 
-	HRESULT FitText(
+	bool FitText(
 		const ClusterPosition& clusterStart,
 		UINT32 textEnd,
 		float maxWidth,

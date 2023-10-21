@@ -7,12 +7,12 @@ TextFlowSource::TextFlowSource(InlineBoxBuilder& ibb)
     : ibb_(ibb)
 {}
 
-void TextFlowSource::getNextLine(float fontHeight, float& left, float& width, bool& allow_overflow)
+void TextFlowSource::getNextLine(float pref_min_width, float fontHeight, float& left, float& width, bool& allow_overflow)
 {
-    LineBox* lb = ibb_.getNextLine();
+    LineBox* lb = ibb_.getNextLine(pref_min_width);
     left = lb->left + lb->offset_x;
-    width = lb->avail_width;
-    allow_overflow = (lb->offset_x > 0.0f);
+    width = lb->avail_width - lb->offset_x;
+    allow_overflow = (lb->offset_x <= 0.0f);
 }
 
 TextFlowSink::TextFlowSink(InlineBoxBuilder& ibb)

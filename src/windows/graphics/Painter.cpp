@@ -84,6 +84,23 @@ void Painter::DrawTextLayout(float x, float y, const TextLayout& layout) {
                             D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 }
+void Painter::DrawGlyphRun(float x, float y, const GlyphRun& gr)
+{
+    D2D1_POINT_2F origin = D2D1::Point2F(_current.offset.x + x, _current.offset.y + y);
+    if (_current.HasFill()) {
+        ComPtr<ID2D1Brush> brush = CreateBrush(_current.color);
+        if (_current.gradient_brush) {
+            brush = _current.gradient_brush;
+            brush->SetTransform(D2D1::Matrix3x2F::Translation(origin.x, origin.y));
+        } else {
+            brush = CreateBrush(_current.color);
+        }
+        _rt->DrawGlyphRun(origin,
+            gr.raw(),
+            brush.Get(),
+            DWRITE_MEASURING_MODE_NATURAL);
+    }
+}
 void Painter::Save() {
     _state_stack.push_back(_current);
 }
