@@ -5,6 +5,7 @@ target_sources(kwui PUBLIC
     TextLayout.h
     TextAnalysis.h
     FlowLayout.h
+    TextFlow.h
     FlowSource.h
     FlowSink.h
 )
@@ -15,6 +16,7 @@ target_sources(kwui PRIVATE
     TextLayout.cpp
     TextAnalysis.cpp
     FlowLayout.cpp
+    TextFlow.cpp
     FlowSource.cpp
     FlowSink.cpp
 )

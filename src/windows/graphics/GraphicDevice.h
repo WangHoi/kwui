@@ -2,6 +2,7 @@
 
 #include "windows/windows_header.h"
 #include "TextLayout.h"
+#include "TextFlow.h"
 #include "scene2d/geom_types.h"
 #include "absl/types/span.h"
 #include <unordered_map>
@@ -47,7 +48,7 @@ public:
 		float font_size,
 		FontWeight font_weight = FontWeight(),
 		FontStyle font_style = FontStyle());
-	ComPtr<IDWriteTextLayout> CreateTextLayout2(
+	std::unique_ptr<TextFlow> CreateTextFlow(
 		const std::wstring& text,
 		const std::string& font_family,
 		float font_size,

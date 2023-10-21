@@ -11,7 +11,7 @@ public:
 
 class TextFlowSourceInterface {
 public:
-    virtual absl::optional<scene2d::RectF> getNextRect(float fontHeight) = 0;
+    virtual void getNextLine(float fontHeight, float& left, float& width, bool& allow_overflow) = 0;
 };
 
 class TextFlowSinkInterface {
@@ -22,15 +22,14 @@ public:
         std::unique_ptr<GlyphRunInterface> glyph_run) = 0;
 };
 
-struct FontMetrics {
-    float ascent;
-    float descent;
-    float line_gap;
+struct FlowMetrics {
+    float line_height;
+    float baseline;
 };
 
 class TextFlowInterface {
 public:
-    virtual FontMetrics fontMetrics() = 0;
+    virtual FlowMetrics flowMetrics() = 0;
     virtual std::tuple<float, float> measureWidth() = 0;
     virtual void flowText(TextFlowSourceInterface *source, TextFlowSinkInterface *sink) = 0;
 };

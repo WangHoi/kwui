@@ -5,6 +5,7 @@
 #include "style/style.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "graph2d/TextLayout.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -25,7 +26,6 @@ struct LineBox;
 struct TextBoxes;
 enum class InlineBoxType {
 	Empty,
-	WithTextBoxes,
 	WithGlyphRun,
 	WithInlineChildren,
 };
@@ -36,9 +36,9 @@ struct InlineBox {
 
 	InlineBoxType type = InlineBoxType::Empty;
 	absl::variant<
-		absl::monostate,			// empty
-		TextBoxes*,					// text boxes
-		InlineBox* 					// first inline child
+		absl::monostate,				// empty
+		graph2d::GlyphRunInterface*,	// text boxes
+		InlineBox* 						// first inline child
 	> payload;
 	InlineBox* parent;
 	InlineBox* next_sibling;
@@ -50,12 +50,38 @@ struct InlineBox {
 	scene2d::RectF boundingRect() const;
 };
 
+struct LineBox {
+	float offset_x; // used while building
+
+	float left; // BFC coord: left
+	float avail_width;
+	// float line_gap;  // leading
+
+	scene2d::DimensionF used_size;
+	float used_baseline; // offset from used_size's top
+
+	std::vector<InlineBox*> inline_boxes;
+
+	LineBox(float left_, float avail_w);
+	~LineBox() = default;
+	int addInlineBox(InlineBox* box);
+	void layoutArrange(float offset_y);
+};
+
 class InlineBoxBuilder {
 public:
 	InlineBoxBuilder(InlineFormatContext& ifc, InlineBox* root);
+
+	inline InlineFormatContext& ifc() const { return ifc_; }
+
 	//float containingBlockWidth() const;
 	//absl::optional<float> containingBlockHeight() const;
 	void addText(scene2d::Node* node);
+	void addGlyphRun(
+		const scene2d::PointF& pos,
+		std::unique_ptr<graph2d::GlyphRunInterface> glyph_run);
+	void appendGlyphRun(InlineBox* box);
+	LineBox* getNextLine();
 	void beginInline(InlineBox* box);
 	void endInline();
 
@@ -64,6 +90,8 @@ private:
 	InlineBox* root_;
 	InlineBox* contg_;
 	InlineBox* last_child_ = nullptr;
+	scene2d::Node* text_node_ = nullptr;
+	LineBox* line_ = nullptr;
 	std::vector<std::tuple<InlineBox*, InlineBox*>> stack_;
 };
 
@@ -75,8 +103,9 @@ public:
 	inline BlockFormatContext& bfc() const { return bfc_; }
 	float getAvailWidth() const;
 	void setupBox(InlineBox* box);
-	void layoutText(const std::string& text, InlineBox& inline_box, TextBoxes& text_boxes);
+	LineBox* getNextLine();
 
+	// Add inline box to LineBox
 	void addBox(InlineBox* box);
 
 	void layoutArrange();

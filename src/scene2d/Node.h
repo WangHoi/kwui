@@ -195,6 +195,7 @@ protected:
 	// Text
 	std::string text_;
 	std::unique_ptr<graph2d::TextFlowInterface> text_flow_;
+	style::TextBoxes text_boxes_; // Formatted text boxes
 
 	// Element
 	base::string_atom tag_;

@@ -491,12 +491,12 @@ void Node::requestAnimationFrame(scene2d::Node* node)
 
 void Node::updateTextLayout()
 {
-	//text_layout_ = graph2d::createTextLayout(
-	//	text_,
-	//	computed_style_.font_family.keyword_val.c_str(),
-	//	computed_style_.font_style,
-	//	computed_style_.font_weight,
-	//	computed_style_.font_size.pixelOrZero());
+	text_flow_ = graph2d::createTextFlow(
+		text_,
+		computed_style_.font_family.keyword_val.c_str(),
+		computed_style_.font_style,
+		computed_style_.font_weight,
+		computed_style_.font_size.pixelOrZero());
 }
 
 void Node::layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node)
