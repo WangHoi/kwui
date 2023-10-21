@@ -1,5 +1,6 @@
 布局:
-- text-align 居中
+- TextFlow::measureWidth 未实现
+- 绝对位置的自动宽度有bug
 - 盒子生成：文本的anon-inline-box
 - Relative的处理
 - 盒子生成：inline中包含block，需要生成临时anon-block-box包裹;

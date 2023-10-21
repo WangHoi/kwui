@@ -30,6 +30,8 @@ static void resolve_style(style::FontStyle& style, const style::FontStyle* paren
 	const style::ValueSpec& spec);
 static void resolve_style(style::FontWeight& style, const style::FontWeight* parent,
 	const style::ValueSpec& spec);
+static void resolve_style(style::TextAlign& style, const style::TextAlign* parent,
+	const style::ValueSpec& spec);
 
 Node::Node(Scene* scene, NodeType type)
 	: scene_(scene)
@@ -229,6 +231,7 @@ void Node::resolveDefaultStyle()
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_size, style::Value::fromPixel(12));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_style, style::FontStyle::Normal);
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_weight, style::FontWeight());
+	RESOLVE_STYLE_DEFAULT_INHERIT(text_align, style::TextAlign::Left);
 #undef RESOLVE_STYLE_DEFAULT_INHERIT
 }
 
@@ -277,6 +280,7 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 	RESOLVE_STYLE(font_size);
 	RESOLVE_STYLE(font_style);
 	RESOLVE_STYLE(font_weight);
+	RESOLVE_STYLE(text_align);
 #undef RESOLVE_STYLE
 }
 
@@ -493,6 +497,7 @@ void Node::updateTextLayout()
 {
 	text_flow_ = graph2d::createTextFlow(
 		text_,
+		computed_style_.line_height.pixelOrZero(),
 		computed_style_.font_family.keyword_val.c_str(),
 		computed_style_.font_style,
 		computed_style_.font_weight,
@@ -715,7 +720,7 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		contg_node->eachLayoutChild([&](Node* child) {
 			layoutMeasure(*contg_node->ifc_, ibb, child);
 			});
-		contg_node->ifc_->layoutArrange();
+		contg_node->ifc_->layoutArrange(contg_node->computed_style_.text_align);
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
 			bfc.border_bottom = bfc.margin_bottom + *box.prefer_height;
@@ -830,6 +835,24 @@ void resolve_style(style::FontWeight& style, const style::FontWeight* parent,
 					style = style::FontWeight(900);
 				}
 			}
+		}
+	}
+}
+
+void resolve_style(style::TextAlign& style, const style::TextAlign* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Keyword) {
+			if (spec.value->keyword_val == base::string_intern("left"))
+				style = style::TextAlign::Left;
+			else if (spec.value->keyword_val == base::string_intern("center"))
+				style = style::TextAlign::Center;
+			else if (spec.value->keyword_val == base::string_intern("right"))
+				style = style::TextAlign::Right;
 		}
 	}
 }

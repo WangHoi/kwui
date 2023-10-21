@@ -116,6 +116,7 @@ struct StyleSpec {
 	ValueSpec font_size;
 	ValueSpec font_style;
 	ValueSpec font_weight;
+	ValueSpec text_align;
 };
 
 enum class DisplayType {
@@ -152,6 +153,12 @@ public:
 	}
 private:
 	uint16_t raw_;
+};
+
+enum class TextAlign {
+	Left,
+	Center,
+	Right,
 };
 
 struct Style {
@@ -198,6 +205,7 @@ struct Style {
 	Value font_size;
 	FontStyle font_style;
 	FontWeight font_weight;
+	TextAlign text_align;
 };
 
 template <typename Sink>

@@ -50,6 +50,7 @@ public:
 		FontStyle font_style = FontStyle());
 	std::unique_ptr<TextFlow> CreateTextFlow(
 		const std::wstring& text,
+		float line_height,
 		const std::string& font_family,
 		float font_size,
 		FontWeight font_weight = FontWeight(),

@@ -150,6 +150,7 @@ ComPtr<IDWriteTextLayout> GraphicDevice::CreateTextLayout(
 
 std::unique_ptr<TextFlow> GraphicDevice::CreateTextFlow(
 	const std::wstring& text,
+	float line_height,
 	const std::string& font_family,
 	float font_size,
 	FontWeight font_weight,
@@ -170,7 +171,8 @@ std::unique_ptr<TextFlow> GraphicDevice::CreateTextFlow(
 		DEFAULT_LOCALE,
 		format.GetAddressOf());
 	std::unique_ptr<TextFlow> flow = std::make_unique<TextFlow>(_dwrite);
-	flow->SetTextFormat(format);
+	flow->setLineHeight(line_height);
+	flow->setTextFormat(format);
 	flow->AnalyzeText(text.c_str(), text.length());
 	return flow;
 }

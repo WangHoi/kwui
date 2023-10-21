@@ -62,7 +62,7 @@ struct LineBox {
 	LineBox(float left_, float avail_w);
 	~LineBox() = default;
 	int addInlineBox(InlineBox* box);
-	void layoutArrange(float offset_y);
+	void layoutArrange(float offset_y, style::TextAlign text_align);
 };
 
 class InlineBoxBuilder {
@@ -107,7 +107,7 @@ public:
 	// Add inline box to LineBox
 	void addBox(InlineBox* box);
 
-	void layoutArrange();
+	void layoutArrange(style::TextAlign text_align);
 	inline float getLayoutHeight() const
 	{
 		return height_;

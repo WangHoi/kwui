@@ -150,11 +150,11 @@ LineBox* InlineFormatContext::getLineBox(float pref_min_width)
     return newLineBox();
 }
 
-void InlineFormatContext::layoutArrange()
+void InlineFormatContext::layoutArrange(style::TextAlign text_align)
 {
     float y = 0;
     for (auto& line_box : line_boxes_) {
-        line_box->layoutArrange(bfc_.margin_bottom + y);
+        line_box->layoutArrange(bfc_.margin_bottom + y, text_align);
         y += line_box->used_size.height;
     }
     height_ = y;
@@ -199,7 +199,7 @@ int LineBox::addInlineBox(InlineBox* box)
     return idx;
 }
 
-void LineBox::layoutArrange(float offset_y)
+void LineBox::layoutArrange(float offset_y, style::TextAlign text_align)
 {
     used_size.width = 0;
     float top = 0, bottom = 0;
@@ -216,6 +216,18 @@ void LineBox::layoutArrange(float offset_y)
         b->pos.x = x;
         b->pos.y = offset_y + top - b->baseline;
         x += b->size.width;
+    }
+
+    float align_offset_x = 0.0f;
+    if (text_align == style::TextAlign::Center) {
+        align_offset_x = 0.5f * (avail_width - (x - left));
+    } else if (text_align == style::TextAlign::Right) {
+        align_offset_x = avail_width - (x - left);
+    }
+    if (align_offset_x != 0.0f) {
+        for (style::InlineBox* b : inline_boxes) {
+            b->pos.x += align_offset_x;
+        }
     }
 }
 

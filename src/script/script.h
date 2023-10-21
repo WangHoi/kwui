@@ -224,6 +224,7 @@ inline style::StyleSpec Context::parse<style::StyleSpec>(JSContext* ctx_, JSValu
 		CHECK_VALUE2(font_size, "font-size");
 		CHECK_VALUE2(font_style, "font-style");
 		CHECK_VALUE2(font_weight, "font-weight");
+		CHECK_VALUE2(text_align, "text-align");
 #undef CHECK_VALUE
 #undef CHECK_VALUE2
 		});

@@ -76,7 +76,8 @@ public:
 	{
 	}
 
-	HRESULT SetTextFormat(ComPtr<IDWriteTextFormat> textFormat);
+	HRESULT setTextFormat(ComPtr<IDWriteTextFormat> textFormat);
+	void setLineHeight(float line_height);
 
 	HRESULT SetNumberSubstitution(ComPtr<IDWriteNumberSubstitution> numberSubstitution);
 
@@ -108,6 +109,7 @@ protected:
 		const ClusterPosition& clusterStart,
 		UINT32 textEnd,
 		float maxWidth,
+		bool empty_line,
 		OUT ClusterPosition* clusterEnd
 	);
 
@@ -160,6 +162,7 @@ protected:
 
 	// Input information.
 	std::wstring text_;
+	absl::optional<float> line_height_;
 	wchar_t localeName_[LOCALE_NAME_MAX_LENGTH];
 	graph2d::FlowMetrics flow_metrics_;
 	DWRITE_READING_DIRECTION readingDirection_;
