@@ -20,9 +20,6 @@ namespace graphics {
 class Painter;
 }
 }
-namespace graph2d {
-class TextLayoutInterface;
-}
 namespace style {
 class BlockWidthSolverInterface;
 class InlineBoxBuilder;

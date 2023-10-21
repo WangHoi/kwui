@@ -10,9 +10,6 @@
 #include <memory>
 #include <string>
 
-namespace graph2d {
-class TextLayoutInterface;
-}
 namespace scene2d {
 class Node;
 }
@@ -81,7 +78,8 @@ public:
 		const scene2d::PointF& pos,
 		std::unique_ptr<graph2d::GlyphRunInterface> glyph_run);
 	void appendGlyphRun(InlineBox* box);
-	LineBox* getNextLine(float pref_min_width);
+	LineBox* getCurrentLine();
+	LineBox* getNextLine();
 	void beginInline(InlineBox* box);
 	void endInline();
 
@@ -104,6 +102,7 @@ public:
 	float getAvailWidth() const;
 	void setupBox(InlineBox* box);
 	LineBox* getLineBox(float pref_min_width);
+	LineBox* newLineBox();
 
 	// Add inline box to LineBox
 	void addBox(InlineBox* box);
@@ -116,8 +115,6 @@ public:
 	float getLayoutWidth() const;
 
 private:
-	LineBox* newLineBox();
-
 	BlockFormatContext& bfc_;
 	float left_;
 	float avail_width_;

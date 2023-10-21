@@ -1,6 +1,7 @@
 #include "TextFlow.h"
 #include "TextAnalysis.h"
 #include "base/log.h"
+#include "windows/EncodingManager.h"
 #include <numeric>
 
 namespace windows {
@@ -436,14 +437,24 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 
         // Iteratively pull rect's from the source,
         // and push as much text will fit to the sink.
-        float min_width = 0.0f;
+        float first = true;
         while (cluster.textPosition < textLength)
         {
             // Pull the next rect from the source.
             float width;
-            bool allow_overflow;
-            flowSource->getNextLine(min_width, fontHeight, rect.left, width, allow_overflow);
-            LOG(INFO) << "nextLine: min_width=" << min_width << ", left=" << rect.left << ", width=" << width << ", allow_overflow=" << allow_overflow;
+            bool empty_line;
+            if (first) {
+                flowSource->getCurrentLine(fontHeight, rect.left, width, empty_line);
+            } else {
+                flowSource->getNextLine(fontHeight, rect.left, width);
+                empty_line = true;
+            }
+            first = false;
+            
+            LOG(INFO) << "nextLine:"
+                << " left=" << rect.left
+                << ", width=" << width
+                << ", empty=" << empty_line;
             rect.right = rect.left + width;
 
             if (rect.right - rect.left <= 0)
@@ -451,14 +462,14 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 
             // Fit as many clusters between breakpoints that will go in.
             bool overflow = FitText(cluster, textLength, rect.right - rect.left, &nextCluster);
-            LOG(INFO) << "overflow=" << overflow;
+            std::wstring seg = text_.substr(cluster.textPosition, nextCluster.textPosition - cluster.textPosition);
+            LOG(INFO) << "text fit [" << windows::EncodingManager::WideToUTF8(seg) << "] overflow=" << overflow;
             
             // Check overflow
-            if (!allow_overflow && overflow) {
-                min_width = 65536;
+            if (!empty_line && overflow) {
+                LOG(INFO) << "retry fit text";
                 continue;
             }
-            min_width = 0.0f;
 
             // Push the glyph runs to the sink.
             if (FAILED(ProduceGlyphRuns(flowSink, rect, cluster, nextCluster)))
@@ -503,14 +514,10 @@ bool TextFlow::FitText(
         textWidth += GetClusterRangeWidth(cluster, nextCluster);
         if (textWidth > maxWidth && !breakpoint.isWhitespace)
         {
-#if 0
             // Want a minimum of one cluster.
             if (validBreakPosition > clusterStart.textPosition) {
                 break;
             }
-#endif
-            overflow = (bestBreakPosition == clusterStart.textPosition);
-            break;
         }
 
         validBreakPosition = nextCluster.textPosition;
@@ -525,6 +532,9 @@ bool TextFlow::FitText(
         }
         cluster = nextCluster;
     }
+
+    LOG(INFO) << "text_width=" << textWidth;
+    overflow = (bestBreakPosition == clusterStart.textPosition);
 
     ////////////////////////////////////////
     // Want last best position that didn't break a word, but if that's not available,

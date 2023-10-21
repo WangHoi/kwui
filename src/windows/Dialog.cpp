@@ -72,11 +72,6 @@ public:
         p_.SetColor(get_color(background_color));
         p_.DrawRect(rect1.origin(), rect1.size());
     }
-    void drawTextLayout(const scene2d::PointF& pos, const graph2d::TextLayoutInterface* text_layout, const style::Value& color) override
-    {
-        p_.SetColor(get_color(color));
-        p_.DrawTextLayout(pos, *(graphics::TextLayout*)text_layout);
-    }
     void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* gr, const style::Value& color) override
     {
         p_.SetColor(get_color(color));

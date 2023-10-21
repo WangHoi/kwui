@@ -35,9 +35,15 @@ void InlineBoxBuilder::addGlyphRun(const scene2d::PointF& pos, std::unique_ptr<g
     text_node_->text_boxes_.glyph_runs.push_back(std::move(glyph_run));
 }
 
-LineBox* InlineBoxBuilder::getNextLine(float pref_min_width)
+LineBox* InlineBoxBuilder::getCurrentLine()
 {
-    line_ = ifc_.getLineBox(pref_min_width);
+    line_ = ifc_.getLineBox(0.0f);
+    return line_;
+}
+
+LineBox* InlineBoxBuilder::getNextLine()
+{
+    line_ = ifc_.newLineBox();
     return line_;
 }
 

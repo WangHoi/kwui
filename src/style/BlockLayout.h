@@ -9,9 +9,6 @@
 #include <memory>
 #include <string>
 
-namespace graph2d {
-class TextLayoutInterface;
-}
 namespace scene2d {
 class Node;
 }

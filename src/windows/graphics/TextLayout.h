@@ -92,16 +92,16 @@ private:
 	TextAlignment _align;
 };
 
-class TextLayout : public graph2d::TextLayoutInterface {
+class TextLayout {
 public:
 	TextLayout(const std::wstring& text, const std::string& font_family,
 			   float font_size, ComPtr<IDWriteTextLayout> layout);
-	float lineHeight() const override { return _line_height; }
-	float baseline() const override { return _baseline; }
-	scene2d::RectF rect() const override { return _rect; }
-	scene2d::RectF caretRect(int idx) const override;
-	scene2d::RectF rangeRect(int start_idx, int end_idx) const override;
-	int hitTest(const scene2d::PointF& pos, scene2d::RectF* out_caret_rect = nullptr) const override;
+	float lineHeight() const { return _line_height; }
+	float baseline() const { return _baseline; }
+	scene2d::RectF rect() const { return _rect; }
+	scene2d::RectF caretRect(int idx) const;
+	scene2d::RectF rangeRect(int start_idx, int end_idx) const;
+	int hitTest(const scene2d::PointF& pos, scene2d::RectF* out_caret_rect = nullptr) const;
 
 	inline IDWriteTextLayout *GetRaw() const { return _layout.Get(); }
 
