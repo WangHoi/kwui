@@ -46,7 +46,7 @@ var simple_stylesheet = {
 		"position": "absolute",
 		"top": "10px",
 		"left": "10px",
-		// "width": "200px",
+		"width": "200px",
 		//"line-height": "20px",
 		//"margin-top": "10",
 		// "width": "20px",
@@ -64,10 +64,7 @@ var simple_stylesheet = {
 		"font-weight": "bold",
 	},
 	".fs-20": {
-		"font-size": "20px",
-	},
-	".tall": {
-		"line-height": "16px",
+		"font-size": "30px",
 	},
 };
 

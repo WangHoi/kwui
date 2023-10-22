@@ -402,9 +402,41 @@ graph2d::FlowMetrics TextFlow::flowMetrics()
 std::tuple<float, float> TextFlow::measureWidth()
 {
 	if (!isTextAnalysisComplete_)
-		return std::tuple<float, float>(0.0f, 0.0f);
+		return std::tuple<float, float>(0.0f, std::numeric_limits<float>::max());
 
-	return std::tuple<float, float>(0.0f, 10.0f);
+	ClusterPosition min_start_cluster, max_start_cluster, next_cluster;
+	SetClusterPosition(min_start_cluster, 0);
+	next_cluster = max_start_cluster = min_start_cluster;
+	UINT32 text_length = (UINT32)text_.length();
+	float min_text_width = 0.0f;
+	float max_text_width = 0.0f;
+	while (next_cluster.textPosition < text_length) {
+		AdvanceClusterPosition(next_cluster);
+		const DWRITE_LINE_BREAKPOINT breakpoint = breakpoints_[next_cluster.textPosition - 1];
+		// Update min width
+		if (breakpoint.breakConditionAfter != DWRITE_BREAK_CONDITION_MAY_NOT_BREAK) {
+			float text_width = GetClusterRangeWidth(min_start_cluster, next_cluster);
+			min_text_width = std::max(min_text_width, text_width);
+			min_start_cluster = next_cluster;
+		}
+		// Update max width
+		if (breakpoint.breakConditionAfter == DWRITE_BREAK_CONDITION_MUST_BREAK) {
+			float text_width = GetClusterRangeWidth(max_start_cluster, next_cluster);
+			max_text_width = std::max(max_text_width, text_width);
+			max_start_cluster = next_cluster;
+		}
+	}
+	if (min_start_cluster.textPosition < next_cluster.textPosition) {
+		float text_width = GetClusterRangeWidth(min_start_cluster, next_cluster);
+		min_text_width = std::max(min_text_width, text_width);
+	}
+	if (max_start_cluster.textPosition < next_cluster.textPosition) {
+		float text_width = GetClusterRangeWidth(max_start_cluster, next_cluster);
+		max_text_width = std::max(max_text_width, text_width);
+	}
+
+	// LOG(INFO) << "measure " << min_text_width << "/" << max_text_width;
+	return std::make_tuple(min_text_width, max_text_width);
 }
 
 void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::TextFlowSinkInterface* flowSink)
@@ -451,10 +483,10 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 			}
 			first = false;
 
-			LOG(INFO) << "nextLine:"
-				<< " left=" << rect.left
-				<< ", width=" << width
-				<< ", empty=" << empty_line;
+			//LOG(INFO) << "nextLine:"
+			//	<< " left=" << rect.left
+			//	<< ", width=" << width
+			//	<< ", empty=" << empty_line;
 			rect.right = rect.left + width;
 
 			if (rect.right - rect.left <= 0)
@@ -463,11 +495,11 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 			// Fit as many clusters between breakpoints that will go in.
 			bool overflow = FitText(cluster, textLength, rect.right - rect.left, empty_line, &nextCluster);
 			std::wstring seg = text_.substr(cluster.textPosition, nextCluster.textPosition - cluster.textPosition);
-			LOG(INFO) << "text fit [" << windows::EncodingManager::WideToUTF8(seg) << "] overflow=" << overflow;
+			// LOG(INFO) << "text fit [" << windows::EncodingManager::WideToUTF8(seg) << "] overflow=" << overflow;
 
 			// Check overflow
 			if (!empty_line && overflow) {
-				LOG(INFO) << "retry fit text";
+				// LOG(INFO) << "retry fit text";
 				continue;
 			}
 
@@ -537,7 +569,6 @@ bool TextFlow::FitText(
 		cluster = nextCluster;
 	}
 
-	LOG(INFO) << "text_width=" << textWidth;
 	overflow = (best_break_text_width > maxWidth);
 
 	////////////////////////////////////////
@@ -587,20 +618,8 @@ HRESULT TextFlow::ProduceGlyphRuns(
 		&bidiOrdering[0]
 	);
 
-	////////////////////////////////////////
-	// Ignore any trailing whitespace
-
-	// Look backwards from end until we find non-space.
-	UINT32 trailingWsPosition = clusterEnd.textPosition;
-	for (; trailingWsPosition > clusterStart.textPosition; --trailingWsPosition)
-	{
-		if (!breakpoints_[trailingWsPosition - 1].isWhitespace)
-			break; // Encountered last significant character.
-	}
-	// Set the glyph run's ending cluster to the last whitespace.
-	ClusterPosition clusterWsEnd(clusterStart);
-	SetClusterPosition(clusterWsEnd, trailingWsPosition);
-
+	// No whitespace trimming
+	ClusterPosition clusterWsEnd(clusterEnd);
 
 	////////////////////////////////////////
 	// Produce justified advances to reduce the jagged edge.
