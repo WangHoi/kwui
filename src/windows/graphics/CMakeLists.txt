@@ -4,10 +4,7 @@ target_sources(kwui PUBLIC
     Painter.h
     TextLayout.h
     TextAnalysis.h
-    FlowLayout.h
     TextFlow.h
-    FlowSource.h
-    FlowSink.h
 )
 target_sources(kwui PRIVATE
     Color.cpp
@@ -15,8 +12,5 @@ target_sources(kwui PRIVATE
     Painter.cpp
     TextLayout.cpp
     TextAnalysis.cpp
-    FlowLayout.cpp
     TextFlow.cpp
-    FlowSource.cpp
-    FlowSink.cpp
 )
