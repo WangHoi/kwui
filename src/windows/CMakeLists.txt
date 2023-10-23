@@ -5,11 +5,15 @@ target_sources(kwui PUBLIC
     Dialog.h
     PopupShadow.h
     EncodingManager.h
-    encoding_helpers.h)
+    encoding_helpers.h
+    ResourceManager.h
+)
 target_sources(kwui PRIVATE
     Dialog.cpp
     PopupShadow.cpp
     EncodingManager.cpp
     encoding_helpers.cpp
     theme.h
-    theme.cpp)
+    theme.cpp
+    ResourceManager.cpp
+)

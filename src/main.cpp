@@ -8,6 +8,7 @@
 #include "windows/Dialog.h"
 #include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"
+#include "windows/ResourceManager.h"
 
 int main()
 {
@@ -20,6 +21,7 @@ int main()
     MSG msg;
     PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
 
+    windows::ResourceManager::createInstance(::GetModuleHandleW(NULL));
     windows::graphics::GraphicDevice::createInstance()->Init();
     windows::control::register_line_edit_control();
     windows::control::register_progress_bar_control();
@@ -33,6 +35,7 @@ int main()
     }
 
     windows::graphics::GraphicDevice::releaseInstance();
+    windows::ResourceManager::releaseInstance();
 
     CoUninitialize();
     return exit_code;

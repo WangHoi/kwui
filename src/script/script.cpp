@@ -1,6 +1,7 @@
 #include "script.h"
 #include "scene2d/Scene.h"
 #include "windows/Dialog.h"
+#include "windows/ResourceManager.h"
 
 namespace script {
 
@@ -79,6 +80,7 @@ JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, 
 }
 
 static JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+static JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 
 Context::Context(Runtime* rt)
 {
@@ -94,6 +96,8 @@ Context::Context(Runtime* rt)
     app_ = JS_NewObject(ctx_);
     JS_SetPropertyStr(ctx_, app_, "showDialog",
         JS_NewCFunction(ctx_, app_show_dialog, "app_show_dialog", 1));
+    JS_SetPropertyStr(ctx_, app_, "loadResource",
+        JS_NewCFunction(ctx_, app_load_resource, "app_load_resource", 1));
     JS_SetPropertyStr(ctx_, global_obj, "app", app_);
 
     JS_FreeValue(ctx_, global_obj);
@@ -161,6 +165,17 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
         dialog->GetScene()->createComponentNode(argv[0]));
     LOG(INFO) << "show dialog";
     dialog->Show();
+    return JS_UNDEFINED;
+}
+
+JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+    int32_t id = 0;
+    int ret = JS_ToInt32(ctx, &id, argv[1]);
+    if (ret == 0) {
+        LOG(INFO) << "load resource with id " << id;
+        windows::ResourceManager::instance()->preloadResourceArchive(id);
+    }
     return JS_UNDEFINED;
 }
 
