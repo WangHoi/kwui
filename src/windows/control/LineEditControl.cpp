@@ -9,6 +9,7 @@ namespace windows {
 namespace control {
 
 static constexpr size_t MAX_UNDO_HISTORY = 20;
+const char* LineEditControl::CONTROL_NAME = "line_edit";
 
 class ReplaceSelectionCommand : public TextEditModel::Command {
 public:
@@ -262,7 +263,7 @@ LineEditControl::LineEditControl()
 LineEditControl::~LineEditControl() = default;
 base::string_atom LineEditControl::name()
 {
-    return base::string_intern("line-edit");
+    return base::string_intern(CONTROL_NAME);
 }
 void LineEditControl::onAttach(scene2d::Node* node)
 {
@@ -781,13 +782,6 @@ std::wstring LineEditControl::GetSelectionText() const {
 void LineEditControl::ResetCaretBlink() {
     _caret_blink_helper->Reset();
 }
-void register_line_edit_control()
-{
-    scene2d::ControlRegistry::get()
-        ->registerControl(base::string_intern("line-edit"),
-            []() -> scene2d::Control* {
-                return new LineEditControl();
-            });
-}
+
 }
 }

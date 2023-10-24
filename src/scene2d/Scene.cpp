@@ -152,7 +152,7 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 	root_->computed_style_.position = style::PositionType::Absolute;
 	root_->computed_style_.width = style::Value::fromPixel(size.width);
 	root_->computed_style_.height = style::Value::fromPixel(size.height);
-	root_->reflow(size.width, size.height);
+	root_->reflowAbsolutelyPositioned(size.width, size.height);
 }
 
 void Scene::paint(graph2d::PainterInterface* painter)
@@ -194,14 +194,14 @@ PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 		p += node->inline_box_.boundingRect().origin();
 	}
 
-	Node* pn = node->absolutelyPositionedParent();
+	Node* pn = node->absolutelyPositionedAncestor();
 	while (pn) {
 		if (pn->computed_style_.display == style::DisplayType::Block) {
 			p += pn->block_box_.pos;
 		} else if (node->computed_style_.display == style::DisplayType::Inline) {
 			p += pn->inline_box_.boundingRect().origin();
 		}
-		pn = pn->absolutelyPositionedParent();
+		pn = pn->absolutelyPositionedAncestor();
 	}
 	return p;
 }

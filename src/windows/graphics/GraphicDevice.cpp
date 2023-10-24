@@ -214,12 +214,18 @@ void GraphicDevice::LoadBitmapToCache(const std::string& name, absl::Span<uint8_
 	bitmap.x2 = LoadBitmapFromResource(res_x2, scene2d::PointF::fromAll(2.0f));
 	_bitmap_cache[name] = bitmap;
 }
-BitmapSubItem GraphicDevice::LoadBitmapFromResource(
-	absl::Span<uint8_t> res, const scene2d::PointF& dpi_scale) {
+void GraphicDevice::LoadBitmapToCache(const std::string& name, const std::wstring& filename)
+{
+	BitmapItem bitmap;
+	bitmap.x1 = LoadBitmapFromFilename(filename, scene2d::PointF::fromAll(1.0f));
+	bitmap.x1_5 = bitmap.x1;
+	bitmap.x2 = bitmap.x1;
+	_bitmap_cache[name] = bitmap;
+}
+BitmapSubItem GraphicDevice::LoadBitmapFromResource(absl::Span<uint8_t> res, const scene2d::PointF& dpi_scale) {
 	HRESULT hr;
 	ComPtr<IWICStream> stream;
-	BitmapSubItem item;
-	item.dpi_scale = dpi_scale;
+
 	hr = _wic_factory->CreateStream(stream.GetAddressOf());
 	if (FAILED(hr)) {
 		return BitmapSubItem();
@@ -228,6 +234,29 @@ BitmapSubItem GraphicDevice::LoadBitmapFromResource(
 	if (FAILED(hr)) {
 		return BitmapSubItem();
 	}
+	return LoadBitmapFromStream(stream, dpi_scale);
+}
+BitmapSubItem GraphicDevice::LoadBitmapFromFilename(const std::wstring& filename, const scene2d::PointF& dpi_scale) {
+	HRESULT hr;
+	ComPtr<IWICStream> stream;
+
+	hr = _wic_factory->CreateStream(stream.GetAddressOf());
+	if (FAILED(hr)) {
+		return BitmapSubItem();
+	}
+	hr = stream->InitializeFromFilename(filename.c_str(), GENERIC_READ);
+	if (FAILED(hr)) {
+		return BitmapSubItem();
+	}
+	return LoadBitmapFromStream(stream, dpi_scale);
+}
+BitmapSubItem GraphicDevice::LoadBitmapFromStream(ComPtr<IWICStream> stream, const scene2d::PointF& dpi_scale) {
+	if (!stream)
+		return BitmapSubItem();
+
+	HRESULT hr;
+	BitmapSubItem item;
+	item.dpi_scale = dpi_scale;
 	ComPtr<IWICBitmapDecoder> decoder;
 	hr = _wic_factory->CreateDecoderFromStream(stream.Get(), NULL, WICDecodeMetadataCacheOnLoad, decoder.GetAddressOf());
 	if (FAILED(hr)) {

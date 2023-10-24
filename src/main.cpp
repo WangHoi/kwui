@@ -6,6 +6,10 @@
 #include "script/script.h"
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/Dialog.h"
+#include "windows/control/Control.h"
+#include "windows/control/ButtonControl.h"
+#include "windows/control/ImageControl.h"
+#include "windows/control/ImageButtonControl.h"
 #include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"
 #include "windows/ResourceManager.h"
@@ -23,11 +27,18 @@ int main()
 
     windows::ResourceManager::createInstance(::GetModuleHandleW(NULL));
     windows::graphics::GraphicDevice::createInstance()->Init();
-    windows::control::register_line_edit_control();
-    windows::control::register_progress_bar_control();
+
+    windows::graphics::GraphicDevice::instance()
+        ->LoadBitmapToCache("cx_logo_2.svg", L"D:\\projects\\kwui\\chengxun80.png");
+
+    scene2d::ControlRegistry::get()->registerControl<windows::control::LineEditControl>();
+    scene2d::ControlRegistry::get()->registerControl<windows::control::ProgressBarControl>();
+    scene2d::ControlRegistry::get()->registerControl<windows::control::ImageControl>();
+    scene2d::ControlRegistry::get()->registerControl<windows::control::ButtonControl>();
+    scene2d::ControlRegistry::get()->registerControl<windows::control::ImageButtonControl>();
 
     script::Context ctx;
-    ctx.loadFile("d:/projects/kwui/text_layout.js");
+    ctx.loadFile("d:/projects/kwui/button_layout.js");
 
     while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);

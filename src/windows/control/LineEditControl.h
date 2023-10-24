@@ -57,6 +57,7 @@ private:
 
 class LineEditControl : public scene2d::Control {
 public:
+    static const char* CONTROL_NAME;
     LineEditControl();
     ~LineEditControl();
     base::string_atom name() override;
@@ -156,6 +157,5 @@ private:
     TextChangedCallback _text_changed_callback;
 };
 
-void register_line_edit_control();
 }
 }

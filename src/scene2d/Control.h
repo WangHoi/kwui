@@ -47,6 +47,14 @@ public:
     void registerControl(base::string_atom name, ControlFactoryFn fn);
     void unregisterControl(base::string_atom name);
     Control* createControl(base::string_atom name);
+    template <typename T>
+    void registerControl()
+    {
+        registerControl(base::string_intern(T::CONTROL_NAME),
+            []() -> scene2d::Control* {
+                return new T();
+            });
+    }
 
 private:
     std::map<base::string_atom, ControlFactoryFn> control_factories_;

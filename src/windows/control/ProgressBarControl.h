@@ -9,6 +9,7 @@ namespace control {
 
 class ProgressBarControl : public scene2d::Control {
 public:
+    static const char* CONTROL_NAME;
     ProgressBarControl();
     base::string_atom name() override;
     void onPaint(graphics::Painter& p, const scene2d::RectF& rect) override;
@@ -25,8 +26,6 @@ private:
     graphics::Color _color;
     float _border_radius;
 };
-
-void register_progress_bar_control();
 
 }
 }

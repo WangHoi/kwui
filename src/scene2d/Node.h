@@ -67,6 +67,11 @@ public:
 	Node(Scene* scene, NodeType type, JSValue comp_state);
 	~Node();
 
+	Scene* scene() const
+	{
+		return scene_;
+	}
+
 	NodeType type() const
 	{
 		return type_;
@@ -141,13 +146,15 @@ public:
 	bool matchSimple(style::Selector *selector) const;
 	void computeLayout();
 
+	// normal flow layout with new BFC
+	void reflowNormal(float contg_blk_width, absl::optional<float> contg_blk_height);
 	// layout absoluted positioned
-	void reflow(float contg_blk_width, float contg_blk_height);
+	void reflowAbsolutelyPositioned(float contg_blk_width, float contg_blk_height);
 
 	bool positioned() const;
 	bool relativePositioned() const;
 	bool absolutelyPositioned() const;
-	Node* absolutelyPositionedParent() const;
+	Node* absolutelyPositionedAncestor() const;
 
 	scene2d::PointF getMousePosition() const;
 	void requestPaint();

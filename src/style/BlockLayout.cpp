@@ -31,11 +31,11 @@ void BlockBoxBuilder::beginInline(scene2d::Node* node)
         contg_->type = BlockBoxType::WithInlineChildren;
         contg_->payload = node->parent();
     } else if (contg_->type == BlockBoxType::WithBlockChildren) {
-        LOG(WARNING) << "begin Block in containing block type (Block) not implemented.";
+        LOG(WARNING) << "begin Inline in containing block type (Block) not implemented.";
     } else if (contg_->type == BlockBoxType::WithInlineChildren) {
         ;
     } else if (contg_->type == BlockBoxType::WithBFC) {
-        LOG(WARNING) << "begin Block in containing block type (nested BFC) not implemented.";
+        LOG(WARNING) << "begin Inline in containing block type (nested BFC) not implemented.";
     }
 }
 

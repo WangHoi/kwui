@@ -53,6 +53,11 @@ var simple_stylesheet = {
 		"margin-top": 10,
 		"margin-right": 10,
 		"margin-bottom": 10
+	},
+	"img": {
+		"display": "block",
+		"width": "80px",
+		"height": "80px",
 	}
 };
 var hello_world_full = (<body>
@@ -72,7 +77,7 @@ var hello_world_full = (<body>
         </span>
     </div>
     <div style={{"text-align":"center"}}>
-        <button style={{"margin-top": 40}}>安装</button>
+        <button style={{"margin-top": 40, "display":"block", "background-color": "#f0f"}}>安装</button>
     </div>
 </body>);
 
@@ -93,6 +98,6 @@ var title_bar = (
     </div>
 );
 
-console.log(JSON.stringify(hello_world));
+console.log(JSON.stringify(hello_world_full));
 
-app.showDialog(title_bar, simple_stylesheet);
+app.showDialog(hello_world_full, simple_stylesheet);

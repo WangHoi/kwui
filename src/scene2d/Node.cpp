@@ -182,6 +182,8 @@ void Node::resolveDefaultStyle()
 		|| tag_ == base::string_intern("em")
 		|| tag_ == base::string_intern("b")) {
 		computed_style_.display = style::DisplayType::Inline;
+	} else if (tag_ == base::string_intern("button")) {
+		computed_style_.display = style::DisplayType::InlineBlock;
 	} else {
 		computed_style_.display = style::DisplayType::Block;
 	}
@@ -315,11 +317,127 @@ void Node::computeLayout()
 	size_.height = computed_style_.height.f32_val;
 }
 
-void Node::reflow(float contg_blk_width, float contg_blk_height)
+void Node::reflowNormal(float contg_blk_width, absl::optional<float> contg_blk_height)
 {
-	CHECK(type_ == NodeType::NODE_ELEMENT) << "reflow(): expect NODE_ELEMENT";
+	CHECK(type_ == NodeType::NODE_ELEMENT) << "reflowNormal(): expect NODE_ELEMENT";
+
+	bfc_.emplace(this);
+	bfc_->owner = this;
+
+	LOG(INFO)
+		<< "<" << tag_ << "> " << this << " "
+		<< "new BFC size (" << contg_blk_width << ", " << (contg_blk_height.has_value() ? absl::StrFormat("%v", *contg_blk_height) : "<nullopt>") << ")";
+
+	// Box generation
+	auto& b = block_box_;
+	style::BlockBoxBuilder bbb(&b);
+	eachChild(absl::bind_front(&Node::layoutPrepare, std::ref(*bfc_), std::ref(bbb)));
+
+	const auto& st = computed_style_;
+	float clean_contg_width = contg_blk_width
+		- try_resolve_to_px(st.border_left_width, contg_blk_width).value_or(0)
+		- try_resolve_to_px(st.padding_left, contg_blk_width).value_or(0)
+		- try_resolve_to_px(st.padding_right, contg_blk_width).value_or(0)
+		- try_resolve_to_px(st.border_right_width, contg_blk_width).value_or(0);
+	style::StaticBlockWidthSolver width_solver(
+		clean_contg_width,
+		try_resolve_to_px(st.margin_left, contg_blk_width),
+		try_resolve_to_px(st.width, contg_blk_width),
+		try_resolve_to_px(st.margin_right, contg_blk_width));
+
+	// Compute width, left and right margins
+	style::WidthConstraint mw;
+	mw.type = style::WidthConstraintType::Fixed;
+	mw.value = width_solver.measureWidth();
+	if (mw.type == style::WidthConstraintType::Fixed) {
+		b.content.width = mw.value;
+	} else {
+		auto [min_content_width, max_content_width] = layoutMeasureWidth(b);
+		if (mw.type == style::WidthConstraintType::MinContent) {
+			b.content.width = min_content_width;
+		} else if (mw.type == style::WidthConstraintType::MaxContent) {
+			b.content.width = max_content_width;
+		} else if (mw.type == style::WidthConstraintType::FitContent) {
+			b.content.width = std::min(max_content_width, std::max(min_content_width, mw.value));
+		} else {
+			LOG(ERROR) << "BUG: unexpected width constraint type.";
+			b.content.width = 0.0f;
+		}
+	}
+	width_solver.setLayoutWidth(b.content.width);
+
+	b.margin.left = width_solver.marginLeft();
+	b.border.left = try_resolve_to_px(st.border_left_width, contg_blk_width).value_or(0);
+	b.padding.left = try_resolve_to_px(st.padding_left, contg_blk_width).value_or(0);
+	b.padding.right = try_resolve_to_px(st.padding_right, contg_blk_width).value_or(0);
+	b.border.right = try_resolve_to_px(st.border_right_width, contg_blk_width).value_or(0);
+	b.margin.right = width_solver.marginRight();
+
+	// Compute top and bottom margins
+	b.margin.top = try_resolve_to_px(st.margin_top, contg_blk_width).value_or(0);
+	b.border.top = try_resolve_to_px(st.border_top_width, contg_blk_width).value_or(0);
+	b.padding.top = try_resolve_to_px(st.padding_top, contg_blk_width).value_or(0);
+
+	b.prefer_height = try_resolve_to_px(st.height, contg_blk_height);
+
+	b.padding.bottom = try_resolve_to_px(st.padding_bottom, contg_blk_width).value_or(0);
+	b.border.bottom = try_resolve_to_px(st.border_bottom_width, contg_blk_width).value_or(0);
+	b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_blk_width).value_or(0);
+
+	eachLayoutChild([this, &bbb](Node* child) {
+		layoutMeasure(*bfc_, bbb, child);
+		});
+
+	layoutArrange(*bfc_, b);
+
+	// Compute final height
+	if (b.prefer_height.has_value()) {
+		b.content.height = *b.prefer_height;
+	} else {
+		b.content.height = bfc_->margin_bottom - b.margin.bottom - b.border.bottom - b.padding.bottom;
+	}
+
+	LOG(INFO) << "reflowNormal<" << tag_ << "> border box" << b.borderRect();
+
+	// layout out-of-flow
+	for (Node* node : bfc_->abs_pos_nodes) {
+		// find containing block
+		Node* pn = node->parent();
+		while (pn) {
+			if (pn->type() == NodeType::NODE_ELEMENT && pn->computed_style_.position != style::PositionType::Static) {
+				//abs_contg_width = pn->block_box_.padding.left + pn->block_box_.content.width + pn->block_box_.padding.right;
+				//abs_contg_height = pn->block_box_.padding.top + pn->block_box_.content.height + pn->block_box_.padding.bottom;
+				break;
+			}
+			pn = pn->parent();
+		}
+
+		if (!pn) {
+			RectF r = b.paddingRect();
+			node->reflowAbsolutelyPositioned(r.width(), r.height());
+		} else if (pn->computed_style_.display == style::DisplayType::Block) {
+			RectF r = pn->block_box_.paddingRect();
+			node->reflowAbsolutelyPositioned(r.width(), r.height());
+			if (pn->computed_style_.position == style::PositionType::Relative) {
+				node->block_box_.pos += pn->block_box_.pos + r.origin();
+			}
+		} else if (pn->computed_style_.display == style::DisplayType::Inline) {
+			RectF r = pn->inline_box_.boundingRect();
+			node->reflowAbsolutelyPositioned(r.width(), r.height());
+			if (pn->computed_style_.position == style::PositionType::Relative) {
+				node->block_box_.pos += pn->inline_box_.pos + r.origin();
+			}
+		} else {
+			LOG(WARNING) << "TODO: not implemented: absolutely element reflowAbsolutelyPositioned for parent with display " << pn->computed_style_.display;
+		}
+	}
+}
+
+void Node::reflowAbsolutelyPositioned(float contg_blk_width, float contg_blk_height)
+{
+	CHECK(type_ == NodeType::NODE_ELEMENT) << "reflowAbsolutelyPositioned(): expect NODE_ELEMENT";
 	CHECK(computed_style_.position == style::PositionType::Absolute || computed_style_.position == style::PositionType::Fixed)
-		<< "reflow(): invalid position " << computed_style_.position;
+		<< "reflowAbsolutelyPositioned(): invalid position " << computed_style_.position;
 
 	bfc_.emplace(this);
 	bfc_->owner = this;
@@ -402,7 +520,7 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 	//b.content.height = height_solver.height();
 	b.content.height = std::max(0.0f, height_solver.height() - b.margin.top - b.margin.bottom);
 
-	LOG(INFO) << "reflow <" << tag_ << "> border box" << b.borderRect();
+	LOG(INFO) << "reflowAbsolutelyPositioned <" << tag_ << "> border box" << b.borderRect();
 
 	// layout out-of-flow
 	for (Node* node : bfc_->abs_pos_nodes) {
@@ -419,21 +537,21 @@ void Node::reflow(float contg_blk_width, float contg_blk_height)
 
 		if (!pn) {
 			RectF r = b.paddingRect();
-			node->reflow(r.width(), r.height());
+			node->reflowAbsolutelyPositioned(r.width(), r.height());
 		} else if (pn->computed_style_.display == style::DisplayType::Block) {
 			RectF r = pn->block_box_.paddingRect();
-			node->reflow(r.width(), r.height());
+			node->reflowAbsolutelyPositioned(r.width(), r.height());
 			if (pn->computed_style_.position == style::PositionType::Relative) {
 				node->block_box_.pos += pn->block_box_.pos + r.origin();
 			}
 		} else if (pn->computed_style_.display == style::DisplayType::Inline) {
 			RectF r = pn->inline_box_.boundingRect();
-			node->reflow(r.width(), r.height());
+			node->reflowAbsolutelyPositioned(r.width(), r.height());
 			if (pn->computed_style_.position == style::PositionType::Relative) {
 				node->block_box_.pos += pn->inline_box_.pos + r.origin();
 			}
 		} else {
-			LOG(WARNING) << "TODO: not implemented: absolutely element reflow for parent with display " << pn->computed_style_.display;
+			LOG(WARNING) << "TODO: not implemented: absolutely element reflowAbsolutelyPositioned for parent with display " << pn->computed_style_.display;
 		}
 	}
 }
@@ -462,7 +580,7 @@ bool Node::absolutelyPositioned() const
 		&& computed_style_.position != style::PositionType::Relative;
 }
 
-Node* Node::absolutelyPositionedParent() const
+Node* Node::absolutelyPositionedAncestor() const
 {
 	Node* p = parent_;
 	while (p) {
@@ -591,11 +709,16 @@ void Node::layoutMeasure(style::InlineFormatContext& ifc, style::InlineBoxBuilde
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		if (node->absolutelyPositioned()) {
 			ifc.bfc().abs_pos_nodes.push_back(node);
-		} else {
+		} else if (node->computed_style_.display == style::DisplayType::Inline) {
 			ibb.beginInline(&node->inline_box_);
 			eachLayoutChild(node, [&](Node* child) {
 				layoutMeasure(ifc, ibb, child);
 				});
+			ibb.endInline();
+		} else if (node->computed_style_.display == style::DisplayType::InlineBlock) {
+			node->reflowNormal(node->block_box_.content.width, node->block_box_.prefer_height);
+			// TODO: ibb.addInlineBlock()
+			ibb.beginInline(&node->inline_box_);
 			ibb.endInline();
 		}
 	} else if (node->type() == NodeType::NODE_COMPONENT) {
@@ -656,7 +779,7 @@ void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 				layoutMeasure(bfc, bbb, child);
 				});
 			bbb.endBlock();
-		} else if (st.display == style::DisplayType::Inline) {
+		} else if (st.display == style::DisplayType::Inline || st.display == style::DisplayType::InlineBlock) {
 			bbb.beginInline(node);
 			/*
 			Node::eachLayoutChild(node, [&bfc, &bbb](Node* child) {

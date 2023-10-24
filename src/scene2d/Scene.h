@@ -56,6 +56,11 @@ public:
 
 	PointF mapPointToScene(Node* node, const PointF& pos) const;
 
+	script::Context& scriptContext() const
+	{
+		return *script_ctx_;
+	}
+
 private:
 	Node* createComponentNodeWithState(JSValue comp_data);
     Node* pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos);

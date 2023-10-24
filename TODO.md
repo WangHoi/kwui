@@ -28,8 +28,6 @@ Control:
 橙讯安装程序移植
 ====
 
-- ResourceManager移植
-
 签名自查程序移植
 ====
 
