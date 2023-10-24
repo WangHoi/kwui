@@ -25,6 +25,7 @@ enum class InlineBoxType {
 	Empty,
 	WithGlyphRun,
 	WithInlineChildren,
+	WithBFC,
 };
 struct InlineBox {
 	scene2d::PointF pos; // BFC coordinates, set by LineBox::layout(),
@@ -74,6 +75,7 @@ public:
 	//float containingBlockWidth() const;
 	//absl::optional<float> containingBlockHeight() const;
 	void addText(scene2d::Node* node);
+	void addInlineBlock(scene2d::Node* node);
 	void addGlyphRun(
 		const scene2d::PointF& pos,
 		std::unique_ptr<graph2d::GlyphRunInterface> glyph_run);
@@ -121,6 +123,8 @@ private:
 	std::vector<std::unique_ptr<LineBox>> line_boxes_;
 
 	float height_;
+
+	friend class InlineBoxBuilder;
 };
 
 } // namespace style

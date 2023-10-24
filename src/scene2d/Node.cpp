@@ -716,10 +716,7 @@ void Node::layoutMeasure(style::InlineFormatContext& ifc, style::InlineBoxBuilde
 				});
 			ibb.endInline();
 		} else if (node->computed_style_.display == style::DisplayType::InlineBlock) {
-			node->reflowNormal(node->block_box_.content.width, node->block_box_.prefer_height);
-			// TODO: ibb.addInlineBlock()
-			ibb.beginInline(&node->inline_box_);
-			ibb.endInline();
+			ibb.addInlineBlock(node);
 		}
 	} else if (node->type() == NodeType::NODE_COMPONENT) {
 		LOG(WARNING) << "BUG: layoutMeasure(NODE_COMPONENT)";
