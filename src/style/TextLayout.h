@@ -12,6 +12,12 @@ struct TextBoxes
 {
 	std::vector<std::unique_ptr<graph2d::GlyphRunInterface>> glyph_runs;
 	std::vector<std::unique_ptr<InlineBox>> inline_boxes;
+
+	void reset()
+	{
+		glyph_runs.clear();
+		inline_boxes.clear();
+	}
 };
 
 class InlineBoxBuilder;

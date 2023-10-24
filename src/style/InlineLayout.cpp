@@ -15,6 +15,7 @@ void InlineBoxBuilder::addText(scene2d::Node* node)
     beginInline(&text_node_->inline_box_);
 	TextFlowSource source(*this);
 	TextFlowSink sink(*this);
+    node->text_boxes_.reset();
 	node->text_flow_->flowText(&source, &sink);
     endInline();
     text_node_ = nullptr;
@@ -22,7 +23,7 @@ void InlineBoxBuilder::addText(scene2d::Node* node)
 
 void InlineBoxBuilder::addInlineBlock(scene2d::Node* node)
 {
-    node->reflowNormal(ifc_.avail_width_, node->block_box_.prefer_height);
+    node->reflowInlineBlock(ifc_.avail_width_, node->block_box_.prefer_height);
     node->inline_box_.type = InlineBoxType::WithBFC;
     node->inline_box_.payload = absl::monostate{};
     scene2d::RectF margin_rect = node->block_box_.marginRect();
@@ -31,6 +32,9 @@ void InlineBoxBuilder::addInlineBlock(scene2d::Node* node)
 
     node->inline_box_.line_box = ifc_.getLineBox(margin_rect.width());
     node->inline_box_.line_box->addInlineBox(&node->inline_box_);
+
+    beginInline(&node->inline_box_);
+    endInline();
 }
 
 void InlineBoxBuilder::addGlyphRun(const scene2d::PointF& pos, std::unique_ptr<graph2d::GlyphRunInterface> glyph_run)

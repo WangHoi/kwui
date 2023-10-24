@@ -56,9 +56,9 @@ public:
     void setTranslation(const scene2d::PointF& offset, bool combine) override
     {
         if (combine)
-            p_.SetTranslation(offset);
-        else
             p_.Translate(offset);
+        else
+            p_.SetTranslation(offset);
     }
     void drawBox(const scene2d::RectF& rect, float border_width, const style::Value& background_color, const style::Value& border_color) override
     {

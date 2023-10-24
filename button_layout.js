@@ -42,16 +42,18 @@ function Div(props, kids) {
 }
 
 var simple_stylesheet = {
-	"div": {
+	"div.abs": {
 		"position": "absolute",
 		"top": "10px",
 		"left": "10px",
-		"width": "200px",
+		//"width": "200px",
 		//"line-height": "20px",
 		//"margin-top": "10",
 		// "width": "20px",
-		"background-color": "#b0e0a0",
 		//"text-align": "left",
+	},
+	".bg-green": {
+		"background-color": "#b0e0a0",
 	},
 	"line-edit": {
 		"width": 100,
@@ -67,17 +69,17 @@ var simple_stylesheet = {
 		"font-size": "30px",
 	},
 	"button": {
-		"width": 100,
+		"width": "70px",
+		"text-align": "center"
 	}
 };
 
-var hello_world = (<div>
-	<p class="bold">Test button(inline layout)</p>
-	<div>
+var hello_world2 = (
+	<div class="abs">
 		<button>First button</button>
 		<button>Second button</button>
 		<button>Third button</button>
 	</div>
-</div>);
+);
 
-app.showDialog(hello_world, simple_stylesheet);
+app.showDialog(hello_world2, simple_stylesheet);

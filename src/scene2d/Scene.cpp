@@ -347,6 +347,22 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::Painte
 			if (node->control_)
 				painter->drawControl(render_rect, node->control_.get());
 		} else if (node->computed_style_.display == style::DisplayType::Inline) {
+		} else if (node->computed_style_.display == style::DisplayType::InlineBlock) {
+			LOG(INFO) << "paintInlineBlock scene pos=" << node->inline_box_.pos
+				<< ", border-rect " << node->block_box_.borderRect();
+			RectF border_rect = node->block_box_.borderRect();
+			RectF render_rect = RectF::fromXYWH(
+				node->inline_box_.pos.x + border_rect.left,
+				node->inline_box_.pos.y + border_rect.top,
+				border_rect.width(),
+				border_rect.height());
+			painter->drawBox(
+				render_rect,
+				node->computed_style_.border_top_width.pixelOrZero(),
+				node->computed_style_.background_color,
+				node->computed_style_.border_color);
+			if (node->control_)
+				painter->drawControl(render_rect, node->control_.get());
 		} else if (node->computed_style_.display == style::DisplayType::None) {
 			;
 		} else {
@@ -354,24 +370,25 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::Painte
 		}
 		
 		bool need_restore = false;
-		if (node->absolutelyPositioned()) {
+		if (node->absolutelyPositioned() && node->computed_style_.display == style::DisplayType::Block) {
+			need_restore = true;
 			painter->save();
-			if (node->computed_style_.display == style::DisplayType::Block) {
-				PointF pos = node->block_box_.pos;
-				LOG(INFO) << "paint setTranslation " << pos;
-				painter->setTranslation(pos, true);
-			} else if (node->computed_style_.display == style::DisplayType::Inline) {
-				//offset = node->inline_box_.boundingRect().origin();
-			}
-			Node::eachLayoutChild(node, [&](Node* child) {
-				paintNode(child, bpc, painter);
-				});
-			painter->restore();
-		} else {
-			Node::eachLayoutChild(node, [&](Node* child) {
-				paintNode(child, bpc, painter);
-				});
+			PointF pos = node->block_box_.pos;
+			//LOG(INFO) << "paint abs_pos_block setTranslation " << pos;
+			painter->setTranslation(pos, true);
+			//offset = node->inline_box_.boundingRect().origin();
+		} else if (node->computed_style_.display == style::DisplayType::InlineBlock) {
+			need_restore = true;
+			painter->save();
+			PointF pos = node->inline_box_.pos;
+			//LOG(INFO) << "paint inline_block setTranslation " << pos;
+			painter->setTranslation(pos, true);
 		}
+		Node::eachLayoutChild(node, [&](Node* child) {
+			paintNode(child, bpc, painter);
+			});
+		if (need_restore)
+			painter->restore();
 	} else if (node->type_ == NodeType::NODE_COMPONENT) {
 		Node::eachLayoutChild(node, [&](Node* child) {
 			paintNode(child, bpc, painter);
@@ -391,6 +408,10 @@ Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_
 	if (node->type() == NodeType::NODE_ELEMENT && node->absolutelyPositioned()
 		&& node->computedStyle().display == style::DisplayType::Block) {
 		local_pos -= node->block_box_.pos;
+	}
+	if (node->type() == NodeType::NODE_ELEMENT
+		&& node->computedStyle().display == style::DisplayType::InlineBlock) {
+		local_pos -= node->inline_box_.pos;
 	}
 	const auto& children = node->children_;
 	for (auto it = children.rbegin(); it != children.rend(); ++it) {

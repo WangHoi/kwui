@@ -132,6 +132,14 @@ D2D1_RECT_F Painter::PixelSnapConservative(const D2D1_RECT_F& rect) {
     float bottom = ceilf(rect.bottom * _dpi_scale) / _dpi_scale;
     return D2D1::RectF(left, top, right, bottom);
 }
+void Painter::Translate(const scene2d::PointF& offset) {
+    _current.offset += offset;
+    //LOG(INFO) << "Translate current: " << _current.offset;
+}
+void Painter::SetTranslation(const scene2d::PointF& abs_offset) {
+    _current.offset = abs_offset;
+    //LOG(INFO) << "SetTranslation current: " << _current.offset;
+}
 void Painter::PushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) {
     D2D1_RECT_F rect = D2D1::RectF(_current.offset.x + origin.x,
                                    _current.offset.y + origin.y,

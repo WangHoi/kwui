@@ -29,8 +29,8 @@ public:
     void DrawGlyphRun(const scene2d::PointF& origin, const GlyphRun& gr) { DrawGlyphRun(origin.x, origin.y, gr); }
     void DrawGlyphRun(float x, float y, const GlyphRun& gr);
     void Translate(float x, float y) { Translate({ x, y }); }
-    void Translate(const scene2d::PointF& offset) { _current.offset += offset; }
-    void SetTranslation(const scene2d::PointF& abs_offset) { _current.offset = abs_offset; }
+    void Translate(const scene2d::PointF& offset);
+    void SetTranslation(const scene2d::PointF& abs_offset);
     const scene2d::PointF& GetAccumTranslate() const { return _current.offset; }
     void PushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size);
     void PopClipRect();

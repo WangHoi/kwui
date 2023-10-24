@@ -103,12 +103,21 @@ bool Node::testFlags(int flags) const
 }
 
 absl::optional<PointF> Node::hitTestNode(const PointF& p) {
-	if (type_ == NodeType::NODE_ELEMENT && computed_style_.display == style::DisplayType::Block) {
-		RectF border_rect = block_box_.borderRect();
-		PointF pos = p - border_rect.origin();
-		if (0.0f <= pos.x && pos.x < border_rect.width()
-			&& 0.0f <= pos.y && pos.y < border_rect.height()) {
-			return pos;
+	if (type_ == NodeType::NODE_ELEMENT) {
+		if (computed_style_.display == style::DisplayType::Block) {
+			RectF border_rect = block_box_.borderRect();
+			PointF pos = p - border_rect.origin();
+			if (0.0f <= pos.x && pos.x < border_rect.width()
+				&& 0.0f <= pos.y && pos.y < border_rect.height()) {
+				return pos;
+			}
+		} else if (computed_style_.display == style::DisplayType::InlineBlock) {
+			RectF border_rect = block_box_.borderRect();
+			PointF pos = p - inline_box_.pos - border_rect.origin();
+			if (0.0f <= pos.x && pos.x < border_rect.width()
+				&& 0.0f <= pos.y && pos.y < border_rect.height()) {
+				return pos;
+			}
 		}
 	}
 	return absl::nullopt;
@@ -317,9 +326,12 @@ void Node::computeLayout()
 	size_.height = computed_style_.height.f32_val;
 }
 
-void Node::reflowNormal(float contg_blk_width, absl::optional<float> contg_blk_height)
+void Node::reflowInlineBlock(float contg_blk_width, absl::optional<float> contg_blk_height)
 {
-	CHECK(type_ == NodeType::NODE_ELEMENT) << "reflowNormal(): expect NODE_ELEMENT";
+	CHECK(type_ == NodeType::NODE_ELEMENT)
+		<< "reflowInlineBlock(): expect NODE_ELEMENT";
+	CHECK(computed_style_.display == style::DisplayType::InlineBlock)
+		<< "reflowInlineBlock(): expect DisplayType::InlineBlock";
 
 	bfc_.emplace(this);
 	bfc_->owner = this;
@@ -346,32 +358,20 @@ void Node::reflowNormal(float contg_blk_width, absl::optional<float> contg_blk_h
 		try_resolve_to_px(st.margin_right, contg_blk_width));
 
 	// Compute width, left and right margins
-	style::WidthConstraint mw;
-	mw.type = style::WidthConstraintType::Fixed;
-	mw.value = width_solver.measureWidth();
-	if (mw.type == style::WidthConstraintType::Fixed) {
-		b.content.width = mw.value;
+	absl::optional<float> prefer_width = try_resolve_to_px(st.width, contg_blk_width);
+	if (prefer_width.has_value()) {
+		b.content.width = prefer_width.value();
 	} else {
 		auto [min_content_width, max_content_width] = layoutMeasureWidth(b);
-		if (mw.type == style::WidthConstraintType::MinContent) {
-			b.content.width = min_content_width;
-		} else if (mw.type == style::WidthConstraintType::MaxContent) {
-			b.content.width = max_content_width;
-		} else if (mw.type == style::WidthConstraintType::FitContent) {
-			b.content.width = std::min(max_content_width, std::max(min_content_width, mw.value));
-		} else {
-			LOG(ERROR) << "BUG: unexpected width constraint type.";
-			b.content.width = 0.0f;
-		}
+		b.content.width = std::min(max_content_width, std::max(min_content_width, contg_blk_width));
 	}
-	width_solver.setLayoutWidth(b.content.width);
 
-	b.margin.left = width_solver.marginLeft();
+	b.margin.left = try_resolve_to_px(st.margin_left, contg_blk_width).value_or(0);
 	b.border.left = try_resolve_to_px(st.border_left_width, contg_blk_width).value_or(0);
 	b.padding.left = try_resolve_to_px(st.padding_left, contg_blk_width).value_or(0);
 	b.padding.right = try_resolve_to_px(st.padding_right, contg_blk_width).value_or(0);
 	b.border.right = try_resolve_to_px(st.border_right_width, contg_blk_width).value_or(0);
-	b.margin.right = width_solver.marginRight();
+	b.margin.right = try_resolve_to_px(st.margin_right, contg_blk_width).value_or(0);
 
 	// Compute top and bottom margins
 	b.margin.top = try_resolve_to_px(st.margin_top, contg_blk_width).value_or(0);
@@ -397,7 +397,7 @@ void Node::reflowNormal(float contg_blk_width, absl::optional<float> contg_blk_h
 		b.content.height = bfc_->margin_bottom - b.margin.bottom - b.border.bottom - b.padding.bottom;
 	}
 
-	LOG(INFO) << "reflowNormal<" << tag_ << "> border box" << b.borderRect();
+	LOG(INFO) << "reflowInlineBlock<" << tag_ << "> border box" << b.borderRect();
 
 	// layout out-of-flow
 	for (Node* node : bfc_->abs_pos_nodes) {
@@ -641,6 +641,18 @@ void Node::layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 			bbb.beginInline(node);
 			//Node::eachChild(node, absl::bind_front(&Node::layoutPrepare, std::ref(bbb)));
 			bbb.endInline();
+		} else if (st.display == style::DisplayType::InlineBlock) {
+			bbb.beginInline(node);
+			
+			auto& b = node->block_box_;
+			node->bfc_.emplace(node);
+			node->bfc_->owner = node;
+
+			style::BlockBoxBuilder new_bbb(&b);
+			eachChild(node, absl::bind_front(&Node::layoutPrepare, std::ref(*node->bfc_), std::ref(new_bbb)));
+
+			//Node::eachChild(node, absl::bind_front(&Node::layoutPrepare, std::ref(bbb)));
+			bbb.endInline();
 		}
 	} else {
 		Node::eachChild(node, absl::bind_front(&Node::layoutPrepare, std::ref(bfc), std::ref(bbb)));
@@ -691,13 +703,25 @@ std::tuple<float, float> Node::layoutMeasureInlineWidth(Node* node)
 	if (node->type() == NodeType::NODE_TEXT) {
 		return node->text_flow_->measureWidth();
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
-		float min_width = 0.0f, max_width = 0.0f;
-		node->eachLayoutChild([&](Node* child) {
-			auto [child_min_w, child_max_w] = layoutMeasureInlineWidth(child);
-			min_width = std::max(min_width, child_min_w);
-			max_width += child_max_w;
-			});
-		return { min_width, max_width };
+		if (node->computed_style_.display == style::DisplayType::Inline) {
+			float min_width = 0.0f, max_width = 0.0f;
+			node->eachLayoutChild([&](Node* child) {
+				auto [child_min_w, child_max_w] = layoutMeasureInlineWidth(child);
+				min_width = std::max(min_width, child_min_w);
+				max_width += child_max_w;
+				});
+			return { min_width, max_width };
+		} else if (node->computed_style_.display == style::DisplayType::InlineBlock) {
+			node->reflowInlineBlock(0.0f, absl::nullopt);
+			float min_width = node->block_box_.marginRect().width();
+			node->reflowInlineBlock(std::numeric_limits<float>::max(), absl::nullopt);
+			float max_width = node->block_box_.marginRect().width();
+			return { min_width, max_width };
+		} else {
+			LOG(INFO)
+				<< "layoutMeasureInlineWidth: unsupported display "
+				<< node->computed_style_.display;
+		}
 	}
 	return { 0.0f, 0.0f };
 }

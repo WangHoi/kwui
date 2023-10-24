@@ -146,8 +146,8 @@ public:
 	bool matchSimple(style::Selector *selector) const;
 	void computeLayout();
 
-	// normal flow layout with new BFC
-	void reflowNormal(float contg_blk_width, absl::optional<float> contg_blk_height);
+	// layout inline-block with new BFC
+	void reflowInlineBlock(float contg_blk_width, absl::optional<float> contg_blk_height);
 	// layout absoluted positioned
 	void reflowAbsolutelyPositioned(float contg_blk_width, float contg_blk_height);
 
