@@ -69,14 +69,19 @@ var simple_stylesheet = {
 		"font-size": "30px",
 	},
 	"button": {
-		"width": "70px",
+		"width": "100px",
+		"border-color": "#000",
+		"border-left-width": 1,
+		"border-top-width": 1,
+		"border-right-width": 1,
+		"border-bottom-width": 1,
 		"text-align": "center"
 	}
 };
 
 var hello_world2 = (
 	<div class="abs">
-		<button>First button</button>
+		<button style={{"margin-top":20}}>First button</button>
 		<button>Second button</button>
 		<button>Third button</button>
 	</div>

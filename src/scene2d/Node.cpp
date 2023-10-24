@@ -36,10 +36,8 @@ static void resolve_style(style::TextAlign& style, const style::TextAlign* paren
 Node::Node(Scene* scene, NodeType type)
 	: scene_(scene)
 	, type_(type)
-	, origin_(PointF::fromZeros())
-	, size_(DimensionF::fromZeros())
+	, block_box_(&computed_style_)
 {
-	block_box_.style = &computed_style_;
 	weakptr_ = new base::WeakObjectProxy<Node>(this);
 	weakptr_->retain();
 }
@@ -320,10 +318,7 @@ bool Node::matchSimple(style::Selector* selector) const
 
 void Node::computeLayout()
 {
-	origin_.x = computed_style_.left.f32_val;
-	origin_.y = computed_style_.top.f32_val;
-	size_.width = computed_style_.width.f32_val;
-	size_.height = computed_style_.height.f32_val;
+	LOG(WARNING) << "TODO: remove Node::computeLayout()";
 }
 
 void Node::reflowInlineBlock(float contg_blk_width, absl::optional<float> contg_blk_height)
@@ -394,7 +389,13 @@ void Node::reflowInlineBlock(float contg_blk_width, absl::optional<float> contg_
 	if (b.prefer_height.has_value()) {
 		b.content.height = *b.prefer_height;
 	} else {
-		b.content.height = bfc_->margin_bottom - b.margin.bottom - b.border.bottom - b.padding.bottom;
+		b.content.height = bfc_->margin_bottom
+			- b.margin.bottom
+			- b.border.bottom
+			- b.padding.bottom
+			- b.padding.top
+			- b.border.top
+			- b.margin.top;
 	}
 
 	LOG(INFO) << "reflowInlineBlock<" << tag_ << "> border box" << b.borderRect();
@@ -627,6 +628,11 @@ void Node::layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 	if (node->type() == NodeType::NODE_TEXT) {
 		bbb.addText(node);
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
+		// TODO: add reset method
+		node->inline_box_ = style::InlineBox();
+		node->block_box_ = style::BlockBox(&node->computed_style_);
+		node->bfc_ = absl::nullopt;
+		node->ifc_ = absl::nullopt;
 		const auto& st = node->computedStyle();
 		if (node->absolutelyPositioned()) {
 			bfc.abs_pos_nodes.push_back(node);

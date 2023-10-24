@@ -96,16 +96,6 @@ public:
 		return base::object_weakptr<Node>(weakptr_);
 	}
 
-	inline const PointF& origin() const
-	{
-		return origin_;
-	}
-
-	inline const DimensionF& size() const
-	{
-		return size_;
-	}
-
 	inline bool visible() const
 	{
 		return visible_;
@@ -225,8 +215,6 @@ protected:
 	style::StyleSpec specStyle_;
 	style::Style computed_style_;
 	absl::optional<style::BoxF> layoutBox_;
-	PointF origin_;
-	DimensionF size_;
 
 	bool visible_ = true;
 

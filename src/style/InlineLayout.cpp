@@ -12,6 +12,7 @@ InlineBoxBuilder::InlineBoxBuilder(InlineFormatContext& ifc, InlineBox* root)
 void InlineBoxBuilder::addText(scene2d::Node* node)
 {
     text_node_ = node;
+    text_node_->inline_box_ = InlineBox();
     beginInline(&text_node_->inline_box_);
 	TextFlowSource source(*this);
 	TextFlowSink sink(*this);

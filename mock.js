@@ -42,9 +42,6 @@ function Div(props, kids) {
 }
 
 var simple_stylesheet = {
-	"button": {
-		"display": "inline"
-	},
 	".title-bar": {
 		"position": "absolute",
 		"top": 0,
@@ -55,7 +52,7 @@ var simple_stylesheet = {
 		"margin-bottom": 10
 	},
 	"img": {
-		"display": "block",
+		"display": "inline-block",
 		"width": "80px",
 		"height": "80px",
 	}
@@ -77,7 +74,7 @@ var hello_world_full = (<body>
         </span>
     </div>
     <div style={{"text-align":"center"}}>
-        <button style={{"margin-top": 40, "display":"block", "background-color": "#f0f"}}>安装</button>
+        <button style={{"margin-top": 40, "background-color": "#f0f"}}>安装</button>
     </div>
 </body>);
 
