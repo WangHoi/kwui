@@ -2,6 +2,7 @@
 #include "base/string_intern.h"
 #include "StyleValue.h"
 #include "StyleClass.h"
+#include "StylePseudoClass.h"
 #include "absl/strings/str_format.h"
 
 namespace style {
@@ -17,6 +18,7 @@ public:
     base::string_atom tag;
     base::string_atom id;
     Classes klass;
+    PseudoClasses pseudo_classes;
     std::unique_ptr<Selector> dep_selector;
     SelectorDependency dep_type = SelectorDependency::None;
 
@@ -36,6 +38,7 @@ public:
         }
         absl::Format(&sink, "%v", p.tag);
         absl::Format(&sink, "%v", p.klass);
+        absl::Format(&sink, "%v", p.pseudo_classes);
         if (p.id != base::string_atom()) {
             absl::Format(&sink, "#%v", p.id);
         }

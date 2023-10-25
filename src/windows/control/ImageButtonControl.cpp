@@ -16,6 +16,10 @@ base::string_atom ImageButtonControl::name()
 {
 	return base::string_intern(CONTROL_NAME);
 }
+bool ImageButtonControl::testFlags(int flags) const
+{
+	return (scene2d::NODE_FLAG_CLICKABLE | scene2d::NODE_FLAG_HOVERABLE) & flags;
+}
 void ImageButtonControl::onPaint(graphics::Painter& p, const scene2d::RectF& rect)
 {
 	if (!_bitmap) {

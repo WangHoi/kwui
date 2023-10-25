@@ -757,16 +757,17 @@ void Dialog::UpdateHoveredNode() {
     base::object_refptr<scene2d::Node> old_hovered = _hovered_node.upgrade();
     if (node != old_hovered.get()) {
         if (old_hovered) {
-            // old_hovered->_under_mouse = false;
+            old_hovered->state_ &= ~scene2d::NODE_STATE_HOVER;
             scene2d::MouseEvent hover_leave(old_hovered.get(), scene2d::MOUSE_LEAVE);
             old_hovered->onEvent(hover_leave);
         }
         _hovered_node = node ? node->weaken() : base::object_weakptr<scene2d::Node>();
         if (node) {
-            // node->_under_mouse = true;
+            node->state_ |= scene2d::NODE_STATE_HOVER;
             scene2d::MouseEvent hover_enter(node, scene2d::MOUSE_ENTER);
             node->onEvent(hover_enter);
         }
+        RequestPaint();
     }
 }
 void Dialog::UpdateFocusedNode() {

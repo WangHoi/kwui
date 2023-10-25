@@ -33,6 +33,11 @@ enum class NodeType {
 	NODE_COMPONENT = 3,
 };
 
+enum NodeState {
+	NODE_STATE_ACTIVE = 1,
+	NODE_STATE_HOVER = 2,
+};
+
 template <typename Sink>
 void AbslStringify(Sink& sink, NodeType p) {
 	switch (p) {
@@ -176,6 +181,7 @@ protected:
 	}
 	template<typename F>
 	static void eachLayoutChild(Node* node, F&& f);
+	bool matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const;
 
 	// Tree nodes
 	Scene* scene_ = nullptr;
@@ -185,6 +191,7 @@ protected:
 	std::vector<Node*> children_;
 
 	NodeType type_;
+	uint8_t state_ = 0;
 
 	// Text
 	std::string text_;

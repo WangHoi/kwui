@@ -310,6 +310,8 @@ bool Node::matchSimple(style::Selector* selector) const
 		return false;
 	if (!klass_.containsClass(selector->klass))
 		return false;
+	if (!matchPseudoClasses(selector->pseudo_classes))
+		return false;
 	if (selector->tag != base::string_atom() && selector->tag != base::string_intern("*")
 		&& selector->tag != tag_)
 		return false;
@@ -900,6 +902,23 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 			(bfc.margin_bottom - bfc.border_bottom));
 		bfc.margin_bottom = bfc.border_bottom + coll_margin;
 	}
+}
+
+bool Node::matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const
+{
+	for (auto it = pseudo_classes.begin(); it != pseudo_classes.end(); ++it) {
+		const base::string_atom& klass = *it;
+		if (klass == base::string_intern("active")) {
+			if (!(state_ & NODE_STATE_ACTIVE))
+				return false;
+		} else if (klass == base::string_intern("hover")) {
+			if (!(state_ & NODE_STATE_HOVER))
+				return false;
+		} else {
+			return false;
+		}
+	}
+	return true;
 }
 
 void resolve_style(style::DisplayType& style, const style::DisplayType* parent,

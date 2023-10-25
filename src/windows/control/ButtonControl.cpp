@@ -21,7 +21,7 @@ base::string_atom ButtonControl::name()
 
 bool ButtonControl::testFlags(int flags) const
 {
-	return scene2d::NODE_FLAG_CLICKABLE & flags;
+	return (scene2d::NODE_FLAG_CLICKABLE | scene2d::NODE_FLAG_HOVERABLE) & flags;
 }
 
 void ButtonControl::onPaint(graphics::Painter& p, const scene2d::RectF& rect)
