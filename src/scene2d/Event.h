@@ -52,8 +52,8 @@ enum MouseCommand {
     MOUSE_UP,
     MOUSE_MOVE,
 
-    MOUSE_ENTER,
-    MOUSE_LEAVE,
+    MOUSE_OVER,
+    MOUSE_OUT,
 };
 
 struct MouseEvent : public Event {

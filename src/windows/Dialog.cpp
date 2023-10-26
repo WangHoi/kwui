@@ -758,13 +758,13 @@ void Dialog::UpdateHoveredNode() {
     if (node != old_hovered.get()) {
         if (old_hovered) {
             old_hovered->state_ &= ~scene2d::NODE_STATE_HOVER;
-            scene2d::MouseEvent hover_leave(old_hovered.get(), scene2d::MOUSE_LEAVE);
+            scene2d::MouseEvent hover_leave(old_hovered.get(), scene2d::MOUSE_OUT);
             old_hovered->onEvent(hover_leave);
         }
         _hovered_node = node ? node->weaken() : base::object_weakptr<scene2d::Node>();
         if (node) {
             node->state_ |= scene2d::NODE_STATE_HOVER;
-            scene2d::MouseEvent hover_enter(node, scene2d::MOUSE_ENTER);
+            scene2d::MouseEvent hover_enter(node, scene2d::MOUSE_OVER);
             node->onEvent(hover_enter);
         }
         RequestPaint();
