@@ -117,6 +117,9 @@ struct StyleSpec {
 	ValueSpec font_style;
 	ValueSpec font_weight;
 	ValueSpec text_align;
+
+	ValueSpec overflow_x;
+	ValueSpec overflow_y;
 };
 
 enum class DisplayType {
@@ -136,6 +139,13 @@ enum class PositionType {
 enum class FontStyle {
 	Normal,
 	Italic,
+};
+
+enum class OverflowType {
+	Visible,
+	Hidden,
+	Auto,
+	Scroll,
 };
 
 class FontWeight {
@@ -206,6 +216,9 @@ struct Style {
 	FontStyle font_style;
 	FontWeight font_weight;
 	TextAlign text_align;
+
+	OverflowType overflow_x = OverflowType::Visible;
+	OverflowType overflow_y = OverflowType::Visible;
 };
 
 template <typename Sink>
@@ -242,6 +255,26 @@ void AbslStringify(Sink& sink, PositionType p) {
 		break;
 	case PositionType::Fixed:
 		absl::Format(&sink, "Fixed");
+		break;
+	default:
+		absl::Format(&sink, "Custom(%d)", (int)p);
+	}
+}
+
+template <typename Sink>
+void AbslStringify(Sink& sink, OverflowType p) {
+	switch (p) {
+	case OverflowType::Visible:
+		absl::Format(&sink, "Visible");
+		break;
+	case OverflowType::Hidden:
+		absl::Format(&sink, "Hidden");
+		break;
+	case OverflowType::Auto:
+		absl::Format(&sink, "Auto");
+		break;
+	case OverflowType::Scroll:
+		absl::Format(&sink, "Scroll");
 		break;
 	default:
 		absl::Format(&sink, "Custom(%d)", (int)p);

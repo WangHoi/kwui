@@ -223,6 +223,9 @@ protected:
 	style::Style computed_style_;
 	absl::optional<style::BoxF> layoutBox_;
 
+	bool scrollbar_x = false;
+	bool scrollbar_y = false;
+
 	bool visible_ = true;
 
 	friend class Scene;

@@ -38,7 +38,7 @@ int main()
     scene2d::ControlRegistry::get()->registerControl<windows::control::ImageButtonControl>();
 
     script::Context ctx;
-    ctx.loadFile("d:/projects/kwui/pseudo_class.js");
+    ctx.loadFile("d:/projects/kwui/overflow.js");
 
     while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
