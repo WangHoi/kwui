@@ -13,7 +13,7 @@ public:
     static const char* CONTROL_NAME;
     ImageControl();
     base::string_atom name() override;
-    void onPaint(graphics::Painter& p, const scene2d::RectF& rect) override;
+    void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
     void onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value) override;
     void setImageSource(const std::string& name);
 

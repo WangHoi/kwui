@@ -4,10 +4,8 @@
 #include "Node.h"
 #include <map>
 
-namespace windows {
-namespace graphics {
-class Painter;
-}
+namespace graph2d {
+class PainterInterface;
 }
 
 namespace scene2d {
@@ -29,7 +27,7 @@ public:
     virtual void onAttach(Node *node) {}
     virtual void onDetach(Node *node) {}
     virtual bool testFlags(int flags) const { return false; }
-    virtual void onPaint(windows::graphics::Painter &p, const scene2d::RectF& rect) {}
+    virtual void onPaint(graph2d::PainterInterface &p, const scene2d::RectF& rect) {}
     virtual void onMouseEvent(Node* node, MouseEvent &evt) {}
     virtual void onKeyEvent(Node* node, KeyEvent &evt) {}
     virtual void onFocusEvent(Node* node, FocusEvent &evt) {}

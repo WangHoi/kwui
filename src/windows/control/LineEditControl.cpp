@@ -277,7 +277,8 @@ bool LineEditControl::testFlags(int flags) const
 {
     return true;
 }
-void LineEditControl::onPaint(windows::graphics::Painter &p, const scene2d::RectF& rect) {
+void LineEditControl::onPaint(graph2d::PainterInterface &pi, const scene2d::RectF& rect) {
+    graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
     p.Save();
     p.Translate(rect.origin());
 

@@ -14,7 +14,7 @@ public:
     ButtonControl();
     base::string_atom name() override;
     bool testFlags(int flags) const override;
-    void onPaint(graphics::Painter& p, const scene2d::RectF& rect) override;
+    void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
     void onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt) override;
     void onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value) override;
     void onSetEventHandler(base::string_atom name, JSValue func) override;

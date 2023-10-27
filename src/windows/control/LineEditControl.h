@@ -64,7 +64,7 @@ public:
     void onAttach(scene2d::Node* node) override;
     void onDetach(scene2d::Node* node) override;
     bool testFlags(int flags) const override;
-    void onPaint(windows::graphics::Painter& p, const scene2d::RectF& rect) override;
+    void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
     void onFocusEvent(scene2d::Node* node, scene2d::FocusEvent& evt) override;
     void onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt) override;
     void onKeyEvent(scene2d::Node* node, scene2d::KeyEvent& evt) override;

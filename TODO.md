@@ -13,6 +13,7 @@
 - shorthand 支持
 
 ### DOM:
+- mouseover/mouseout 事件没有 bubble
 - fragment 处理有问题，没有跳过
 
 ### Control:

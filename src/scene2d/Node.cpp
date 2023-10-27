@@ -203,10 +203,10 @@ void Node::resolveDefaultStyle()
 #define RESOLVE_STYLE_DEFAULT(x, def) \
     computed_style_.x = def
 
-	RESOLVE_STYLE_DEFAULT(margin_left, style::Value::auto_());
-	RESOLVE_STYLE_DEFAULT(margin_top, style::Value::auto_());
-	RESOLVE_STYLE_DEFAULT(margin_right, style::Value::auto_());
-	RESOLVE_STYLE_DEFAULT(margin_bottom, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(margin_left, style::Value::fromPixel(0));
+	RESOLVE_STYLE_DEFAULT(margin_top, style::Value::fromPixel(0));
+	RESOLVE_STYLE_DEFAULT(margin_right, style::Value::fromPixel(0));
+	RESOLVE_STYLE_DEFAULT(margin_bottom, style::Value::fromPixel(0));
 	RESOLVE_STYLE_DEFAULT(border_left_width, style::Value::auto_());
 	RESOLVE_STYLE_DEFAULT(border_top_width, style::Value::auto_());
 	RESOLVE_STYLE_DEFAULT(border_right_width, style::Value::auto_());

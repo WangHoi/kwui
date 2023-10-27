@@ -45,32 +45,35 @@ var simple_stylesheet = {
 	".outer": {
 		"overflow-y": "auto",
 		"width": "200px",
-		"height": "200px",
-		"background-color": "#aaa",
+		"height": "100px",
+		"margin-left": "8px",
+		"margin-top": "8px",
+		"padding-top": "50px",
+		"padding-bottom": "50px",
+		"padding-left": "10px",
+		"padding-right": "10px",
+		"background-color": "#eee",
+		"border-top-width": "2px",
+		"border-color": "#000",
 	},
 	".inner": {
-		"margin-left": "auto",
-		"margin-right": "auto",
 		"width": "80%",
-		"height": "100%",
-		"background-color": "#0ff",
+		"height": "50%",
+		"background-color": "#00ffff",
+		"font-size": "16px",
+		"border-top-width": "2px",
+		"border-color": "#080",
 	},
-	".italic": {
-		"font-style": "italic"
-	},	
-	".bold": {
-		"font-weight": "bold",
-	},
-	".fs-20": {
-		"font-size": "30px",
-	},
+	"span": {
+		"font-size": 16,
+	}
 };
 
+var span1 = <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius Syntax</span>;
+var span2 = <span>This property is a shorthand for the following</span>;
 var hello_world = (<div class="outer">
     <div class="inner"></div>
-	<p>
-	<span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius Syntax</span>
-	</p>
+	<p>{span2}</p>
 </div>);
 
 app.showDialog(hello_world, simple_stylesheet);

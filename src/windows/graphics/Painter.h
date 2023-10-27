@@ -1,6 +1,8 @@
 #pragma once
 
 #include "scene2d/geom_types.h"
+#include "scene2d/Control.h"
+#include "graph2d/Painter.h"
 #include "windows/windows_header.h"
 #include "Color.h"
 #include "TextLayout.h"
@@ -89,6 +91,66 @@ private:
 	float _dpi_scale;
     State _current;
     std::vector<State> _state_stack;
+};
+
+class PainterImpl : public graph2d::PainterInterface
+{
+public:
+    PainterImpl(graphics::Painter& p)
+        : p_(p) {}
+    static inline graphics::Painter& unwrap(graph2d::PainterInterface& pi)
+    {
+        return ((PainterImpl&)pi).p_;
+    }
+    void save() override
+    {
+        p_.Save();
+    }
+    void restore() override
+    {
+        p_.Restore();
+    }
+    void setTranslation(const scene2d::PointF& offset, bool combine) override
+    {
+        if (combine)
+            p_.Translate(offset);
+        else
+            p_.SetTranslation(offset);
+    }
+    void drawBox(const scene2d::RectF& rect, float border_width, const style::Value& background_color, const style::Value& border_color) override
+    {
+        auto rect1 = scene2d::RectF::fromXYWH(
+            rect.left + border_width * 0.5f,
+            rect.top + border_width * 0.5f,
+            rect.width() - border_width,
+            rect.height() - border_width);
+        p_.SetStrokeWidth(border_width);
+        p_.SetStrokeColor(get_color(border_color));
+        p_.SetColor(get_color(background_color));
+        p_.DrawRect(rect1.origin(), rect1.size());
+    }
+    void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* gr, const style::Value& color) override
+    {
+        p_.SetColor(get_color(color));
+        auto glyph_run = (graphics::GlyphRun*)gr;
+        p_.DrawGlyphRun(pos, *glyph_run);
+    }
+    void drawControl(const scene2d::RectF& rect, scene2d::Control* control) override
+    {
+        control->onPaint(*this, rect);
+    }
+private:
+    static graphics::Color get_color(const style::Value& v) {
+        if (v.isAuto())
+            return NO_COLOR;
+        if (v.unit == style::ValueUnit::HexColor) {
+            return graphics::Color::FromString(v.string_val);
+        } else if (v.unit == style::ValueUnit::Keyword) {
+            return graphics::Color::FromString(v.keyword_val.c_str());
+        }
+        return NO_COLOR;
+    }
+    graphics::Painter& p_;
 };
 
 } // namespace graphics

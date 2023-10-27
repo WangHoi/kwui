@@ -20,8 +20,9 @@ bool ImageButtonControl::testFlags(int flags) const
 {
 	return (scene2d::NODE_FLAG_CLICKABLE | scene2d::NODE_FLAG_HOVERABLE) & flags;
 }
-void ImageButtonControl::onPaint(graphics::Painter& p, const scene2d::RectF& rect)
+void ImageButtonControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect)
 {
+	graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
 	if (!_bitmap) {
 		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
 			->GetBitmap(_src, p.GetDpiScale());

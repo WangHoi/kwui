@@ -24,7 +24,7 @@ bool ButtonControl::testFlags(int flags) const
 	return (scene2d::NODE_FLAG_CLICKABLE | scene2d::NODE_FLAG_HOVERABLE) & flags;
 }
 
-void ButtonControl::onPaint(graphics::Painter& p, const scene2d::RectF& rect)
+void ButtonControl::onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect)
 {
 	//p.SetColor(BLUE.MakeAlpha(0.2f));
 	//p.DrawRect(rect.origin(), rect.size());

@@ -15,7 +15,8 @@ base::string_atom ProgressBarControl::name()
 {
 	return base::string_intern(CONTROL_NAME);
 }
-void ProgressBarControl::onPaint(graphics::Painter& p, const scene2d::RectF& rect) {
+void ProgressBarControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect) {
+	graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
 	p.SetColor(_bg_color);
 	p.DrawRoundedRect(rect.origin(), rect.size(), _border_radius);
 

@@ -14,8 +14,9 @@ base::string_atom ImageControl::name()
 {
 	return base::string_intern(CONTROL_NAME);
 }
-void ImageControl::onPaint(graphics::Painter& p, const scene2d::RectF& rect)
+void ImageControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect)
 {
+	graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
 	if (!_bitmap) {
 		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
 			->GetBitmap(_image_src, p.GetDpiScale());
