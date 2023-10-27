@@ -11,6 +11,8 @@
 
 namespace scene2d {
 
+static const float SCROLLBAR_WIDTH = 16.0f;
+
 static inline void resolve_style(style::Value& style,
 	const style::Value* parent,
 	const style::ValueSpec& spec)
@@ -31,6 +33,8 @@ static void resolve_style(style::FontStyle& style, const style::FontStyle* paren
 static void resolve_style(style::FontWeight& style, const style::FontWeight* parent,
 	const style::ValueSpec& spec);
 static void resolve_style(style::TextAlign& style, const style::TextAlign* parent,
+	const style::ValueSpec& spec);
+static void resolve_style(style::OverflowType& style, const style::OverflowType* parent,
 	const style::ValueSpec& spec);
 
 Node::Node(Scene* scene, NodeType type)
@@ -229,6 +233,9 @@ void Node::resolveDefaultStyle()
 
 	RESOLVE_STYLE_DEFAULT(border_color, style::Value::auto_());
 	RESOLVE_STYLE_DEFAULT(background_color, style::Value::auto_());
+
+	RESOLVE_STYLE_DEFAULT(overflow_x, style::OverflowType::Visible);
+	RESOLVE_STYLE_DEFAULT(overflow_y, style::OverflowType::Visible);
 #undef RESOLVE_STYLE_DEFAULT
 
 #define RESOLVE_STYLE_DEFAULT_INHERIT(x, def) \
@@ -290,6 +297,8 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 	RESOLVE_STYLE(font_style);
 	RESOLVE_STYLE(font_weight);
 	RESOLVE_STYLE(text_align);
+	RESOLVE_STYLE(overflow_x);
+	RESOLVE_STYLE(overflow_y);
 #undef RESOLVE_STYLE
 }
 
@@ -1022,6 +1031,26 @@ void resolve_style(style::TextAlign& style, const style::TextAlign* parent,
 				style = style::TextAlign::Center;
 			else if (spec.value->keyword_val == base::string_intern("right"))
 				style = style::TextAlign::Right;
+		}
+	}
+}
+
+void resolve_style(style::OverflowType& style, const style::OverflowType* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Keyword) {
+			if (spec.value->keyword_val == base::string_intern("visible"))
+				style = style::OverflowType::Visible;
+			else if (spec.value->keyword_val == base::string_intern("hidden"))
+				style = style::OverflowType::Hidden;
+			else if (spec.value->keyword_val == base::string_intern("auto"))
+				style = style::OverflowType::Auto;
+			else if (spec.value->keyword_val == base::string_intern("scroll"))
+				style = style::OverflowType::Scroll;
 		}
 	}
 }
