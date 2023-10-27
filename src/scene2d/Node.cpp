@@ -787,7 +787,7 @@ void Node::layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 				try_resolve_to_px(st.margin_left, contg_width),
 				try_resolve_to_px(st.width, contg_width),
 				try_resolve_to_px(st.margin_right, contg_width));
-			float avail_width = solver.measureWidth();
+			float avail_width = solver.measureWidth().value;
 			solver.setLayoutWidth(avail_width);
 
 			// Compute width, left and right margins

@@ -27,7 +27,7 @@ public:
         return true;
     }
     float containingBlockWidth() const;
-    float measureWidth();
+    WidthConstraint measureWidth();
     void setLayoutWidth(float layout_width);
 
     float marginLeft();

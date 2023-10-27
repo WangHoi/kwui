@@ -63,6 +63,8 @@ var simple_stylesheet = {
 		"font-size": "16px",
 		"border-top-width": "2px",
 		"border-color": "#080",
+		"margin-left": "10px",
+		"margin-top": "10px",
 	},
 	"span": {
 		"font-size": 16,

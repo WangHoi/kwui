@@ -15,15 +15,19 @@ float StaticBlockWidthSolver::containingBlockWidth() const
 {
 	return cont_block_width_;
 }
-float StaticBlockWidthSolver::measureWidth()
+WidthConstraint StaticBlockWidthSolver::measureWidth()
 {
-	if (width_.has_value())
-		return std::max(*width_, 0.0f);
-	
-	float w = cont_block_width_
-		- margin_left_.value_or(0)
-		- margin_right_.value_or(0);
-	return std::max(w, 0.0f);
+	WidthConstraint c;
+	c.type = WidthConstraintType::Fixed;
+	if (width_.has_value()) {
+		c.value = std::max(0.0f, *width_);
+	} else {
+		float w = cont_block_width_
+			- margin_left_.value_or(0)
+			- margin_right_.value_or(0);
+		c.value = std::max(0.0f, w);
+	}
+	return c;
 }
 void StaticBlockWidthSolver::setLayoutWidth(float layout_width)
 {
