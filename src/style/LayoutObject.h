@@ -1,12 +1,17 @@
 #pragma once
 #include "BlockLayout.h"
 #include "InlineLayout.h"
-
+#include "TextLayout.h"
 namespace scene2d {
 class Node;
 }
 
 namespace style {
+
+struct TextBox {
+	graph2d::TextFlowInterface* text_flow = nullptr;
+	TextBoxes text_boxes;
+};
 
 struct LayoutObject {
 	enum Flag {
@@ -17,7 +22,8 @@ struct LayoutObject {
 	absl::variant<
 		absl::monostate,
 		BlockBox,
-		InlineBox
+		InlineBox,
+		TextBox
 	> box;
 
 	absl::variant<
@@ -60,6 +66,8 @@ private:
 	LayoutObject* last_child_ = nullptr;
 	// (contg, last_child)
 	std::vector<std::tuple<LayoutObject*, LayoutObject*>> stack_;
+	bool reparent_to_anon_block_pending_ = false;
+	bool new_bfc_pending_ = false;
 };
 
 }

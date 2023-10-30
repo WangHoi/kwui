@@ -61,7 +61,10 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		// establish new BFC
 		if (st.display == style::DisplayType::InlineBlock
 			|| st.overflow_x != style::OverflowType::Visible
-			|| st.overflow_y != style::OverflowType::Visible) {
+			|| st.overflow_y != style::OverflowType::Visible
+			|| new_bfc_pending_) {
+
+			new_bfc_pending_ = false;
 			current_->flags |= LayoutObject::NEW_BFC_FLAG;
 			current_->bfc = absl::make_optional<BlockFormatContext>(node);
 		}
@@ -73,12 +76,11 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 
 void LayoutTreeBuilder::addText(scene2d::Node* node)
 {
-	/*
-	if (current_->type == BlockBoxType::Empty) {
-		current_->type = BlockBoxType::WithInlineChildren;
-		current_->payload = node->parent();
-	}
-	*/
+	parentAddInlineChild();
+
+	TextBox tb;
+	tb.text_flow = node->text_flow_.get();
+	current_->box.emplace<TextBox>(std::move(tb));
 }
 
 void LayoutTreeBuilder::beginChild(LayoutObject* o)
@@ -109,7 +111,10 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 
 void LayoutTreeBuilder::endChild()
 {
-	// TODO: handle anon_block
+	if (reparent_to_anon_block_pending_) {
+		reparent_to_anon_block_pending_ = false;
+		LOG(WARNING) << "TODO: handle anon_block";
+	}
 	std::tie(current_, last_child_) = stack_.back();
 	stack_.pop_back();
 }
@@ -117,8 +122,8 @@ void LayoutTreeBuilder::endChild()
 void LayoutTreeBuilder::parentAddBlockChild()
 {
 	if (current_->parent->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
-		LOG(WARNING) << "add block-level child to inline parent, fallback to inline-block";
 		current_->box = InlineBox();
+		new_bfc_pending_ = true;
 		return;
 	}
 
@@ -129,6 +134,7 @@ void LayoutTreeBuilder::parentAddBlockChild()
 void LayoutTreeBuilder::parentAddInlineChild()
 {
 	if (current_->parent->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) {
+		reparent_to_anon_block_pending_ = true;
 		current_->anon_block = std::make_unique<LayoutObject>();
 		current_->box = InlineBox();
 	} else {
