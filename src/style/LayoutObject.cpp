@@ -17,10 +17,19 @@ std::vector<LayoutObject*> LayoutTreeBuilder::build()
 {
 	std::vector<LayoutObject*> flow_roots;
 	
+	flow_roots.push_back(&root_->layout_);
 	initFlowRoot(root_);
-	
 	scene2d::Node::eachChild(root_, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
 	
+	while (!abs_pos_nodes_.empty()) {
+		auto nodes = std::move(abs_pos_nodes_);
+		for (auto node : nodes) {
+			flow_roots.push_back(&node->layout_);
+			initFlowRoot(node);
+			scene2d::Node::eachChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
+		}
+	}
+
 	return flow_roots;
 }
 
