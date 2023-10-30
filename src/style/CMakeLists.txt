@@ -20,4 +20,5 @@ target_sources(kwui PRIVATE
   StylePaint.cpp
   BoxConstraintSolver.h
   BoxConstraintSolver.cpp
-)
+  LayoutObject.h
+  LayoutObject.cpp)

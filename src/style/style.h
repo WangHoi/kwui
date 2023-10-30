@@ -7,3 +7,4 @@
 #include "BlockLayout.h"
 #include "InlineLayout.h"
 #include "TextLayout.h"
+#include "LayoutObject.h"

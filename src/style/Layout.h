@@ -18,6 +18,7 @@ class InlineFormatContext;
 class InlineBox;
 class BlockBox;
 class BlockBoxBuilder;
+struct LayoutObject;
 
 struct EdgeOffsetF {
 	float left = 0;

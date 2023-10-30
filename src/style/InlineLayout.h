@@ -1,8 +1,8 @@
 #pragma once
 #include "Layout.h"
+#include "StyleValue.h"
 #include "scene2d/geom_types.h"
 #include "base/log.h"
-#include "style/style.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "graph2d/TextLayout.h"

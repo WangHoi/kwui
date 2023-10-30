@@ -2,7 +2,6 @@
 #include "GraphicDevice.h"
 #include "windows/EncodingManager.h"
 #include <limits>
-#include "TextLayout.h"
 
 namespace windows {
 namespace graphics {

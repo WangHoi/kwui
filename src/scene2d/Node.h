@@ -12,7 +12,7 @@
 #include "geom_types.h"
 #include "Attribute.h"
 #include "Event.h"
-#include "style/Layout.h"
+#include "style/LayoutObject.h"
 
 namespace windows {
 class Dialog;
@@ -23,6 +23,7 @@ class Painter;
 namespace style {
 class BlockWidthSolverInterface;
 class InlineBoxBuilder;
+class LayoutTreeBuilder;
 }
 
 namespace scene2d {
@@ -158,15 +159,6 @@ public:
 
 	void updateTextLayout();
 
-protected:
-	static void layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
-	static std::tuple<float, float> layoutMeasureWidth(style::BlockBox& box);
-	static std::tuple<float, float> layoutMeasureInlineWidth(Node* node);
-	static void layoutMeasure(style::InlineFormatContext& ifc, style::InlineBoxBuilder& ibb, Node* node);
-	// in-flow layout
-	static void layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
-	// in-flow placing
-	static void layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box);
 	template<typename F>
 	inline void eachChild(F&& f)
 	{
@@ -181,6 +173,16 @@ protected:
 	}
 	template<typename F>
 	static void eachLayoutChild(Node* node, F&& f);
+
+protected:
+	static void layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
+	static std::tuple<float, float> layoutMeasureWidth(style::BlockBox& box);
+	static std::tuple<float, float> layoutMeasureInlineWidth(Node* node);
+	static void layoutMeasure(style::InlineFormatContext& ifc, style::InlineBoxBuilder& ibb, Node* node);
+	// in-flow layout
+	static void layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
+	// in-flow placing
+	static void layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box);
 	bool matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const;
 
 	// Tree nodes
@@ -202,6 +204,7 @@ protected:
 	base::string_atom tag_;
 	base::string_atom id_;
 	style::Classes klass_;
+	style::LayoutObject layout_;
 	style::InlineBox inline_box_;	// inline-level layout
 	style::BlockBox block_box_;		// block-level layout
 	absl::optional<style::BlockFormatContext> bfc_;
@@ -221,7 +224,6 @@ protected:
 	// Style and layout
 	style::StyleSpec specStyle_;
 	style::Style computed_style_;
-	absl::optional<style::BoxF> layoutBox_;
 
 	bool scrollbar_x = false;
 	bool scrollbar_y = false;
@@ -231,6 +233,7 @@ protected:
 	friend class Scene;
 	friend class windows::Dialog;
 	friend class style::InlineBoxBuilder;
+	friend class style::LayoutTreeBuilder;
 };
 
 template<typename F>
