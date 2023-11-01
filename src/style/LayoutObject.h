@@ -44,6 +44,8 @@ struct LayoutObject {
 	LayoutObject* first_child;
 
 	void reset();
+	
+	static void reflow(LayoutObject* o, const scene2d::DimensionF& viewport_size);
 };
 
 class LayoutTreeBuilder {

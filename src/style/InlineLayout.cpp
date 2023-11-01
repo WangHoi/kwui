@@ -172,7 +172,7 @@ void InlineFormatContext::layoutArrange(style::TextAlign text_align)
 {
     float y = 0;
     for (auto& line_box : line_boxes_) {
-        line_box->layoutArrange(bfc_.margin_bottom + y, text_align);
+        line_box->layoutArrange(bfc_.margin_bottom_edge + y, text_align);
         y += line_box->used_size.height;
     }
     height_ = y;

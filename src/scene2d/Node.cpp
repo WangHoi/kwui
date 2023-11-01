@@ -400,7 +400,7 @@ void Node::reflowInlineBlock(float contg_blk_width, absl::optional<float> contg_
 	if (b.prefer_height.has_value()) {
 		b.content.height = *b.prefer_height;
 	} else {
-		b.content.height = bfc_->margin_bottom
+		b.content.height = bfc_->margin_bottom_edge
 			- b.margin.bottom
 			- b.border.bottom
 			- b.padding.bottom
@@ -837,37 +837,37 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 	box.pos.x = bfc.content_left;
 	if (borpad_top > 0) {
 		float coll_margin = style::collapse_margin(box.margin.top,
-			(bfc.margin_bottom - bfc.border_bottom));
-		box.pos.y = bfc.border_bottom + coll_margin - box.margin.top;
-		bfc.border_bottom = bfc.border_bottom + coll_margin + borpad_top;
-		bfc.margin_bottom = bfc.border_bottom;
+			(bfc.margin_bottom_edge - bfc.border_bottom_edge));
+		box.pos.y = bfc.border_bottom_edge + coll_margin - box.margin.top;
+		bfc.border_bottom_edge = bfc.border_bottom_edge + coll_margin + borpad_top;
+		bfc.margin_bottom_edge = bfc.border_bottom_edge;
 	} else {
 		float coll_margin = style::collapse_margin(box.margin.top,
-			(bfc.margin_bottom - bfc.border_bottom));
-		box.pos.y = bfc.border_bottom + coll_margin - box.margin.top;
-		//bfc.border_bottom += coll_margin + borpad_top;
-		bfc.margin_bottom = bfc.border_bottom + coll_margin;
+			(bfc.margin_bottom_edge - bfc.border_bottom_edge));
+		box.pos.y = bfc.border_bottom_edge + coll_margin - box.margin.top;
+		//bfc.border_bottom_edge += coll_margin + borpad_top;
+		bfc.margin_bottom_edge = bfc.border_bottom_edge + coll_margin;
 	}
 
 	base::scoped_setter _(bfc.content_left,
 		bfc.content_left + box.margin.left + box.border.left + box.padding.left);
 	if (box.type == style::BlockBoxType::WithBlockChildren || box.type == style::BlockBoxType::Empty) {
-		float saved_bfc_margin_bottom = bfc.margin_bottom;
+		float saved_bfc_margin_bottom = bfc.margin_bottom_edge;
 		box.eachChild([&](style::BlockBox* child) {
 			Node::layoutArrange(bfc, *child);
 			});
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
-			bfc.border_bottom = saved_bfc_margin_bottom + *box.prefer_height;
-			bfc.margin_bottom = bfc.border_bottom;
+			bfc.border_bottom_edge = saved_bfc_margin_bottom + *box.prefer_height;
+			bfc.margin_bottom_edge = bfc.border_bottom_edge;
 		} else {
 			// Compute 'auto' height
 			if (borpad_bottom > 0) {
 				box.content.height = std::max(0.0f,
-					bfc.margin_bottom - box.pos.y - box.margin.top - borpad_top);
+					bfc.margin_bottom_edge - box.pos.y - box.margin.top - borpad_top);
 			} else {
 				box.content.height = std::max(0.0f,
-					bfc.border_bottom - box.pos.y - box.margin.top - borpad_top);
+					bfc.border_bottom_edge - box.pos.y - box.margin.top - borpad_top);
 			}
 		}
 	} else if (box.type == style::BlockBoxType::WithInlineChildren) {
@@ -875,8 +875,8 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		contg_node->ifc_.emplace(bfc, bfc.content_left, box.content.width);
 		LOG(INFO)
 			<< "<" << contg_node->tag_ << "> "
-			<< "begin IFC pos=" << PointF(bfc.content_left, bfc.margin_bottom)
-			<< ", bfc_bottom=" << bfc.border_bottom << ", " << bfc.margin_bottom;
+			<< "begin IFC pos=" << PointF(bfc.content_left, bfc.margin_bottom_edge)
+			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
 		style::InlineBoxBuilder ibb(*contg_node->ifc_, &contg_node->inline_box_);
 		contg_node->eachLayoutChild([&](Node* child) {
 			layoutMeasure(*contg_node->ifc_, ibb, child);
@@ -884,13 +884,13 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		contg_node->ifc_->layoutArrange(contg_node->computed_style_.text_align);
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
-			bfc.border_bottom = bfc.margin_bottom + *box.prefer_height;
-			bfc.margin_bottom = bfc.border_bottom;
+			bfc.border_bottom_edge = bfc.margin_bottom_edge + *box.prefer_height;
+			bfc.margin_bottom_edge = bfc.border_bottom_edge;
 		} else {
 			box.content.height = contg_node->ifc_->getLayoutHeight();
 			if (box.content.height > 0) {
-				bfc.border_bottom = bfc.margin_bottom + box.content.height;
-				bfc.margin_bottom = bfc.border_bottom;
+				bfc.border_bottom_edge = bfc.margin_bottom_edge + box.content.height;
+				bfc.margin_bottom_edge = bfc.border_bottom_edge;
 			} else {
 				// check top and bottom margin collapse, below
 			}
@@ -898,18 +898,18 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		LOG(INFO)
 			<< "<" << contg_node->tag_ << "> "
 			<< "end IFC size=" << box.content
-			<< ", bfc_bottom=" << bfc.border_bottom << ", " << bfc.margin_bottom;
+			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
 	}
 
 	LOG(INFO) << "layout arrange box pos " << box.pos << ", border-rect: " << box.borderRect();
 
 	if (borpad_bottom > 0) {
-		bfc.border_bottom = bfc.margin_bottom + borpad_bottom;
-		bfc.margin_bottom = bfc.border_bottom + box.margin.bottom;
+		bfc.border_bottom_edge = bfc.margin_bottom_edge + borpad_bottom;
+		bfc.margin_bottom_edge = bfc.border_bottom_edge + box.margin.bottom;
 	} else {
 		float coll_margin = style::collapse_margin(box.margin.bottom,
-			(bfc.margin_bottom - bfc.border_bottom));
-		bfc.margin_bottom = bfc.border_bottom + coll_margin;
+			(bfc.margin_bottom_edge - bfc.border_bottom_edge));
+		bfc.margin_bottom_edge = bfc.border_bottom_edge + coll_margin;
 	}
 }
 

@@ -11,6 +11,27 @@ void LayoutObject::reset()
 	flags = 0;
 }
 
+void LayoutObject::reflow(LayoutObject* o, const scene2d::DimensionF& viewport_size)
+{
+	CHECK(o->flags & LayoutObject::NEW_BFC_FLAG)
+		<< "LayoutObject::reflow: root expect NEW_BFC_FLAG";
+	CHECK(absl::holds_alternative<BlockBox>(o->box))
+		<< "LayoutObject::reflow: root must be block-level";
+	
+	BlockFormatContext& bfc = o->bfc.value();
+	const Style& st = *o->style;
+	BlockBox& b = absl::get<BlockBox>(o->box);
+
+	// 1. Compute intrinsic width
+
+
+	if (st.position == PositionType::Static) {
+
+	} else {
+		LOG(WARNING) << "TODO: handle positioned";
+	}
+}
+
 LayoutTreeBuilder::LayoutTreeBuilder(scene2d::Node* node)
 	: root_(node) {}
 std::vector<LayoutObject*> LayoutTreeBuilder::build()
@@ -36,6 +57,10 @@ std::vector<LayoutObject*> LayoutTreeBuilder::build()
 void LayoutTreeBuilder::initFlowRoot(scene2d::Node* node)
 {
 	// TODO: add reset method
+	node->layout_.reset();
+	node->layout_.flags |= LayoutObject::NEW_BFC_FLAG;
+	node->layout_.bfc.emplace(node);
+
 	node->inline_box_ = style::InlineBox();
 	node->block_box_ = style::BlockBox(&node->computed_style_);
 	node->bfc_.emplace(node);
@@ -99,6 +124,7 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 	//}
 	o->reset();
 
+	o->parent = current_;
 	if (last_child_) {
 		o->next_sibling = last_child_->next_sibling;
 		o->prev_sibling = last_child_;

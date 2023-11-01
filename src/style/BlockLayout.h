@@ -123,8 +123,9 @@ struct BlockFormatContext {
 	std::vector<scene2d::Node*> abs_pos_nodes; // 'absolute' and 'fixed' positioned nodes
 
 	float content_left = 0;
-	float border_bottom = 0;
-	float margin_bottom = 0;
+	float border_right_edge = 0;
+	float border_bottom_edge = 0;
+	float margin_bottom_edge = 0;
 
 	BlockFormatContext(scene2d::Node* owner_)
 		: owner(owner_) {}

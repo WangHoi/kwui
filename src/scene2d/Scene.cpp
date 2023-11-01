@@ -4,6 +4,7 @@
 #include "style/style.h"
 #include "style/Layout.h"
 #include "style/StylePaint.h"
+#include "style/LayoutObject.h"
 #include "absl/functional/bind_front.h"
 #include "absl/cleanup/cleanup.h"
 #include "graph2d/Painter.h"
@@ -148,11 +149,18 @@ void Scene::resolveStyle()
 
 void Scene::computeLayout(const scene2d::DimensionF& size)
 {
+	/*
 	root_->computed_style_.display = style::DisplayType::Block;
 	root_->computed_style_.position = style::PositionType::Absolute;
 	root_->computed_style_.width = style::Value::fromPixel(size.width);
 	root_->computed_style_.height = style::Value::fromPixel(size.height);
 	root_->reflowAbsolutelyPositioned(size.width, size.height);
+	*/
+	style::LayoutTreeBuilder b(root_);
+	std::vector<style::LayoutObject*> flow_roots = b.build();
+	for (auto flow_root : flow_roots) {
+		style::LayoutObject::reflow(flow_root, size);
+	}
 }
 
 void Scene::paint(graph2d::PainterInterface* painter)
