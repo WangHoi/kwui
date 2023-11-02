@@ -22,8 +22,11 @@ void LayoutObject::reflow(LayoutObject* o, const scene2d::DimensionF& viewport_s
 	const Style& st = *o->style;
 	BlockBox& b = absl::get<BlockBox>(o->box);
 
-	// 1. Compute intrinsic width
+	// 1. Measure min(max)-content width
 
+	// 2. Horizontal arrage
+
+	// 3. Vertical arrage
 
 	if (st.position == PositionType::Static) {
 
