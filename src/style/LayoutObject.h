@@ -8,9 +8,16 @@ class Node;
 
 namespace style {
 
+struct LayoutObject;
+
 struct TextBox {
 	graph2d::TextFlowInterface* text_flow = nullptr;
 	TextBoxes text_boxes;
+};
+
+struct FlowRoot {
+	LayoutObject* root = nullptr;
+	LayoutObject* positioned_parent = nullptr;
 };
 
 struct LayoutObject {
@@ -26,16 +33,14 @@ struct LayoutObject {
 		TextBox
 	> box;
 
-	absl::variant<
-		absl::monostate,	// empty
-		BlockBox*,			// first-child
-		scene2d::Node*,		// Node containing inlines
-		std::unique_ptr<BlockFormatContext>		// nested BFC, in-flow
-	> inner;
 	uint32_t flags = 0;
 	absl::optional<BlockFormatContext> bfc;
 	absl::optional<InlineFormatContext> ifc;
 	std::unique_ptr<LayoutObject> anon_block;
+
+	float min_width = 0.0f;
+	float max_width = std::numeric_limits<float>::infinity();
+	absl::optional<float> prefer_height;
 
 	const Style* style;
 	LayoutObject* parent;
@@ -45,13 +50,15 @@ struct LayoutObject {
 
 	void reset();
 	
-	static void reflow(LayoutObject* o, const scene2d::DimensionF& viewport_size);
+	static void reflow(FlowRoot root, const scene2d::DimensionF& viewport_size);
+	static void measure(LayoutObject* o, float viewport_height);
+	static void arrange(LayoutObject* o, BlockFormatContext& bfc);
 };
 
 class LayoutTreeBuilder {
 public:
 	LayoutTreeBuilder(scene2d::Node* node);
-	std::vector<LayoutObject*> build();
+	std::vector<FlowRoot> build();
 private:
 	void initFlowRoot(scene2d::Node* node);
 	void prepareChild(scene2d::Node* node);

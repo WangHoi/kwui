@@ -157,8 +157,8 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 	root_->reflowAbsolutelyPositioned(size.width, size.height);
 	*/
 	style::LayoutTreeBuilder b(root_);
-	std::vector<style::LayoutObject*> flow_roots = b.build();
-	for (auto flow_root : flow_roots) {
+	std::vector<style::FlowRoot> flow_roots = b.build();
+	for (auto& flow_root : flow_roots) {
 		style::LayoutObject::reflow(flow_root, size);
 	}
 }
@@ -202,14 +202,14 @@ PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 		p += node->inline_box_.boundingRect().origin();
 	}
 
-	Node* pn = node->absolutelyPositionedAncestor();
+	Node* pn = node->positionedAncestor();
 	while (pn) {
 		if (pn->computed_style_.display == style::DisplayType::Block) {
 			p += pn->block_box_.pos;
 		} else if (node->computed_style_.display == style::DisplayType::Inline) {
 			p += pn->inline_box_.boundingRect().origin();
 		}
-		pn = pn->absolutelyPositionedAncestor();
+		pn = pn->positionedAncestor();
 	}
 	return p;
 }

@@ -150,7 +150,7 @@ public:
 	bool positioned() const;
 	bool relativePositioned() const;
 	bool absolutelyPositioned() const;
-	Node* absolutelyPositionedAncestor() const;
+	Node* positionedAncestor() const;
 
 	scene2d::PointF getMousePosition() const;
 	void requestPaint();
