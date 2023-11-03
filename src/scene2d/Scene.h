@@ -75,6 +75,7 @@ private:
 	Node* root_;
 	base::WeakObjectProxy<Scene> *weakptr_;
 	std::vector<std::unique_ptr<style::StyleRule>> style_rules_;
+	std::vector<style::FlowRoot> flow_roots_;
 
 	friend class Node;
 };

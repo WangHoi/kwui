@@ -2,8 +2,13 @@
 #include "BlockLayout.h"
 #include "InlineLayout.h"
 #include "TextLayout.h"
+
 namespace scene2d {
 class Node;
+}
+
+namespace graph2d {
+class PainterInterface;
 }
 
 namespace style {
@@ -12,7 +17,7 @@ struct LayoutObject;
 
 struct TextBox {
 	graph2d::TextFlowInterface* text_flow = nullptr;
-	TextBoxes text_boxes;
+	GlyphRunBoxes glyph_run_boxes;
 };
 
 struct FlowRoot {
@@ -42,17 +47,45 @@ struct LayoutObject {
 	float max_width = std::numeric_limits<float>::infinity();
 	absl::optional<float> prefer_height;
 
-	const Style* style;
-	LayoutObject* parent;
-	LayoutObject* next_sibling;
-	LayoutObject* prev_sibling;
-	LayoutObject* first_child;
+	const Style* style = nullptr;
+	LayoutObject* parent = nullptr;
+	LayoutObject* next_sibling = nullptr;
+	LayoutObject* prev_sibling = nullptr;
+	LayoutObject* first_child = nullptr;
 
+	void init(const Style* style);
 	void reset();
 	
 	static void reflow(FlowRoot root, const scene2d::DimensionF& viewport_size);
+	static void paint(FlowRoot root, graph2d::PainterInterface* painter);
+
+private:
+	enum ScrollbarPolicy {
+		Hidden,
+		Stable,
+		StableBothEdges,
+	};
+
 	static void measure(LayoutObject* o, float viewport_height);
-	static void arrange(LayoutObject* o, BlockFormatContext& bfc);
+	static void arrange(LayoutObject* o,
+		BlockFormatContext& bfc,
+		const scene2d::DimensionF& viewport_size);
+	static void arrange(LayoutObject* o,
+		BlockFormatContext& bfc,
+		const scene2d::DimensionF& viewport_size,
+		ScrollbarPolicy scroll_y);
+	static void arrangeBlockX(LayoutObject* o,
+		BlockFormatContext& bfc,
+		const scene2d::DimensionF& viewport_size,
+		ScrollbarPolicy scroll_y);
+	static void arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc);
+	static void arrangeBlockChildren(LayoutObject* o,
+		BlockFormatContext& bfc,
+		const scene2d::DimensionF& viewport_size,
+		ScrollbarPolicy scroll_y);
+	static void arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
+	static void arrange(LayoutObject* o, InlineFormatContext& ifc);
+	static void paint(LayoutObject *o, graph2d::PainterInterface* painter);
 };
 
 class LayoutTreeBuilder {

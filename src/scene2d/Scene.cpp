@@ -157,16 +157,19 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 	root_->reflowAbsolutelyPositioned(size.width, size.height);
 	*/
 	style::LayoutTreeBuilder b(root_);
-	std::vector<style::FlowRoot> flow_roots = b.build();
-	for (auto& flow_root : flow_roots) {
+	flow_roots_ = b.build();
+	for (auto& flow_root : flow_roots_) {
 		style::LayoutObject::reflow(flow_root, size);
 	}
 }
 
 void Scene::paint(graph2d::PainterInterface* painter)
 {
-	style::BlockPaintContext bpc;
-	paintNode(root_, bpc, painter);
+	// style::BlockPaintContext bpc;
+	// paintNode(root_, bpc, painter);
+	for (auto& flow_root : flow_roots_) {
+		style::LayoutObject::paint(flow_root, painter);
+	}
 }
 
 scene2d::PointF Scene::getMousePosition() const

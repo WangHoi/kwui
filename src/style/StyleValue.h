@@ -7,6 +7,7 @@
 #include <optional>
 #include "base/base.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/variant.h"
 
 namespace style {
 

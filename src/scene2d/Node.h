@@ -165,14 +165,14 @@ public:
 		return Node::eachChild(this, std::move(f));
 	}
 	template<typename F>
-	static void eachChild(Node* node, F&& f);
+	static void eachChild(Node* node, F f);
 	template<typename F>
 	inline void eachLayoutChild(F&& f)
 	{
 		return Node::eachLayoutChild(this, std::move(f));
 	}
 	template<typename F>
-	static void eachLayoutChild(Node* node, F&& f);
+	static void eachLayoutChild(Node* node, F f);
 
 protected:
 	static void layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
@@ -198,7 +198,7 @@ protected:
 	// Text
 	std::string text_;
 	std::unique_ptr<graph2d::TextFlowInterface> text_flow_;
-	style::TextBoxes text_boxes_; // Formatted text boxes
+	style::GlyphRunBoxes text_boxes_; // Formatted text boxes
 
 	// Element
 	base::string_atom tag_;
@@ -237,7 +237,7 @@ protected:
 };
 
 template<typename F>
-void Node::eachChild(Node* node, F&& f)
+void Node::eachChild(Node* node, F f)
 {
 	for (Node* child : node->children()) {
 		f(child);
@@ -245,7 +245,7 @@ void Node::eachChild(Node* node, F&& f)
 }
 
 template<typename F>
-void Node::eachLayoutChild(Node* node, F&& f)
+void Node::eachLayoutChild(Node* node, F f)
 {
 	for (Node* child : node->children()) {
 		if (child->type() == NodeType::NODE_TEXT) {

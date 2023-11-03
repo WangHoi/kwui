@@ -115,6 +115,7 @@ protected:
 
 	HRESULT ProduceGlyphRuns(
 		graph2d::TextFlowSinkInterface* flowSink,
+		style::LineBox* line,
 		const scene2d::RectF& rect,
 		const ClusterPosition& clusterStart,
 		const ClusterPosition& clusterEnd

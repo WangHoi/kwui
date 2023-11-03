@@ -473,12 +473,13 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 		while (cluster.textPosition < textLength)
 		{
 			// Pull the next rect from the source.
+			style::LineBox* line = nullptr;
 			float width;
 			bool empty_line;
 			if (first) {
-				flowSource->getCurrentLine(fontHeight, rect.left, width, empty_line);
+				line = flowSource->getCurrentLine(fontHeight, rect.left, width, empty_line);
 			} else {
-				flowSource->getNextLine(fontHeight, rect.left, width);
+				line = flowSource->getNextLine(fontHeight, rect.left, width);
 				empty_line = true;
 			}
 			first = false;
@@ -504,7 +505,7 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 			}
 
 			// Push the glyph runs to the sink.
-			if (FAILED(ProduceGlyphRuns(flowSink, rect, cluster, nextCluster)))
+			if (FAILED(ProduceGlyphRuns(flowSink, line, rect, cluster, nextCluster)))
 				break;
 
 			cluster = nextCluster;
@@ -587,6 +588,7 @@ bool TextFlow::FitText(
 
 HRESULT TextFlow::ProduceGlyphRuns(
 	graph2d::TextFlowSinkInterface* flowSink,
+	style::LineBox* line,
 	const scene2d::RectF& rect,
 	const ClusterPosition& clusterStart,
 	const ClusterPosition& clusterEnd
@@ -713,7 +715,7 @@ HRESULT TextFlow::ProduceGlyphRuns(
 			scene2d::PointF pos(
 				(run.bidiLevel & 1) ? (x + runWidth) : (x), // origin starts from right if RTL
 				y);
-			flowSink->setGlyphRun(pos, std::move(glyph_run));
+			flowSink->addGlyphRun(line, pos, std::move(glyph_run));
 
 			x += runWidth;
 		}

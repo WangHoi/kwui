@@ -1,5 +1,4 @@
 #pragma once
-#include "InlineLayout.h"
 #include "graph2d/TextLayout.h"
 #include "style/StyleValue.h"
 #include <vector>
@@ -8,7 +7,10 @@
 
 namespace style {
 
-struct TextBoxes
+struct LineBox;
+struct InlineBox;
+
+struct GlyphRunBoxes
 {
 	std::vector<std::unique_ptr<graph2d::GlyphRunInterface>> glyph_runs;
 	std::vector<std::unique_ptr<InlineBox>> inline_boxes;
@@ -20,30 +22,41 @@ struct TextBoxes
 	}
 };
 
-class InlineBoxBuilder;
+class LineBoxInterface {
+public:
+	virtual LineBox* getCurrentLine() = 0;
+	virtual LineBox* getNextLine() = 0;
+};
 
 class TextFlowSource : public graph2d::TextFlowSourceInterface
 {
 public:
-	TextFlowSource(InlineBoxBuilder& ibb);
+	TextFlowSource(LineBoxInterface* lbi);
 	// 通过 TextFlowSourceInterface 继承
-	void getCurrentLine(float fontHeight, float& left, float& width, bool& empty) override;
-	void getNextLine(float fontHeight, float& left, float& width) override;
+	LineBox* getCurrentLine(float fontHeight, float& left, float& width, bool& empty) override;
+	LineBox* getNextLine(float fontHeight, float& left, float& width) override;
 
 private:
-	InlineBoxBuilder& ibb_;
+	LineBoxInterface *lbi_;
 };
 
+class GlyphRunSinkInterface {
+public:
+	virtual void prepare(size_t glyph_count) = 0;
+	virtual void addGlyphRun(style::LineBox* line,
+		const scene2d::PointF& pos,
+		std::unique_ptr<graph2d::GlyphRunInterface> glyph_run) = 0;
+};
 class TextFlowSink : public graph2d::TextFlowSinkInterface {
 public:
-	TextFlowSink(InlineBoxBuilder& ibb);
+	TextFlowSink(GlyphRunSinkInterface* sink);
 	void prepare(size_t glyph_count) override;
-	void setGlyphRun(
+	void addGlyphRun(style::LineBox* line,
 		const scene2d::PointF& pos,
 		std::unique_ptr<graph2d::GlyphRunInterface> glyph_run) override;
 
 private:
-	InlineBoxBuilder& ibb_;
+	GlyphRunSinkInterface* sink_;
 };
 
 }

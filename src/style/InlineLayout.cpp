@@ -14,8 +14,8 @@ void InlineBoxBuilder::addText(scene2d::Node* node)
     text_node_ = node;
     text_node_->inline_box_ = InlineBox();
     beginInline(&text_node_->inline_box_);
-	TextFlowSource source(*this);
-	TextFlowSink sink(*this);
+	TextFlowSource source(this);
+	TextFlowSink sink(this);
     node->text_boxes_.reset();
 	node->text_flow_->flowText(&source, &sink);
     endInline();
@@ -38,7 +38,7 @@ void InlineBoxBuilder::addInlineBlock(scene2d::Node* node)
     endInline();
 }
 
-void InlineBoxBuilder::addGlyphRun(const scene2d::PointF& pos, std::unique_ptr<graph2d::GlyphRunInterface> glyph_run)
+void InlineBoxBuilder::addGlyphRun(LineBox* line, const scene2d::PointF& pos, std::unique_ptr<graph2d::GlyphRunInterface> glyph_run)
 {
     std::unique_ptr<InlineBox> inline_box = std::make_unique<InlineBox>();
     inline_box->type = InlineBoxType::WithGlyphRun;
@@ -165,6 +165,16 @@ LineBox* InlineFormatContext::getLineBox(float pref_min_width)
     LineBox* lb = line_boxes_.back().get();
     if (lb->inline_boxes.empty() || lb->offset_x + pref_min_width <= lb->avail_width)
         return lb;
+    return newLineBox();
+}
+
+LineBox* InlineFormatContext::getCurrentLine()
+{
+    return getLineBox(0.0f);
+}
+
+LineBox* InlineFormatContext::getNextLine()
+{
     return newLineBox();
 }
 

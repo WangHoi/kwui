@@ -44,6 +44,7 @@ Node::Node(Scene* scene, NodeType type)
 {
 	weakptr_ = new base::WeakObjectProxy<Node>(this);
 	weakptr_->retain();
+	layout_.init(&computed_style_);
 }
 
 Node::Node(Scene* scene, NodeType type, const std::string& text)
@@ -834,7 +835,7 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 	float borpad_top = box.border.top + box.padding.top;
 	float borpad_bottom = box.border.bottom + box.padding.bottom;
 
-	box.pos.x = bfc.contg_left;
+	box.pos.x = bfc.contg_left_edge;
 	if (borpad_top > 0) {
 		float coll_margin = style::collapse_margin(box.margin.top,
 			(bfc.margin_bottom_edge - bfc.border_bottom_edge));
@@ -849,8 +850,8 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		bfc.margin_bottom_edge = bfc.border_bottom_edge + coll_margin;
 	}
 
-	base::scoped_setter _(bfc.contg_left,
-		bfc.contg_left + box.margin.left + box.border.left + box.padding.left);
+	base::scoped_setter _(bfc.contg_left_edge,
+		bfc.contg_left_edge + box.margin.left + box.border.left + box.padding.left);
 	if (box.type == style::BlockBoxType::WithBlockChildren || box.type == style::BlockBoxType::Empty) {
 		float saved_bfc_margin_bottom = bfc.margin_bottom_edge;
 		box.eachChild([&](style::BlockBox* child) {
@@ -872,10 +873,10 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		}
 	} else if (box.type == style::BlockBoxType::WithInlineChildren) {
 		Node* contg_node = std::get<Node*>(box.payload);
-		contg_node->ifc_.emplace(bfc, bfc.contg_left, box.content.width);
+		contg_node->ifc_.emplace(bfc, bfc.contg_left_edge, box.content.width);
 		LOG(INFO)
 			<< "<" << contg_node->tag_ << "> "
-			<< "begin IFC pos=" << PointF(bfc.contg_left, bfc.margin_bottom_edge)
+			<< "begin IFC pos=" << PointF(bfc.contg_left_edge, bfc.margin_bottom_edge)
 			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
 		style::InlineBoxBuilder ibb(*contg_node->ifc_, &contg_node->inline_box_);
 		contg_node->eachLayoutChild([&](Node* child) {

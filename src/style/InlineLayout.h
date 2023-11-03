@@ -1,5 +1,6 @@
 #pragma once
 #include "Layout.h"
+#include "TextLayout.h"
 #include "StyleValue.h"
 #include "scene2d/geom_types.h"
 #include "base/log.h"
@@ -20,7 +21,7 @@ class BlockFormatContext;
 class InlineFormatContext;
 class InlineBox;
 struct LineBox;
-struct TextBoxes;
+struct GlyphRunBoxes;
 enum class InlineBoxType {
 	Empty,
 	WithGlyphRun,
@@ -66,7 +67,7 @@ struct LineBox {
 	void layoutArrange(float offset_y, style::TextAlign text_align);
 };
 
-class InlineBoxBuilder {
+class InlineBoxBuilder : public LineBoxInterface, public GlyphRunSinkInterface {
 public:
 	InlineBoxBuilder(InlineFormatContext& ifc, InlineBox* root);
 
@@ -76,14 +77,18 @@ public:
 	//absl::optional<float> containingBlockHeight() const;
 	void addText(scene2d::Node* node);
 	void addInlineBlock(scene2d::Node* node);
-	void addGlyphRun(
-		const scene2d::PointF& pos,
-		std::unique_ptr<graph2d::GlyphRunInterface> glyph_run);
 	void appendGlyphRun(InlineBox* box);
-	LineBox* getCurrentLine();
-	LineBox* getNextLine();
 	void beginInline(InlineBox* box);
 	void endInline();
+
+	LineBox* getCurrentLine() override;
+	LineBox* getNextLine() override;
+
+	void prepare(size_t /* glyphCount */) override {}
+	void addGlyphRun(
+		LineBox* line,
+		const scene2d::PointF& pos,
+		std::unique_ptr<graph2d::GlyphRunInterface> glyph_run) override;
 
 private:
 	InlineFormatContext& ifc_;
@@ -95,7 +100,7 @@ private:
 	std::vector<std::tuple<InlineBox*, InlineBox*>> stack_;
 };
 
-class InlineFormatContext {
+class InlineFormatContext : public LineBoxInterface {
 public:
 	InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width);
 	~InlineFormatContext();
@@ -115,6 +120,9 @@ public:
 		return height_;
 	}
 	float getLayoutWidth() const;
+
+	LineBox* getCurrentLine() override;
+	LineBox* getNextLine() override;
 
 private:
 	BlockFormatContext& bfc_;

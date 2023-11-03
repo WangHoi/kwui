@@ -2,6 +2,10 @@
 #include "scene2d/geom_types.h"
 #include "absl/types/optional.h"
 
+namespace style {
+struct LineBox;
+}
+
 namespace graph2d {
 
 class GlyphRunInterface {
@@ -11,14 +15,15 @@ public:
 
 class TextFlowSourceInterface {
 public:
-    virtual void getCurrentLine(float fontHeight, float& left, float& width, bool& empty) = 0;
-    virtual void getNextLine(float fontHeight, float& left, float& width) = 0;
+    virtual style::LineBox* getCurrentLine(float fontHeight, float& left, float& width, bool& empty) = 0;
+    virtual style::LineBox* getNextLine(float fontHeight, float& left, float& width) = 0;
 };
 
 class TextFlowSinkInterface {
 public:
     virtual void prepare(size_t glyph_count) = 0;
-    virtual void setGlyphRun(
+    virtual void addGlyphRun(
+        style::LineBox* line,
         const scene2d::PointF& pos,
         std::unique_ptr<GlyphRunInterface> glyph_run) = 0;
 };
