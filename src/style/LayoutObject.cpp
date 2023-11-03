@@ -8,7 +8,7 @@
 
 namespace style {
 
-static const float SCROLLBAR_GUTTER_WIDTH = 12.0f;
+static const float SCROLLBAR_GUTTER_WIDTH = 16.0f;
 
 void LayoutObject::init(const Style* st)
 {
@@ -133,11 +133,19 @@ void LayoutObject::arrange(LayoutObject* o, BlockFormatContext& bfc, const scene
 	ScrollbarPolicy scroll_y = ScrollbarPolicy::Hidden;
 	if (st.overflow_y == OverflowType::Scroll)
 		scroll_y = ScrollbarPolicy::Stable;
+	
+	float saved_border_right_edge = bfc.border_right_edge;
+	float saved_border_bottom_edge = bfc.border_bottom_edge;
+	float saved_margin_bottom_edge = bfc.margin_bottom_edge;
 	arrange(o, bfc, viewport_size, scroll_y);
 
-	if (st.overflow_y == OverflowType::Auto && false) {
+	const BlockBox& b = absl::get<BlockBox>(o->box);
+	if (st.overflow_y == OverflowType::Auto && bfc.border_right_edge > b.pos.x + b.paddingRect().right) {
 		// handle overflow-y
 		scroll_y = ScrollbarPolicy::Stable;
+		bfc.border_right_edge = saved_border_right_edge;
+		bfc.border_bottom_edge = saved_border_bottom_edge;
+		bfc.margin_bottom_edge = saved_margin_bottom_edge;
 		arrange(o, bfc, viewport_size, scroll_y);
 	}
 }
@@ -151,7 +159,7 @@ void LayoutObject::arrange(LayoutObject* o,
 	if (st.display == DisplayType::Block) {
 		arrangeBlockX(o, bfc, viewport_size, scroll_y);
 		arrangeBlockTop(o, bfc);
-		arrangeBlockChildren(o, bfc, viewport_size, scroll_y);
+		arrangeBlockChildren(o, bfc, viewport_size);
 		arrangeBlockBottom(o, bfc);
 	} else {
 		LOG(WARNING) << "arrange " << st.display << " not implemented.";
@@ -197,6 +205,14 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 	b.border.right = try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
 	b.margin.right = solver.marginRight();
 
+	if (scroll_y == ScrollbarPolicy::Stable) {
+		b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
+	} else if (scroll_y == ScrollbarPolicy::StableBothEdges) {
+		b.inner_padding.left = SCROLLBAR_GUTTER_WIDTH;
+		b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
+	}
+	b.content.width = std::max(0.0f, b.content.width - b.inner_padding.left - b.inner_padding.right);
+
 	// Compute height, top and bottom margins
 	b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);
 	b.border.top = try_resolve_to_px(st.border_top_width, contg_width).value_or(0);
@@ -207,7 +223,10 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 	b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_width).value_or(0);
 
 	// Compute pos.x
-	b.pos.x = bfc.contg_left_edge + b.margin.left;
+	b.pos.x = bfc.contg_left_edge;
+
+	// Update max border_right_edge
+	bfc.border_right_edge = std::max(bfc.border_right_edge, bfc.contg_left_edge + b.borderRect().right);
 }
 
 void LayoutObject::arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc)
@@ -238,8 +257,7 @@ void LayoutObject::arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc)
 
 void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 	BlockFormatContext& bfc,
-	const scene2d::DimensionF& viewport_size,
-	ScrollbarPolicy scroll_y)
+	const scene2d::DimensionF& viewport_size)
 {
 	CHECK(absl::holds_alternative<BlockBox>(o->box));
 
@@ -249,21 +267,8 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 
 	if (o->flags & NEW_BFC_FLAG) {
 		BlockFormatContext& inner_bfc = o->bfc.value();
-		if (scroll_y == ScrollbarPolicy::Stable) {
-			inner_bfc.contg_right_edge = std::max(bfc.contg_left_edge,
-				bfc.contg_right_edge - SCROLLBAR_GUTTER_WIDTH);
-		} else if (scroll_y == ScrollbarPolicy::StableBothEdges) {
-			if (bfc.contg_right_edge - bfc.contg_left_edge >= 2.0f * SCROLLBAR_GUTTER_WIDTH) {
-				inner_bfc.contg_left_edge = bfc.contg_left_edge + SCROLLBAR_GUTTER_WIDTH;
-				inner_bfc.contg_right_edge = bfc.contg_right_edge - SCROLLBAR_GUTTER_WIDTH;
-			} else {
-				float mid = 0.5f * (bfc.contg_left_edge + bfc.contg_right_edge);
-				inner_bfc.contg_left_edge = inner_bfc.contg_right_edge = mid;
-			}
-		} else {
-			inner_bfc.contg_left_edge = bfc.contg_left_edge;
-			inner_bfc.contg_right_edge = bfc.contg_right_edge;
-		}
+		inner_bfc.contg_left_edge = bfc.contg_left_edge;
+		inner_bfc.contg_right_edge = bfc.contg_right_edge;
 		inner_bfc.border_right_edge = inner_bfc.contg_left_edge;
 		inner_bfc.border_bottom_edge = inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
 		inner_bfc.contg_height = bfc.contg_height;
@@ -281,7 +286,7 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
 			LayoutObject* child = o->first_child;
 			do {
-				arrange(child, bfc, viewport_size, scroll_y);
+				arrange(child, bfc, viewport_size);
 				child = child->next_sibling;
 			} while (child != o->first_child);
 		}

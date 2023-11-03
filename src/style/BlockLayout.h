@@ -30,6 +30,7 @@ struct BlockBox {
 	EdgeOffsetF margin; // margin edges
 	EdgeOffsetF border; // border edges
 	EdgeOffsetF padding; // padding edges
+	EdgeOffsetF inner_padding;
 	scene2d::DimensionF content; // content size
 
 	absl::optional<float> prefer_height;
@@ -56,30 +57,30 @@ struct BlockBox {
 		return scene2d::RectF::fromXYWH(
 			0,
 			0,
-			margin.left + border.left + padding.left + content.width + padding.right + border.right + margin.right,
-			margin.top + border.top + padding.top + content.height + padding.bottom + border.bottom + margin.bottom);
+			margin.left + border.left + padding.left + inner_padding.left + content.width + inner_padding.right + padding.right + border.right + margin.right,
+			margin.top + border.top + padding.top + inner_padding.top + content.height + inner_padding.bottom + padding.bottom + border.bottom + margin.bottom);
 	}
 	inline scene2d::RectF borderRect() const
 	{
 		return scene2d::RectF::fromXYWH(
 			margin.left,
 			margin.top,
-			border.left + padding.left + content.width + padding.right + border.right,
-			border.top + padding.top + content.height + padding.bottom + border.bottom);
+			border.left + padding.left + inner_padding.left + content.width + inner_padding.right + padding.right + border.right,
+			border.top + padding.top + inner_padding.top + content.height + inner_padding.bottom + padding.bottom + border.bottom);
 	}
 	inline scene2d::RectF paddingRect() const
 	{
 		return scene2d::RectF::fromXYWH(
 			margin.left + border.left,
 			margin.top + border.top,
-			padding.left + content.width + padding.right,
-			padding.top + content.height + padding.bottom);
+			padding.left + inner_padding.left + content.width + inner_padding.right + padding.right,
+			padding.top + inner_padding.top + content.height + inner_padding.bottom + padding.bottom);
 	}
 	inline scene2d::RectF contentRect() const
 	{
 		return scene2d::RectF::fromXYWH(
-			margin.left + border.left + padding.left,
-			margin.top + border.top + padding.top,
+			margin.left + border.left + padding.left + inner_padding.left,
+			margin.top + border.top + padding.top + inner_padding.top,
 			content.width,
 			content.height);
 	}

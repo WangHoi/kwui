@@ -2,8 +2,8 @@
 <head>
     <style type="text/css">
         .outer {
-            overflow-y: scroll;
-            width: 200px;
+			overflow-y: auto;
+            width: 150px;
             height: 100px;
             padding: 50px 0px;
             background-color: #eee;
@@ -11,13 +11,13 @@
         }
         .inner {
             /*margin-left: -100px;*/
-		    margin-left:50px;
+		    margin-left:auto;
             margin-right: 0px;
             margin-top: 0px;
-            width: 90%;
+            width: 160px;
             height: 50%;
             padding: 0px 0px;
-            border: 2px solid #080;
+            border: 10px solid #c7edc280;
             background-color: #00ffff;
         }
 		.nested {
@@ -32,10 +32,11 @@
 <body>
     <div class="outer">
         <div class="inner">
+			<div class="nested"></div>
 		</div>
         <!-- <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius Syntax</span> -->
         <!--<span>This property is a shorthand for the following</span>-->
-        <span>a b c d e f g h i j k l m o p q r s t u v w x y z</span>
+        <div class="inner"></div>
     </div>
 </body>
 </html>

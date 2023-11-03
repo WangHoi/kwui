@@ -81,8 +81,7 @@ private:
 	static void arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc);
 	static void arrangeBlockChildren(LayoutObject* o,
 		BlockFormatContext& bfc,
-		const scene2d::DimensionF& viewport_size,
-		ScrollbarPolicy scroll_y);
+		const scene2d::DimensionF& viewport_size);
 	static void arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
 	static void arrange(LayoutObject* o, InlineFormatContext& ifc);
 	static void paint(LayoutObject *o, graph2d::PainterInterface* painter);
