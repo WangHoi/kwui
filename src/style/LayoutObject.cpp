@@ -18,11 +18,13 @@ void LayoutObject::init(const Style* st)
 
 void LayoutObject::reset()
 {
-	LOG(WARNING) << "TODO: implement LayoutObject::reset()";
 	flags = 0;
 	min_width = 0.0f;
 	max_width = std::numeric_limits<float>::infinity();
 	prefer_height = absl::nullopt;
+	parent = nullptr;
+	first_child = nullptr;
+	next_sibling = prev_sibling = this;
 }
 
 void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
@@ -65,9 +67,6 @@ void LayoutObject::paint(FlowRoot fl, graph2d::PainterInterface* painter)
 void LayoutObject::measure(LayoutObject* o, float viewport_height)
 {
 	const style::Style& st = *o->style;
-	absl::optional<float> parent_height = o->parent
-		? o->parent->prefer_height : absl::make_optional(viewport_height);
-	o->prefer_height = try_resolve_to_px(st.height, parent_height);
 
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
 		float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
@@ -203,11 +202,12 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 	b.border.top = try_resolve_to_px(st.border_top_width, contg_width).value_or(0);
 	b.padding.top = try_resolve_to_px(st.padding_top, contg_width).value_or(0);
 
-	b.prefer_height = try_resolve_to_px(st.height, bfc.contg_height);
-
 	b.padding.bottom = try_resolve_to_px(st.padding_bottom, contg_width).value_or(0);
 	b.border.bottom = try_resolve_to_px(st.border_bottom_width, contg_width).value_or(0);
 	b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_width).value_or(0);
+
+	// Compute pos.x
+	b.pos.x = bfc.contg_left_edge + b.margin.left;
 }
 
 void LayoutObject::arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc)
@@ -270,13 +270,21 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 		bfc = inner_bfc;
 	}
 
+	box.prefer_height = try_resolve_to_px(o->style->height, bfc.contg_height);
+
 	float saved_bfc_margin_bottom = bfc.margin_bottom_edge;
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
-		LayoutObject* child = o->first_child;
-		do {
-			arrange(child, bfc, viewport_size, scroll_y);
-			child = child->next_sibling;
-		} while (child != o->first_child);
+		{
+			base::scoped_setter _1(bfc.contg_height,
+				box.prefer_height);
+			base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
+			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
+			LayoutObject* child = o->first_child;
+			do {
+				arrange(child, bfc, viewport_size, scroll_y);
+				child = child->next_sibling;
+			} while (child != o->first_child);
+		}
 
 		BlockBox& box = absl::get<BlockBox>(o->box);
 		if (box.prefer_height.has_value()) {
@@ -299,12 +307,17 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 			<< "begin IFC pos=" << scene2d::PointF(bfc.contg_left_edge, bfc.margin_bottom_edge)
 			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
 
-		LayoutObject* child = o->first_child;
-		do {
-			arrange(child, *o->ifc);
-			child = child->next_sibling;
-		} while (child != o->first_child);
-		o->ifc->layoutArrange(o->style->text_align);
+		{
+			base::scoped_setter _1(bfc.contg_height, box.prefer_height);
+			base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
+			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
+			LayoutObject* child = o->first_child;
+			do {
+				arrange(child, *o->ifc);
+				child = child->next_sibling;
+			} while (child != o->first_child);
+			o->ifc->layoutArrange(o->style->text_align);
+		}
 
 		BlockBox& box = absl::get<BlockBox>(o->box);
 		if (box.prefer_height.has_value()) {
@@ -323,6 +336,13 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 		LOG(INFO)
 			<< "end IFC size=" << box.content
 			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
+	} else {
+		BlockBox& box = absl::get<BlockBox>(o->box);
+		if (box.prefer_height.has_value()) {
+			box.content.height = *box.prefer_height;
+			bfc.border_bottom_edge = bfc.margin_bottom_edge + *box.prefer_height;
+			bfc.margin_bottom_edge = bfc.border_bottom_edge;
+		}
 	}
 }
 

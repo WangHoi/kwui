@@ -3,26 +3,40 @@
     <style type="text/css">
         .outer {
 			overflow-y: auto;
-            width: 200px;
+            width: 150px;
             height: 100px;
-            padding: 50px 10px;
+            padding: 50px 0px;
             background-color: #eee;
             border: 2px solid black;
         }
         .inner {
-            margin: 0px 100px 0px 0px;
-            width: 80%;
+            /*margin-left: -100px;*/
+		    margin-left:auto;
+            margin-right: 0px;
+            margin-top: 0px;
+            width: 160px;
             height: 50%;
-            border: 2px solid green;
-			background-color: #00ffff;
+            padding: 0px 0px;
+            border: 10px solid #c7edc280;
+            background-color: #00ffff;
         }
+		.nested {
+			width: 160px;
+			height: 50px;
+			background-color:red;
+			margin-left:auto;
+			margin-right: 50px;
+		}
     </style>
 </head>
 <body>
     <div class="outer">
-        <div class="inner"></div>
+        <div class="inner">
+			<div class="nested"></div>
+		</div>
         <!-- <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius Syntax</span> -->
-        <span>This property is a shorthand for the following</span>
+        <!--<span>This property is a shorthand for the following</span>-->
+        <div class="inner"></div>
     </div>
 </body>
 </html>

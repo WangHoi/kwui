@@ -43,7 +43,7 @@ function Div(props, kids) {
 
 var simple_stylesheet = {
 	".outer": {
-		"overflow-y": "auto",
+		"overflow-y": "scroll",
 		"width": "200px",
 		"height": "100px",
 		"margin-left": "8px",
@@ -57,7 +57,7 @@ var simple_stylesheet = {
 		"border-color": "#000",
 	},
 	".inner": {
-		"width": "80%",
+		"width": "90%",
 		"height": "50%",
 		"background-color": "#00ffff",
 		"font-size": "16px",
