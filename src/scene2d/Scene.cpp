@@ -120,7 +120,13 @@ void Scene::updateComponent(JSValue comp_state)
 
 Node* Scene::pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos)
 {
-	return pickNode(root_, pos, flag_mask, out_local_pos);
+	//return pickNode(root_, pos, flag_mask, out_local_pos);
+	for (auto it = flow_roots_.rbegin(); it != flow_roots_.rend(); ++it) {
+		style::LayoutObject* o = style::LayoutObject::pick(*it, pos, flag_mask, out_local_pos);
+		if (o)
+			return o->node;
+	}
+	return nullptr;
 }
 
 void Scene::appendStyleRule(std::unique_ptr<style::StyleRule>&& rule)
@@ -167,9 +173,7 @@ void Scene::paint(graph2d::PainterInterface* painter)
 {
 	// style::BlockPaintContext bpc;
 	// paintNode(root_, bpc, painter);
-	for (auto& flow_root : flow_roots_) {
-		style::LayoutObject::paint(flow_root, painter);
-	}
+	paintNode(root_, painter);
 }
 
 scene2d::PointF Scene::getMousePosition() const
@@ -409,6 +413,10 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::Painte
 	}
 }
 
+void Scene::paintNode(Node* node, graph2d::PainterInterface* painter)
+{
+	style::LayoutObject::paint(&node->layout_, painter);
+}
 Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos/* = nullptr */)
 {
 	if (!node->visible()) {

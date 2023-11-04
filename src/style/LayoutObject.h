@@ -53,11 +53,14 @@ struct LayoutObject {
 	LayoutObject* prev_sibling = nullptr;
 	LayoutObject* first_child = nullptr;
 
-	void init(const Style* style);
+	scene2d::Node* node = nullptr;
+
+	void init(const Style* style, scene2d::Node* node);
 	void reset();
-	
+
 	static void reflow(FlowRoot root, const scene2d::DimensionF& viewport_size);
-	static void paint(FlowRoot root, graph2d::PainterInterface* painter);
+	static void paint(LayoutObject* o, graph2d::PainterInterface* painter);
+	static LayoutObject* pick(FlowRoot root, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos);
 
 private:
 	enum ScrollbarPolicy {
@@ -84,7 +87,7 @@ private:
 		const scene2d::DimensionF& viewport_size);
 	static void arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
 	static void arrange(LayoutObject* o, InlineFormatContext& ifc);
-	static void paint(LayoutObject *o, graph2d::PainterInterface* painter);
+	static LayoutObject* pick(LayoutObject *o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos);
 };
 
 class LayoutTreeBuilder {

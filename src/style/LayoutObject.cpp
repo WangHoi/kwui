@@ -10,9 +10,10 @@ namespace style {
 
 static const float SCROLLBAR_GUTTER_WIDTH = 16.0f;
 
-void LayoutObject::init(const Style* st)
+void LayoutObject::init(const Style* st, scene2d::Node* nd)
 {
 	style = st;
+	node = nd;
 	next_sibling = prev_sibling = this;
 }
 
@@ -59,9 +60,48 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 	arrange(fl.root, bfc, viewport_size);
 }
 
-void LayoutObject::paint(FlowRoot fl, graph2d::PainterInterface* painter)
+void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 {
-	paint(fl.root, painter);
+	const Style& st = *o->style;
+
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		const BlockBox& b = absl::get<BlockBox>(o->box);
+		scene2d::RectF border_rect = b.borderRect();
+		scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
+			b.pos.x + border_rect.left,
+			b.pos.y + border_rect.top,
+			border_rect.width(),
+			border_rect.height());
+		LOG(INFO) << "paint box: " << render_rect;
+		painter->drawBox(
+			render_rect,
+			st.border_top_width.pixelOrZero(),
+			st.background_color,
+			st.border_color);
+	} else if (absl::holds_alternative<InlineBox>(o->box)) {
+
+	} else if (absl::holds_alternative<TextBox>(o->box)) {
+		const TextBox& tb = absl::get<TextBox>(o->box);
+		size_t n = tb.glyph_run_boxes.glyph_runs.size();
+		for (size_t i = 0; i < n; ++i) {
+			InlineBox* ibox = tb.glyph_run_boxes.inline_boxes[i].get();
+			graph2d::GlyphRunInterface* gr = tb.glyph_run_boxes.glyph_runs[i].get();
+			scene2d::PointF baseline_origin = ibox->pos;
+			baseline_origin.y += ibox->baseline;
+			painter->drawGlyphRun(baseline_origin, gr, st.color);
+		}
+	}
+
+	LayoutObject* child = o->first_child;
+	if (child) do {
+		paint(child, painter);
+		child = child->next_sibling;
+	} while (child != o->first_child);
+}
+
+LayoutObject* LayoutObject::pick(FlowRoot fl, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos)
+{
+	return nullptr;
 }
 
 void LayoutObject::measure(LayoutObject* o, float viewport_height)
@@ -444,10 +484,12 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
 	}
 }
 
-void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
+LayoutObject* LayoutObject::pick(LayoutObject* o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos)
 {
 	const Style& st = *o->style;
-	
+	LayoutObject* pick_result = nullptr;
+	scene2d::PointF children_offset;
+
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
 		scene2d::RectF border_rect = b.borderRect();
@@ -456,30 +498,36 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			b.pos.y + border_rect.top,
 			border_rect.width(),
 			border_rect.height());
-		painter->drawBox(
-			render_rect,
-			st.border_top_width.pixelOrZero(),
-			st.background_color,
-			st.border_color);
-	} else if (absl::holds_alternative<InlineBox>(o->box)) {
-
-	} else if (absl::holds_alternative<TextBox>(o->box)) {
-		const TextBox& tb = absl::get<TextBox>(o->box);
-		size_t n = tb.glyph_run_boxes.glyph_runs.size();
-		for (size_t i = 0; i < n; ++i) {
-			InlineBox* ibox = tb.glyph_run_boxes.inline_boxes[i].get();
-			graph2d::GlyphRunInterface* gr = tb.glyph_run_boxes.glyph_runs[i].get();
-			scene2d::PointF baseline_origin = ibox->pos;
-			baseline_origin.y += ibox->baseline;
-			painter->drawGlyphRun(baseline_origin, gr, st.color);
+		if (o->node && o->node->testFlags(flag_mask) && render_rect.contains(pos)) {
+			if (out_local_pos)
+				*out_local_pos = pos - render_rect.origin();
+			pick_result = o;
 		}
+		children_offset = b.contentRect().origin();
+	} else if (absl::holds_alternative<InlineBox>(o->box)) {
+		const InlineBox& b = absl::get<InlineBox>(o->box);
+		const scene2d::RectF rect = b.boundingRect();
+		if (o->node && o->node->testFlags(flag_mask) && rect.contains(pos)) {
+			if (out_local_pos)
+				*out_local_pos = pos - rect.origin();
+			pick_result = o;
+		}
+
+		children_offset = b.pos;
+	} else if (absl::holds_alternative<TextBox>(o->box)) {
 	}
 
-	LayoutObject* child = o->first_child;
+	LayoutObject* child = o->first_child->prev_sibling;
 	if (child) do {
-		paint(child, painter);
-		child = child->next_sibling;
+		LayoutObject* picked_child = pick(child, pos, flag_mask, out_local_pos);
+		if (picked_child) {
+			pick_result = picked_child;
+			break;
+		}
+		child = child->prev_sibling;
 	} while (child != o->first_child);
+
+	return pick_result;
 }
 
 LayoutTreeBuilder::LayoutTreeBuilder(scene2d::Node* node)

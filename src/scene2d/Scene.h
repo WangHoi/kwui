@@ -68,6 +68,7 @@ private:
 	bool match(Node* node, style::Selector* selector);
 	void resolveNodeStyle(Node* node);
 	void paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::PainterInterface* painter);
+	void paintNode(Node* node, graph2d::PainterInterface* painter);
 	Node* pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos = nullptr);
 
 	EventContext& event_ctx_;

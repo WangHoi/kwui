@@ -164,6 +164,12 @@ struct RectF {
     }
     inline float width() const { return right - left; }
     inline float height() const { return bottom - top; }
+
+    bool contains(const PointF& pos) const
+    {
+        return (left <= pos.x && pos.x < right && top <= pos.y && pos.y < bottom);
+    }
+
     float left;
     float top;
     float right;

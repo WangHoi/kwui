@@ -44,7 +44,7 @@ Node::Node(Scene* scene, NodeType type)
 {
 	weakptr_ = new base::WeakObjectProxy<Node>(this);
 	weakptr_->retain();
-	layout_.init(&computed_style_);
+	layout_.init(&computed_style_, this);
 }
 
 Node::Node(Scene* scene, NodeType type, const std::string& text)

@@ -7,24 +7,24 @@
 namespace windows {
 namespace control {
 
-class ScrollBarControl : public scene2d::Control {
+class ScrollbarControl : public scene2d::Control {
 public:
     enum Orientation {
         VERTICAL,
         HORIZONTAL,
     };
     static const char* CONTROL_NAME;
-    ScrollBarControl();
+    ScrollbarControl();
     base::string_atom name() override;
     void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
     void onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value) override;
     
     inline Orientation orientation() const { return orient_; }
     inline void setOrientation(Orientation orient) { orient_ = orient; }
-    float innerLength() const { return inner_len_; }
-    void setInnerLength(float len) { inner_len_ = len; }
-    float viewportLength() const { return viewport_len_; }
-    void setViewportLength(float len) { viewport_len_ = len; }
+    float scrollLength() const { return scroll_len_; }
+    void setScrollLength(float len) { scroll_len_ = len; }
+    float clientLength() const { return client_len_; }
+    void setClientLength(float len) { client_len_ = len; }
     float scrollOffset() const { return scroll_offset_; }
     void setScrollOffset(float offset) { scroll_offset_ = offset; }
 
@@ -34,8 +34,8 @@ public:
 
 private:
     Orientation orient_ = VERTICAL;
-    float inner_len_ = 0.0f;
-    float viewport_len_ = 0.0f;
+    float scroll_len_ = 0.0f;
+    float client_len_ = 0.0f;
     float scroll_offset_ = 0.0f;
     graphics::Color bg_color_;
     graphics::Color color_;

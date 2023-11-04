@@ -11,6 +11,6 @@ target_sources(kwui PRIVATE
   Attribute.h
   Control.h
   Control.cpp
-  ScrollBarControl.h
-  ScrollBarControl.cpp
+  ScrollbarControl.h
+  ScrollbarControl.cpp
 )
