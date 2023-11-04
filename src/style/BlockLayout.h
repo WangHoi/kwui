@@ -5,6 +5,7 @@
 #include "base/log.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "absl/strings/str_format.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -96,6 +97,18 @@ struct BlockBox {
 				child = child->next_sibling;
 			} while (child != first_child);
 		}
+	}
+
+	template <typename Sink>
+	friend void AbslStringify(Sink& sink, const BlockBox& o) {
+		absl::Format(&sink, "BlockBox { ");
+		absl::Format(&sink, "pos=%v, ", o.pos);
+		absl::Format(&sink, "margin=%v, ", o.margin);
+		absl::Format(&sink, "border=%v, ", o.border);
+		absl::Format(&sink, "padding=%v, ", o.padding);
+		absl::Format(&sink, "inner_pad=%v, ", o.inner_padding);
+		absl::Format(&sink, "content=%v, ", o.content);
+		absl::Format(&sink, "}");
 	}
 };
 

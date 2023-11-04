@@ -47,6 +47,15 @@ struct InlineBox {
 	float line_box_offset_x = 0; // set by IFC::setupBox()
 
 	scene2d::RectF boundingRect() const;
+
+	template <typename Sink>
+	friend void AbslStringify(Sink& sink, const InlineBox& o) {
+		absl::Format(&sink, "InlineBox { ");
+		absl::Format(&sink, "pos=%v, ", o.pos);
+		absl::Format(&sink, "size=%v, ", o.size);
+		absl::Format(&sink, "baseline=%.0f, ", o.baseline);
+		absl::Format(&sink, "}");
+	}
 };
 
 struct LineBox {

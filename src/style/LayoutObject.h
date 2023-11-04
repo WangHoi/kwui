@@ -2,6 +2,7 @@
 #include "BlockLayout.h"
 #include "InlineLayout.h"
 #include "TextLayout.h"
+#include "absl/strings/str_format.h"
 
 namespace scene2d {
 class Node;
@@ -18,6 +19,11 @@ struct LayoutObject;
 struct TextBox {
 	graph2d::TextFlowInterface* text_flow = nullptr;
 	GlyphRunBoxes glyph_run_boxes;
+
+	template <typename Sink>
+	friend void AbslStringify(Sink& sink, const TextBox& o) {
+		absl::Format(&sink, "TextBox { }");
+	}
 };
 
 struct FlowRoot {
@@ -88,6 +94,20 @@ private:
 	static void arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
 	static void arrange(LayoutObject* o, InlineFormatContext& ifc);
 	static LayoutObject* pick(LayoutObject *o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos);
+
+	template <typename Sink>
+	friend void AbslStringify(Sink& sink, const LayoutObject& o) {
+		absl::Format(&sink, "LayoutObject { ");
+		absl::Format(&sink, "flags=0x%04x, ", o.flags);
+		if (absl::holds_alternative<BlockBox>(o.box)) {
+			absl::Format(&sink, "box=%v, ", absl::get<BlockBox>(o.box));
+		} else if (absl::holds_alternative<InlineBox>(o.box)) {
+			absl::Format(&sink, "box=%v, ", absl::get<InlineBox>(o.box));
+		} else if (absl::holds_alternative<TextBox>(o.box)) {
+			absl::Format(&sink, "box=%v, ", absl::get<TextBox>(o.box));
+		}
+		absl::Format(&sink, "}");
+	}
 };
 
 class LayoutTreeBuilder {

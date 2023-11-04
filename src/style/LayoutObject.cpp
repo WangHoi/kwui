@@ -64,6 +64,10 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 {
 	const Style& st = *o->style;
 
+	static int depth = 0;
+	base::scoped_setter _(depth, depth + 1);
+	LOG(INFO) << std::string(depth, '-') << " paint " << *o;
+
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
 		scene2d::RectF border_rect = b.borderRect();
@@ -72,7 +76,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			b.pos.y + border_rect.top,
 			border_rect.width(),
 			border_rect.height());
-		LOG(INFO) << "paint box: " << render_rect;
+		// LOG(INFO) << "paint box: " << render_rect;
 		painter->drawBox(
 			render_rect,
 			st.border_top_width.pixelOrZero(),
@@ -111,7 +115,7 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
 		float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
 		LayoutObject* child = o->first_child;
-		do {
+		if (child) do {
 			const style::Style& st = *child->style;
 			float margin_left = try_resolve_to_px(st.margin_left, absl::nullopt).value_or(0);
 			float border_left = try_resolve_to_px(st.border_left_width, absl::nullopt).value_or(0);
@@ -146,7 +150,7 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
 		LayoutObject* child = o->first_child;
-		do {
+		if (child) do {
 			measure(child, viewport_height);
 
 			min_width = std::max(min_width, child->min_width);
