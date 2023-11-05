@@ -4,6 +4,7 @@
 #include "graph2d/Painter.h"
 #include "absl/functional/bind_front.h"
 #include "base/log.h"
+#include "graph2d/graph2d.h"
 #include <algorithm>
 
 namespace style {
@@ -475,6 +476,8 @@ private:
 
 void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
 {
+	const auto& st = *o->style;
+
 	if (absl::holds_alternative<TextBox>(o->box)) {
 		TextBox& tb = absl::get<TextBox>(o->box);
 		TextBoxFlow tbf(tb, ifc);
@@ -501,16 +504,24 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
 			child = child->next_sibling;
 		} while (child != o->first_child);
 		
-		float line_height = o->style->line_height.pixelOrZero();
 		std::vector<InlineBox> merged_boxes;
 		for (InlineBox* child : inline_boxes) {
-			if (merged_boxes.empty()) {
-				InlineBox ib = *child;
+			if (merged_boxes.empty() || merged_boxes.back().line_box != child->line_box) {
+				auto fm = graph2d::getFontMetrics(st.font_family.keyword_val.c_str(),
+					st.font_size.pixelOrZero());
+				float line_height = o->style->line_height.pixelOrZero();
+				InlineBox ib;
+				ib.pos = child->pos;
+				ib.baseline = fm.baseline;
+				ib.size.width = child->size.width;
+				ib.size.height = fm.line_height;
+				ib.line_box = child->line_box;
 				ib.line_box->line_height = std::max(ib.line_box->line_height, line_height);
 				merged_boxes.push_back(ib);
 			} else {
 				InlineBox& ib = merged_boxes.back();
-				ib.line_box->line_height = std::max(ib.line_box->line_height, line_height);
+				ib.size.width = std::max(child->pos.x + child->size.width,
+					ib.pos.x + ib.size.width) - ib.pos.x;
 			}
 		}
 		o->box.emplace<std::vector<InlineBox>>(std::move(merged_boxes));
