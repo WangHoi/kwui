@@ -15,5 +15,6 @@ std::unique_ptr<TextFlowInterface> createTextFlow(
 	style::FontStyle font_style,
 	style::FontWeight font_weight,
 	float font_size);
+FlowMetrics getFontMetrics(const char* font_family, float font_size);
 
 }

@@ -21,4 +21,20 @@ std::unique_ptr<TextFlowInterface> createTextFlow(
         ->CreateTextFlow(u16_text, line_height, font_family, font_size, win_font_weight, win_font_style);
 }
 
+FlowMetrics getFontMetrics(const char* font_family, float font_size)
+{
+    FlowMetrics fm;
+    DWRITE_FONT_METRICS dwrite_fm;
+    if (windows::graphics::GraphicDevice::instance()->GetFontMetrics(font_family, dwrite_fm)) {
+        fm.line_height = (dwrite_fm.ascent + dwrite_fm.descent + dwrite_fm.lineGap) * font_size / dwrite_fm.designUnitsPerEm;
+        fm.baseline = dwrite_fm.ascent * font_size / dwrite_fm.designUnitsPerEm;
+    } else {
+        LOG(ERROR) << "graph2d::getFontMetrics failed, \"" << font_family << "\" not found.";
+        fm.line_height = font_size;
+        fm.baseline = fm.line_height * 0.8f;
+    }
+
+    return fm;
+}
+
 }

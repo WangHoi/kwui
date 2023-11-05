@@ -82,7 +82,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			st.border_top_width.pixelOrZero(),
 			st.background_color,
 			st.border_color);
-	} else if (absl::holds_alternative<InlineBox>(o->box)) {
+	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
 
 	} else if (absl::holds_alternative<TextBox>(o->box)) {
 		const TextBox& tb = absl::get<TextBox>(o->box);
@@ -461,6 +461,8 @@ public:
 		inline_box->line_box->addInlineBox(inline_box.get());
 		inline_box->line_box_offset_x = inline_box->line_box->offset_x;
 		inline_box->line_box->offset_x += inline_box->size.width;
+		
+		line->line_height = std::max(line->line_height, fm.line_height);
 
 		text_box_.glyph_run_boxes.inline_boxes.push_back(std::move(inline_box));
 		text_box_.glyph_run_boxes.glyph_runs.push_back(std::move(glyph_run));
@@ -478,13 +480,40 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
 		TextBoxFlow tbf(tb, ifc);
 		tb.glyph_run_boxes.reset();
 		tb.text_flow->flowText(&tbf, &tbf);
-	}
-	if (o->flags & HAS_INLINE_CHILD_FLAG) {
+	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		LayoutObject* child = o->first_child;
-		do {
+		std::vector<InlineBox*> inline_boxes;
+		if (child) do {
 			arrange(child, ifc);
+
+			if (absl::holds_alternative<TextBox>(child->box)) {
+				const auto& child_inline_boxes = absl::get<TextBox>(child->box).glyph_run_boxes.inline_boxes;
+				for (auto& ib : child_inline_boxes) {
+					inline_boxes.push_back(ib.get());
+				}
+			} else if (absl::holds_alternative<std::vector<InlineBox>>(child->box)) {
+				auto& child_inline_boxes = absl::get<std::vector<InlineBox>>(child->box);
+				for (auto& ib : child_inline_boxes) {
+					inline_boxes.push_back(&ib);
+				}
+			}
+
 			child = child->next_sibling;
 		} while (child != o->first_child);
+		
+		float line_height = o->style->line_height.pixelOrZero();
+		std::vector<InlineBox> merged_boxes;
+		for (InlineBox* child : inline_boxes) {
+			if (merged_boxes.empty()) {
+				InlineBox ib = *child;
+				ib.line_box->line_height = std::max(ib.line_box->line_height, line_height);
+				merged_boxes.push_back(ib);
+			} else {
+				InlineBox& ib = merged_boxes.back();
+				ib.line_box->line_height = std::max(ib.line_box->line_height, line_height);
+			}
+		}
+		o->box.emplace<std::vector<InlineBox>>(std::move(merged_boxes));
 	}
 }
 
@@ -508,16 +537,19 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, const scene2d::PointF& pos, in
 			pick_result = o;
 		}
 		children_offset = b.contentRect().origin();
-	} else if (absl::holds_alternative<InlineBox>(o->box)) {
-		const InlineBox& b = absl::get<InlineBox>(o->box);
-		const scene2d::RectF rect = b.boundingRect();
-		if (o->node && o->node->testFlags(flag_mask) && rect.contains(pos)) {
-			if (out_local_pos)
-				*out_local_pos = pos - rect.origin();
-			pick_result = o;
+	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
+		/*
+		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+		for (auto it = ibs.rbegin(); it != ibs.rend(); ++it) {
+			const scene2d::RectF rect = it->boundingRect();
+			if (o->node && o->node->testFlags(flag_mask) && rect.contains(pos)) {
+				if (out_local_pos)
+					*out_local_pos = pos - rect.origin();
+				pick_result = o;
+			}
 		}
-
 		children_offset = b.pos;
+		*/
 	} else if (absl::holds_alternative<TextBox>(o->box)) {
 	}
 
@@ -675,7 +707,6 @@ void LayoutTreeBuilder::endChild()
 void LayoutTreeBuilder::parentAddBlockChild()
 {
 	if (current_->parent->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
-		current_->box = InlineBox();
 		new_bfc_pending_ = true;
 		return;
 	}
@@ -689,10 +720,9 @@ void LayoutTreeBuilder::parentAddInlineChild()
 	if (current_->parent->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) {
 		reparent_to_anon_block_pending_ = true;
 		current_->anon_block = std::make_unique<LayoutObject>();
-		current_->box = InlineBox();
+		current_->anon_block->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 	} else {
 		current_->parent->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
-		current_->box = InlineBox();
 	}
 }
 

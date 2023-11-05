@@ -64,6 +64,7 @@ struct LineBox {
 	float left; // BFC coord: left
 	float avail_width;
 	// float line_gap;  // leading
+	float line_height = 0.0f;
 
 	scene2d::DimensionF used_size;
 	float used_baseline; // offset from used_size's top
