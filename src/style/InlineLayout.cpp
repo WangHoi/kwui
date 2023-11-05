@@ -114,9 +114,11 @@ void InlineBoxBuilder::endInline()
     stack_.pop_back();
 }
 
-InlineFormatContext::InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width)
-    : bfc_(bfc), left_(left), avail_width_(avail_width), height_(0)
-{}
+InlineFormatContext::InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width, float top)
+    : bfc_(bfc), left_(left), avail_width_(avail_width), top_(top), height_(0)
+{
+    // LOG(INFO) << "ifc ctor " << left_ << ", " << top_ << " width " << avail_width;
+}
 
 InlineFormatContext::~InlineFormatContext() = default;
 
@@ -178,14 +180,14 @@ LineBox* InlineFormatContext::getNextLine()
     return newLineBox();
 }
 
-void InlineFormatContext::layoutArrange(style::TextAlign text_align)
+void InlineFormatContext::arrangeY(style::TextAlign text_align)
 {
-    float y = 0;
+    float y = top_;
     for (auto& line_box : line_boxes_) {
-        line_box->layoutArrange(bfc_.margin_bottom_edge + y, text_align);
-        y += line_box->used_size.height;
+        line_box->arrange(y, text_align);
+        y += line_box->line_height;
     }
-    height_ = y;
+    height_ = y - top_;
 }
 
 scene2d::RectF InlineBox::boundingRect() const
@@ -227,22 +229,24 @@ int LineBox::addInlineBox(InlineBox* box)
     return idx;
 }
 
-void LineBox::layoutArrange(float offset_y, style::TextAlign text_align)
+void LineBox::arrange(float pos_y, style::TextAlign text_align)
 {
     used_size.width = 0;
-    float top = 0, bottom = 0;
+    float line_ascent = 0, line_descent = 0;
     for (InlineBox* b : inline_boxes) {
         used_size.width += b->size.width;
-        top = std::max(top, b->baseline);
-        bottom = std::max(bottom, b->size.height - b->baseline);
+        line_ascent = std::max(line_ascent, b->baseline);
+        line_descent = std::max(line_descent, b->size.height - b->baseline);
     }
-    used_size.height = top + bottom;
-    used_baseline = bottom;
 
+    used_size.height = line_ascent + line_descent;
+    used_baseline = line_descent;
+
+    float line_leading = 0.5f * (line_height - (line_ascent + line_descent));
     float x = left;
     for (style::InlineBox* b : inline_boxes) {
         b->pos.x = x;
-        b->pos.y = offset_y + top - b->baseline;
+        b->pos.y = pos_y + line_leading + line_ascent - b->baseline;
         x += b->size.width;
     }
 

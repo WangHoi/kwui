@@ -171,7 +171,6 @@ std::unique_ptr<TextFlow> GraphicDevice::CreateTextFlow(
 		DEFAULT_LOCALE,
 		format.GetAddressOf());
 	std::unique_ptr<TextFlow> flow = std::make_unique<TextFlow>(_dwrite);
-	flow->setLineHeight(line_height);
 	flow->setTextFormat(format);
 	flow->AnalyzeText(text.c_str(), text.length());
 	return flow;

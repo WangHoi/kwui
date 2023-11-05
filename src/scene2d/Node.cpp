@@ -873,7 +873,7 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		}
 	} else if (box.type == style::BlockBoxType::WithInlineChildren) {
 		Node* contg_node = std::get<Node*>(box.payload);
-		contg_node->ifc_.emplace(bfc, bfc.contg_left_edge, box.content.width);
+		contg_node->ifc_.emplace(bfc, bfc.contg_left_edge, box.content.width, bfc.margin_bottom_edge + box.contentRect().top);
 		LOG(INFO)
 			<< "<" << contg_node->tag_ << "> "
 			<< "begin IFC pos=" << PointF(bfc.contg_left_edge, bfc.margin_bottom_edge)
@@ -882,7 +882,7 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		contg_node->eachLayoutChild([&](Node* child) {
 			layoutMeasure(*contg_node->ifc_, ibb, child);
 			});
-		contg_node->ifc_->layoutArrange(contg_node->computed_style_.text_align);
+		contg_node->ifc_->arrangeY(contg_node->computed_style_.text_align);
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
 			bfc.border_bottom_edge = bfc.margin_bottom_edge + *box.prefer_height;

@@ -36,6 +36,7 @@ struct LayoutObject {
 		HAS_BLOCK_CHILD_FLAG = 1,
 		HAS_INLINE_CHILD_FLAG = 2,
 		NEW_BFC_FLAG = 4,
+		ANON_SPAN_FLAG = 8,
 	};
 	absl::variant<
 		absl::monostate,
@@ -47,7 +48,7 @@ struct LayoutObject {
 	uint32_t flags = 0;
 	absl::optional<BlockFormatContext> bfc;
 	absl::optional<InlineFormatContext> ifc;
-	std::unique_ptr<LayoutObject> anon_block;
+	std::unique_ptr<LayoutObject> anon_span;
 
 	float min_width = 0.0f;
 	float max_width = std::numeric_limits<float>::infinity();
@@ -133,8 +134,8 @@ private:
 
 	LayoutObject* current_ = nullptr;
 	LayoutObject* last_child_ = nullptr;
-	// (contg, last_child)
-	std::vector<std::tuple<LayoutObject*, LayoutObject*>> stack_;
+	// (contg, last_child, reparent_anon_block)
+	std::vector<std::tuple<LayoutObject*, LayoutObject*, bool>> stack_;
 	bool reparent_to_anon_block_pending_ = false;
 	bool new_bfc_pending_ = false;
 };

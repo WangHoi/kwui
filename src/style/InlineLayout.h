@@ -74,7 +74,7 @@ struct LineBox {
 	LineBox(float left_, float avail_w);
 	~LineBox() = default;
 	int addInlineBox(InlineBox* box);
-	void layoutArrange(float offset_y, style::TextAlign text_align);
+	void arrange(float offset_y, style::TextAlign text_align);
 };
 
 class InlineBoxBuilder : public LineBoxInterface, public GlyphRunSinkInterface {
@@ -112,7 +112,7 @@ private:
 
 class InlineFormatContext : public LineBoxInterface {
 public:
-	InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width);
+	InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width, float top);
 	~InlineFormatContext();
 
 	inline BlockFormatContext& bfc() const { return bfc_; }
@@ -124,7 +124,7 @@ public:
 	// Add inline box to LineBox
 	void addBox(InlineBox* box);
 
-	void layoutArrange(style::TextAlign text_align);
+	void arrangeY(style::TextAlign text_align);
 	inline float getLayoutHeight() const
 	{
 		return height_;
@@ -138,6 +138,7 @@ private:
 	BlockFormatContext& bfc_;
 	float left_;
 	float avail_width_;
+	float top_;
 	std::vector<std::unique_ptr<LineBox>> line_boxes_;
 
 	float height_;

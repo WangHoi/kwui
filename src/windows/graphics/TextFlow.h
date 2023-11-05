@@ -77,7 +77,6 @@ public:
 	}
 
 	HRESULT setTextFormat(ComPtr<IDWriteTextFormat> textFormat);
-	void setLineHeight(float line_height);
 
 	HRESULT SetNumberSubstitution(ComPtr<IDWriteNumberSubstitution> numberSubstitution);
 

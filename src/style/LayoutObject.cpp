@@ -111,6 +111,9 @@ LayoutObject* LayoutObject::pick(FlowRoot fl, const scene2d::PointF& pos, int fl
 
 void LayoutObject::measure(LayoutObject* o, float viewport_height)
 {
+	static int depth = 0;
+	base::scoped_setter _(depth, depth + 1);
+	LOG(INFO) << std::string(depth, '-') << " measure " << o << " " << * o;
 	const style::Style& st = *o->style;
 
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
@@ -352,7 +355,8 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 			}
 		}
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
-		o->ifc.emplace(bfc, bfc.contg_left_edge, bfc.contg_right_edge - bfc.contg_left_edge);
+		auto rect = box.contentRect();
+		o->ifc.emplace(bfc, bfc.contg_left_edge + rect.left, rect.width(), box.pos.y + rect.top);
 		LOG(INFO)
 			<< "begin IFC pos=" << scene2d::PointF(bfc.contg_left_edge, bfc.margin_bottom_edge)
 			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
@@ -366,7 +370,7 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 				arrange(child, *o->ifc);
 				child = child->next_sibling;
 			} while (child != o->first_child);
-			o->ifc->layoutArrange(o->style->text_align);
+			o->ifc->arrangeY(o->style->text_align);
 		}
 
 		BlockBox& box = absl::get<BlockBox>(o->box);
@@ -509,7 +513,7 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
 			if (merged_boxes.empty() || merged_boxes.back().line_box != child->line_box) {
 				auto fm = graph2d::getFontMetrics(st.font_family.keyword_val.c_str(),
 					st.font_size.pixelOrZero());
-				float line_height = o->style->line_height.pixelOrZero();
+				float line_height = st.line_height.pixelOrZero();
 				InlineBox ib;
 				ib.pos = child->pos;
 				ib.baseline = fm.baseline;
@@ -678,10 +682,11 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 		o->parent->first_child = o;
 	}
 	last_child_ = o;
-	stack_.push_back(std::make_tuple(current_, last_child_));
+	stack_.push_back(std::make_tuple(current_, last_child_, reparent_to_anon_block_pending_));
 
 	current_ = o;
 	last_child_ = nullptr;
+	reparent_to_anon_block_pending_ = false;
 }
 
 void LayoutTreeBuilder::endChild()
@@ -692,7 +697,7 @@ void LayoutTreeBuilder::endChild()
 		auto parent = current_->parent;
 		auto prev = current_->prev_sibling;
 		auto next = current_->next_sibling;
-		auto anon = current_->anon_block.get();
+		auto anon = current_->anon_span.get();
 
 		prev->next_sibling = next;
 		next->prev_sibling = prev;
@@ -702,22 +707,29 @@ void LayoutTreeBuilder::endChild()
 
 		anon->first_child = current_;
 		anon->parent = parent;
+		if (!stack_.empty()) {
+			LayoutObject*& last_child = std::get<1>(stack_.back());
+			last_child = anon;
+		}
+
 		if (parent) {
-			if (parent->first_child == current_)
+			if (!parent->first_child || parent->first_child == current_)
 				parent->first_child = anon;
 			if (prev != current_)
 				prev->next_sibling = anon;
 			if (next != current_)
 				next->prev_sibling = anon;
+			parent->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 		}
 	}
-	std::tie(current_, last_child_) = stack_.back();
+	std::tie(current_, last_child_, reparent_to_anon_block_pending_) = stack_.back();
 	stack_.pop_back();
 }
 
 void LayoutTreeBuilder::parentAddBlockChild()
 {
 	if (current_->parent->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
+		LOG(ERROR) << "LayoutTreeBuilder::parentAddBlockChild(): invalid state";
 		new_bfc_pending_ = true;
 		return;
 	}
@@ -728,10 +740,13 @@ void LayoutTreeBuilder::parentAddBlockChild()
 
 void LayoutTreeBuilder::parentAddInlineChild()
 {
-	if (current_->parent->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) {
+	if (current_->node->type() == scene2d::NodeType::NODE_TEXT
+		&& (current_->parent->style->display == DisplayType::Block 
+			|| current_->parent->style->display == DisplayType::InlineBlock)) {
 		reparent_to_anon_block_pending_ = true;
-		current_->anon_block = std::make_unique<LayoutObject>();
-		current_->anon_block->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+		current_->anon_span = std::make_unique<LayoutObject>();
+		current_->anon_span->init(current_->style, current_->node);
+		current_->anon_span->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_SPAN_FLAG;
 	} else {
 		current_->parent->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 	}

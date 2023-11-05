@@ -97,4 +97,4 @@ var title_bar = (
 
 console.log(JSON.stringify(hello_world_full));
 
-app.showDialog(hello_world_full, simple_stylesheet);
+app.showDialog(hello_world, simple_stylesheet);

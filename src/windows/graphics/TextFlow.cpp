@@ -122,22 +122,10 @@ HRESULT TextFlow::setTextFormat(ComPtr<IDWriteTextFormat> textFormat)
 	}
 	DWRITE_FONT_METRICS fm;
 	fontFace_->GetMetrics(&fm);
-	if (line_height_.has_value()) {
-		flow_metrics_.line_height = *line_height_;
-		float fmLineHeight = (fm.ascent + fm.descent + fm.lineGap) * fontEmSize_ / fm.designUnitsPerEm;
-		flow_metrics_.baseline = (0.5f * fm.lineGap + fm.ascent) * fontEmSize_ / fm.designUnitsPerEm
-			+ 0.5f * (*line_height_ - fmLineHeight);
-	} else {
-		flow_metrics_.line_height = (fm.ascent + fm.descent + fm.lineGap) * fontEmSize_ / fm.designUnitsPerEm;
-		flow_metrics_.baseline = (0.5f * fm.lineGap + fm.ascent) * fontEmSize_ / fm.designUnitsPerEm;
-	}
+	flow_metrics_.line_height = (fm.ascent + fm.descent + fm.lineGap) * fontEmSize_ / fm.designUnitsPerEm;
+	flow_metrics_.baseline = (0.5f * fm.lineGap + fm.ascent) * fontEmSize_ / fm.designUnitsPerEm;
 
 	return S_OK;
-}
-
-void TextFlow::setLineHeight(float line_height)
-{
-	line_height_ = line_height;
 }
 
 HRESULT TextFlow::SetNumberSubstitution(ComPtr<IDWriteNumberSubstitution> numberSubstitution)
