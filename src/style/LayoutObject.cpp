@@ -44,18 +44,32 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 
 	// Find containing bfc
 	BlockFormatContext bfc(nullptr);
+	bfc.contg_left_edge = 0.0f;
+	bfc.contg_right_edge = viewport_size.width;
+	bfc.border_right_edge = bfc.contg_left_edge;
+	bfc.border_bottom_edge = bfc.margin_bottom_edge = 0.0f;
+	bfc.contg_height.emplace(viewport_size.height);
+
 	if (fl.positioned_parent) {
-		CHECK(absl::holds_alternative<BlockBox>(fl.positioned_parent->box));
-		const auto& rect = absl::get<BlockBox>(fl.positioned_parent->box).paddingRect();
-		bfc.contg_left_edge = rect.left;
-		bfc.contg_right_edge = rect.right;
-		bfc.border_right_edge = rect.left;
-		bfc.border_bottom_edge = bfc.margin_bottom_edge = rect.top;
-		bfc.contg_height.emplace(rect.height());
-	} else {
-		bfc.contg_left_edge = 0.0f;
-		bfc.contg_right_edge = viewport_size.width;
-		bfc.contg_height.emplace(viewport_size.height);
+		if (absl::holds_alternative<BlockBox>(fl.positioned_parent->box)) {
+			const auto& rect = absl::get<BlockBox>(fl.positioned_parent->box).paddingRect();
+			bfc.contg_left_edge = rect.left;
+			bfc.contg_right_edge = rect.right;
+			bfc.border_right_edge = bfc.contg_left_edge;
+			bfc.border_bottom_edge = bfc.margin_bottom_edge = rect.top;
+			bfc.contg_height.emplace(rect.height());
+		} else if (absl::holds_alternative<std::vector<InlineBox>>(fl.positioned_parent->box)) {
+			const auto& ibs = absl::get<std::vector<InlineBox>>(fl.positioned_parent->box);
+			if (!ibs.empty()) {
+				const InlineBox& first = ibs.front();
+				const InlineBox& last = ibs.back();
+				bfc.contg_left_edge = first.pos.x;
+				bfc.contg_right_edge = last.pos.x + last.size.width;
+				bfc.border_right_edge = bfc.contg_left_edge;
+				bfc.border_bottom_edge = bfc.margin_bottom_edge = first.pos.y;
+				bfc.contg_height.emplace(std::max(0.0f, last.pos.y + last.size.height - first.pos.y));
+			}
+		}
 	}
 
 	arrange(fl.root, bfc, viewport_size);
@@ -210,7 +224,7 @@ void LayoutObject::arrange(LayoutObject* o,
 		arrangeBlockChildren(o, bfc, viewport_size);
 		arrangeBlockBottom(o, bfc);
 	} else {
-		LOG(WARNING) << "arrange " << st.display << " not implemented.";
+		LOG(WARNING) << "LayoutObject::arrange " << st.display << " not implemented.";
 	}
 }
 
@@ -285,6 +299,7 @@ void LayoutObject::arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc)
 	float borpad_top = box.border.top + box.padding.top;
 
 	if (o->flags & NEW_BFC_FLAG) {
+		box.pos.y = bfc.margin_bottom_edge;
 		bfc.border_bottom_edge = bfc.margin_bottom_edge = bfc.margin_bottom_edge + borpad_top;
 	} else {
 		if (borpad_top > 0) {
@@ -367,10 +382,15 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
 			LayoutObject* child = o->first_child;
 			do {
+				prepare(child, *o->ifc);
+				child = child->next_sibling;
+			} while (child != o->first_child);
+			o->ifc->arrange(o->style->text_align);
+			child = o->first_child;
+			do {
 				arrange(child, *o->ifc);
 				child = child->next_sibling;
 			} while (child != o->first_child);
-			o->ifc->arrangeY(o->style->text_align);
 		}
 
 		BlockBox& box = absl::get<BlockBox>(o->box);
@@ -478,7 +498,7 @@ private:
 	InlineFormatContext& ifc_;
 };
 
-void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
+void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc)
 {
 	const auto& st = *o->style;
 
@@ -488,6 +508,19 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
 		tb.glyph_run_boxes.reset();
 		tb.text_flow->flowText(&tbf, &tbf);
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
+		LayoutObject* child = o->first_child;
+		if (child) do {
+			prepare(child, ifc);
+			child = child->next_sibling;
+		} while (child != o->first_child);
+	}
+}
+
+void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
+{
+	const auto& st = *o->style;
+
+	if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		LayoutObject* child = o->first_child;
 		std::vector<InlineBox*> inline_boxes;
 		if (child) do {
@@ -507,7 +540,7 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
 
 			child = child->next_sibling;
 		} while (child != o->first_child);
-		
+
 		std::vector<InlineBox> merged_boxes;
 		for (InlineBox* child : inline_boxes) {
 			if (merged_boxes.empty() || merged_boxes.back().line_box != child->line_box) {
@@ -620,7 +653,6 @@ void LayoutTreeBuilder::initFlowRoot(scene2d::Node* node)
 
 void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 {
-	beginChild(&node->layout_);
 	if (node->type() == scene2d::NodeType::NODE_TEXT) {
 		addText(node);
 	} else if (node->type() == scene2d::NodeType::NODE_ELEMENT) {
@@ -628,6 +660,8 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 			abs_pos_nodes_.push_back(node);
 			return;
 		}
+
+		beginChild(&node->layout_);
 
 		// 'static' or 'relative' positioned
 		const auto& st = node->computedStyle();
@@ -649,19 +683,38 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 			current_->flags |= LayoutObject::NEW_BFC_FLAG;
 			current_->bfc = absl::make_optional<BlockFormatContext>(node);
 		}
+		scene2d::Node::eachChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
+		endChild();
 	}
-	scene2d::Node::eachChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
-
-	endChild();
 }
 
 void LayoutTreeBuilder::addText(scene2d::Node* node)
 {
-	parentAddInlineChild();
-
 	TextBox tb;
 	tb.text_flow = node->text_flow_.get();
-	current_->box.emplace<TextBox>(std::move(tb));
+	node->layout_.box.emplace<TextBox>(std::move(tb));
+
+	if (current_->style->display == DisplayType::Block
+			|| current_->style->display == DisplayType::InlineBlock) {
+		current_->anon_span = std::make_unique<LayoutObject>();
+		auto anon = current_->anon_span.get();
+		anon->init(&node->computed_style_, node);
+		anon->flags = LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_SPAN_FLAG;
+		anon->box.emplace<std::vector<InlineBox>>();
+
+		CHECK(!(current_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
+		current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+		current_->first_child = anon;
+		anon->parent = current_;
+
+		anon->first_child = &node->layout_;
+		node->layout_.parent = anon;
+	} else {
+		CHECK(!(current_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
+		current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+		current_->first_child = &node->layout_;
+		node->layout_.parent = current_;
+	}
 }
 
 void LayoutTreeBuilder::beginChild(LayoutObject* o)
@@ -691,37 +744,6 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 
 void LayoutTreeBuilder::endChild()
 {
-	if (reparent_to_anon_block_pending_) {
-		reparent_to_anon_block_pending_ = false;
-
-		auto parent = current_->parent;
-		auto prev = current_->prev_sibling;
-		auto next = current_->next_sibling;
-		auto anon = current_->anon_span.get();
-
-		prev->next_sibling = next;
-		next->prev_sibling = prev;
-
-		current_->parent = anon;
-		current_->next_sibling = current_->prev_sibling = current_;
-
-		anon->first_child = current_;
-		anon->parent = parent;
-		if (!stack_.empty()) {
-			LayoutObject*& last_child = std::get<1>(stack_.back());
-			last_child = anon;
-		}
-
-		if (parent) {
-			if (!parent->first_child || parent->first_child == current_)
-				parent->first_child = anon;
-			if (prev != current_)
-				prev->next_sibling = anon;
-			if (next != current_)
-				next->prev_sibling = anon;
-			parent->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
-		}
-	}
 	std::tie(current_, last_child_, reparent_to_anon_block_pending_) = stack_.back();
 	stack_.pop_back();
 }

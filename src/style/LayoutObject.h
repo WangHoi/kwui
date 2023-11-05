@@ -22,7 +22,11 @@ struct TextBox {
 
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const TextBox& o) {
-		absl::Format(&sink, "TextBox { }");
+		absl::Format(&sink, "TextBox { ");
+		for (auto& inline_box : o.glyph_run_boxes.inline_boxes) {
+			absl::Format(&sink, "%v, ", *inline_box);
+		}
+		absl::Format(&sink, "}");
 	}
 };
 
@@ -93,6 +97,7 @@ private:
 		BlockFormatContext& bfc,
 		const scene2d::DimensionF& viewport_size);
 	static void arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
+	static void prepare(LayoutObject* o, InlineFormatContext& ifc);
 	static void arrange(LayoutObject* o, InlineFormatContext& ifc);
 	static LayoutObject* pick(LayoutObject *o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos);
 

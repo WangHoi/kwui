@@ -180,7 +180,7 @@ LineBox* InlineFormatContext::getNextLine()
     return newLineBox();
 }
 
-void InlineFormatContext::arrangeY(style::TextAlign text_align)
+void InlineFormatContext::arrange(style::TextAlign text_align)
 {
     float y = top_;
     for (auto& line_box : line_boxes_) {

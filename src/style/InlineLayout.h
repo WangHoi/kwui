@@ -124,7 +124,7 @@ public:
 	// Add inline box to LineBox
 	void addBox(InlineBox* box);
 
-	void arrangeY(style::TextAlign text_align);
+	void arrange(style::TextAlign text_align);
 	inline float getLayoutHeight() const
 	{
 		return height_;

@@ -882,7 +882,7 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 		contg_node->eachLayoutChild([&](Node* child) {
 			layoutMeasure(*contg_node->ifc_, ibb, child);
 			});
-		contg_node->ifc_->arrangeY(contg_node->computed_style_.text_align);
+		contg_node->ifc_->arrange(contg_node->computed_style_.text_align);
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
 			bfc.border_bottom_edge = bfc.margin_bottom_edge + *box.prefer_height;
@@ -902,7 +902,7 @@ void Node::layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box)
 			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
 	}
 
-	LOG(INFO) << "layout arrange box pos " << box.pos << ", border-rect: " << box.borderRect();
+	LOG(INFO) << "layout prepare box pos " << box.pos << ", border-rect: " << box.borderRect();
 
 	if (borpad_bottom > 0) {
 		bfc.border_bottom_edge = bfc.margin_bottom_edge + borpad_bottom;

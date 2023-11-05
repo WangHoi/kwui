@@ -235,7 +235,7 @@ void AbslStringify(Sink& sink, DisplayType p) {
 		absl::Format(&sink, "Inline");
 		break;
 	case DisplayType::InlineBlock:
-		absl::Format(&sink, "InlineBox");
+		absl::Format(&sink, "InlineBlock");
 		break;
 	default:
 		absl::Format(&sink, "Custom(%d)", (int)p);

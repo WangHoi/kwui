@@ -173,7 +173,9 @@ void Scene::paint(graph2d::PainterInterface* painter)
 {
 	// style::BlockPaintContext bpc;
 	// paintNode(root_, bpc, painter);
-	paintNode(root_, painter);
+	for (auto& fl : flow_roots_) {
+		style::LayoutObject::paint(fl.root, painter);
+	}
 }
 
 scene2d::PointF Scene::getMousePosition() const
