@@ -40,7 +40,6 @@ static void resolve_style(style::OverflowType& style, const style::OverflowType*
 Node::Node(Scene* scene, NodeType type)
 	: scene_(scene)
 	, type_(type)
-	, block_box_(&computed_style_)
 {
 	weakptr_ = new base::WeakObjectProxy<Node>(this);
 	weakptr_->retain();
@@ -642,7 +641,7 @@ void Node::layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder&
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		// TODO: add reset method
 		node->inline_box_ = style::InlineBox();
-		node->block_box_ = style::BlockBox(&node->computed_style_);
+		node->block_box_ = style::BlockBox();
 		node->bfc_ = absl::nullopt;
 		node->ifc_ = absl::nullopt;
 		const auto& st = node->computedStyle();

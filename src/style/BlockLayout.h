@@ -50,8 +50,8 @@ struct BlockBox {
 	BlockBox* next_sibling;
 	BlockBox* prev_sibling;
 
-	BlockBox(const Style* st)
-		: style(st), parent(nullptr), next_sibling(this), prev_sibling(this) {}
+	BlockBox()
+		: parent(nullptr), next_sibling(this), prev_sibling(this) {}
 
 	inline scene2d::RectF marginRect() const
 	{

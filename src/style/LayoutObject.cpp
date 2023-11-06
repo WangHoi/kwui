@@ -130,56 +130,76 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 	LOG(INFO) << std::string(depth, '-') << " measure " << o << " " << * o;
 	const style::Style& st = *o->style;
 
-	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
+	if (st.display == DisplayType::Block || st.display == DisplayType::InlineBlock) {
 		float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
-		LayoutObject* child = o->first_child;
-		if (child) do {
-			const style::Style& st = *child->style;
-			float margin_left = try_resolve_to_px(st.margin_left, absl::nullopt).value_or(0);
-			float border_left = try_resolve_to_px(st.border_left_width, absl::nullopt).value_or(0);
-			float padding_left = try_resolve_to_px(st.padding_left, absl::nullopt).value_or(0);
-			float width = try_resolve_to_px(st.width, absl::nullopt).value_or(0);
-			float padding_right = try_resolve_to_px(st.padding_right, absl::nullopt).value_or(0);
-			float border_right = try_resolve_to_px(st.border_right_width, absl::nullopt).value_or(0);
-			float margin_right = try_resolve_to_px(st.margin_right, absl::nullopt).value_or(0);
-			float mbp_width = margin_left + border_left + padding_left + padding_right + border_right + margin_right;
+		float margin_left = try_resolve_to_px(st.margin_left, absl::nullopt).value_or(0);
+		float border_left = try_resolve_to_px(st.border_left_width, absl::nullopt).value_or(0);
+		float padding_left = try_resolve_to_px(st.padding_left, absl::nullopt).value_or(0);
+		float width = try_resolve_to_px(st.width, absl::nullopt).value_or(0);
+		float padding_right = try_resolve_to_px(st.padding_right, absl::nullopt).value_or(0);
+		float border_right = try_resolve_to_px(st.border_right_width, absl::nullopt).value_or(0);
+		float margin_right = try_resolve_to_px(st.margin_right, absl::nullopt).value_or(0);
+		float mbp_width = margin_left + border_left + padding_left + padding_right + border_right + margin_right;
 
-			if (st.width.isPixel() || st.width.isRaw()) {
-				min_width = std::max(min_width, mbp_width + width);
-				if (max_width == std::numeric_limits<float>::infinity()) {
-					max_width = mbp_width + width;
-				} else {
-					max_width = std::max(max_width, mbp_width + width);
-				}
-			} else {
-				measure(child, viewport_height);
-				min_width = std::max(min_width, mbp_width + child->min_width);
-				if (max_width == std::numeric_limits<float>::infinity()) {
-					max_width = mbp_width + child->max_width;
-				} else {
-					max_width = std::max(max_width, mbp_width + child->max_width);
-				}
-			}
-
-			child = child->next_sibling;
-		} while (child != o->first_child);
-		o->min_width = min_width;
-		o->max_width = max_width;
-	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
-		float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
-		LayoutObject* child = o->first_child;
-		if (child) do {
-			measure(child, viewport_height);
-
-			min_width = std::max(min_width, child->min_width);
+		if (st.width.isPixel() || st.width.isRaw()) {
+			min_width = std::max(min_width, mbp_width + width);
 			if (max_width == std::numeric_limits<float>::infinity()) {
-				max_width = child->max_width;
+				max_width = mbp_width + width;
 			} else {
-				max_width = std::max(max_width, child->max_width);
+				max_width = std::max(max_width, mbp_width + width);
 			}
+		}
 
-			child = child->next_sibling;
-		} while (child != o->first_child);
+		if (o->flags & HAS_BLOCK_CHILD_FLAG) {
+			LayoutObject* child = o->first_child;
+			if (child) do {
+				const style::Style& cst = *child->style;
+				float margin_left = try_resolve_to_px(cst.margin_left, absl::nullopt).value_or(0);
+				float border_left = try_resolve_to_px(cst.border_left_width, absl::nullopt).value_or(0);
+				float padding_left = try_resolve_to_px(cst.padding_left, absl::nullopt).value_or(0);
+				float width = try_resolve_to_px(cst.width, absl::nullopt).value_or(0);
+				float padding_right = try_resolve_to_px(cst.padding_right, absl::nullopt).value_or(0);
+				float border_right = try_resolve_to_px(cst.border_right_width, absl::nullopt).value_or(0);
+				float margin_right = try_resolve_to_px(cst.margin_right, absl::nullopt).value_or(0);
+				float mbp_width = margin_left + border_left + padding_left + padding_right + border_right + margin_right;
+
+				if (cst.width.isPixel() || cst.width.isRaw()) {
+					min_width = std::max(min_width, mbp_width + width);
+					if (max_width == std::numeric_limits<float>::infinity()) {
+						max_width = mbp_width + width;
+					} else {
+						max_width = std::max(max_width, mbp_width + width);
+					}
+				} else {
+					measure(child, viewport_height);
+					min_width = std::max(min_width, mbp_width + child->min_width);
+					if (max_width == std::numeric_limits<float>::infinity()) {
+						max_width = mbp_width + child->max_width;
+					} else {
+						max_width = std::max(max_width, mbp_width + child->max_width);
+					}
+				}
+
+				child = child->next_sibling;
+			} while (child != o->first_child);
+			o->min_width = min_width;
+			o->max_width = max_width;
+		} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
+			float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
+			LayoutObject* child = o->first_child;
+			if (child) do {
+				measure(child, viewport_height);
+
+				min_width = std::max(min_width, child->min_width);
+				if (max_width == std::numeric_limits<float>::infinity()) {
+					max_width = child->max_width;
+				} else {
+					max_width = std::max(max_width, child->max_width);
+				}
+
+				child = child->next_sibling;
+			} while (child != o->first_child);
+		}
 		o->min_width = min_width;
 		o->max_width = max_width;
 	} else if (absl::holds_alternative<TextBox>(o->box)) {
@@ -388,7 +408,7 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 			o->ifc->arrange(o->style->text_align);
 			child = o->first_child;
 			do {
-				arrange(child, *o->ifc);
+				arrange(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
 			} while (child != o->first_child);
 		}
@@ -507,6 +527,8 @@ void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc)
 		TextBoxFlow tbf(tb, ifc);
 		tb.glyph_run_boxes.reset();
 		tb.text_flow->flowText(&tbf, &tbf);
+	} else if (st.display == DisplayType::InlineBlock) {
+#error TODO
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		LayoutObject* child = o->first_child;
 		if (child) do {
@@ -516,52 +538,69 @@ void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc)
 	}
 }
 
-void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc)
+void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size)
 {
 	const auto& st = *o->style;
 
-	if (o->flags & HAS_INLINE_CHILD_FLAG) {
-		LayoutObject* child = o->first_child;
-		std::vector<InlineBox*> inline_boxes;
-		if (child) do {
-			arrange(child, ifc);
+	if (st.display == DisplayType::InlineBlock) {
+		arrange(o, o->bfc.value(), viewport_size);
+		InlineBlockBox ibb;
+		InlineBox ib;
+		ib.pos.x = o->bfc->contg_left_edge;
+		ib.line_box = nullptr;
+		o->box.emplace<InlineBlockBox>(std::move(ibb));
+	} else if (st.display == DisplayType::Inline) {
+		if (o->flags & HAS_INLINE_CHILD_FLAG) {
+			LayoutObject* child = o->first_child;
+			std::vector<InlineBox*> inline_boxes;
+			if (child) do {
+				arrange(child, ifc, viewport_size);
 
-			if (absl::holds_alternative<TextBox>(child->box)) {
-				const auto& child_inline_boxes = absl::get<TextBox>(child->box).glyph_run_boxes.inline_boxes;
-				for (auto& ib : child_inline_boxes) {
-					inline_boxes.push_back(ib.get());
+				if (absl::holds_alternative<TextBox>(child->box)) {
+					const auto& child_inline_boxes = absl::get<TextBox>(child->box).glyph_run_boxes.inline_boxes;
+					for (auto& ib : child_inline_boxes) {
+						inline_boxes.push_back(ib.get());
+					}
+				} else if (absl::holds_alternative<std::vector<InlineBox>>(child->box)) {
+					auto& child_inline_boxes = absl::get<std::vector<InlineBox>>(child->box);
+					for (auto& ib : child_inline_boxes) {
+						inline_boxes.push_back(&ib);
+					}
+				} else if (absl::holds_alternative<InlineBlockBox>(child->box)) {
+					auto& child_inline_boxes = absl::get<InlineBlockBox>(child->box).inline_boxes;
+					for (auto& ib : child_inline_boxes) {
+						inline_boxes.push_back(&ib);
+					}
 				}
-			} else if (absl::holds_alternative<std::vector<InlineBox>>(child->box)) {
-				auto& child_inline_boxes = absl::get<std::vector<InlineBox>>(child->box);
-				for (auto& ib : child_inline_boxes) {
-					inline_boxes.push_back(&ib);
+
+				child = child->next_sibling;
+			} while (child != o->first_child);
+
+			std::vector<InlineBox> merged_boxes;
+			for (InlineBox* child : inline_boxes) {
+				if (merged_boxes.empty() || merged_boxes.back().line_box != child->line_box) {
+					auto fm = graph2d::getFontMetrics(st.font_family.keyword_val.c_str(),
+						st.font_size.pixelOrZero());
+					float line_height = st.line_height.pixelOrZero();
+					InlineBox ib;
+					ib.pos = child->pos;
+					ib.baseline = fm.baseline;
+					ib.size.width = child->size.width;
+					ib.size.height = fm.line_height;
+					ib.line_box = child->line_box;
+					ib.line_box->line_height = std::max(ib.line_box->line_height, line_height);
+					merged_boxes.push_back(ib);
+				} else {
+					InlineBox& ib = merged_boxes.back();
+					ib.size.width = std::max(child->pos.x + child->size.width,
+						ib.pos.x + ib.size.width) - ib.pos.x;
 				}
 			}
 
-			child = child->next_sibling;
-		} while (child != o->first_child);
-
-		std::vector<InlineBox> merged_boxes;
-		for (InlineBox* child : inline_boxes) {
-			if (merged_boxes.empty() || merged_boxes.back().line_box != child->line_box) {
-				auto fm = graph2d::getFontMetrics(st.font_family.keyword_val.c_str(),
-					st.font_size.pixelOrZero());
-				float line_height = st.line_height.pixelOrZero();
-				InlineBox ib;
-				ib.pos = child->pos;
-				ib.baseline = fm.baseline;
-				ib.size.width = child->size.width;
-				ib.size.height = fm.line_height;
-				ib.line_box = child->line_box;
-				ib.line_box->line_height = std::max(ib.line_box->line_height, line_height);
-				merged_boxes.push_back(ib);
-			} else {
-				InlineBox& ib = merged_boxes.back();
-				ib.size.width = std::max(child->pos.x + child->size.width,
-					ib.pos.x + ib.size.width) - ib.pos.x;
-			}
+			o->box.emplace<std::vector<InlineBox>>(std::move(merged_boxes));
+		} else {
+			o->box.emplace<std::vector<InlineBox>>();
 		}
-		o->box.emplace<std::vector<InlineBox>>(std::move(merged_boxes));
 	}
 }
 
@@ -640,15 +679,15 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 
 void LayoutTreeBuilder::initFlowRoot(scene2d::Node* node)
 {
-	node->inline_box_ = style::InlineBox();
-	node->block_box_ = style::BlockBox(&node->computed_style_);
+	node->inline_box_ = InlineBox();
+	node->block_box_ = BlockBox();
 	node->bfc_.emplace(node);
 	node->ifc_ = absl::nullopt;
 	current_ = &node->layout_;
 	current_->reset();
 	current_->flags |= LayoutObject::NEW_BFC_FLAG;
 	current_->bfc.emplace(node);
-	current_->box = BlockBox(&node->computed_style_);
+	current_->box = BlockBox();
 }
 
 void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
@@ -757,7 +796,7 @@ void LayoutTreeBuilder::parentAddBlockChild()
 	}
 
 	current_->parent->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
-	current_->box = BlockBox(nullptr);
+	current_->box = BlockBox();
 }
 
 void LayoutTreeBuilder::parentAddInlineChild()

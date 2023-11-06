@@ -35,6 +35,11 @@ struct FlowRoot {
 	LayoutObject* positioned_parent = nullptr;
 };
 
+struct InlineBlockBox {
+	std::vector<InlineBox> inline_boxes;
+	BlockBox block_box;
+};
+
 struct LayoutObject {
 	enum Flag {
 		HAS_BLOCK_CHILD_FLAG = 1,
@@ -46,6 +51,7 @@ struct LayoutObject {
 		absl::monostate,
 		BlockBox,
 		std::vector<InlineBox>,
+		InlineBlockBox,
 		TextBox
 	> box;
 
@@ -98,7 +104,7 @@ private:
 		const scene2d::DimensionF& viewport_size);
 	static void arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
 	static void prepare(LayoutObject* o, InlineFormatContext& ifc);
-	static void arrange(LayoutObject* o, InlineFormatContext& ifc);
+	static void arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
 	static LayoutObject* pick(LayoutObject *o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos);
 
 	template <typename Sink>
