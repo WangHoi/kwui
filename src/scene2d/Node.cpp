@@ -335,9 +335,9 @@ void Node::computeLayout()
 void Node::reflowInlineBlock(float contg_blk_width, absl::optional<float> contg_blk_height)
 {
 	CHECK(type_ == NodeType::NODE_ELEMENT)
-		<< "reflowInlineBlock(): expect NODE_ELEMENT";
+		<< "arrangeInlineBlock(): expect NODE_ELEMENT";
 	CHECK(computed_style_.display == style::DisplayType::InlineBlock)
-		<< "reflowInlineBlock(): expect DisplayType::InlineBlock";
+		<< "arrangeInlineBlock(): expect DisplayType::InlineBlock";
 
 	bfc_.emplace(this);
 	bfc_->owner = this;
@@ -409,7 +409,7 @@ void Node::reflowInlineBlock(float contg_blk_width, absl::optional<float> contg_
 			- b.margin.top;
 	}
 
-	LOG(INFO) << "reflowInlineBlock<" << tag_ << "> border box" << b.borderRect();
+	LOG(INFO) << "arrangeInlineBlock<" << tag_ << "> border box" << b.borderRect();
 
 	// layout out-of-flow
 	for (Node* node : bfc_->abs_pos_nodes) {

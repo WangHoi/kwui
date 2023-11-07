@@ -2,6 +2,7 @@
 #include "BlockLayout.h"
 #include "InlineLayout.h"
 #include "TextLayout.h"
+#include "InlineBlockLayout.h"
 #include "absl/strings/str_format.h"
 
 namespace scene2d {
@@ -33,11 +34,6 @@ struct TextBox {
 struct FlowRoot {
 	LayoutObject* root = nullptr;
 	LayoutObject* positioned_parent = nullptr;
-};
-
-struct InlineBlockBox {
-	std::vector<InlineBox> inline_boxes;
-	BlockBox block_box;
 };
 
 struct LayoutObject {
@@ -103,8 +99,18 @@ private:
 		BlockFormatContext& bfc,
 		const scene2d::DimensionF& viewport_size);
 	static void arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
-	static void prepare(LayoutObject* o, InlineFormatContext& ifc);
+	static void prepare(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
 	static void arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
+	static void arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
+	static void arrangeInlineBlockX(LayoutObject* o,
+		BlockFormatContext& inner_bfc,
+		const scene2d::DimensionF& viewport_size,
+		ScrollbarPolicy scroll_y);
+	static void arrangeInlineBlockTop(LayoutObject* o, BlockFormatContext& bfc);
+	static void arrangeInlineBlockChildren(LayoutObject* o,
+		BlockFormatContext& bfc,
+		const scene2d::DimensionF& viewport_size);
+	static void arrangeInlineBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
 	static LayoutObject* pick(LayoutObject *o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos);
 
 	template <typename Sink>
