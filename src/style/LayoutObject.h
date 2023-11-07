@@ -103,7 +103,7 @@ private:
 	static void arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
 	static void arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
 	static void arrangeInlineBlockX(LayoutObject* o,
-		BlockFormatContext& inner_bfc,
+		BlockFormatContext& bfc,
 		const scene2d::DimensionF& viewport_size,
 		ScrollbarPolicy scroll_y);
 	static void arrangeInlineBlockTop(LayoutObject* o, BlockFormatContext& bfc);

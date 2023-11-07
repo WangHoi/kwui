@@ -186,20 +186,23 @@ void Node::setEventHandler(base::string_atom name, JSValue func)
 
 void Node::resolveDefaultStyle()
 {
-	CHECK(type_ == NodeType::NODE_ELEMENT);
-	if (tag_ == base::string_intern("img")
-		|| tag_ == base::string_intern("span")
-		|| tag_ == base::string_intern("strong")
-		|| tag_ == base::string_intern("em")
-		|| tag_ == base::string_intern("b")) {
+	if (type_ == NodeType::NODE_TEXT) {
 		computed_style_.display = style::DisplayType::Inline;
-	} else if (tag_ == base::string_intern("button")) {
-		computed_style_.display = style::DisplayType::InlineBlock;
 	} else {
-		computed_style_.display = style::DisplayType::Block;
+		if (tag_ == base::string_intern("img")
+			|| tag_ == base::string_intern("span")
+			|| tag_ == base::string_intern("strong")
+			|| tag_ == base::string_intern("em")
+			|| tag_ == base::string_intern("b")) {
+			computed_style_.display = style::DisplayType::Inline;
+		} else if (tag_ == base::string_intern("button")) {
+			computed_style_.display = style::DisplayType::InlineBlock;
+		} else {
+			computed_style_.display = style::DisplayType::Block;
+		}
 	}
 	computed_style_.position = style::PositionType::Static;
-	CHECK(type_ == NodeType::NODE_ELEMENT);
+
 #define RESOLVE_STYLE_DEFAULT(x, def) \
     computed_style_.x = def
 

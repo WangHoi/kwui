@@ -313,13 +313,10 @@ bool Scene::match(Node* node, style::Selector* selector)
 
 void Scene::resolveNodeStyle(Node* node)
 {
-	if (node->type() != NodeType::NODE_ELEMENT) {
-		if (node->parent_)
-			node->computed_style_ = node->parent_->computed_style_;
-		if (node->type() == NodeType::NODE_TEXT) {
-			node->updateTextLayout();
-		}
-	} else {
+	if (node->type() == NodeType::NODE_COMPONENT) {
+		node->computed_style_ = node->parent_->computed_style_;
+		node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
+	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		node->resolveDefaultStyle();
 		for (auto& rule : style_rules_) {
 			if (match(node, rule->selector.get())) {
@@ -327,8 +324,11 @@ void Scene::resolveNodeStyle(Node* node)
 			}
 		}
 		node->resolveInlineStyle();
+		node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
+	} else if (node->type() == NodeType::NODE_TEXT) {
+		node->resolveDefaultStyle();
+		node->updateTextLayout();
 	}
-	node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
 }
 
 void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::PainterInterface* painter)
