@@ -78,6 +78,7 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 {
 	const Style& st = *o->style;
+	bool painter_restore_pending = false;
 
 	static int depth = 0;
 	base::scoped_setter _(depth, depth + 1);
@@ -100,19 +101,26 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
 
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
-		const BlockBox& b = absl::get<InlineBlockBox>(o->box).block_box;
-		scene2d::RectF border_rect = b.borderRect();
-		scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
-			b.pos.x + border_rect.left,
-			b.pos.y + border_rect.top,
-			border_rect.width(),
-			border_rect.height());
-		// LOG(INFO) << "paint box: " << render_rect;
-		painter->drawBox(
-			render_rect,
-			st.border_top_width.pixelOrZero(),
-			st.background_color,
-			st.border_color);
+		const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
+		if (!ibb.inline_boxes.empty()) {
+			const InlineBox& ib = ibb.inline_boxes.front();
+			const BlockBox& b = ibb.block_box;
+			scene2d::RectF border_rect = b.borderRect();
+			scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
+				b.pos.x + border_rect.left,
+				b.pos.y + border_rect.top,
+				border_rect.width(),
+				border_rect.height());
+			// LOG(INFO) << "paint box: " << render_rect;
+			painter_restore_pending = true;
+			painter->save();
+			painter->setTranslation(ib.pos, true);
+			painter->drawBox(
+				render_rect,
+				st.border_top_width.pixelOrZero(),
+				st.background_color,
+				st.border_color);
+		}
 	} else if (absl::holds_alternative<TextBox>(o->box)) {
 		const TextBox& tb = absl::get<TextBox>(o->box);
 		size_t n = tb.glyph_run_boxes.glyph_runs.size();
@@ -130,6 +138,11 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		paint(child, painter);
 		child = child->next_sibling;
 	} while (child != o->first_child);
+
+	if (painter_restore_pending) {
+		painter_restore_pending = false;
+		painter->restore();
+	}
 }
 
 LayoutObject* LayoutObject::pick(FlowRoot fl, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos)
@@ -624,6 +637,8 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	float min_width = mbp_width + o->min_width;
 	float max_width = mbp_width + o->max_width;
 	LineBox* line = ifc.getLineBox(max_width);
+#error "TODO: figure out inline_pos_y"
+	float inline_pos_x = line->left + line->offset_x;
 	float fit_width = std::max(min_width, std::min(max_width, line->avail_width - line->offset_x));
 	line->offset_x += fit_width;
 
@@ -644,7 +659,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	InlineBox& ib = ibb.inline_boxes.front();
 	ib.line_box = line;
 	ib.line_box->addInlineBox(&ib);
-	ib.pos = ibb.block_box.pos;
+	ib.pos.x = inline_pos_x;
 	ib.size = ibb.block_box.marginRect().size();
 	ib.baseline = ib.size.height;
 }
