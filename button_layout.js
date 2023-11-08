@@ -69,22 +69,28 @@ var simple_stylesheet = {
 		"font-size": "30px",
 	},
 	"button": {
-		"width": "100px",
+		"width": "auto",
 		"border-color": "#000",
-		"border-left-width": 1,
-		"border-top-width": 1,
-		"border-right-width": 1,
-		"border-bottom-width": 1,
+		"border-left-width": 10,
+		"border-top-width": 10,
+		"border-right-width": 10,
+		"border-bottom-width": 10,
 		"text-align": "center"
 	}
 };
 
 var hello_world2 = (
 	<div class="abs">
-		<button style={{"margin-top":20}}>First button</button>
-		<button>Second button</button>
-		<button>Third button</button>
+		<button style={{"margin-top":20}}>First</button>
+		<button>Second</button>
+		<button>Third<button>Fourth</button></button>
 	</div>
 );
 
-app.showDialog(hello_world2, simple_stylesheet);
+var hello_world3 = (
+	<div>
+		<button>Third<button style={{"margin-left":0}}>Fourth</button></button>
+	</div>
+);
+
+app.showDialog(hello_world3, simple_stylesheet);

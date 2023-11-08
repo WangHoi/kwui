@@ -130,6 +130,10 @@ public:
 		return height_;
 	}
 	float getLayoutWidth() const;
+	inline const std::vector<std::unique_ptr<LineBox>>& lineBoxes() const
+	{
+		return line_boxes_;
+	}
 
 	LineBox* getCurrentLine() override;
 	LineBox* getNextLine() override;

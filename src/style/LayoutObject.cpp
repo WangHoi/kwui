@@ -152,64 +152,63 @@ LayoutObject* LayoutObject::pick(FlowRoot fl, const scene2d::PointF& pos, int fl
 
 void LayoutObject::measure(LayoutObject* o, float viewport_height)
 {
-	static int depth = 0;
-	base::scoped_setter _(depth, depth + 1);
-	LOG(INFO) << std::string(depth, '-') << " measure " << o << " " << * o;
-	const style::Style& st = *o->style;
+	//static int depth = 0;
+	//base::scoped_setter _(depth, depth + 1);
+	//LOG(INFO) << std::string(depth, '-') << " measure " << o << " " << *o;
 
+	LayoutObject* child = o->first_child;
+	if (child) do {
+		measure(child, viewport_height);
+		child = child->next_sibling;
+	} while (child != o->first_child);
+	
+	const style::Style& st = *o->style;
+	float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
+	bool depends_children_width = false;
 	if (st.display == DisplayType::Block || st.display == DisplayType::InlineBlock) {
-		float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
 		float width = try_resolve_to_px(st.width, absl::nullopt).value_or(0);
 
 		if (st.width.isPixel() || st.width.isRaw()) {
-			min_width = std::max(min_width, width);
-			if (max_width == std::numeric_limits<float>::infinity()) {
-				max_width = width;
-			} else {
-				max_width = std::max(max_width, width);
-			}
+			min_width = std::max(0.0f, width);
+			max_width = std::max(0.0f, width);
+		} else {
+			depends_children_width = true;
 		}
+	} else if (st.display == DisplayType::Inline) {
+		if (absl::holds_alternative<TextBox>(o->box)) {
+			TextBox& tb = absl::get<TextBox>(o->box);
+			// TODO: handle parent margin_border_padding_left(right)
+			std::tie(min_width, max_width) = tb.text_flow->measureWidth();
+		} else {
+			depends_children_width = true;
+		}
+	}
 
-		if (o->flags & HAS_BLOCK_CHILD_FLAG) {
+	if (depends_children_width) {
+		if (st.display == DisplayType::Block || st.display == DisplayType::InlineBlock) {
 			LayoutObject* child = o->first_child;
 			if (child) do {
 				const style::Style& cst = *child->style;
 				float margin_left = try_resolve_to_px(cst.margin_left, absl::nullopt).value_or(0);
 				float border_left = try_resolve_to_px(cst.border_left_width, absl::nullopt).value_or(0);
 				float padding_left = try_resolve_to_px(cst.padding_left, absl::nullopt).value_or(0);
-				float width = try_resolve_to_px(cst.width, absl::nullopt).value_or(0);
 				float padding_right = try_resolve_to_px(cst.padding_right, absl::nullopt).value_or(0);
 				float border_right = try_resolve_to_px(cst.border_right_width, absl::nullopt).value_or(0);
 				float margin_right = try_resolve_to_px(cst.margin_right, absl::nullopt).value_or(0);
 				float mbp_width = margin_left + border_left + padding_left + padding_right + border_right + margin_right;
 
-				if (cst.width.isPixel() || cst.width.isRaw()) {
-					min_width = std::max(min_width, mbp_width + width);
-					if (max_width == std::numeric_limits<float>::infinity()) {
-						max_width = mbp_width + width;
-					} else {
-						max_width = std::max(max_width, mbp_width + width);
-					}
+				min_width = std::max(min_width, mbp_width + child->min_width);
+				if (max_width == std::numeric_limits<float>::infinity()) {
+					max_width = mbp_width + child->max_width;
 				} else {
-					measure(child, viewport_height);
-					min_width = std::max(min_width, mbp_width + child->min_width);
-					if (max_width == std::numeric_limits<float>::infinity()) {
-						max_width = mbp_width + child->max_width;
-					} else {
-						max_width = std::max(max_width, mbp_width + child->max_width);
-					}
+					max_width = std::max(max_width, mbp_width + child->max_width);
 				}
 
 				child = child->next_sibling;
 			} while (child != o->first_child);
-			o->min_width = min_width;
-			o->max_width = max_width;
-		} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
-			float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
+		} else if (st.display == DisplayType::Inline) {
 			LayoutObject* child = o->first_child;
 			if (child) do {
-				measure(child, viewport_height);
-
 				min_width = std::max(min_width, child->min_width);
 				if (max_width == std::numeric_limits<float>::infinity()) {
 					max_width = child->max_width;
@@ -220,13 +219,9 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 				child = child->next_sibling;
 			} while (child != o->first_child);
 		}
-		o->min_width = min_width;
-		o->max_width = max_width;
-	} else if (absl::holds_alternative<TextBox>(o->box)) {
-		TextBox& tb = absl::get<TextBox>(o->box);
-		// TODO: handle parent margin_border_padding_left(right)
-		std::tie(o->min_width, o->max_width) = tb.text_flow->measureWidth();
 	}
+	o->min_width = min_width;
+	o->max_width = max_width;
 }
 
 void LayoutObject::arrange(LayoutObject* o, BlockFormatContext& bfc, const scene2d::DimensionF& viewport_size)
@@ -612,6 +607,12 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 
 			o->box.emplace<std::vector<InlineBox>>(std::move(merged_boxes));
 		}
+	} else if (st.display == DisplayType::InlineBlock) {
+		InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
+		if (!ibb.inline_boxes.empty()) {
+			const InlineBox& ib = ibb.inline_boxes.front();
+			//ibb.block_box.pos = ib.pos;
+		}
 	}
 }
 
@@ -625,8 +626,6 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	const Style& st = *o->style;
 	BlockFormatContext& bfc = ifc.bfc();
 
-	measure(o, viewport_size.height);
-
 	float contg_width = bfc.contg_right_edge - bfc.contg_left_edge;
 	float mbp_width = try_resolve_to_px(st.margin_left, contg_width).value_or(0)
 		+ try_resolve_to_px(st.border_left_width, contg_width).value_or(0)
@@ -637,7 +636,6 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	float min_width = mbp_width + o->min_width;
 	float max_width = mbp_width + o->max_width;
 	LineBox* line = ifc.getLineBox(max_width);
-#error "TODO: figure out inline_pos_y"
 	float inline_pos_x = line->left + line->offset_x;
 	float fit_width = std::max(min_width, std::min(max_width, line->avail_width - line->offset_x));
 	line->offset_x += fit_width;
@@ -653,7 +651,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 
 	arrangeInlineBlockX(o, bfc, viewport_size, scroll_y);
 	arrangeInlineBlockChildren(o, bfc.contg_height, viewport_size);
-	
+
 	InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 	ibb.inline_boxes.resize(1);
 	InlineBox& ib = ibb.inline_boxes.front();
@@ -661,7 +659,13 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	ib.line_box->addInlineBox(&ib);
 	ib.pos.x = inline_pos_x;
 	ib.size = ibb.block_box.marginRect().size();
-	ib.baseline = ib.size.height;
+	if (scroll_y == ScrollbarPolicy::Hidden) {
+		absl::optional<float> baseline = find_first_baseline(o);
+		ib.baseline = baseline.value_or(ib.size.height);
+	} else {
+		ib.baseline = ib.size.height;
+	}
+	line->line_height = std::max(line->line_height, ib.size.height);
 }
 
 void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
@@ -685,6 +689,7 @@ void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
 	b.margin.right = try_resolve_to_px(st.margin_right, contg_width).value_or(0);
 
 	if (st.width.isAuto()) {
+		b.content.width = std::max(o->min_width, std::min(o->max_width, contg_width));
 	} else {
 		b.content.width = try_resolve_to_px(st.width, contg_width).value_or(0);
 	}
@@ -708,6 +713,7 @@ void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
 
 	// Compute pos.x
 	b.pos.x = bfc.contg_left_edge;
+	int kk = bfc.contg_left_edge;
 
 	// Update max border_right_edge
 	bfc.border_right_edge = std::max(bfc.border_right_edge, bfc.contg_left_edge + b.borderRect().right);
@@ -724,8 +730,8 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 	float borpad_bottom = box.border.bottom + box.padding.bottom;
 
 	BlockFormatContext& bfc = o->bfc.value();
-	bfc.contg_left_edge = 0;
-	bfc.contg_right_edge = box.marginRect().right;
+	bfc.contg_left_edge = box.contentRect().left;
+	bfc.contg_right_edge = bfc.contg_left_edge + box.contentRect().width();
 	bfc.border_right_edge = bfc.contg_left_edge;
 	bfc.border_bottom_edge = bfc.margin_bottom_edge = box.margin.top + borpad_top;
 	bfc.contg_height = contg_height;
@@ -860,6 +866,32 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, const scene2d::PointF& pos, in
 	return pick_result;
 }
 
+absl::optional<float> LayoutObject::find_first_baseline(LayoutObject* o, float accum_y)
+{
+	if (o->ifc.has_value()) {
+		for (const std::unique_ptr<LineBox>& line : o->ifc->lineBoxes()) {
+			for (const InlineBox* ib : line->inline_boxes) {
+				return ib->pos.y + ib->baseline + accum_y;
+			}
+		}
+	}
+
+	if (o->style->display == DisplayType::InlineBlock) {
+		const auto& ibb = absl::get<InlineBlockBox>(o->box);
+		if (!ibb.inline_boxes.empty())
+			accum_y += ibb.inline_boxes.front().pos.y;
+	}
+
+	LayoutObject* child = o->first_child;
+	if (child) do {
+		auto baseline = find_first_baseline(child, accum_y);
+		if (baseline.has_value())
+			return baseline;
+		child = child->next_sibling;
+	} while (child != o->first_child);
+	return absl::nullopt;
+}
+
 LayoutTreeBuilder::LayoutTreeBuilder(scene2d::Node* node)
 	: root_(node) {}
 std::vector<FlowRoot> LayoutTreeBuilder::build()
@@ -967,6 +999,7 @@ void LayoutTreeBuilder::addText(scene2d::Node* node)
 		CHECK(!(current_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
 		current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 		current_->first_child = anon;
+		last_child_ = anon;
 		anon->parent = current_;
 
 		anon->first_child = &node->layout_;

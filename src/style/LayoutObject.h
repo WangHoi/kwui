@@ -110,6 +110,7 @@ private:
 		absl::optional<float> contg_height,
 		const scene2d::DimensionF& viewport_size);
 	static LayoutObject* pick(LayoutObject *o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos);
+	static absl::optional<float> find_first_baseline(LayoutObject* o, float accum_y = 0.0f);
 
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const LayoutObject& o) {
