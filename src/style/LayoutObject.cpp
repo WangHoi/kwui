@@ -146,21 +146,14 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 
 	if (st.display == DisplayType::Block || st.display == DisplayType::InlineBlock) {
 		float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
-		float margin_left = try_resolve_to_px(st.margin_left, absl::nullopt).value_or(0);
-		float border_left = try_resolve_to_px(st.border_left_width, absl::nullopt).value_or(0);
-		float padding_left = try_resolve_to_px(st.padding_left, absl::nullopt).value_or(0);
 		float width = try_resolve_to_px(st.width, absl::nullopt).value_or(0);
-		float padding_right = try_resolve_to_px(st.padding_right, absl::nullopt).value_or(0);
-		float border_right = try_resolve_to_px(st.border_right_width, absl::nullopt).value_or(0);
-		float margin_right = try_resolve_to_px(st.margin_right, absl::nullopt).value_or(0);
-		float mbp_width = margin_left + border_left + padding_left + padding_right + border_right + margin_right;
 
 		if (st.width.isPixel() || st.width.isRaw()) {
-			min_width = std::max(min_width, mbp_width + width);
+			min_width = std::max(min_width, width);
 			if (max_width == std::numeric_limits<float>::infinity()) {
-				max_width = mbp_width + width;
+				max_width = width;
 			} else {
-				max_width = std::max(max_width, mbp_width + width);
+				max_width = std::max(max_width, width);
 			}
 		}
 
@@ -621,23 +614,30 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 
 	measure(o, viewport_size.height);
 
-	LineBox* line = ifc.getLineBox(o->max_width);
-	float fit_width = std::max(o->min_width, std::min(o->max_width, line->avail_width - line->offset_x));
+	float contg_width = bfc.contg_right_edge - bfc.contg_left_edge;
+	float mbp_width = try_resolve_to_px(st.margin_left, contg_width).value_or(0)
+		+ try_resolve_to_px(st.border_left_width, contg_width).value_or(0)
+		+ try_resolve_to_px(st.padding_left, contg_width).value_or(0)
+		+ try_resolve_to_px(st.padding_right, contg_width).value_or(0)
+		+ try_resolve_to_px(st.border_right_width, contg_width).value_or(0)
+		+ try_resolve_to_px(st.margin_right, contg_width).value_or(0);
+	float min_width = mbp_width + o->min_width;
+	float max_width = mbp_width + o->max_width;
+	LineBox* line = ifc.getLineBox(max_width);
+	float fit_width = std::max(min_width, std::min(max_width, line->avail_width - line->offset_x));
 	line->offset_x += fit_width;
 
 	ScrollbarPolicy scroll_y = ScrollbarPolicy::Hidden;
 	if (st.overflow_y == OverflowType::Scroll) {
 		scroll_y = ScrollbarPolicy::Stable;
 	} else if (st.overflow_y == OverflowType::Auto) {
-		if (o->min_width > fit_width) {
+		if (min_width > fit_width) {
 			scroll_y = ScrollbarPolicy::Stable;
 		}
 	}
 
 	arrangeInlineBlockX(o, bfc, viewport_size, scroll_y);
-	arrangeInlineBlockTop(o, bfc);
-	arrangeInlineBlockChildren(o, bfc, viewport_size);
-	arrangeInlineBlockBottom(o, bfc);
+	arrangeInlineBlockChildren(o, bfc.contg_height, viewport_size);
 	
 	InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 	ibb.inline_boxes.resize(1);
@@ -698,54 +698,24 @@ void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
 	bfc.border_right_edge = std::max(bfc.border_right_edge, bfc.contg_left_edge + b.borderRect().right);
 }
 
-void LayoutObject::arrangeInlineBlockTop(LayoutObject* o, BlockFormatContext& bfc)
-{
-	CHECK(absl::holds_alternative<InlineBlockBox>(o->box));
-
-	BlockBox& box = absl::get<InlineBlockBox>(o->box).block_box;
-	float borpad_top = box.border.top + box.padding.top;
-
-	if (o->flags & NEW_BFC_FLAG) {
-		box.pos.y = bfc.margin_bottom_edge;
-		bfc.border_bottom_edge = bfc.margin_bottom_edge = bfc.margin_bottom_edge + borpad_top;
-	} else {
-		if (borpad_top > 0) {
-			float coll_margin = collapse_margin(box.margin.top,
-				(bfc.margin_bottom_edge - bfc.border_bottom_edge));
-			box.pos.y = bfc.border_bottom_edge + coll_margin - box.margin.top;
-			bfc.border_bottom_edge = bfc.border_bottom_edge + coll_margin + borpad_top;
-			bfc.margin_bottom_edge = bfc.border_bottom_edge;
-		} else {
-			float coll_margin = collapse_margin(box.margin.top,
-				(bfc.margin_bottom_edge - bfc.border_bottom_edge));
-			box.pos.y = bfc.border_bottom_edge + coll_margin - box.margin.top;
-			//bfc.border_bottom_edge += coll_margin + borpad_top;
-			bfc.margin_bottom_edge = bfc.border_bottom_edge + coll_margin;
-		}
-	}
-}
-
 void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
-	BlockFormatContext& bfc,
-	const scene2d::DimensionF& viewport_size)
+	absl::optional<float> contg_height, const scene2d::DimensionF& viewport_size)
 {
 	CHECK(absl::holds_alternative<InlineBlockBox>(o->box));
 
+	const Style& st = *o->style;
 	BlockBox& box = absl::get<InlineBlockBox>(o->box).block_box;
 	float borpad_top = box.border.top + box.padding.top;
 	float borpad_bottom = box.border.bottom + box.padding.bottom;
 
-	if (o->flags & NEW_BFC_FLAG) {
-		BlockFormatContext& inner_bfc = o->bfc.value();
-		inner_bfc.contg_left_edge = bfc.contg_left_edge;
-		inner_bfc.contg_right_edge = bfc.contg_right_edge;
-		inner_bfc.border_right_edge = inner_bfc.contg_left_edge;
-		inner_bfc.border_bottom_edge = inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
-		inner_bfc.contg_height = bfc.contg_height;
-		bfc = inner_bfc;
-	}
+	BlockFormatContext& bfc = o->bfc.value();
+	bfc.contg_left_edge = 0;
+	bfc.contg_right_edge = box.marginRect().right;
+	bfc.border_right_edge = bfc.contg_left_edge;
+	bfc.border_bottom_edge = bfc.margin_bottom_edge = box.margin.top + borpad_top;
+	bfc.contg_height = contg_height;
 
-	box.prefer_height = try_resolve_to_px(o->style->height, bfc.contg_height);
+	box.prefer_height = try_resolve_to_px(st.height, bfc.contg_height);
 
 	float saved_bfc_margin_bottom = bfc.margin_bottom_edge;
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
@@ -790,7 +760,7 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 				prepare(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
 			} while (child != o->first_child);
-			o->ifc->arrange(o->style->text_align);
+			o->ifc->arrange(st.text_align);
 			child = o->first_child;
 			do {
 				arrange(child, *o->ifc, viewport_size);
@@ -821,28 +791,9 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 			bfc.margin_bottom_edge = bfc.border_bottom_edge;
 		}
 	}
-}
 
-void LayoutObject::arrangeInlineBlockBottom(LayoutObject* o, BlockFormatContext& bfc)
-{
-	CHECK(absl::holds_alternative<InlineBlockBox>(o->box));
-
-	BlockBox& box = absl::get<InlineBlockBox>(o->box).block_box;
-	float borpad_bottom = box.border.bottom + box.padding.bottom;
-
-	if (o->flags & NEW_BFC_FLAG) {
-		BlockFormatContext& inner_bfc = o->bfc.value();
-		bfc.border_bottom_edge = bfc.margin_bottom_edge = inner_bfc.margin_bottom_edge;
-	} else {
-		if (borpad_bottom > 0) {
-			bfc.border_bottom_edge = bfc.margin_bottom_edge + borpad_bottom;
-			bfc.margin_bottom_edge = bfc.border_bottom_edge + box.margin.bottom;
-		} else {
-			float coll_margin = collapse_margin(box.margin.bottom,
-				(bfc.margin_bottom_edge - bfc.border_bottom_edge));
-			bfc.margin_bottom_edge = bfc.border_bottom_edge + coll_margin;
-		}
-	}
+	bfc.border_bottom_edge = bfc.margin_bottom_edge + borpad_bottom;
+	bfc.margin_bottom_edge = bfc.border_bottom_edge + box.margin.bottom;
 }
 
 LayoutObject* LayoutObject::pick(LayoutObject* o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos)

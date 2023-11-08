@@ -106,11 +106,9 @@ private:
 		BlockFormatContext& bfc,
 		const scene2d::DimensionF& viewport_size,
 		ScrollbarPolicy scroll_y);
-	static void arrangeInlineBlockTop(LayoutObject* o, BlockFormatContext& bfc);
 	static void arrangeInlineBlockChildren(LayoutObject* o,
-		BlockFormatContext& bfc,
+		absl::optional<float> contg_height,
 		const scene2d::DimensionF& viewport_size);
-	static void arrangeInlineBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
 	static LayoutObject* pick(LayoutObject *o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos);
 
 	template <typename Sink>
