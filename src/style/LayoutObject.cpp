@@ -711,9 +711,8 @@ void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
 	b.border.bottom = try_resolve_to_px(st.border_bottom_width, contg_width).value_or(0);
 	b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_width).value_or(0);
 
-	// Compute pos.x
-	b.pos.x = bfc.contg_left_edge;
-	int kk = bfc.contg_left_edge;
+	// No need to compute pos.x
+	// b.pos.x = bfc.contg_left_edge;
 
 	// Update max border_right_edge
 	bfc.border_right_edge = std::max(bfc.border_right_edge, bfc.contg_left_edge + b.borderRect().right);
@@ -731,19 +730,15 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 
 	BlockFormatContext& bfc = o->bfc.value();
 	bfc.contg_left_edge = box.contentRect().left;
-	bfc.contg_right_edge = bfc.contg_left_edge + box.contentRect().width();
+	bfc.contg_right_edge = box.contentRect().right;
 	bfc.border_right_edge = bfc.contg_left_edge;
 	bfc.border_bottom_edge = bfc.margin_bottom_edge = box.margin.top + borpad_top;
 	bfc.contg_height = contg_height;
-
 	box.prefer_height = try_resolve_to_px(st.height, bfc.contg_height);
 
 	float saved_bfc_margin_bottom = bfc.margin_bottom_edge;
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
 		{
-			base::scoped_setter _1(bfc.contg_height, box.prefer_height);
-			base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
-			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
 			LayoutObject* child = o->first_child;
 			do {
 				arrange(child, bfc, viewport_size);
@@ -767,15 +762,12 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 		}
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		auto rect = box.contentRect();
-		o->ifc.emplace(bfc, bfc.contg_left_edge + rect.left, rect.width(), box.pos.y + rect.top);
+		o->ifc.emplace(bfc, bfc.contg_left_edge, rect.width(), rect.top);
 		LOG(INFO)
 			<< "begin IFC pos=" << scene2d::PointF(bfc.contg_left_edge, bfc.margin_bottom_edge)
 			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
 
 		{
-			base::scoped_setter _1(bfc.contg_height, box.prefer_height);
-			base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
-			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
 			LayoutObject* child = o->first_child;
 			do {
 				prepare(child, *o->ifc, viewport_size);
