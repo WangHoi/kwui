@@ -69,15 +69,12 @@ var simple_stylesheet = {
 		"font-size": "30px",
 	},
 	"button": {
-		"width": "100px",
+		"width": "auto",
 		"border-color": "#000",
 		"border-left-width": 10,
 		"border-top-width": 10,
 		"border-right-width": 10,
 		"border-bottom-width": 10,
-		"text-align": "right"
-	},
-	".miao": {
 		"text-align": "left"
 	}
 };
@@ -92,8 +89,8 @@ var hello_world2 = (
 
 var hello_world3 = (
 	<div>
-		<button>Third<button class="miao" style={{"margin-left":0}}>Fourth</button></button>
+		<button>Third<button>Fourth</button></button>
 	</div>
 );
 
-app.showDialog(hello_world3, simple_stylesheet);
+app.showDialog(hello_world2, simple_stylesheet);

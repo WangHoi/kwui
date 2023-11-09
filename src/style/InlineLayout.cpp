@@ -256,7 +256,7 @@ void LineBox::arrange(float pos_y, style::TextAlign text_align)
     } else if (text_align == style::TextAlign::Right) {
         align_offset_x = avail_width - (x - left);
     }
-    if (align_offset_x != 0.0f) {
+    if (align_offset_x > 0.0f) {
         for (style::InlineBox* b : inline_boxes) {
             b->pos.x += align_offset_x;
         }

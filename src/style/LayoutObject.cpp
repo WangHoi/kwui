@@ -185,7 +185,7 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 	}
 
 	if (depends_children_width) {
-		if (st.display == DisplayType::Block || st.display == DisplayType::InlineBlock) {
+		if (o->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) {
 			LayoutObject* child = o->first_child;
 			if (child) do {
 				const style::Style& cst = *child->style;
@@ -206,14 +206,26 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 
 				child = child->next_sibling;
 			} while (child != o->first_child);
-		} else if (st.display == DisplayType::Inline) {
+		} else if (o->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
 			LayoutObject* child = o->first_child;
 			if (child) do {
-				min_width = std::max(min_width, child->min_width);
+				float mbp_width = 0;
+				const style::Style& cst = *child->style;
+				if (cst.display == DisplayType::Block || cst.display == DisplayType::InlineBlock) {
+					float margin_left = try_resolve_to_px(cst.margin_left, absl::nullopt).value_or(0);
+					float border_left = try_resolve_to_px(cst.border_left_width, absl::nullopt).value_or(0);
+					float padding_left = try_resolve_to_px(cst.padding_left, absl::nullopt).value_or(0);
+					float padding_right = try_resolve_to_px(cst.padding_right, absl::nullopt).value_or(0);
+					float border_right = try_resolve_to_px(cst.border_right_width, absl::nullopt).value_or(0);
+					float margin_right = try_resolve_to_px(cst.margin_right, absl::nullopt).value_or(0);
+					mbp_width = margin_left + border_left + padding_left + padding_right + border_right + margin_right;
+				}
+
+				min_width = std::max(min_width, mbp_width + child->min_width);
 				if (max_width == std::numeric_limits<float>::infinity()) {
-					max_width = child->max_width;
+					max_width = mbp_width + child->max_width;
 				} else {
-					max_width = std::max(max_width, child->max_width);
+					max_width += mbp_width + child->max_width;
 				}
 
 				child = child->next_sibling;
