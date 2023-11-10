@@ -960,6 +960,7 @@ void LayoutTreeBuilder::initFlowRoot(scene2d::Node* node)
 	current_->flags |= LayoutObject::NEW_BFC_FLAG;
 	current_->bfc.emplace(node);
 	current_->box = BlockBox();
+	last_child_ = nullptr;
 }
 
 void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
