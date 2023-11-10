@@ -101,6 +101,7 @@ private:
 	static void arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
 	static void prepare(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
 	static void arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
+	static void translate(LayoutObject* o, scene2d::PointF offset);
 	static void arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
 	static void arrangeInlineBlockX(LayoutObject* o,
 		BlockFormatContext& bfc,

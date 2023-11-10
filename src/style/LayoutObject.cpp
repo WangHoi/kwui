@@ -78,7 +78,6 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 {
 	const Style& st = *o->style;
-	bool painter_restore_pending = false;
 
 	static int depth = 0;
 	base::scoped_setter _(depth, depth + 1);
@@ -112,9 +111,6 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 				border_rect.width(),
 				border_rect.height());
 			// LOG(INFO) << "paint box: " << render_rect;
-			painter_restore_pending = true;
-			painter->save();
-			painter->setTranslation(ib.pos, true);
 			painter->drawBox(
 				render_rect,
 				st.border_top_width.pixelOrZero(),
@@ -138,11 +134,6 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		paint(child, painter);
 		child = child->next_sibling;
 	} while (child != o->first_child);
-
-	if (painter_restore_pending) {
-		painter_restore_pending = false;
-		painter->restore();
-	}
 }
 
 LayoutObject* LayoutObject::pick(FlowRoot fl, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos)
@@ -161,7 +152,7 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 		measure(child, viewport_height);
 		child = child->next_sibling;
 	} while (child != o->first_child);
-	
+
 	const style::Style& st = *o->style;
 	float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
 	bool depends_children_width = false;
@@ -242,7 +233,7 @@ void LayoutObject::arrange(LayoutObject* o, BlockFormatContext& bfc, const scene
 	ScrollbarPolicy scroll_y = ScrollbarPolicy::Hidden;
 	if (st.overflow_y == OverflowType::Scroll)
 		scroll_y = ScrollbarPolicy::Stable;
-	
+
 	float saved_border_right_edge = bfc.border_right_edge;
 	float saved_border_bottom_edge = bfc.border_bottom_edge;
 	float saved_margin_bottom_edge = bfc.margin_bottom_edge;
@@ -532,7 +523,7 @@ public:
 		inline_box->line_box->addInlineBox(inline_box.get());
 		inline_box->line_box_offset_x = inline_box->line_box->offset_x;
 		inline_box->line_box->offset_x += inline_box->size.width;
-		
+
 		line->line_height = std::max(line->line_height, fm.line_height);
 
 		text_box_.glyph_run_boxes.inline_boxes.push_back(std::move(inline_box));
@@ -565,6 +556,7 @@ void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc, const scen
 	}
 }
 
+// arrange bottom up
 void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size)
 {
 	const auto& st = *o->style;
@@ -623,9 +615,46 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 		InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 		if (!ibb.inline_boxes.empty()) {
 			const InlineBox& ib = ibb.inline_boxes.front();
-			//ibb.block_box.pos = ib.pos;
+			ibb.block_box.pos = ib.pos;
+			LayoutObject* child = o->first_child;
+			if (child) do {
+				translate(child, ib.pos);
+				child = child->next_sibling;
+			} while (child != o->first_child);
 		}
 	}
+}
+
+void LayoutObject::translate(LayoutObject* o, scene2d::PointF offset)
+{
+	if (absl::holds_alternative<TextBox>(o->box)) {
+		auto& tb = absl::get<TextBox>(o->box);
+		for (auto& ib : tb.glyph_run_boxes.inline_boxes) {
+			ib->pos += offset;
+		}
+	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
+		auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+		for (auto& ib : ibs) {
+			ib.pos += offset;
+		}
+	} else if (absl::holds_alternative<BlockBox>(o->box)) {
+		auto& b = absl::get<BlockBox>(o->box);
+		b.pos += offset;
+	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		auto& ibb = absl::get<InlineBlockBox>(o->box);
+		CHECK(!ibb.inline_boxes.empty());
+		if (!ibb.inline_boxes.empty()) {
+			auto& ib = ibb.inline_boxes.front();
+			ib.pos += offset;
+		}
+		ibb.block_box.pos += offset;
+	}
+
+	LayoutObject* child = o->first_child;
+	if (child) do {
+		translate(child, offset);
+		child = child->next_sibling;
+	} while (child != o->first_child);
 }
 
 void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size)
