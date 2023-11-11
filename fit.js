@@ -69,4 +69,36 @@ var hello_world = <div>
 	<div><p>hello</p></div><p>world</p>
 </div>;
 
-app.showDialog(hello_world, simple_stylesheet);
+var fit_body = <body>
+    <div class="rel">
+        <div class="abs top-right">
+            <div>最小化</div>
+            <div style="width:10px;">a</div>
+        </div>
+    </div>
+</body>;
+
+var fit_stylesheet = {
+	".rel": {
+		"position": "relative",
+        "width": "200px",
+        "height": "200px",
+        "background-color": "#aaa",
+    },
+	".abs": {
+        "position": "absolute",
+        //overflow: auto;
+    },
+    ".top-right": {
+        "top": "10px",
+        "right": "10px",
+        "background-color": "#e8e",
+    },
+    ".bottom-right": {
+        "bottom": "10px",
+        "right": "10px",
+        "background-color": "#e8e",
+    }
+};
+
+app.showDialog(fit_body, fit_stylesheet);

@@ -129,11 +129,19 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		}
 	}
 
+	if (st.position == PositionType::Absolute) {
+		painter->setTranslation(absl::get<BlockBox>(o->box).pos, true);
+	}
+
 	LayoutObject* child = o->first_child;
 	if (child) do {
 		paint(child, painter);
 		child = child->next_sibling;
 	} while (child != o->first_child);
+
+	if (st.position == PositionType::Absolute) {
+		painter->restore();
+	}
 }
 
 LayoutObject* LayoutObject::pick(FlowRoot fl, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos)
@@ -273,6 +281,7 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 {
 	const Style& st = *o->style;
 	CHECK(st.display == DisplayType::Block);
+	BlockBox& b = absl::get<BlockBox>(o->box);
 
 	float contg_width = bfc.contg_right_edge - bfc.contg_left_edge;
 	float clean_contg_width = contg_width
@@ -287,46 +296,92 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 	} else {
 		clean_contg_width = std::max(0.0f, clean_contg_width);
 	}
-	StaticBlockWidthSolver solver(
-		clean_contg_width,
-		try_resolve_to_px(st.margin_left, contg_width),
-		try_resolve_to_px(st.width, contg_width),
-		try_resolve_to_px(st.margin_right, contg_width));
-	float avail_width = solver.measureWidth().value;
-	solver.setLayoutWidth(avail_width);
 
-	// Compute width, left and right margins
-	BlockBox& b = absl::get<BlockBox>(o->box);
-	b.content.width = solver.width();
-	b.margin.left = solver.marginLeft();
-	b.border.left = try_resolve_to_px(st.border_left_width, contg_width).value_or(0);
-	b.padding.left = try_resolve_to_px(st.padding_left, contg_width).value_or(0);
-	b.padding.right = try_resolve_to_px(st.padding_right, contg_width).value_or(0);
-	b.border.right = try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
-	b.margin.right = solver.marginRight();
+	if (st.position == PositionType::Absolute) {
+		style::AbsoluteBlockWidthSolver solver(
+			clean_contg_width,
+			try_resolve_to_px(st.left, contg_width),
+			try_resolve_to_px(st.margin_left, contg_width),
+			try_resolve_to_px(st.width, contg_width),
+			try_resolve_to_px(st.margin_right, contg_width),
+			try_resolve_to_px(st.right, contg_width));
 
-	if (scroll_y == ScrollbarPolicy::Stable) {
-		b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
-	} else if (scroll_y == ScrollbarPolicy::StableBothEdges) {
-		b.inner_padding.left = SCROLLBAR_GUTTER_WIDTH;
-		b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
+		// Compute width, left and right margins
+		style::WidthConstraint mw = solver.measureWidth();
+		if (mw.type == style::WidthConstraintType::Fixed) {
+			b.content.width = mw.value;
+		} else if (mw.type == style::WidthConstraintType::MinContent) {
+			b.content.width = o->min_width;
+		} else if (mw.type == style::WidthConstraintType::MaxContent) {
+			b.content.width = o->max_width;
+		} else if (mw.type == style::WidthConstraintType::FitContent) {
+			b.content.width = std::min(o->max_width, std::max(o->min_width, mw.value));
+		} else {
+			LOG(ERROR) << "BUG: unexpected width constraint type.";
+			b.content.width = 0.0f;
+		}
+		solver.setLayoutWidth(b.content.width);
+
+		b.margin.left = solver.marginLeft();
+		b.border.left = try_resolve_to_px(st.border_left_width, contg_width).value_or(0);
+		b.padding.left = try_resolve_to_px(st.padding_left, contg_width).value_or(0);
+		b.padding.right = try_resolve_to_px(st.padding_right, contg_width).value_or(0);
+		b.border.right = try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
+		b.margin.right = solver.marginRight();
+
+		// Compute top and bottom margins
+		b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);
+		b.border.top = try_resolve_to_px(st.border_top_width, contg_width).value_or(0);
+		b.padding.top = try_resolve_to_px(st.padding_top, contg_width).value_or(0);
+
+		b.prefer_height = try_resolve_to_px(st.height, contg_width);
+
+		b.padding.bottom = try_resolve_to_px(st.padding_bottom, contg_width).value_or(0);
+		b.border.bottom = try_resolve_to_px(st.border_bottom_width, contg_width).value_or(0);
+		b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_width).value_or(0);
+
+		b.pos.x = solver.left();
+	} else {
+		StaticBlockWidthSolver solver(
+			clean_contg_width,
+			try_resolve_to_px(st.margin_left, contg_width),
+			try_resolve_to_px(st.width, contg_width),
+			try_resolve_to_px(st.margin_right, contg_width));
+		float avail_width = solver.measureWidth().value;
+		solver.setLayoutWidth(avail_width);
+
+		// Compute width, left and right margins
+		b.content.width = solver.width();
+		b.margin.left = solver.marginLeft();
+		b.border.left = try_resolve_to_px(st.border_left_width, contg_width).value_or(0);
+		b.padding.left = try_resolve_to_px(st.padding_left, contg_width).value_or(0);
+		b.padding.right = try_resolve_to_px(st.padding_right, contg_width).value_or(0);
+		b.border.right = try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
+		b.margin.right = solver.marginRight();
+
+		if (scroll_y == ScrollbarPolicy::Stable) {
+			b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
+		} else if (scroll_y == ScrollbarPolicy::StableBothEdges) {
+			b.inner_padding.left = SCROLLBAR_GUTTER_WIDTH;
+			b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
+		}
+		b.content.width = std::max(0.0f, b.content.width - b.inner_padding.left - b.inner_padding.right);
+
+		// Compute height, top and bottom margins
+		b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);
+		b.border.top = try_resolve_to_px(st.border_top_width, contg_width).value_or(0);
+		b.padding.top = try_resolve_to_px(st.padding_top, contg_width).value_or(0);
+
+		b.padding.bottom = try_resolve_to_px(st.padding_bottom, contg_width).value_or(0);
+		b.border.bottom = try_resolve_to_px(st.border_bottom_width, contg_width).value_or(0);
+		b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_width).value_or(0);
+
+		// Compute pos.x
+		b.pos.x = bfc.contg_left_edge;
+
+		// Update max border_right_edge
+		bfc.border_right_edge = std::max(bfc.border_right_edge, bfc.contg_left_edge + b.borderRect().right);
 	}
-	b.content.width = std::max(0.0f, b.content.width - b.inner_padding.left - b.inner_padding.right);
-
-	// Compute height, top and bottom margins
-	b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);
-	b.border.top = try_resolve_to_px(st.border_top_width, contg_width).value_or(0);
-	b.padding.top = try_resolve_to_px(st.padding_top, contg_width).value_or(0);
-
-	b.padding.bottom = try_resolve_to_px(st.padding_bottom, contg_width).value_or(0);
-	b.border.bottom = try_resolve_to_px(st.border_bottom_width, contg_width).value_or(0);
-	b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_width).value_or(0);
-
-	// Compute pos.x
-	b.pos.x = bfc.contg_left_edge;
-
-	// Update max border_right_edge
-	bfc.border_right_edge = std::max(bfc.border_right_edge, bfc.contg_left_edge + b.borderRect().right);
 }
 
 void LayoutObject::arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc)
@@ -368,11 +423,19 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 
 	if (o->flags & NEW_BFC_FLAG) {
 		BlockFormatContext& inner_bfc = o->bfc.value();
-		inner_bfc.contg_left_edge = bfc.contg_left_edge;
-		inner_bfc.contg_right_edge = bfc.contg_right_edge;
-		inner_bfc.border_right_edge = inner_bfc.contg_left_edge;
-		inner_bfc.border_bottom_edge = inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
-		inner_bfc.contg_height = bfc.contg_height;
+		if (o->style->position == PositionType::Absolute) {
+			inner_bfc.contg_left_edge = 0;
+			inner_bfc.contg_right_edge = bfc.contg_right_edge - bfc.contg_left_edge;
+			inner_bfc.border_right_edge = inner_bfc.contg_left_edge;
+			inner_bfc.border_bottom_edge = inner_bfc.margin_bottom_edge = 0;
+			inner_bfc.contg_height = bfc.contg_height;
+		} else if (o->style->position == PositionType::Static) {
+			inner_bfc.contg_left_edge = bfc.contg_left_edge;
+			inner_bfc.contg_right_edge = bfc.contg_right_edge;
+			inner_bfc.border_right_edge = inner_bfc.contg_left_edge;
+			inner_bfc.border_bottom_edge = inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
+			inner_bfc.contg_height = bfc.contg_height;
+		}
 		bfc = inner_bfc;
 	}
 
@@ -408,14 +471,14 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 		}
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		auto rect = box.contentRect();
-		o->ifc.emplace(bfc, bfc.contg_left_edge + rect.left, rect.width(), box.pos.y + rect.top);
+		o->ifc.emplace(bfc, bfc.contg_left_edge + rect.left, rect.width(), bfc.margin_bottom_edge + rect.top);
 		LOG(INFO)
 			<< "begin IFC pos=" << scene2d::PointF(bfc.contg_left_edge, bfc.margin_bottom_edge)
 			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
 
 		{
 			base::scoped_setter _1(bfc.contg_height, box.prefer_height);
-			base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
+			base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.pos.x + box.contentRect().left);
 			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
 			LayoutObject* child = o->first_child;
 			do {
