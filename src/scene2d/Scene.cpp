@@ -171,24 +171,27 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 
 void Scene::paint(graph2d::PainterInterface* painter)
 {
-	// style::BlockPaintContext bpc;
-	// paintNode(root_, bpc, painter);
-	std::map<style::LayoutObject*, PointF> offsets;
+	// positioned_layout -> (offset, parent_positioned_layout)
+	std::map<style::LayoutObject*, std::tuple<PointF, style::LayoutObject*>> offsets;
 	for (auto& fl : flow_roots_) {
-#error TODO: relative positioned root
 		if (fl.positioned_parent) {
 			PointF offset;
 			auto it = offsets.find(fl.positioned_parent);
 			while (it != offsets.end()) {
-				offset += it->second;
-				it = offsets.find(it->first);
+				const auto& [off, po] = it->second;
+				offset += off;
+				it = offsets.find(po);
 			}
 			painter->setTranslation(offset, false);
 		}
 		
 		style::LayoutObject::paint(fl.root, painter);
 		
-		offsets[fl.root] = absl::get<style::BlockBox>(fl.root->box).pos;
+		offsets[fl.root] = { style::LayoutObject::getOffset(fl.root), fl.positioned_parent };
+		for (style::LayoutObject*o : fl.relatives_) {
+			offsets[o] = { style::LayoutObject::getOffset(o), fl.root };
+		}
+
 		if (fl.positioned_parent) {
 			painter->restore();
 		}

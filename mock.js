@@ -106,4 +106,4 @@ var hello_world3 = (
 
 console.log(JSON.stringify(hello_world_full));
 
-app.showDialog(hello_world3, simple_stylesheet);
+app.showDialog(hello_world_full, simple_stylesheet);

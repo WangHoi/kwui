@@ -72,7 +72,7 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 		}
 	}
 
-	arrange(fl.root, bfc, viewport_size);
+	arrangeBlock(fl.root, bfc, viewport_size);
 }
 
 void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
@@ -147,6 +147,22 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 LayoutObject* LayoutObject::pick(FlowRoot fl, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos)
 {
 	return nullptr;
+}
+
+scene2d::PointF LayoutObject::getOffset(LayoutObject* o)
+{
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		const auto& rect = absl::get<BlockBox>(o->box).paddingRect();
+		return rect.origin();
+	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+		if (!ibs.empty()) {
+			const InlineBox& first = ibs.front();
+			const InlineBox& last = ibs.back();
+			return first.pos;
+		}
+	}
+	return scene2d::PointF();
 }
 
 void LayoutObject::measure(LayoutObject* o, float viewport_height)
@@ -235,7 +251,7 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 	o->max_width = max_width;
 }
 
-void LayoutObject::arrange(LayoutObject* o, BlockFormatContext& bfc, const scene2d::DimensionF& viewport_size)
+void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const scene2d::DimensionF& viewport_size)
 {
 	const Style& st = *o->style;
 	ScrollbarPolicy scroll_y = ScrollbarPolicy::Hidden;
@@ -245,7 +261,7 @@ void LayoutObject::arrange(LayoutObject* o, BlockFormatContext& bfc, const scene
 	float saved_border_right_edge = bfc.border_right_edge;
 	float saved_border_bottom_edge = bfc.border_bottom_edge;
 	float saved_margin_bottom_edge = bfc.margin_bottom_edge;
-	arrange(o, bfc, viewport_size, scroll_y);
+	arrangeBlock(o, bfc, viewport_size, scroll_y);
 
 	const BlockBox& b = absl::get<BlockBox>(o->box);
 	if (st.overflow_y == OverflowType::Auto && bfc.border_right_edge > b.pos.x + b.paddingRect().right) {
@@ -254,11 +270,11 @@ void LayoutObject::arrange(LayoutObject* o, BlockFormatContext& bfc, const scene
 		bfc.border_right_edge = saved_border_right_edge;
 		bfc.border_bottom_edge = saved_border_bottom_edge;
 		bfc.margin_bottom_edge = saved_margin_bottom_edge;
-		arrange(o, bfc, viewport_size, scroll_y);
+		arrangeBlock(o, bfc, viewport_size, scroll_y);
 	}
 }
 
-void LayoutObject::arrange(LayoutObject* o,
+void LayoutObject::arrangeBlock(LayoutObject* o,
 	BlockFormatContext& bfc,
 	const scene2d::DimensionF& viewport_size,
 	ScrollbarPolicy scroll_y)
@@ -270,7 +286,7 @@ void LayoutObject::arrange(LayoutObject* o,
 		arrangeBlockChildren(o, bfc, viewport_size);
 		arrangeBlockBottom(o, bfc);
 	} else {
-		LOG(WARNING) << "LayoutObject::arrange " << st.display << " not implemented.";
+		LOG(WARNING) << "LayoutObject::arrangeBlock " << st.display << " not implemented.";
 	}
 }
 
@@ -386,27 +402,33 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 
 void LayoutObject::arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc)
 {
+	const Style& st = *o->style;
 	CHECK(absl::holds_alternative<BlockBox>(o->box));
 
 	BlockBox& box = absl::get<BlockBox>(o->box);
-	float borpad_top = box.border.top + box.padding.top;
 
-	if (o->flags & NEW_BFC_FLAG) {
-		box.pos.y = bfc.margin_bottom_edge;
-		bfc.border_bottom_edge = bfc.margin_bottom_edge = bfc.margin_bottom_edge + borpad_top;
+	if (st.position == PositionType::Absolute) {
+		box.pos.y = 0;
 	} else {
-		if (borpad_top > 0) {
-			float coll_margin = collapse_margin(box.margin.top,
-				(bfc.margin_bottom_edge - bfc.border_bottom_edge));
-			box.pos.y = bfc.border_bottom_edge + coll_margin - box.margin.top;
-			bfc.border_bottom_edge = bfc.border_bottom_edge + coll_margin + borpad_top;
-			bfc.margin_bottom_edge = bfc.border_bottom_edge;
+		float borpad_top = box.border.top + box.padding.top;
+
+		if (o->flags & NEW_BFC_FLAG) {
+			box.pos.y = bfc.margin_bottom_edge;
+			bfc.border_bottom_edge = bfc.margin_bottom_edge = bfc.margin_bottom_edge + borpad_top;
 		} else {
-			float coll_margin = collapse_margin(box.margin.top,
-				(bfc.margin_bottom_edge - bfc.border_bottom_edge));
-			box.pos.y = bfc.border_bottom_edge + coll_margin - box.margin.top;
-			//bfc.border_bottom_edge += coll_margin + borpad_top;
-			bfc.margin_bottom_edge = bfc.border_bottom_edge + coll_margin;
+			if (borpad_top > 0) {
+				float coll_margin = collapse_margin(box.margin.top,
+					(bfc.margin_bottom_edge - bfc.border_bottom_edge));
+				box.pos.y = bfc.border_bottom_edge + coll_margin - box.margin.top;
+				bfc.border_bottom_edge = bfc.border_bottom_edge + coll_margin + borpad_top;
+				bfc.margin_bottom_edge = bfc.border_bottom_edge;
+			} else {
+				float coll_margin = collapse_margin(box.margin.top,
+					(bfc.margin_bottom_edge - bfc.border_bottom_edge));
+				box.pos.y = bfc.border_bottom_edge + coll_margin - box.margin.top;
+				//bfc.border_bottom_edge += coll_margin + borpad_top;
+				bfc.margin_bottom_edge = bfc.border_bottom_edge + coll_margin;
+			}
 		}
 	}
 }
@@ -449,7 +471,7 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
 			LayoutObject* child = o->first_child;
 			do {
-				arrange(child, bfc, viewport_size);
+				arrangeBlock(child, bfc, viewport_size);
 				child = child->next_sibling;
 			} while (child != o->first_child);
 		}
@@ -471,7 +493,11 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 		}
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		auto rect = box.contentRect();
-		o->ifc.emplace(bfc, bfc.contg_left_edge + rect.left, rect.width(), bfc.margin_bottom_edge + rect.top);
+		scene2d::PointF pos;
+		if (o->style->position == PositionType::Static || o->style->position == PositionType::Relative) {
+			pos = box.pos;
+		}
+		o->ifc.emplace(bfc, pos.x + rect.left, rect.width(), pos.y + rect.top);
 		LOG(INFO)
 			<< "begin IFC pos=" << scene2d::PointF(bfc.contg_left_edge, bfc.margin_bottom_edge)
 			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
@@ -522,9 +548,11 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 
 void LayoutObject::arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc)
 {
+	const Style& st = *o->style;
 	CHECK(absl::holds_alternative<BlockBox>(o->box));
 
 	BlockBox& box = absl::get<BlockBox>(o->box);
+
 	float borpad_bottom = box.border.bottom + box.padding.bottom;
 
 	if (o->flags & NEW_BFC_FLAG) {
@@ -539,6 +567,19 @@ void LayoutObject::arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc)
 				(bfc.margin_bottom_edge - bfc.border_bottom_edge));
 			bfc.margin_bottom_edge = bfc.border_bottom_edge + coll_margin;
 		}
+	}
+
+	if (st.position == PositionType::Absolute) {
+		// for absolutely positioned block
+		// TODO: improve AbsoluteBlockPositionSolver
+		CHECK(bfc.contg_height.has_value());
+		float contg_blk_height = bfc.contg_height.value_or(0);
+		AbsoluteBlockPositionSolver height_solver(contg_blk_height,
+			try_resolve_to_px(st.top, contg_blk_height),
+			try_resolve_to_px(st.height, contg_blk_height),
+			try_resolve_to_px(st.bottom, contg_blk_height));
+		height_solver.setLayoutHeight(box.marginRect().size().height);
+		box.pos.y = height_solver.top();
 	}
 }
 
@@ -619,7 +660,7 @@ void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc, const scen
 	}
 }
 
-// arrange bottom up
+// arrangeBlock bottom up
 void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size)
 {
 	const auto& st = *o->style;
@@ -845,7 +886,7 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 		{
 			LayoutObject* child = o->first_child;
 			do {
-				arrange(child, bfc, viewport_size);
+				arrangeBlock(child, bfc, viewport_size);
 				child = child->next_sibling;
 			} while (child != o->first_child);
 		}
@@ -996,6 +1037,7 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 
 	flow_roots.push_back({ &root_->layout_, nullptr });
 	initFlowRoot(root_);
+	flow_root_ = &flow_roots.back();
 	scene2d::Node::eachChild(root_, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
 
 	while (!abs_pos_nodes_.empty()) {
@@ -1004,10 +1046,12 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 			auto pnode = node->positionedAncestor();
 			auto po = pnode ? &pnode->layout_ : nullptr;
 			flow_roots.push_back({ &node->layout_, po });
+			flow_root_ = &flow_roots.back();
 			initFlowRoot(node);
 			scene2d::Node::eachChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
 		}
 	}
+	flow_root_ = nullptr;
 
 	return flow_roots;
 }
@@ -1031,9 +1075,12 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 	if (node->type() == scene2d::NodeType::NODE_TEXT) {
 		addText(node);
 	} else if (node->type() == scene2d::NodeType::NODE_ELEMENT) {
-		if (node->absolutelyPositioned()) {
-			abs_pos_nodes_.push_back(node);
-			return;
+		if (node->positioned()) {
+			flow_root_->relatives_.push_back(&node->layout_);
+			if (node->absolutelyPositioned()) {
+				abs_pos_nodes_.push_back(node);
+				return;
+			}
 		}
 
 		beginChild(&node->layout_);

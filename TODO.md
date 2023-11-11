@@ -1,12 +1,10 @@
 ## 框架
 
 ### 布局:
-- 盒子生成：文本的anon-inline-box
 - Relative的处理
 - 盒子生成：inline中包含block，需要生成临时anon-block-box包裹;
 - AbsoluteBlockHeightSolver
-- StaticBlockWidthSolver 处理自动宽度
-- inline-block 的baseline不对
+- 支持滚动条
 
 ### CSS:
 - font-size 支持更多单位
@@ -31,6 +29,3 @@
 
 ## 签名自查程序移植
 
-- 支持滚动条
-- position: sticky
-- DataGrid实现：部分JS接口

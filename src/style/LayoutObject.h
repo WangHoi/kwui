@@ -34,6 +34,7 @@ struct TextBox {
 struct FlowRoot {
 	LayoutObject* root = nullptr;
 	LayoutObject* positioned_parent = nullptr;
+	std::vector<LayoutObject*> relatives_;
 };
 
 struct LayoutObject {
@@ -74,6 +75,7 @@ struct LayoutObject {
 	static void reflow(FlowRoot root, const scene2d::DimensionF& viewport_size);
 	static void paint(LayoutObject* o, graph2d::PainterInterface* painter);
 	static LayoutObject* pick(FlowRoot root, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos);
+	static scene2d::PointF getOffset(LayoutObject* o);
 
 private:
 	enum ScrollbarPolicy {
@@ -83,10 +85,10 @@ private:
 	};
 
 	static void measure(LayoutObject* o, float viewport_height);
-	static void arrange(LayoutObject* o,
+	static void arrangeBlock(LayoutObject* o,
 		BlockFormatContext& bfc,
 		const scene2d::DimensionF& viewport_size);
-	static void arrange(LayoutObject* o,
+	static void arrangeBlock(LayoutObject* o,
 		BlockFormatContext& bfc,
 		const scene2d::DimensionF& viewport_size,
 		ScrollbarPolicy scroll_y);
@@ -147,8 +149,9 @@ private:
 	void parentAddInlineChild();
 
 	scene2d::Node* root_ = nullptr;
-	std::vector<scene2d::Node*> abs_pos_nodes_; // 'absolute' and 'fixed' positioned nodes
+	std::vector<scene2d::Node*> abs_pos_nodes_;
 
+	FlowRoot* flow_root_ = nullptr;
 	LayoutObject* current_ = nullptr;
 	LayoutObject* last_child_ = nullptr;
 	// (contg, last_child, reparent_anon_block)

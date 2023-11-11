@@ -71,7 +71,7 @@ var hello_world = <div>
 
 var fit_body = <body>
     <div class="rel">
-        <div class="abs top-right">
+        <div class="abs bottom-right">
             <div>最小化</div>
             <div style="width:10px;">a</div>
         </div>
