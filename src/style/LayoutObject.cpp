@@ -350,8 +350,6 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 		b.border.top = try_resolve_to_px(st.border_top_width, contg_width).value_or(0);
 		b.padding.top = try_resolve_to_px(st.padding_top, contg_width).value_or(0);
 
-		b.prefer_height = try_resolve_to_px(st.height, contg_width);
-
 		b.padding.bottom = try_resolve_to_px(st.padding_bottom, contg_width).value_or(0);
 		b.border.bottom = try_resolve_to_px(st.border_bottom_width, contg_width).value_or(0);
 		b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_width).value_or(0);
@@ -439,6 +437,7 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 {
 	CHECK(absl::holds_alternative<BlockBox>(o->box));
 
+	const Style& st = *o->style;
 	BlockBox& box = absl::get<BlockBox>(o->box);
 	float borpad_top = box.border.top + box.padding.top;
 	float borpad_bottom = box.border.bottom + box.padding.bottom;
@@ -461,7 +460,19 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 		bfc = inner_bfc;
 	}
 
-	box.prefer_height = try_resolve_to_px(o->style->height, bfc.contg_height);
+	box.prefer_height = try_resolve_to_px(st.height, bfc.contg_height);
+	if (st.position == PositionType::Absolute) {
+		if (bfc.contg_height.has_value() && !box.prefer_height.has_value()
+			&& (st.top.isPixel() || st.top.isRaw())
+			&& (st.bottom.isPixel() || st.bottom.isRaw())) {
+			float h = bfc.contg_height.value()
+				- try_resolve_to_px(st.top, bfc.contg_height).value_or(0)
+				- box.margin.top - box.border.top - box.padding.top - box.inner_padding.top
+				- box.inner_padding.bottom - box.padding.bottom - box.border.bottom - box.margin.bottom
+				- try_resolve_to_px(st.bottom, bfc.contg_height).value_or(0);
+			box.prefer_height.emplace(std::max(0.0f, h));
+		}
+	}
 
 	float saved_bfc_margin_bottom = bfc.margin_bottom_edge;
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {

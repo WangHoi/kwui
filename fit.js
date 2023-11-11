@@ -95,6 +95,7 @@ var fit_stylesheet = {
         "background-color": "#e8e",
     },
     ".bottom-right": {
+        "top": "10px",
         "bottom": "10px",
         "right": "10px",
         "background-color": "#e8e",
