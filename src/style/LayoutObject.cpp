@@ -144,9 +144,69 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 	}
 }
 
-LayoutObject* LayoutObject::pick(FlowRoot fl, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos)
+LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_mask, scene2d::PointF* out_local_pos)
 {
-	return nullptr;
+	const Style& st = *o->style;
+	LayoutObject* pick_result = nullptr;
+
+	if (o->node->text_ == "mini") {
+		int kk = 1;
+	}
+
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		const BlockBox& b = absl::get<BlockBox>(o->box);
+		scene2d::RectF border_rect = b.borderRect();
+		scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
+			b.pos.x + border_rect.left,
+			b.pos.y + border_rect.top,
+			border_rect.width(),
+			border_rect.height());
+		if (o->node && o->node->testFlags(flag_mask) && render_rect.contains(pos)) {
+			if (out_local_pos)
+				*out_local_pos = pos - render_rect.origin();
+			pick_result = o;
+		}
+	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+		for (auto it = ibs.rbegin(); it != ibs.rend(); ++it) {
+			const scene2d::RectF rect = it->boundingRect();
+			if (o->node && o->node->testFlags(flag_mask) && rect.contains(pos)) {
+				if (out_local_pos)
+					*out_local_pos = pos - rect.origin();
+				pick_result = o;
+			}
+		}
+	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		const BlockBox& b = absl::get<InlineBlockBox>(o->box).block_box;
+		scene2d::RectF border_rect = b.borderRect();
+		scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
+			b.pos.x + border_rect.left,
+			b.pos.y + border_rect.top,
+			border_rect.width(),
+			border_rect.height());
+		if (o->node && o->node->testFlags(flag_mask) && render_rect.contains(pos)) {
+			if (out_local_pos)
+				*out_local_pos = pos - render_rect.origin();
+			pick_result = o;
+		}
+	} else if (absl::holds_alternative<TextBox>(o->box)) {
+	}
+
+	if (st.position == PositionType::Absolute) {
+		pos -= absl::get<BlockBox>(o->box).pos;
+	}
+
+	LayoutObject* child = o->first_child ? o->first_child->prev_sibling : nullptr;
+	if (child) do {
+		LayoutObject* picked_child = pick(child, pos, flag_mask, out_local_pos);
+		if (picked_child) {
+			pick_result = picked_child;
+			break;
+		}
+		child = child->prev_sibling;
+	} while (child != o->first_child->prev_sibling);
+
+	return pick_result;
 }
 
 scene2d::PointF LayoutObject::getOffset(LayoutObject* o)
@@ -965,55 +1025,6 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 	bfc.margin_bottom_edge = bfc.border_bottom_edge + box.margin.bottom;
 }
 
-LayoutObject* LayoutObject::pick(LayoutObject* o, const scene2d::PointF& pos, int flag_mask, scene2d::PointF* out_local_pos)
-{
-	const Style& st = *o->style;
-	LayoutObject* pick_result = nullptr;
-	scene2d::PointF children_offset;
-
-	if (absl::holds_alternative<BlockBox>(o->box)) {
-		const BlockBox& b = absl::get<BlockBox>(o->box);
-		scene2d::RectF border_rect = b.borderRect();
-		scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
-			b.pos.x + border_rect.left,
-			b.pos.y + border_rect.top,
-			border_rect.width(),
-			border_rect.height());
-		if (o->node && o->node->testFlags(flag_mask) && render_rect.contains(pos)) {
-			if (out_local_pos)
-				*out_local_pos = pos - render_rect.origin();
-			pick_result = o;
-		}
-		children_offset = b.contentRect().origin();
-	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
-		/*
-		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
-		for (auto it = ibs.rbegin(); it != ibs.rend(); ++it) {
-			const scene2d::RectF rect = it->boundingRect();
-			if (o->node && o->node->testFlags(flag_mask) && rect.contains(pos)) {
-				if (out_local_pos)
-					*out_local_pos = pos - rect.origin();
-				pick_result = o;
-			}
-		}
-		children_offset = b.pos;
-		*/
-	} else if (absl::holds_alternative<TextBox>(o->box)) {
-	}
-
-	LayoutObject* child = o->first_child->prev_sibling;
-	if (child) do {
-		LayoutObject* picked_child = pick(child, pos, flag_mask, out_local_pos);
-		if (picked_child) {
-			pick_result = picked_child;
-			break;
-		}
-		child = child->prev_sibling;
-	} while (child != o->first_child);
-
-	return pick_result;
-}
-
 absl::optional<float> LayoutObject::find_first_baseline(LayoutObject* o, float accum_y)
 {
 	if (o->ifc.has_value()) {
@@ -1087,7 +1098,7 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		addText(node);
 	} else if (node->type() == scene2d::NodeType::NODE_ELEMENT) {
 		if (node->positioned()) {
-			flow_root_->relatives_.push_back(&node->layout_);
+			flow_root_->relatives.push_back(&node->layout_);
 			if (node->absolutelyPositioned()) {
 				abs_pos_nodes_.push_back(node);
 				return;

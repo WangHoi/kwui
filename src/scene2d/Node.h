@@ -24,6 +24,7 @@ namespace style {
 class BlockWidthSolverInterface;
 class InlineBoxBuilder;
 class LayoutTreeBuilder;
+class LayoutObject;
 }
 
 namespace scene2d {
@@ -234,6 +235,7 @@ protected:
 	friend class windows::Dialog;
 	friend class style::InlineBoxBuilder;
 	friend class style::LayoutTreeBuilder;
+	friend class style::LayoutObject;
 };
 
 template<typename F>

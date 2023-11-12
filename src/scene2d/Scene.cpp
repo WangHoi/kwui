@@ -7,6 +7,7 @@
 #include "style/LayoutObject.h"
 #include "absl/functional/bind_front.h"
 #include "absl/cleanup/cleanup.h"
+#include "base/log.h"
 #include "graph2d/Painter.h"
 
 namespace scene2d {
@@ -122,7 +123,7 @@ Node* Scene::pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos)
 {
 	//return pickNode(root_, pos, flag_mask, out_local_pos);
 	for (auto it = flow_roots_.rbegin(); it != flow_roots_.rend(); ++it) {
-		style::LayoutObject* o = style::LayoutObject::pick(*it, pos, flag_mask, out_local_pos);
+		style::LayoutObject* o = style::LayoutObject::pick(it->root, pos - it->scene_pos, flag_mask, out_local_pos);
 		if (o)
 			return o->node;
 	}
@@ -167,11 +168,8 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 	for (auto& flow_root : flow_roots_) {
 		style::LayoutObject::reflow(flow_root, size);
 	}
-}
 
-void Scene::paint(graph2d::PainterInterface* painter)
-{
-	// positioned_layout -> (offset, parent_positioned_layout)
+	// compute each flow's scene pos
 	std::map<style::LayoutObject*, std::tuple<PointF, style::LayoutObject*>> offsets;
 	for (auto& fl : flow_roots_) {
 		if (fl.positioned_parent) {
@@ -182,19 +180,24 @@ void Scene::paint(graph2d::PainterInterface* painter)
 				offset += off;
 				it = offsets.find(po);
 			}
-			painter->setTranslation(offset, false);
+			fl.scene_pos = offset;
 		}
-		
-		style::LayoutObject::paint(fl.root, painter);
 		
 		offsets[fl.root] = { style::LayoutObject::getOffset(fl.root), fl.positioned_parent };
-		for (style::LayoutObject*o : fl.relatives_) {
+		for (style::LayoutObject*o : fl.relatives) {
 			offsets[o] = { style::LayoutObject::getOffset(o), fl.root };
 		}
+	}
+}
 
-		if (fl.positioned_parent) {
-			painter->restore();
-		}
+void Scene::paint(graph2d::PainterInterface* painter)
+{
+	for (auto& fl : flow_roots_) {
+		painter->setTranslation(fl.scene_pos, false);
+		LOG(INFO) << "setTranslation " << fl.scene_pos;
+		style::LayoutObject::paint(fl.root, painter);
+		LOG(INFO) << "restore";
+		painter->restore();
 	}
 }
 

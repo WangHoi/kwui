@@ -55,6 +55,9 @@ var simple_stylesheet = {
 		"display": "inline-block",
 		"width": "80px",
 		"height": "80px",
+	},
+	"button:hover": {
+		"background-color": "#ff0",
 	}
 };
 var hello_world_full = (<body>
