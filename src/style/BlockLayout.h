@@ -145,6 +145,9 @@ struct BlockFormatContext {
 
 	BlockFormatContext(scene2d::Node* owner_)
 		: owner(owner_) {}
+
+	BlockFormatContext(const BlockFormatContext&) = delete;
+	BlockFormatContext& operator=(const BlockFormatContext&) = delete;
 };
 
 template <typename Sink>

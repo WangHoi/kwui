@@ -332,6 +332,12 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 		bfc.margin_bottom_edge = saved_margin_bottom_edge;
 		arrangeBlock(o, bfc, viewport_size, scroll_y);
 	}
+	if (scroll_y != ScrollbarPolicy::Hidden)
+	LOG(INFO)
+		<< "offsetWidth=" << bfc.border_right_edge - b.pos.x
+		<< ", width=" << b.paddingRect().right
+		<< ", offsetHeight=" << bfc.border_bottom_edge - saved_margin_bottom_edge
+	    << ", height=" << b.paddingRect().bottom;
 }
 
 void LayoutObject::arrangeBlock(LayoutObject* o,
@@ -550,8 +556,6 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 		BlockBox& box = absl::get<BlockBox>(o->box);
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
-			bfc.border_bottom_edge = saved_bfc_margin_bottom + *box.prefer_height;
-			bfc.margin_bottom_edge = bfc.border_bottom_edge;
 		} else {
 			// Compute 'auto' height
 			if (borpad_bottom > 0) {
@@ -1141,7 +1145,7 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 
 			new_bfc_pending_ = false;
 			current_->flags |= LayoutObject::NEW_BFC_FLAG;
-			current_->bfc = absl::make_optional<BlockFormatContext>(node);
+			current_->bfc.emplace(node);
 		}
 		scene2d::Node::eachChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
 		endChild();

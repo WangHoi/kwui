@@ -76,9 +76,10 @@ var simple_stylesheet = {
 
 var span1 = <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius Syntax</span>;
 var span2 = <span>a b c d e f g h i j k l m o p q r s t u v w x y z</span>;
+//    <div class="inner"></div>
+//	<p>{span2}</p>
 var hello_world = (<div class="outer">
-    <div class="inner"></div>
-	<p>{span2}</p>
+	<qqq style={{"background-color": "#aaa", "height":120}}>test</qqq>
 </div>);
 
 app.showDialog(hello_world, simple_stylesheet);
