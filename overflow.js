@@ -65,6 +65,9 @@ var simple_stylesheet = {
 		"background-color": "#00ffff",
 		"font-size": "16px",
 		"border-top-width": "2px",
+		"border-right-width": "2px",
+		"border-bottom-width": "2px",
+		"border-left-width": "2px",
 		"border-color": "#080",
 		"margin-left": "50px",
 		//"margin-top": "10px",
@@ -76,10 +79,10 @@ var simple_stylesheet = {
 
 var span1 = <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius Syntax</span>;
 var span2 = <span>a b c d e f g h i j k l m o p q r s t u v w x y z</span>;
-//    <div class="inner"></div>
 //	<p>{span2}</p>
 var hello_world = (<div class="outer">
 	<qqq style={{"background-color": "#aaa", "height":120}}>test</qqq>
+    <div class="inner"></div>
 </div>);
 
 app.showDialog(hello_world, simple_stylesheet);

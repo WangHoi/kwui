@@ -77,6 +77,14 @@ struct BlockBox {
 			padding.left + inner_padding.left + content.width + inner_padding.right + padding.right,
 			padding.top + inner_padding.top + content.height + inner_padding.bottom + padding.bottom);
 	}
+	inline scene2d::RectF innerPaddingRect() const
+	{
+		return scene2d::RectF::fromXYWH(
+			margin.left + border.left + inner_padding.left,
+			margin.top + border.top + inner_padding.top,
+			padding.left + content.width + padding.right,
+			padding.top + content.height + padding.bottom);
+	}
 	inline scene2d::RectF contentRect() const
 	{
 		return scene2d::RectF::fromXYWH(
@@ -138,10 +146,11 @@ struct BlockFormatContext {
 
 	float contg_left_edge = 0;
 	float contg_right_edge = 0.0f;
-	float border_right_edge = 0;
 	float border_bottom_edge = 0;
 	float margin_bottom_edge = 0;
 	absl::optional<float> contg_height;
+	float max_border_right_edge = 0;	// max children's border right edge
+	float max_border_bottom_edge = 0;	// max children's border bottom edge
 
 	BlockFormatContext(scene2d::Node* owner_)
 		: owner(owner_) {}

@@ -38,6 +38,11 @@ struct FlowRoot {
 	std::vector<LayoutObject*> relatives;
 };
 
+struct ScrollData {
+	scene2d::DimensionF content_size;
+	scene2d::RectF viewport_rect;
+};
+
 struct LayoutObject {
 	enum Flag {
 		HAS_BLOCK_CHILD_FLAG = 1,
@@ -61,6 +66,8 @@ struct LayoutObject {
 	float min_width = 0.0f;
 	float max_width = std::numeric_limits<float>::infinity();
 	absl::optional<float> prefer_height;
+
+	absl::optional<ScrollData> scroll_data;
 
 	const Style* style = nullptr;
 	LayoutObject* parent = nullptr;
