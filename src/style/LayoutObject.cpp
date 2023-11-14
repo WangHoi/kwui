@@ -337,28 +337,28 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 		arrangeBlock(o, bfc, viewport_size, scroll_y);
 	}
 	if (scroll_y != ScrollbarPolicy::Hidden) {
-		scene2d::DimensionF inner_size = b.innerPaddingRect().size();
+		scene2d::RectF inner_rect = b.innerPaddingRect();
 		if (!o->scroll_data.has_value()) {
 			o->scroll_data.emplace();
 			ScrollData& sd = o->scroll_data.value();
-			sd.content_size.width = std::max(inner_size.width,
-				bfc.max_border_right_edge - saved_max_border_right_edge);
-			sd.content_size.height = std::max(inner_size.height,
-				bfc.max_border_bottom_edge - saved_max_border_bottom_edge);
-			sd.viewport_rect.right = inner_size.width;
-			sd.viewport_rect.bottom = inner_size.height;
+			sd.content_size.width = std::max(inner_rect.size().width,
+				bfc.max_border_right_edge - saved_max_border_right_edge - inner_rect.left);
+			sd.content_size.height = std::max(inner_rect.size().height,
+				bfc.max_border_bottom_edge - saved_max_border_bottom_edge - inner_rect.top);
+			sd.viewport_rect.right = inner_rect.size().width;
+			sd.viewport_rect.bottom = inner_rect.size().height;
 		} else {
 			ScrollData& sd = o->scroll_data.value();
-			sd.content_size.width = std::max(inner_size.width,
+			sd.content_size.width = std::max(inner_rect.size().width,
 				bfc.max_border_right_edge - saved_max_border_right_edge);
-			sd.content_size.height = std::max(inner_size.height,
+			sd.content_size.height = std::max(inner_rect.size().height,
 				bfc.max_border_bottom_edge - saved_max_border_bottom_edge);
 			sd.viewport_rect.left = std::max(0.0f, std::min(sd.viewport_rect.left,
-				sd.content_size.width - inner_size.width));
+				sd.content_size.width - inner_rect.size().width));
 			sd.viewport_rect.top = std::max(0.0f, std::min(sd.viewport_rect.top,
-				sd.content_size.height - inner_size.height));
-			sd.viewport_rect.right = sd.viewport_rect.left + inner_size.width;
-			sd.viewport_rect.bottom = sd.viewport_rect.top + inner_size.height;
+				sd.content_size.height - inner_rect.size().height));
+			sd.viewport_rect.right = sd.viewport_rect.left + inner_rect.size().width;
+			sd.viewport_rect.bottom = sd.viewport_rect.top + inner_rect.size().height;
 		}
 		LOG(INFO)
 			<< "scrollData contentSize " << o->scroll_data->content_size
@@ -541,7 +541,7 @@ void LayoutObject::arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc)
 
 	if (o->flags & NEW_BFC_FLAG) {
 		box.pos.y = bfc.margin_bottom_edge;
-		bfc.border_bottom_edge = bfc.margin_bottom_edge = bfc.margin_bottom_edge + borpad_top;
+		bfc.border_bottom_edge = bfc.margin_bottom_edge = bfc.margin_bottom_edge + box.margin.top + borpad_top;
 	} else {
 		if (borpad_top > 0) {
 			float coll_margin = collapse_margin(box.margin.top,
