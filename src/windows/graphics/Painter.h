@@ -117,6 +117,14 @@ public:
         else
             p_.SetTranslation(offset);
     }
+    void pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) override
+    {
+        p_.PushClipRect(origin, size);
+    }
+    void popClipRect() override
+    {
+        p_.PopClipRect();
+    }
     void drawBox(const scene2d::RectF& rect, float border_width, const style::Value& background_color, const style::Value& border_color) override
     {
         auto rect1 = scene2d::RectF::fromXYWH(

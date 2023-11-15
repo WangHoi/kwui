@@ -131,8 +131,28 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		}
 	}
 
+	painter->save();
+	scene2d::PointF scroll_offset;
+	if (o->scroll_data.has_value()) {
+		const ScrollData& sd = o->scroll_data.value();
+		scroll_offset -= sd.viewport_rect.origin();
+		scene2d::PointF ipad_origin;
+		if (absl::holds_alternative<BlockBox>(o->box)) {
+			const BlockBox& b = absl::get<BlockBox>(o->box);
+			scene2d::RectF ipad_rect = b.innerPaddingRect();
+			ipad_origin = b.pos + ipad_rect.origin();
+		} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+			const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
+			scene2d::RectF ipad_rect = ibb.block_box.innerPaddingRect();
+			ipad_origin = ibb.block_box.pos + ipad_rect.origin();
+		}
+		painter->pushClipRect(ipad_origin, sd.viewport_rect.size());
+	}
+
 	if (st.position == PositionType::Absolute) {
-		painter->setTranslation(absl::get<BlockBox>(o->box).pos, true);
+		painter->setTranslation(absl::get<BlockBox>(o->box).pos + scroll_offset, true);
+	} else {
+		painter->setTranslation(scroll_offset, true);
 	}
 
 	LayoutObject* child = o->first_child;
@@ -141,9 +161,10 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		child = child->next_sibling;
 	} while (child != o->first_child);
 
-	if (st.position == PositionType::Absolute) {
-		painter->restore();
+	if (o->scroll_data.has_value()) {
+		painter->popClipRect();
 	}
+	painter->restore();
 }
 
 LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_mask, scene2d::PointF* out_local_pos)
