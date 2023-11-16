@@ -1008,8 +1008,8 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 	bfc.contg_right_edge = box.contentRect().right;
 	bfc.max_border_right_edge = bfc.contg_left_edge;
 	bfc.border_bottom_edge = bfc.margin_bottom_edge = box.margin.top + borpad_top;
-	bfc.contg_height = contg_height;
-	box.prefer_height = try_resolve_to_px(st.height, bfc.contg_height);
+	box.prefer_height = try_resolve_to_px(st.height, contg_height);
+	bfc.contg_height = box.prefer_height;
 
 	float saved_bfc_margin_bottom = bfc.margin_bottom_edge;
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
