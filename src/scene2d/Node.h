@@ -61,6 +61,7 @@ enum NodeFlag {
 	NODE_FLAG_FOCUSABLE = 1,
 	NODE_FLAG_HOVERABLE = 2,
 	NODE_FLAG_CLICKABLE = 4,
+	NODE_FLAG_SCROLLABLE = 8,
 };
 
 class Control;

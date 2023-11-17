@@ -10,6 +10,29 @@
 namespace style {
 
 static const float SCROLLBAR_GUTTER_WIDTH = 16.0f;
+static const float SCROLLBAR_WHEEL_FACTOR = 16.0f;
+
+bool ScrollData::hitTest(const ScrollData* sd, const scene2d::PointF& pos, int flags)
+{
+	if (flags & scene2d::NODE_FLAG_SCROLLABLE)
+		return true;
+	return (pos.x < 0 || pos.x >= sd->viewport_rect.width()
+		|| pos.y < 0 || pos.y >= sd->viewport_rect.height());
+}
+
+void ScrollData::onEvent(ScrollData* sd, scene2d::MouseEvent& event, scene2d::Node* node)
+{
+	if (event.cmd == scene2d::MOUSE_WHEEL) {
+		float d = -event.wheel_delta * SCROLLBAR_WHEEL_FACTOR;
+		float h = sd->viewport_rect.height();
+		float y = std::clamp(sd->viewport_rect.top + d, 0.0f, sd->content_size.height - h);
+		if (sd->viewport_rect.top != y) {
+			sd->viewport_rect.top = y;
+			sd->viewport_rect.bottom = y + h;
+			node->requestPaint();
+		}
+	}
+}
 
 void LayoutObject::init(const Style* st, scene2d::Node* nd)
 {
@@ -370,9 +393,9 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 		} else {
 			ScrollData& sd = o->scroll_data.value();
 			sd.content_size.width = std::max(inner_rect.size().width,
-				bfc.max_border_right_edge - saved_max_border_right_edge);
+				bfc.max_border_right_edge - saved_max_border_right_edge - inner_rect.left);
 			sd.content_size.height = std::max(inner_rect.size().height,
-				bfc.max_border_bottom_edge - saved_max_border_bottom_edge);
+				bfc.max_border_bottom_edge - saved_max_border_bottom_edge - inner_rect.top);
 			sd.viewport_rect.left = std::max(0.0f, std::min(sd.viewport_rect.left,
 				sd.content_size.width - inner_rect.size().width));
 			sd.viewport_rect.top = std::max(0.0f, std::min(sd.viewport_rect.top,

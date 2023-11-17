@@ -131,6 +131,8 @@ absl::optional<PointF> Node::hitTestNode(const PointF& p) {
 
 void Node::onEvent(MouseEvent& event)
 {
+	if (layout_.scroll_data.has_value())
+		style::ScrollData::onEvent(&layout_.scroll_data.value(), event, this);
 	if (control_)
 		control_->onMouseEvent(this, event);
 }

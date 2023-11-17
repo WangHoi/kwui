@@ -7,6 +7,7 @@
 
 namespace scene2d {
 class Node;
+struct MouseEvent;
 }
 
 namespace graph2d {
@@ -42,11 +43,8 @@ struct ScrollData {
 	scene2d::DimensionF content_size;
 	scene2d::RectF viewport_rect;
 
-	static inline bool hitTest(const ScrollData* sd, const scene2d::PointF& pos, int flags)
-	{
-		return (pos.x < 0 || pos.x >= sd->viewport_rect.width()
-			|| pos.y < 0 || pos.y >= sd->viewport_rect.height());
-	}
+	static bool hitTest(const ScrollData* sd, const scene2d::PointF& pos, int flags);
+	static void onEvent(ScrollData* sd, scene2d::MouseEvent& event, scene2d::Node* node);
 };
 
 struct LayoutObject {
