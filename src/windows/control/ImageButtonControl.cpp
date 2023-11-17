@@ -16,7 +16,7 @@ base::string_atom ImageButtonControl::name()
 {
 	return base::string_intern(CONTROL_NAME);
 }
-bool ImageButtonControl::testFlags(int flags) const
+bool ImageButtonControl::hitTest(const scene2d::PointF& pos, int flags) const
 {
 	return (scene2d::NODE_FLAG_CLICKABLE | scene2d::NODE_FLAG_HOVERABLE) & flags;
 }

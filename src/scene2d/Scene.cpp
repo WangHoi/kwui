@@ -121,7 +121,6 @@ void Scene::updateComponent(JSValue comp_state)
 
 Node* Scene::pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos)
 {
-	//return pickNode(root_, pos, flag_mask, out_local_pos);
 	for (auto it = flow_roots_.rbegin(); it != flow_roots_.rend(); ++it) {
 		style::LayoutObject* o = style::LayoutObject::pick(it->root, pos - it->scene_pos, flag_mask, out_local_pos);
 		if (o)
@@ -244,26 +243,6 @@ PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 		pn = pn->positionedAncestor();
 	}
 	return p;
-}
-
-Node* Scene::pickSelf(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos)
-{
-	if (!node->visible())
-		return nullptr;
-	if (node->testFlags(flag_mask)) {
-		auto local_pos = node->hitTestNode(pos);
-		if (local_pos) {
-			if (out_local_pos) {
-				auto kk = node->hitTestNode(pos);
-				*out_local_pos = *local_pos;
-			}
-			return node;
-		} else {
-			return nullptr;
-		}
-	} else {
-		return nullptr;
-	}
 }
 
 Node* Scene::createComponentNodeWithState(JSValue comp_state)
@@ -441,34 +420,6 @@ void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::Painte
 void Scene::paintNode(Node* node, graph2d::PainterInterface* painter)
 {
 	style::LayoutObject::paint(&node->layout_, painter);
-}
-Node* Scene::pickNode(Node* node, const PointF& pos, int flag_mask, PointF* out_local_pos/* = nullptr */)
-{
-	if (!node->visible()) {
-		return nullptr;
-	}
-	
-	scene2d::PointF local_pos = pos;
-	if (node->type() == NodeType::NODE_ELEMENT && node->absolutelyPositioned()
-		&& node->computedStyle().display == style::DisplayType::Block) {
-		local_pos -= node->block_box_.pos;
-	}
-	if (node->type() == NodeType::NODE_ELEMENT
-		&& node->computedStyle().display == style::DisplayType::InlineBlock) {
-		local_pos -= node->inline_box_.pos;
-	}
-	const auto& children = node->children_;
-	for (auto it = children.rbegin(); it != children.rend(); ++it) {
-		Node* node = pickNode(*it, local_pos, flag_mask, out_local_pos);
-		if (node) {
-			if (out_local_pos) {
-				int kk = 1;
-			}
-			return node;
-		}
-	}
-	
-	return pickSelf(node, pos, flag_mask, out_local_pos);
 }
 
 } // namespace scene2d

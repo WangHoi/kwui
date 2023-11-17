@@ -116,8 +116,8 @@ public:
 		return true;
 	}
 
-	bool testFlags(int flags) const;
-
+	// pos: related to padding box
+	bool hitTest(const PointF& pos, int flags) const;
 	absl::optional<PointF> hitTestNode(const PointF& p);
 
 	void onEvent(MouseEvent &event);

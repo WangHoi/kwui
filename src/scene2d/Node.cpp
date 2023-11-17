@@ -97,10 +97,14 @@ void Node::appendChild(Node* child)
 	children_.push_back(child);
 }
 
-bool Node::testFlags(int flags) const
+bool Node::hitTest(const PointF &pos, int flags) const
 {
+	if (layout_.scroll_data.has_value()) {
+		if (style::ScrollData::hitTest(layout_.scroll_data.operator->(), pos, flags))
+			return true;
+	}
 	if (control_)
-		return control_->testFlags(flags);
+		return control_->hitTest(pos, flags);
 	return false;
 }
 

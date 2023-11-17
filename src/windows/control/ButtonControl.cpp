@@ -19,7 +19,7 @@ base::string_atom ButtonControl::name()
 	return base::string_intern(CONTROL_NAME);
 }
 
-bool ButtonControl::testFlags(int flags) const
+bool ButtonControl::hitTest(const scene2d::PointF& pos, int flags) const
 {
 	return (scene2d::NODE_FLAG_CLICKABLE | scene2d::NODE_FLAG_HOVERABLE) & flags;
 }

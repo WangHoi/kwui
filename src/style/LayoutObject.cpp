@@ -172,10 +172,6 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 	const Style& st = *o->style;
 	LayoutObject* pick_result = nullptr;
 
-	if (o->node->text_ == "mini") {
-		int kk = 1;
-	}
-
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
 		scene2d::RectF border_rect = b.borderRect();
@@ -184,18 +180,20 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 			b.pos.y + border_rect.top,
 			border_rect.width(),
 			border_rect.height());
-		if (o->node && o->node->testFlags(flag_mask) && render_rect.contains(pos)) {
+		scene2d::PointF local_pos = pos - b.innerPaddingRect().origin();
+		if (render_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 			if (out_local_pos)
-				*out_local_pos = pos - render_rect.origin();
+				*out_local_pos = local_pos;
 			pick_result = o;
 		}
 	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
 		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
 		for (auto it = ibs.rbegin(); it != ibs.rend(); ++it) {
 			const scene2d::RectF rect = it->boundingRect();
-			if (o->node && o->node->testFlags(flag_mask) && rect.contains(pos)) {
+			scene2d::PointF local_pos = pos - rect.origin();
+			if (rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 				if (out_local_pos)
-					*out_local_pos = pos - rect.origin();
+					*out_local_pos = local_pos;
 				pick_result = o;
 			}
 		}
@@ -207,9 +205,10 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 			b.pos.y + border_rect.top,
 			border_rect.width(),
 			border_rect.height());
-		if (o->node && o->node->testFlags(flag_mask) && render_rect.contains(pos)) {
+		scene2d::PointF local_pos = pos - b.innerPaddingRect().origin();
+		if (render_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 			if (out_local_pos)
-				*out_local_pos = pos - render_rect.origin();
+				*out_local_pos = local_pos;
 			pick_result = o;
 		}
 	} else if (absl::holds_alternative<TextBox>(o->box)) {
@@ -357,7 +356,7 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 		bfc.max_border_bottom_edge = saved_max_border_bottom_edge;
 		arrangeBlock(o, bfc, viewport_size, scroll_y);
 	}
-	if (scroll_y != ScrollbarPolicy::Hidden) {
+	if (st.overflow_y != OverflowType::Visible) {
 		scene2d::RectF inner_rect = b.innerPaddingRect();
 		if (!o->scroll_data.has_value()) {
 			o->scroll_data.emplace();

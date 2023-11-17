@@ -11,7 +11,6 @@
 - shorthand 支持
 
 ### DOM:
-- 鼠标点击按paddingBox计算，目前是按borderBox
 - mouseover/mouseout 事件没有 bubble
 - fragment 处理有问题，没有跳过
 

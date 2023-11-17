@@ -328,6 +328,9 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             / _dpi_scale;
         OnMouseMove(MakeButtonMask(wParam), GetModifiersState());
         return DefWindowProcW(hWnd, message, wParam, lParam);
+    case WM_MOUSEWHEEL:
+        OnMouseWheel(HIWORD(wParam), MakeButtonMask(LOWORD(wParam)), GetModifiersState());
+        break;
     case WM_MOUSELEAVE:
         //c2_log("mouse leave\n");
         _mouse_event_tracking = false;
@@ -694,6 +697,32 @@ void Dialog::OnMouseMove(int buttons, int modifiers) {
     //c2_log("OnMouseMove %.0f, %.0f\n", _mouse_position.x, _mouse_position.y);
     UpdateMouseTracking();
     UpdateHoveredNode();
+}
+void Dialog::OnMouseWheel(int wheel_delta, int buttons, int modifiers)
+{
+#if 0
+    scene2d::Node* node;
+    scene2d::PointF local_pos;
+    node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_HOVERABLE, &local_pos);
+    if (node) {
+        LOG(INFO) << "mouse down " << local_pos;
+        scene2d::MouseEvent mouse_down(node, scene2d::MOUSE_DOWN, _mouse_position, local_pos, button, buttons, modifiers);
+        node->onEvent(mouse_down);
+    }
+
+    node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_FOCUSABLE);
+    base::object_refptr<scene2d::Node> old_focused = _focused_node.upgrade();
+    if (node) {
+        if (node != old_focused.get())
+            if (old_focused) {
+                scene2d::FocusEvent focus_out(old_focused.get(), scene2d::FOCUS_OUT);
+                old_focused->onEvent(focus_out);
+            }
+        _focused_node = node->weaken();
+        scene2d::FocusEvent focus_in(node, scene2d::FOCUS_IN);
+        node->onEvent(focus_in);
+    }
+#endif
 }
 void Dialog::UpdateHoveredNode() {
     scene2d::Node* node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_HOVERABLE);

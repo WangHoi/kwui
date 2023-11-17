@@ -273,7 +273,7 @@ void LineEditControl::onDetach(scene2d::Node* node)
 {
     _node = nullptr;
 }
-bool LineEditControl::testFlags(int flags) const
+bool LineEditControl::hitTest(const scene2d::PointF& pos, int flags) const
 {
     return true;
 }
