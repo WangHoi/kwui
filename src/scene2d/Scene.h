@@ -66,7 +66,6 @@ private:
 	void setupProps(Node* node, JSValue props);
 	bool match(Node* node, style::Selector* selector);
 	void resolveNodeStyle(Node* node);
-	void paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::PainterInterface* painter);
 	void paintNode(Node* node, graph2d::PainterInterface* painter);
 
 	EventContext& event_ctx_;

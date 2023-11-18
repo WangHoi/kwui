@@ -119,7 +119,6 @@ public:
 
 	// pos: related to padding box
 	bool hitTest(const PointF& pos, int flags) const;
-	absl::optional<PointF> hitTestNode(const PointF& p);
 
 	void onEvent(MouseEvent &event);
 	void onEvent(KeyEvent &event);
@@ -143,11 +142,6 @@ public:
 	}
 	bool matchSimple(style::Selector *selector) const;
 	void computeLayout();
-
-	// layout inline-block with new BFC
-	void reflowInlineBlock(float contg_blk_width, absl::optional<float> contg_blk_height);
-	// layout absoluted positioned
-	void reflowAbsolutelyPositioned(float contg_blk_width, float contg_blk_height);
 
 	bool positioned() const;
 	bool relativePositioned() const;
@@ -177,14 +171,6 @@ public:
 	static void eachLayoutChild(Node* node, F f);
 
 protected:
-	static void layoutPrepare(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
-	static std::tuple<float, float> layoutMeasureWidth(style::BlockBox& box);
-	static std::tuple<float, float> layoutMeasureInlineWidth(Node* node);
-	static void layoutMeasure(style::InlineFormatContext& ifc, style::InlineBoxBuilder& ibb, Node* node);
-	// in-flow layout
-	static void layoutMeasure(style::BlockFormatContext& bfc, style::BlockBoxBuilder& bbb, Node* node);
-	// in-flow placing
-	static void layoutArrange(style::BlockFormatContext& bfc, style::BlockBox& box);
 	bool matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const;
 
 	// Tree nodes
@@ -207,10 +193,6 @@ protected:
 	base::string_atom id_;
 	style::Classes klass_;
 	style::LayoutObject layout_;
-	style::InlineBox inline_box_;	// inline-level layout
-	style::BlockBox block_box_;		// block-level layout
-	absl::optional<style::BlockFormatContext> bfc_;
-	absl::optional<style::InlineFormatContext> ifc_;
 
 	// Component
 	JSValue comp_state_ = JS_UNINITIALIZED;

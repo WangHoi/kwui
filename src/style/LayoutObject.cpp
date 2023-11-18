@@ -211,8 +211,8 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
 		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
 		for (auto it = ibs.rbegin(); it != ibs.rend(); ++it) {
-			const scene2d::RectF rect = it->boundingRect();
-			scene2d::PointF local_pos = pos - rect.origin();
+			const scene2d::RectF rect = scene2d::RectF::fromOriginSize(it->pos, it->size);
+			scene2d::PointF local_pos = pos - it->pos;
 			if (rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 				if (out_local_pos)
 					*out_local_pos = local_pos;
@@ -768,8 +768,6 @@ public:
 	void addGlyphRun(style::LineBox* line, const scene2d::PointF& pos, std::unique_ptr<graph2d::GlyphRunInterface> glyph_run) override
 	{
 		std::unique_ptr<InlineBox> inline_box = std::make_unique<InlineBox>();
-		inline_box->type = InlineBoxType::WithGlyphRun;
-		inline_box->payload = glyph_run.get();
 		auto fm = text_box_.text_flow->flowMetrics();
 		inline_box->baseline = fm.baseline;
 		inline_box->size = glyph_run->boundingRect().size();
@@ -1160,10 +1158,6 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 
 void LayoutTreeBuilder::initFlowRoot(scene2d::Node* node)
 {
-	node->inline_box_ = InlineBox();
-	node->block_box_ = BlockBox();
-	node->bfc_.emplace(node);
-	node->ifc_ = absl::nullopt;
 	current_ = &node->layout_;
 	current_->reset();
 	current_->flags |= LayoutObject::NEW_BFC_FLAG;

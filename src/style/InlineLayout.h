@@ -33,20 +33,8 @@ struct InlineBox {
 	scene2d::DimensionF size;
 	float baseline = 0; // offset from top
 
-	InlineBoxType type = InlineBoxType::Empty;
-	absl::variant<
-		absl::monostate,				// empty
-		graph2d::GlyphRunInterface*,	// text boxes
-		InlineBox* 						// first inline child
-	> payload;
-	InlineBox* parent;
-	InlineBox* next_sibling;
-	InlineBox* prev_sibling;
-
 	LineBox* line_box = nullptr; // set by IFC::setupBox()
 	float line_box_offset_x = 0; // set by IFC::setupBox()
-
-	scene2d::RectF boundingRect() const;
 
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const InlineBox& o) {
@@ -75,39 +63,6 @@ struct LineBox {
 	~LineBox() = default;
 	int addInlineBox(InlineBox* box);
 	void arrange(float offset_y, style::TextAlign text_align);
-};
-
-class InlineBoxBuilder : public LineBoxInterface, public GlyphRunSinkInterface {
-public:
-	InlineBoxBuilder(InlineFormatContext& ifc, InlineBox* root);
-
-	inline InlineFormatContext& ifc() const { return ifc_; }
-
-	//float containingBlockWidth() const;
-	//absl::optional<float> containingBlockHeight() const;
-	void addText(scene2d::Node* node);
-	void addInlineBlock(scene2d::Node* node);
-	void appendGlyphRun(InlineBox* box);
-	void beginInline(InlineBox* box);
-	void endInline();
-
-	LineBox* getCurrentLine() override;
-	LineBox* getNextLine() override;
-
-	void prepare(size_t /* glyphCount */) override {}
-	void addGlyphRun(
-		LineBox* line,
-		const scene2d::PointF& pos,
-		std::unique_ptr<graph2d::GlyphRunInterface> glyph_run) override;
-
-private:
-	InlineFormatContext& ifc_;
-	InlineBox* root_;
-	InlineBox* contg_;
-	InlineBox* last_child_ = nullptr;
-	scene2d::Node* text_node_ = nullptr;
-	LineBox* line_ = nullptr;
-	std::vector<std::tuple<InlineBox*, InlineBox*>> stack_;
 };
 
 class InlineFormatContext : public LineBoxInterface {

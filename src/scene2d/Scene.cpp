@@ -222,27 +222,8 @@ void Scene::requestAnimationFrame(scene2d::Node* node)
 
 PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 {
-	if (node->scene_ != this) {
-		LOG(WARNING) << "failed to map point to this scene.";
-		return pos;
-	}
-	PointF p = pos;
-	if (node->computed_style_.display == style::DisplayType::Block) {
-		p += node->block_box_.pos + node->block_box_.borderRect().origin();
-	} else if (node->computed_style_.display == style::DisplayType::Inline) {
-		p += node->inline_box_.boundingRect().origin();
-	}
-
-	Node* pn = node->positionedAncestor();
-	while (pn) {
-		if (pn->computed_style_.display == style::DisplayType::Block) {
-			p += pn->block_box_.pos;
-		} else if (node->computed_style_.display == style::DisplayType::Inline) {
-			p += pn->inline_box_.boundingRect().origin();
-		}
-		pn = pn->positionedAncestor();
-	}
-	return p;
+	LOG(INFO) << "Scene::mapPointToScene";
+	return pos;
 }
 
 Node* Scene::createComponentNodeWithState(JSValue comp_state)
@@ -330,90 +311,6 @@ void Scene::resolveNodeStyle(Node* node)
 	} else if (node->type() == NodeType::NODE_TEXT) {
 		node->resolveDefaultStyle();
 		node->updateTextLayout();
-	}
-}
-
-void Scene::paintNode(Node* node, style::BlockPaintContext& bpc, graph2d::PainterInterface* painter)
-{
-	if (node->type_ == NodeType::NODE_TEXT) {
-		LOG(INFO) << "paintText scene pos=" << node->inline_box_.pos << ", text=" << node->text_;
-		size_t n = node->text_boxes_.glyph_runs.size();
-		for (size_t i = 0; i < n; ++i) {
-			style::InlineBox* ibox = node->text_boxes_.inline_boxes[i].get();
-			graph2d::GlyphRunInterface* gr = node->text_boxes_.glyph_runs[i].get();
-			PointF baseline_origin = ibox->pos;
-			baseline_origin.y += ibox->baseline;
-			painter->drawGlyphRun(baseline_origin, gr, node->computed_style_.color);
-		}
-	} else if (node->type_ == NodeType::NODE_ELEMENT) {
-		//PointF contg_block_pos = node->absolutelyPositioned()
-		//	? bpc.positioned_contg_pos
-		//	: bpc.contg_pos;
-		if (node->computed_style_.display == style::DisplayType::Block) {
-			LOG(INFO) << "paintBlock scene pos=" << node->block_box_.pos
-				<< ", border-rect " << node->block_box_.borderRect();
-			RectF border_rect = node->block_box_.borderRect();
-			RectF render_rect = RectF::fromXYWH(
-				node->block_box_.pos.x + border_rect.left,
-				node->block_box_.pos.y + border_rect.top,
-				border_rect.width(),
-				border_rect.height());
-			painter->drawBox(
-				render_rect,
-				node->computed_style_.border_top_width.pixelOrZero(),
-				node->computed_style_.background_color,
-				node->computed_style_.border_color);
-			if (node->control_)
-				painter->drawControl(render_rect, node->control_.get());
-		} else if (node->computed_style_.display == style::DisplayType::Inline) {
-		} else if (node->computed_style_.display == style::DisplayType::InlineBlock) {
-			LOG(INFO) << "paintInlineBlock scene pos=" << node->inline_box_.pos
-				<< ", border-rect " << node->block_box_.borderRect();
-			RectF border_rect = node->block_box_.borderRect();
-			RectF render_rect = RectF::fromXYWH(
-				node->inline_box_.pos.x + border_rect.left,
-				node->inline_box_.pos.y + border_rect.top,
-				border_rect.width(),
-				border_rect.height());
-			painter->drawBox(
-				render_rect,
-				node->computed_style_.border_top_width.pixelOrZero(),
-				node->computed_style_.background_color,
-				node->computed_style_.border_color);
-			if (node->control_)
-				painter->drawControl(render_rect, node->control_.get());
-		} else if (node->computed_style_.display == style::DisplayType::None) {
-			;
-		} else {
-			LOG(WARNING) << "paintNode: " << node->computed_style_.display << " not implemented.";
-		}
-		
-		bool need_restore = false;
-		if (node->absolutelyPositioned() && node->computed_style_.display == style::DisplayType::Block) {
-			need_restore = true;
-			painter->save();
-			PointF pos = node->block_box_.pos;
-			//LOG(INFO) << "paint abs_pos_block setTranslation " << pos;
-			painter->setTranslation(pos, true);
-			//offset = node->inline_box_.boundingRect().origin();
-		} else if (node->computed_style_.display == style::DisplayType::InlineBlock) {
-			need_restore = true;
-			painter->save();
-			PointF pos = node->inline_box_.pos;
-			//LOG(INFO) << "paint inline_block setTranslation " << pos;
-			painter->setTranslation(pos, true);
-		}
-		Node::eachLayoutChild(node, [&](Node* child) {
-			paintNode(child, bpc, painter);
-			});
-		if (need_restore)
-			painter->restore();
-	} else if (node->type_ == NodeType::NODE_COMPONENT) {
-		Node::eachLayoutChild(node, [&](Node* child) {
-			paintNode(child, bpc, painter);
-			});
-	} else {
-		LOG(WARNING) << "Unsupported paint node type" << node->type_;
 	}
 }
 

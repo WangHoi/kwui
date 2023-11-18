@@ -46,12 +46,6 @@ struct BlockBox {
 	const Style* style;
 	absl::optional<std::tuple<float, float>> measure_width;
 	std::optional<EdgeOffsetF> rel_offset; // Relative positioned box offset
-	BlockBox* parent;
-	BlockBox* next_sibling;
-	BlockBox* prev_sibling;
-
-	BlockBox()
-		: parent(nullptr), next_sibling(this), prev_sibling(this) {}
 
 	inline scene2d::RectF marginRect() const
 	{
@@ -118,24 +112,6 @@ struct BlockBox {
 		absl::Format(&sink, "content=%v, ", o.content);
 		absl::Format(&sink, "}");
 	}
-};
-
-class BlockBoxBuilder {
-public:
-	BlockBoxBuilder(BlockBox* root);
-	float containingBlockWidth() const;
-	absl::optional<float> containingBlockHeight() const;
-	void addText(scene2d::Node* node);
-	void beginInline(scene2d::Node* node);
-	void endInline();
-	void beginBlock(BlockBox* box);
-	void endBlock();
-
-private:
-	BlockBox* root_;
-	BlockBox* contg_;
-	BlockBox* last_child_ = nullptr;
-	std::vector<std::tuple<BlockBox*, BlockBox*>> stack_;
 };
 
 struct BlockFormatContext {
