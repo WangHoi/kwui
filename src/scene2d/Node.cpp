@@ -99,8 +99,8 @@ void Node::appendChild(Node* child)
 
 bool Node::hitTest(const PointF &pos, int flags) const
 {
-	if (layout_.scroll_data.has_value()) {
-		if (style::ScrollData::hitTest(layout_.scroll_data.operator->(), pos, flags))
+	if (layout_.scroll_object.has_value()) {
+		if (style::ScrollObject::hitTest(layout_.scroll_object.operator->(), pos, flags))
 			return true;
 	}
 	if (control_)
@@ -131,8 +131,8 @@ absl::optional<PointF> Node::hitTestNode(const PointF& p) {
 
 void Node::onEvent(MouseEvent& event)
 {
-	if (layout_.scroll_data.has_value())
-		style::ScrollData::onEvent(&layout_.scroll_data.value(), event, this);
+	if (layout_.scroll_object.has_value())
+		style::ScrollObject::onEvent(&layout_.scroll_object.value(), event, this);
 	if (control_)
 		control_->onMouseEvent(this, event);
 }

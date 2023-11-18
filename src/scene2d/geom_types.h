@@ -23,6 +23,10 @@ struct PointF {
     {
         return PointF(f, f);
     }
+    inline PointF operator-() const
+    {
+        return PointF(-x, -y);
+    }
     inline PointF& operator+=(float f)
     {
         x += f;

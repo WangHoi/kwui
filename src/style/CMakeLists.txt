@@ -23,4 +23,6 @@ target_sources(kwui PRIVATE
   BoxConstraintSolver.h
   BoxConstraintSolver.cpp
   LayoutObject.h
-  LayoutObject.cpp)
+  LayoutObject.cpp
+  ScrollObject.h
+  ScrollObject.cpp)

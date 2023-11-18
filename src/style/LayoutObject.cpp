@@ -9,30 +9,7 @@
 
 namespace style {
 
-static const float SCROLLBAR_GUTTER_WIDTH = 16.0f;
-static const float SCROLLBAR_WHEEL_FACTOR = 16.0f;
-
-bool ScrollData::hitTest(const ScrollData* sd, const scene2d::PointF& pos, int flags)
-{
-	if (flags & scene2d::NODE_FLAG_SCROLLABLE)
-		return true;
-	return (pos.x < 0 || pos.x >= sd->viewport_rect.width()
-		|| pos.y < 0 || pos.y >= sd->viewport_rect.height());
-}
-
-void ScrollData::onEvent(ScrollData* sd, scene2d::MouseEvent& event, scene2d::Node* node)
-{
-	if (event.cmd == scene2d::MOUSE_WHEEL) {
-		float d = -event.wheel_delta * SCROLLBAR_WHEEL_FACTOR;
-		float h = sd->viewport_rect.height();
-		float y = std::clamp(sd->viewport_rect.top + d, 0.0f, sd->content_size.height - h);
-		if (sd->viewport_rect.top != y) {
-			sd->viewport_rect.top = y;
-			sd->viewport_rect.bottom = y + h;
-			node->requestPaint();
-		}
-	}
-}
+static const float SCROLLBAR_GUTTER_WIDTH = 8.0f;
 
 void LayoutObject::init(const Style* st, scene2d::Node* nd)
 {
@@ -154,24 +131,45 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		}
 	}
 
-	painter->save();
 	scene2d::PointF scroll_offset;
-	if (o->scroll_data.has_value()) {
-		const ScrollData& sd = o->scroll_data.value();
-		scroll_offset -= sd.viewport_rect.origin();
+	if (o->scroll_object.has_value()) {
+		ScrollObject& so = o->scroll_object.value();
+
+		scroll_offset = -so.viewport_rect.origin();
 		scene2d::PointF ipad_origin;
+		absl::optional<scene2d::RectF> v_scrollbar_rect;
 		if (absl::holds_alternative<BlockBox>(o->box)) {
 			const BlockBox& b = absl::get<BlockBox>(o->box);
 			scene2d::RectF ipad_rect = b.innerPaddingRect();
 			ipad_origin = b.pos + ipad_rect.origin();
+			if (b.inner_padding.right > 0) {
+				v_scrollbar_rect.emplace(scene2d::RectF::fromXYWH(
+					ipad_origin.x + so.viewport_rect.width(),
+					ipad_origin.y,
+					b.inner_padding.right,
+					so.viewport_rect.height()));
+			}
 		} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 			const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 			scene2d::RectF ipad_rect = ibb.block_box.innerPaddingRect();
 			ipad_origin = ibb.block_box.pos + ipad_rect.origin();
+			if (ibb.block_box.inner_padding.right > 0) {
+				v_scrollbar_rect.emplace(scene2d::RectF::fromXYWH(
+					ipad_origin.x + so.viewport_rect.width(),
+					ipad_origin.y,
+					ibb.block_box.inner_padding.right,
+					so.viewport_rect.height()));
+			}
 		}
-		painter->pushClipRect(ipad_origin, sd.viewport_rect.size());
+
+		if (v_scrollbar_rect.has_value()) {
+			ScrollObject::paintVScrollbar(&so, painter, v_scrollbar_rect.value());
+		}
+
+		painter->pushClipRect(ipad_origin, so.viewport_rect.size());
 	}
 
+	painter->save();
 	if (st.position == PositionType::Absolute) {
 		painter->setTranslation(absl::get<BlockBox>(o->box).pos + scroll_offset, true);
 	} else {
@@ -184,10 +182,11 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		child = child->next_sibling;
 	} while (child != o->first_child);
 
-	if (o->scroll_data.has_value()) {
+	painter->restore();
+
+	if (o->scroll_object.has_value()) {
 		painter->popClipRect();
 	}
-	painter->restore();
 }
 
 LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_mask, scene2d::PointF* out_local_pos)
@@ -381,9 +380,9 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 	}
 	if (st.overflow_y != OverflowType::Visible) {
 		scene2d::RectF inner_rect = b.innerPaddingRect();
-		if (!o->scroll_data.has_value()) {
-			o->scroll_data.emplace();
-			ScrollData& sd = o->scroll_data.value();
+		if (!o->scroll_object.has_value()) {
+			o->scroll_object.emplace();
+			ScrollObject& sd = o->scroll_object.value();
 			sd.content_size.width = std::max(inner_rect.size().width,
 				bfc.max_border_right_edge - saved_max_border_right_edge - inner_rect.left);
 			sd.content_size.height = std::max(inner_rect.size().height,
@@ -391,7 +390,7 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 			sd.viewport_rect.right = inner_rect.size().width;
 			sd.viewport_rect.bottom = inner_rect.size().height;
 		} else {
-			ScrollData& sd = o->scroll_data.value();
+			ScrollObject& sd = o->scroll_object.value();
 			sd.content_size.width = std::max(inner_rect.size().width,
 				bfc.max_border_right_edge - saved_max_border_right_edge - inner_rect.left);
 			sd.content_size.height = std::max(inner_rect.size().height,
@@ -404,10 +403,10 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 			sd.viewport_rect.bottom = sd.viewport_rect.top + inner_rect.size().height;
 		}
 		LOG(INFO)
-			<< "scrollData contentSize " << o->scroll_data->content_size
-			<< ", viewportRect " << o->scroll_data->viewport_rect;
+			<< "scrollData contentSize " << o->scroll_object->content_size
+			<< ", viewportRect " << o->scroll_object->viewport_rect;
 	} else {
-		o->scroll_data = absl::nullopt;
+		o->scroll_object = absl::nullopt;
 	}
 	bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, b.pos.x + b.borderRect().right);
 	bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge, bfc.border_bottom_edge);

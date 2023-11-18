@@ -3,6 +3,7 @@
 #include "InlineLayout.h"
 #include "TextLayout.h"
 #include "InlineBlockLayout.h"
+#include "ScrollObject.h"
 #include "absl/strings/str_format.h"
 
 namespace scene2d {
@@ -39,14 +40,6 @@ struct FlowRoot {
 	std::vector<LayoutObject*> relatives;
 };
 
-struct ScrollData {
-	scene2d::DimensionF content_size;
-	scene2d::RectF viewport_rect;
-
-	static bool hitTest(const ScrollData* sd, const scene2d::PointF& pos, int flags);
-	static void onEvent(ScrollData* sd, scene2d::MouseEvent& event, scene2d::Node* node);
-};
-
 struct LayoutObject {
 	enum Flag {
 		HAS_BLOCK_CHILD_FLAG = 1,
@@ -71,7 +64,7 @@ struct LayoutObject {
 	float max_width = std::numeric_limits<float>::infinity();
 	absl::optional<float> prefer_height;
 
-	absl::optional<ScrollData> scroll_data;
+	absl::optional<ScrollObject> scroll_object;
 
 	const Style* style = nullptr;
 	LayoutObject* parent = nullptr;
