@@ -101,11 +101,16 @@ private:
 		BlockFormatContext& bfc,
 		const scene2d::DimensionF& viewport_size,
 		ScrollbarPolicy scroll_y);
-	static void arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc);
-	static void arrangeBlockChildren(LayoutObject* o,
+	static void arrangeBfcTop(LayoutObject* o,
 		BlockFormatContext& bfc,
+		BlockBox& box);
+	static void arrangeBfcChildren(LayoutObject* o,
+		BlockFormatContext& bfc,
+		BlockBox& box,
 		const scene2d::DimensionF& viewport_size);
-	static void arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc);
+	static void arrangeBfcBottom(LayoutObject* o,
+		BlockFormatContext& bfc,
+		BlockBox& box);
 	static void prepare(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
 	static void arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
 	static void translate(LayoutObject* o, scene2d::PointF offset);

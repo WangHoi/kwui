@@ -34,6 +34,10 @@ struct InlineBlockBox {
 		absl::Format(&sink, "], block=%v ", o.block_box);
 		absl::Format(&sink, "}");
 	}
+
+	InlineBlockBox() = default;
+	InlineBlockBox(const InlineBlockBox&) = delete;
+	InlineBlockBox& operator=(const InlineBlockBox&) = delete;
 };
 
 } // namespace style

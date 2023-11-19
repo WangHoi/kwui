@@ -112,6 +112,10 @@ struct BlockBox {
 		absl::Format(&sink, "content=%v, ", o.content);
 		absl::Format(&sink, "}");
 	}
+
+	BlockBox() = default;
+	BlockBox(const BlockBox&) = delete;
+	BlockBox& operator=(const BlockBox&) = delete;
 };
 
 struct BlockFormatContext {

@@ -418,6 +418,7 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 	ScrollbarPolicy scroll_y)
 {
 	const Style& st = *o->style;
+	BlockBox& box = absl::get<BlockBox>(o->box);
 	if (st.display == DisplayType::Block) {
 		arrangeBlockX(o, bfc, viewport_size, scroll_y);
 		if (o->flags & NEW_BFC_FLAG) {
@@ -437,9 +438,9 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 				inner_bfc.border_bottom_edge = bfc.margin_bottom_edge;
 				inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
 			}
-			arrangeBlockTop(o, inner_bfc);
-			arrangeBlockChildren(o, inner_bfc, viewport_size);
-			arrangeBlockBottom(o, inner_bfc);
+			arrangeBfcTop(o, inner_bfc, box);
+			arrangeBfcChildren(o, inner_bfc, box, viewport_size);
+			arrangeBfcBottom(o, inner_bfc, box);
 			if (st.position == PositionType::Absolute) {
 				CHECK(bfc.contg_height.has_value());
 				BlockBox& box = absl::get<BlockBox>(o->box);
@@ -455,9 +456,9 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 			bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, inner_bfc.max_border_right_edge);
 			bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge, inner_bfc.max_border_bottom_edge);
 		} else {
-			arrangeBlockTop(o, bfc);
-			arrangeBlockChildren(o, bfc, viewport_size);
-			arrangeBlockBottom(o, bfc);
+			arrangeBfcTop(o, bfc, box);
+			arrangeBfcChildren(o, bfc, box, viewport_size);
+			arrangeBfcBottom(o, bfc, box);
 		}
 	} else {
 		LOG(WARNING) << "LayoutObject::arrangeBlock " << st.display << " not implemented.";
@@ -572,12 +573,9 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 	}
 }
 
-void LayoutObject::arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc)
+void LayoutObject::arrangeBfcTop(LayoutObject* o, BlockFormatContext& bfc, BlockBox& box)
 {
 	const Style& st = *o->style;
-	CHECK(absl::holds_alternative<BlockBox>(o->box));
-
-	BlockBox& box = absl::get<BlockBox>(o->box);
 
 	float borpad_top = box.border.top + box.padding.top;
 
@@ -601,14 +599,12 @@ void LayoutObject::arrangeBlockTop(LayoutObject* o, BlockFormatContext& bfc)
 	}
 }
 
-void LayoutObject::arrangeBlockChildren(LayoutObject* o,
+void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 	BlockFormatContext& bfc,
+	BlockBox& box,
 	const scene2d::DimensionF& viewport_size)
 {
-	CHECK(absl::holds_alternative<BlockBox>(o->box));
-
 	const Style& st = *o->style;
-	BlockBox& box = absl::get<BlockBox>(o->box);
 	float borpad_top = box.border.top + box.padding.top;
 	float borpad_bottom = box.border.bottom + box.padding.bottom;
 
@@ -640,7 +636,6 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 			} while (child != o->first_child);
 		}
 
-		BlockBox& box = absl::get<BlockBox>(o->box);
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
 			bfc.border_bottom_edge = bfc.margin_bottom_edge + *box.prefer_height;
@@ -706,7 +701,6 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 			<< "end IFC size=" << box.content
 			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
 	} else {
-		BlockBox& box = absl::get<BlockBox>(o->box);
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
 			bfc.border_bottom_edge = bfc.margin_bottom_edge + *box.prefer_height;
@@ -715,12 +709,9 @@ void LayoutObject::arrangeBlockChildren(LayoutObject* o,
 	}
 }
 
-void LayoutObject::arrangeBlockBottom(LayoutObject* o, BlockFormatContext& bfc)
+void LayoutObject::arrangeBfcBottom(LayoutObject* o, BlockFormatContext& bfc, BlockBox& box)
 {
 	const Style& st = *o->style;
-	CHECK(absl::holds_alternative<BlockBox>(o->box));
-
-	BlockBox& box = absl::get<BlockBox>(o->box);
 
 	float borpad_bottom = box.border.bottom + box.padding.bottom;
 
@@ -943,8 +934,28 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 		}
 	}
 
-	arrangeInlineBlockX(o, bfc, viewport_size, scroll_y);
-	arrangeInlineBlockChildren(o, bfc.contg_height, viewport_size);
+	BlockFormatContext& inner_bfc = o->bfc.value();
+	if (st.position == PositionType::Absolute) {
+		inner_bfc.contg_left_edge = 0;
+		inner_bfc.contg_right_edge = bfc.contg_right_edge - bfc.contg_left_edge;
+		inner_bfc.contg_height = bfc.contg_height;
+		inner_bfc.max_border_right_edge = 0;
+		inner_bfc.border_bottom_edge = 0;
+		inner_bfc.margin_bottom_edge = 0;
+	} else {
+		inner_bfc.contg_left_edge = bfc.contg_left_edge;
+		inner_bfc.contg_right_edge = bfc.contg_right_edge;
+		inner_bfc.contg_height = bfc.contg_height;
+		inner_bfc.max_border_right_edge = bfc.contg_left_edge;
+		inner_bfc.border_bottom_edge = bfc.margin_bottom_edge;
+		inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
+	}
+
+	BlockBox& box = absl::get<InlineBlockBox>(o->box).block_box;
+	arrangeInlineBlockX(o, inner_bfc, viewport_size, scroll_y);
+	arrangeBfcTop(o, inner_bfc, box);
+	arrangeBfcChildren(o, inner_bfc, box, viewport_size);
+	arrangeBfcBottom(o, inner_bfc, box);
 
 	InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 	ibb.inline_boxes.resize(1);
@@ -1162,7 +1173,7 @@ void LayoutTreeBuilder::initFlowRoot(scene2d::Node* node)
 	current_->reset();
 	current_->flags |= LayoutObject::NEW_BFC_FLAG;
 	current_->bfc.emplace(node);
-	current_->box = BlockBox();
+	current_->box.emplace<BlockBox>();
 	last_child_ = nullptr;
 }
 
@@ -1292,7 +1303,7 @@ void LayoutTreeBuilder::parentAddBlockChild()
 	}
 
 	current_->parent->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
-	current_->box = BlockBox();
+	current_->box.emplace<BlockBox>();
 }
 
 void LayoutTreeBuilder::parentAddInlineChild()
