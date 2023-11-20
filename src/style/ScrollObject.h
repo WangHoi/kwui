@@ -12,6 +12,7 @@ struct ScrollObject {
 	static bool hitTest(const ScrollObject* sd, const scene2d::PointF& pos, int flags);
 	static void onEvent(ScrollObject* sd, scene2d::MouseEvent& event, scene2d::Node* node);
 	static void paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
+	static void paintHScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
 };
 
 }

@@ -4,7 +4,6 @@
 - Relative的处理
 - 盒子生成：inline中包含block，需要生成临时anon-block-box包裹;
 - AbsoluteBlockHeightSolver
-- 支持滚动条
 
 ### CSS:
 - font-size 支持更多单位
@@ -26,6 +25,4 @@
 
 ## 橙讯安装程序移植
 
-
 ## 签名自查程序移植
-
