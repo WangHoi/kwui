@@ -257,6 +257,10 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 		pos -= absl::get<BlockBox>(o->box).pos;
 	}
 
+	if (o->scroll_object.has_value()) {
+		pos += o->scroll_object.value().viewport_rect.origin();
+	}
+
 	LayoutObject* child = o->first_child ? o->first_child->prev_sibling : nullptr;
 	if (child) do {
 		LayoutObject* picked_child = pick(child, pos, flag_mask, out_local_pos);
@@ -982,6 +986,10 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 		}
 	}
 
+	BlockBox& b = absl::get<InlineBlockBox>(o->box).block_box;
+	arrangeInlineBlockX(o, bfc, viewport_size, scroll_y);
+	arrangeBfcTop(o, bfc, b);
+
 	BlockFormatContext& inner_bfc = o->bfc.value();
 	if (st.position == PositionType::Absolute) {
 		inner_bfc.contg_left_edge = 0;
@@ -998,30 +1006,57 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 		inner_bfc.border_bottom_edge = bfc.margin_bottom_edge;
 		inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
 	}
+	arrangeBfcChildren(o, inner_bfc, b, viewport_size);
+	if (st.overflow_y == OverflowType::Visible) {
+		bfc.border_bottom_edge = bfc.margin_bottom_edge = inner_bfc.margin_bottom_edge;
+		bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge, inner_bfc.max_border_bottom_edge);
+	} else {
+		float box_content_bottom_edge = b.pos.y + b.contentRect().bottom;
+		bfc.border_bottom_edge = bfc.margin_bottom_edge = std::max(bfc.margin_bottom_edge, box_content_bottom_edge);
+		bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge, box_content_bottom_edge);
+	}
+	if (st.overflow_x == OverflowType::Visible) {
+		bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, inner_bfc.max_border_right_edge);
+	} else {
+		float box_margin_right_edge = b.pos.x + b.marginRect().right;
+		bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, box_margin_right_edge);
+	}
 
-	BlockBox& box = absl::get<InlineBlockBox>(o->box).block_box;
-	arrangeInlineBlockX(o, inner_bfc, viewport_size, scroll_y);
-	arrangeBfcTop(o, inner_bfc, box);
-	arrangeBfcChildren(o, inner_bfc, box, viewport_size);
-	arrangeBfcBottom(o, inner_bfc, box);
+	arrangeBfcBottom(o, bfc, b);
 
-	if (st.overflow_y != OverflowType::Visible) {
-		scene2d::RectF inner_rect = box.innerPaddingRect();
+	// Check overflow-x
+	ScrollbarPolicy scroll_x = ScrollbarPolicy::Hidden;
+	if (st.overflow_x == OverflowType::Scroll) {
+		scroll_x = ScrollbarPolicy::Stable;
+	}
+	if (st.overflow_x == OverflowType::Auto && bfc.max_border_right_edge > b.pos.x + b.paddingRect().bottom) {
+		scroll_x = ScrollbarPolicy::Stable;
+	}
+	if (scroll_x == ScrollbarPolicy::Stable) {
+		b.inner_padding.bottom = SCROLLBAR_GUTTER_WIDTH;
+	} else if (scroll_x == ScrollbarPolicy::StableBothEdges) {
+		b.inner_padding.top = b.inner_padding.bottom = SCROLLBAR_GUTTER_WIDTH;
+	}
+	b.content.height = std::max(0.0f, b.content.height - b.inner_padding.top - b.inner_padding.bottom);
+
+	// Update ScrollObject
+	if (st.overflow_y != OverflowType::Visible || st.overflow_x != OverflowType::Visible) {
+		const BlockFormatContext& inner_bfc = o->bfc.value();
+		scene2d::RectF inner_rect = b.innerPaddingRect();
+		float padding_left_edge = b.pos.x + b.paddingRect().left;
+		float padding_top_edge = b.pos.y + b.paddingRect().top;
+		float border_bottom_edge = std::max(inner_bfc.border_bottom_edge, inner_bfc.max_border_bottom_edge);
 		if (!o->scroll_object.has_value()) {
 			o->scroll_object.emplace();
 			ScrollObject& sd = o->scroll_object.value();
-			sd.content_size.width = std::max(inner_rect.size().width,
-				inner_bfc.max_border_right_edge - inner_rect.left);
-			sd.content_size.height = std::max(inner_rect.size().height,
-				inner_bfc.max_border_bottom_edge - inner_rect.top);
+			sd.content_size.width = std::max(inner_rect.size().width, inner_bfc.max_border_right_edge - padding_left_edge);
+			sd.content_size.height = std::max(inner_rect.size().height, border_bottom_edge - padding_top_edge);
 			sd.viewport_rect.right = inner_rect.size().width;
 			sd.viewport_rect.bottom = inner_rect.size().height;
 		} else {
 			ScrollObject& sd = o->scroll_object.value();
-			sd.content_size.width = std::max(inner_rect.size().width,
-				inner_bfc.max_border_right_edge - inner_rect.left);
-			sd.content_size.height = std::max(inner_rect.size().height,
-				inner_bfc.max_border_bottom_edge - inner_rect.top);
+			sd.content_size.width = std::max(inner_rect.size().width, inner_bfc.max_border_right_edge - padding_left_edge);
+			sd.content_size.height = std::max(inner_rect.size().height, border_bottom_edge - padding_top_edge);
 			sd.viewport_rect.left = std::max(0.0f, std::min(sd.viewport_rect.left,
 				sd.content_size.width - inner_rect.size().width));
 			sd.viewport_rect.top = std::max(0.0f, std::min(sd.viewport_rect.top,
