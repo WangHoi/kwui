@@ -6,3 +6,4 @@
 #include "log.h"
 #include "scoped_setter.h"
 #include "ResourceArchive.h"
+#include "PEG.h"

@@ -7,6 +7,7 @@ target_sources(kwui PRIVATE
   scoped_setter.h
   log.h
   log.cpp
+  PEG.h
   ResourceArchive.h
   ResourceArchive.cpp
   algorithm/lzf.h

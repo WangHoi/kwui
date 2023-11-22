@@ -1,0 +1,42 @@
+<html>
+<head>
+    <style type="text/css">
+        .outer {
+            overflow-y: hidden;
+            width: 150px;
+            height: 100px;
+            padding: 50px 0px;
+            background-color: #eee;
+            border: 2px solid black;
+        }
+        .inner {
+            /*margin-left: -100px;*/
+		    margin-left:auto;
+            margin-right: 0px;
+            margin-top: 0px;
+            width: 160px;
+            height: 50%;
+            padding: 0px 0px;
+            border: 10px solid lightblue;
+            background-color: #00ffff;
+        }
+		.nested {
+      display: inline;
+      overflow: scroll;
+			background-color:red;
+			margin-left:auto;
+			margin-right: 50px;
+		}
+    </style>
+</head>
+<body>
+    <div class="outer">
+      <div class="inner">
+			<div class="nested">aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb aaaa bbbb </div>
+		</div>
+        <!-- <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius Syntax</span> -->
+        <!--<span>This property is a shorthand for the following</span>-->
+        <div class="inner"></div>
+    </div>
+</body>
+</html>
