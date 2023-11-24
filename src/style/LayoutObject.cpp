@@ -109,7 +109,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		if (!ibb.inline_boxes.empty()) {
 			const InlineBox& ib = ibb.inline_boxes.front();
 			const BlockBox& b = ibb.block_box;
-			content_rect.emplace(b.paddingRect());
+			content_rect.emplace(b.contentRect().translated(b.pos));
 			scene2d::RectF border_rect = b.borderRect();
 			scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
 				b.pos.x + border_rect.left,
