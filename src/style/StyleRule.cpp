@@ -7,6 +7,17 @@ namespace style {
 
 namespace {
 
+struct SingleDeclaration {
+	base::string_atom name;
+	ValueSpec value;
+};
+struct ShorthandDeclaration {
+	base::string_atom name;
+	ValueSpec value;
+};
+
+using Declaration = absl::variant<>;
+
 IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 {
 	auto [output1, _] = *opt(spaces)(input);
@@ -128,9 +139,26 @@ IResult<std::vector<std::unique_ptr<Selector>>> selector_group(absl::string_view
 	return std::make_tuple(output1, std::move(sels));
 }
 
-/* Syntax:
- *		rule_rhs <-"{" decls  ";" ? S * "}" S *
- */
+// Syntax: S* declaration more_declaration*
+IResult<int> decls(absl::string_view input)
+{
+	auto res1 = tag("{")(input);
+	if (!res1.ok())
+		return res1.status();
+	std::tie(input, std::ignore) = res1.value();
+
+	std::tie(input, std::ignore) = opt(tag(";"))(input).value();
+	std::tie(input, std::ignore) = opt(spaces)(input).value();
+
+	auto res2 = tag("}")(input);
+	if (!res2.ok())
+		return res2.status();
+
+	auto&& [output, _] = res2.value();
+	return std::make_tuple(output, 0);
+}
+
+// Syntax: rule_rhs <-"{" decls ";"? S* "}" S*
 IResult<StyleSpec> style_spec(absl::string_view input)
 {
 	auto res1 = tag("{")(input);
@@ -138,11 +166,17 @@ IResult<StyleSpec> style_spec(absl::string_view input)
 		return res1.status();
 	std::tie(input, std::ignore) = res1.value();
 
+	// auto decls_res = 
+
+	std::tie(input, std::ignore) = opt(tag(";"))(input).value();
+	std::tie(input, std::ignore) = opt(spaces)(input).value();
+
 	auto res2 = tag("}")(input);
 	if (!res2.ok())
 		return res2.status();
-}
 
+	std::tie(input, std::ignore) = opt(spaces)(input).value();
+}
 
 } // namespace {}
 

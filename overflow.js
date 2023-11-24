@@ -77,6 +77,11 @@ var simple_stylesheet = {
 	},
 	"span": {
 		"font-size": 16,
+	},
+	"line_edit": {
+		"width": 100,
+		"height": 16,
+		"background-color": "#fff",
 	}
 };
 
@@ -85,7 +90,7 @@ var span2 = <span>a b c d e f g h i j k l m o p q r s t u v w x y z</span>;
 //	<p>{span2}</p>
 var hello_world = (<div class="outer">
 	<qqq style={{"background-color": "#0aa", "height":120, "overflow-y": "scroll"}}>{span1}</qqq>
-    <div class="inner"></div>
+    <div class="inner"><line_edit /></div>
 </div>);
 
 app.showDialog(hello_world, simple_stylesheet);

@@ -77,6 +77,7 @@ inline auto map(F1&& f1, TF&& tf) {
 		};
 }
 
+// Syntax: SPACE_CHAR+
 inline IResult<std::string_view> spaces(absl::string_view input)
 {
 	int i;

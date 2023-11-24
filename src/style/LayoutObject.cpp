@@ -85,8 +85,11 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 	base::scoped_setter _(depth, depth + 1);
 	LOG(INFO) << std::string(depth, '-') << " paint " << *o;
 
+	absl::optional<scene2d::RectF> padding_rect;
+
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
+		padding_rect.emplace(b.paddingRect());
 		scene2d::RectF border_rect = b.borderRect();
 		scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
 			b.pos.x + border_rect.left,
@@ -106,6 +109,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		if (!ibb.inline_boxes.empty()) {
 			const InlineBox& ib = ibb.inline_boxes.front();
 			const BlockBox& b = ibb.block_box;
+			padding_rect.emplace(b.paddingRect());
 			scene2d::RectF border_rect = b.borderRect();
 			scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
 				b.pos.x + border_rect.left,
@@ -129,6 +133,10 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			baseline_origin.y += ibox->baseline;
 			painter->drawGlyphRun(baseline_origin, gr, st.color);
 		}
+	}
+
+	if (o->node && o->node->control_ && padding_rect.has_value()) {
+		painter->drawControl(padding_rect.value(), o->node->control_.get());
 	}
 
 	scene2d::PointF scroll_offset;
