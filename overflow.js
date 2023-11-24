@@ -80,7 +80,7 @@ var simple_stylesheet = {
 	},
 	"line_edit": {
 		"width": 100,
-		"height": 16,
+		"height": 20,
 		"background-color": "#fff",
 	}
 };

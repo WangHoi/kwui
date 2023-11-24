@@ -173,6 +173,17 @@ struct RectF {
     {
         return (left <= pos.x && pos.x < right && top <= pos.y && pos.y < bottom);
     }
+    void translate(const PointF& pos)
+    {
+        left += pos.x;
+        right += pos.x;
+        top += pos.y;
+        bottom += pos.y;
+    }
+    RectF translated(const PointF& pos) const
+    {
+        return RectF(left + pos.x, top + pos.y, right + pos.x, bottom + pos.y);
+    }
 
     float left;
     float top;
