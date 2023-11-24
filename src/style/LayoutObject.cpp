@@ -116,7 +116,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 				b.pos.y + border_rect.top,
 				border_rect.width(),
 				border_rect.height());
-			// LOG(INFO) << "paint box: " << render_rect;
+			//LOG(INFO) << "paint box: " << render_rect;
 			painter->drawBox(
 				render_rect,
 				st.border_top_width.pixelOrZero(),
