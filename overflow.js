@@ -43,7 +43,7 @@ function Div(props, kids) {
 
 var simple_stylesheet = {
 	".outer": {
-		"display": "inline-block",
+		"display": "block",
 		"overflow-y": "scroll",
 		"overflow-x": "scroll",
 		"width": "200px",

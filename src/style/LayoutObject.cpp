@@ -998,25 +998,16 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	arrangeInlineBlockX(o, bfc, viewport_size, scroll_y);
 
 	BlockFormatContext& inner_bfc = o->bfc.value();
-	if (st.position == PositionType::Absolute) {
-		inner_bfc.contg_left_edge = 0;
-		inner_bfc.contg_right_edge = bfc.contg_right_edge - bfc.contg_left_edge;
-		inner_bfc.contg_height = bfc.contg_height;
-		inner_bfc.max_border_right_edge = 0;
-		inner_bfc.border_bottom_edge = 0;
-		inner_bfc.margin_bottom_edge = 0;
-	} else {
-		inner_bfc.contg_left_edge = bfc.contg_left_edge;
-		inner_bfc.contg_right_edge = bfc.contg_right_edge;
-		inner_bfc.contg_height = bfc.contg_height;
-		inner_bfc.max_border_right_edge = bfc.contg_left_edge;
-		inner_bfc.border_bottom_edge = bfc.margin_bottom_edge;
-		inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
-	}
+	inner_bfc.contg_left_edge = 0;
+	inner_bfc.contg_right_edge = bfc.contg_right_edge - bfc.contg_left_edge;
+	inner_bfc.contg_height = bfc.contg_height;
+	inner_bfc.max_border_right_edge = 0;
+	inner_bfc.border_bottom_edge = 0;
+	inner_bfc.margin_bottom_edge = 0;
 	arrangeBfcTop(o, inner_bfc, b);
 	arrangeBfcChildren(o, inner_bfc, b, viewport_size);
 	arrangeBfcBottom(o, inner_bfc, b);
-
+	/*
 	if (st.overflow_y == OverflowType::Visible) {
 		bfc.border_bottom_edge = bfc.margin_bottom_edge = inner_bfc.margin_bottom_edge;
 		bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge, inner_bfc.max_border_bottom_edge);
@@ -1080,6 +1071,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	}
 	// bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, box.pos.x + box.borderRect().right);
 	// bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge, bfc.border_bottom_edge);
+	*/
 
 	InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 	ibb.inline_boxes.resize(1);
