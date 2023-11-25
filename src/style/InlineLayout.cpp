@@ -10,7 +10,7 @@ namespace style {
 InlineFormatContext::InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width, float top)
     : bfc_(bfc), left_(left), avail_width_(avail_width), top_(top), height_(0)
 {
-    // LOG(INFO) << "ifc ctor " << left_ << ", " << top_ << " width " << avail_width;
+    LOG(INFO) << "ifc ctor " << left_ << ", " << top_ << " width " << avail_width;
 }
 
 InlineFormatContext::~InlineFormatContext() = default;

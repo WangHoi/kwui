@@ -919,6 +919,7 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 		if (!ibb.inline_boxes.empty()) {
 			const InlineBox& ib = ibb.inline_boxes.front();
 			ibb.block_box.pos = ib.pos;
+			LOG(INFO) << "translate " << ib.pos;
 			LayoutObject* child = o->first_child;
 			if (child) do {
 				translate(child, ib.pos);
@@ -995,7 +996,6 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 
 	BlockBox& b = absl::get<InlineBlockBox>(o->box).block_box;
 	arrangeInlineBlockX(o, bfc, viewport_size, scroll_y);
-	arrangeBfcTop(o, bfc, b);
 
 	BlockFormatContext& inner_bfc = o->bfc.value();
 	if (st.position == PositionType::Absolute) {
@@ -1013,7 +1013,10 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 		inner_bfc.border_bottom_edge = bfc.margin_bottom_edge;
 		inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
 	}
+	arrangeBfcTop(o, inner_bfc, b);
 	arrangeBfcChildren(o, inner_bfc, b, viewport_size);
+	arrangeBfcBottom(o, inner_bfc, b);
+
 	if (st.overflow_y == OverflowType::Visible) {
 		bfc.border_bottom_edge = bfc.margin_bottom_edge = inner_bfc.margin_bottom_edge;
 		bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge, inner_bfc.max_border_bottom_edge);
@@ -1028,8 +1031,6 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 		float box_margin_right_edge = b.pos.x + b.marginRect().right;
 		bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, box_margin_right_edge);
 	}
-
-	arrangeBfcBottom(o, bfc, b);
 
 	// Check overflow-x
 	ScrollbarPolicy scroll_x = ScrollbarPolicy::Hidden;
@@ -1242,7 +1243,7 @@ absl::optional<float> LayoutObject::find_first_baseline(LayoutObject* o, float a
 	if (o->ifc.has_value()) {
 		for (const std::unique_ptr<LineBox>& line : o->ifc->lineBoxes()) {
 			for (const InlineBox* ib : line->inline_boxes) {
-				return ib->pos.y + ib->baseline + accum_y;
+				return ib->baseline + accum_y;
 			}
 		}
 	}

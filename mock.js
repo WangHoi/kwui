@@ -43,7 +43,7 @@ function Div(props, kids) {
 
 var simple_stylesheet = {
 	".title-bar": {
-		"position": "absolute",
+		//"position": "absolute",
 		"top": 0,
 		"right": 0,
 		"margin-left": 10,
@@ -93,7 +93,6 @@ var hello_world = (
 var title_bar = (
 	<div class={"title-bar"} style={{ "background-color": "#0ff"}}>
         <button>最小化</button>
-        <button style={{"background-color": "#f0f"}}>最大化</button>
         <button>关闭</button>
     </div>
 );
