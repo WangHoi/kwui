@@ -4,6 +4,7 @@
 - Relative的处理
 - 盒子生成：inline中包含block，需要生成临时anon-block-box包裹;
 - AbsoluteBlockHeightSolver
+- 可滚动区域的计算要在布局完成后计算，inline-block有translate，不好边布局边算
 
 ### CSS:
 - font-size 支持更多单位
