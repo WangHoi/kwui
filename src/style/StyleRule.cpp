@@ -1,5 +1,6 @@
 #include "StyleRule.h"
 #include "base/PEG.h"
+#include <vector>
 
 using namespace base::peg;
 
@@ -13,10 +14,10 @@ struct SingleDeclaration {
 };
 struct ShorthandDeclaration {
 	base::string_atom name;
-	ValueSpec value;
+	std::vector<SingleDeclaration> decls;
 };
 
-using Declaration = absl::variant<>;
+using Declaration = absl::variant<SingleDeclaration, ShorthandDeclaration>;
 
 IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 {
@@ -139,7 +140,82 @@ IResult<std::vector<std::unique_ptr<Selector>>> selector_group(absl::string_view
 	return std::make_tuple(output1, std::move(sels));
 }
 
-// Syntax: S* declaration more_declaration*
+// Syntax: prop_name <- IDENT S*
+IResult<absl::string_view> prop_name(absl::string_view input)
+{
+	return map(seq(ident, opt(spaces)), [](auto&& t) {
+		return absl::get<0>(t);
+		})(input);
+}
+
+// Syntax: ("px" | "pt" | "%" | "")
+IResult<ValueUnit> mess_unit(absl::string_view input)
+{
+	return alt(map(tag("px"), [](auto) { return ValueUnit::Pixel; }),
+		map(tag("pt"), [](auto) { return ValueUnit::Point; }),
+		map(tag("%"), [](auto) { return ValueUnit::Percent; }),
+		map(tag(""), [](auto) { return ValueUnit::Raw; }))(input);
+}
+
+// Syntax: NUMBER mess_unit
+IResult<Value> mess(absl::string_view input)
+{
+	return map(seq(number, mess_unit), [](auto&& t) {
+		Value v;
+		std::tie(v.f32_val, v.unit) = t;
+		return v;
+		})(input);
+}
+
+// Syntax: (IDENT | mess | STRING | hexcolor) S* 
+IResult<SingleDeclaration> single_decl(base::string_atom name, absl::string_view input)
+{
+	IResult<SingleDeclaration> a;
+	return a;
+}
+
+/* Syntax: mess S*
+	| mess S+ mess S*
+	| mess S+ mess S+ mess S*
+	| mess S+ mess S+ mess S+ mess S*
+ */
+IResult<ShorthandDeclaration> magpad_shorthand_decl(base::string_atom name, absl::string_view input)
+{
+	IResult<ShorthandDeclaration> a;
+	return a;
+}
+
+// Syntax: prop_name ":" S* prop_value prio? 
+IResult<Declaration> declaration(absl::string_view input)
+{
+	auto prop_name_res = prop_name(input);
+	if (!prop_name_res.ok())
+		return prop_name_res.status();
+	
+	auto&& [input1, prop_name_str] = prop_name_res.value();
+	auto res1 = seq(tag(":"), opt(spaces))(input1);
+	if (!res1.ok())
+		return res1.status();
+
+	std::tie(input1, std::ignore) = res1.value();
+
+	IResult<Declaration> decl;
+	base::string_atom prop_name = base::string_intern(prop_name_str);
+	if (prop_name == base::string_intern("margin")
+		|| prop_name == base::string_intern("padding")) {
+		decl = magpad_shorthand_decl(prop_name, input1);
+	} else {
+		decl = single_decl(prop_name, input1);
+	}
+
+	if (!decl.ok())
+		return decl.status();
+
+
+	return decl.value();
+}
+
+// Syntax: S* declaration (";" S* declaration)*
 IResult<int> decls(absl::string_view input)
 {
 	auto res1 = tag("{")(input);

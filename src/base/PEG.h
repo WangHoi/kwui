@@ -1,6 +1,7 @@
 #pragma once
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/numbers.h"
 #include <cctype>
 
 namespace base {
@@ -37,6 +38,62 @@ inline auto seq(F1&& f1, F2&& f2) {
 		};
 }
 
+template <typename F1, typename F2, typename F3>
+inline auto seq(F1&& f1, F2&& f2, F3&& f3) {
+	using T1 = StatusOrType<typename std::result_of<F1(std::string_view)>::type>::value_type;
+	using T2 = StatusOrType<typename std::result_of<F2(std::string_view)>::type>::value_type;
+	using T3 = StatusOrType<typename std::result_of<F3(std::string_view)>::type>::value_type;
+	return [f1, f2, f3](absl::string_view input) -> IResult<std::tuple<T1, T2, T3>> {
+		auto res1 = f1(input);
+		if (!res1.ok())
+			return res1.status();
+		auto [output1, val1] = std::move(*res1);
+
+		auto res2 = f2(output1);
+		if (!res2.ok())
+			return res2.status();
+		auto [output2, val2] = std::move(*res2);
+		
+		auto res3 = f3(output2);
+		if (!res3.ok())
+			return res3.status();
+		auto [output3, val3] = std::move(*res3);
+
+		return std::make_tuple(output3, std::make_tuple<T1, T2, T3>(std::move(val1), std::move(val2), std::move(val3)));
+		};
+}
+
+template <typename F1, typename F2, typename F3, typename F4>
+inline auto seq(F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
+	using T1 = StatusOrType<typename std::result_of<F1(std::string_view)>::type>::value_type;
+	using T2 = StatusOrType<typename std::result_of<F2(std::string_view)>::type>::value_type;
+	using T3 = StatusOrType<typename std::result_of<F3(std::string_view)>::type>::value_type;
+	using T4 = StatusOrType<typename std::result_of<F4(std::string_view)>::type>::value_type;
+	return [f1, f2, f3, f4](absl::string_view input) -> IResult<std::tuple<T1, T2, T3, T4>> {
+		auto res1 = f1(input);
+		if (!res1.ok())
+			return res1.status();
+		auto [output1, val1] = std::move(*res1);
+
+		auto res2 = f2(output1);
+		if (!res2.ok())
+			return res2.status();
+		auto [output2, val2] = std::move(*res2);
+
+		auto res3 = f3(output2);
+		if (!res3.ok())
+			return res3.status();
+		auto [output3, val3] = std::move(*res3);
+
+		auto res4 = f4(output3);
+		if (!res4.ok())
+			return res4.status();
+		auto [output4, val4] = std::move(*res4);
+
+		return std::make_tuple(output4, std::make_tuple<T1, T2, T3, T4>(std::move(val1), std::move(val2), std::move(val3), std::move(val4)));
+		};
+}
+
 template <typename F1, typename F2>
 inline auto alt(F1&& f1, F2&& f2) {
 	using T1 = StatusOrType<typename std::result_of<F1(std::string_view)>::type>::value_type;
@@ -48,6 +105,50 @@ inline auto alt(F1&& f1, F2&& f2) {
 			return res1;
 
 		return f2(input);
+		};
+}
+template <typename F1, typename F2, typename F3>
+inline auto alt(F1&& f1, F2&& f2, F3&& f3) {
+	using T1 = StatusOrType<typename std::result_of<F1(std::string_view)>::type>::value_type;
+	using T2 = StatusOrType<typename std::result_of<F2(std::string_view)>::type>::value_type;
+	using T3 = StatusOrType<typename std::result_of<F3(std::string_view)>::type>::value_type;
+	static_assert(std::is_same<T1, T2>::value, "alt type mismatch error.");
+	static_assert(std::is_same<T1, T3>::value, "alt type mismatch error.");
+	return [f1, f2, f3](absl::string_view input) -> IResult<T1> {
+		auto res1 = f1(input);
+		if (res1.ok())
+			return res1;
+
+		auto res2 = f2(input);
+		if (res2.ok())
+			return res2;
+
+		return f3(input);
+		};
+}
+template <typename F1, typename F2, typename F3, typename F4>
+inline auto alt(F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
+	using T1 = StatusOrType<typename std::result_of<F1(std::string_view)>::type>::value_type;
+	using T2 = StatusOrType<typename std::result_of<F2(std::string_view)>::type>::value_type;
+	using T3 = StatusOrType<typename std::result_of<F3(std::string_view)>::type>::value_type;
+	using T4 = StatusOrType<typename std::result_of<F4(std::string_view)>::type>::value_type;
+	static_assert(std::is_same<T1, T2>::value, "alt type mismatch error.");
+	static_assert(std::is_same<T1, T3>::value, "alt type mismatch error.");
+	static_assert(std::is_same<T1, T4>::value, "alt type mismatch error.");
+	return [f1, f2, f3, f4](absl::string_view input) -> IResult<T1> {
+		auto res1 = f1(input);
+		if (res1.ok())
+			return res1;
+
+		auto res2 = f2(input);
+		if (res2.ok())
+			return res2;
+
+		auto res3 = f3(input);
+		if (res3.ok())
+			return res3;
+		
+		return f4(input);
 		};
 }
 
@@ -122,6 +223,43 @@ inline IResult<std::string_view> ident(absl::string_view input)
 	} else {
 		return std::make_tuple(input.substr(i), input.substr(0, i));
 	}
+}
+
+// Syntax: [0123456789]+
+inline IResult<absl::string_view> digits(absl::string_view input)
+{
+	int i;
+	for (i = 0; i < input.length(); ++i) {
+		if (!std::isdigit(input[i]))
+			break;
+	}
+	if (i == 0) {
+		return absl::InvalidArgumentError(input);
+	} else {
+		return std::make_tuple(input.substr(i), input.substr(0, i));
+	}
+}
+
+// Syntax: ("-" | "+")? [0123456789]* "."? [0123456789]*
+inline IResult<float> number(absl::string_view input)
+{
+	auto res = seq(
+		alt(tag("-"), tag("+")),
+		opt(digits),
+		opt(tag(".")),
+		opt(digits)
+	)(input);
+	if (!res.ok())
+		return res.status();
+	
+	auto&& [output, val] = res.value();
+
+	float f32;
+	bool ok = absl::SimpleAtof(input.substr(0, input.length() - output.length()), &f32);
+	if (ok)
+		return std::make_tuple(output, f32);
+	else
+		return absl::InvalidArgumentError(input);
 }
 
 } // namespace peg
