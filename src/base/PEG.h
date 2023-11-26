@@ -178,19 +178,91 @@ inline auto map(F1&& f1, TF&& tf) {
 		};
 }
 
+template <typename F>
+inline auto take_while_m_n(F&& f, int m, int n)
+{
+	return [f, m, n](absl::string_view input) -> IResult<std::string_view> {
+		int i;
+		for (i = 0; i < input.length() && i < n; ++i) {
+			if (!f(input[i]))
+				break;
+		}
+		if (i < m) {
+			return absl::InvalidArgumentError(input);
+		} else {
+			return std::make_tuple(input.substr(i), input.substr(0, i));
+		}
+		};
+}
+
+template <typename F>
+inline auto take_while(F&& f)
+{
+	return take_while_m_n(f, 0, INT_MAX);
+}
+
+template <typename F>
+inline auto take_while1(F&& f)
+{
+	return take_while_m_n(f, 1, INT_MAX);
+}
+
+template <typename SEP, typename F>
+inline auto separated_list0(SEP&& sep, F&& f)
+{
+	using T = StatusOrType<typename std::result_of<F(std::string_view)>::type>::value_type;
+	return [sep, f](absl::string_view input) -> IResult<std::vector<T>> {
+		std::vector<T> list;
+		absl::string_view output = input;
+		auto res = f(input);
+		while (res.ok()) {
+			auto&& [output1, t] = res.value();
+			list.push_back(t);
+			output = output1;
+			
+			auto res2 = sep(output1);
+			if (!res2.ok()) {
+				break;
+			}
+			std::tie(output1, std::ignore) = res2.value();
+			res = f(input);
+		}
+		return std::make_tuple(output, list);
+		};
+}
+
+template <typename SEP, typename F>
+inline auto separated_list1(SEP&& sep, F&& f)
+{
+	using T = StatusOrType<typename std::result_of<F(std::string_view)>::type>::value_type;
+	return [sep, f](absl::string_view input) -> IResult<std::vector<T>> {
+		std::vector<T> list;
+		absl::string_view output = input;
+		auto res = f(input);
+
+		if (!res.ok())
+			return res.status();
+
+		while (res.ok()) {
+			auto&& [output1, t] = res.value();
+			list.push_back(t);
+			output = output1;
+
+			auto res2 = sep(output1);
+			if (!res2.ok()) {
+				break;
+			}
+			std::tie(output1, std::ignore) = res2.value();
+			res = f(input);
+		}
+		return std::make_tuple(output, list);
+		};
+}
+
 // Syntax: SPACE_CHAR+
 inline IResult<std::string_view> spaces(absl::string_view input)
 {
-	int i;
-	for (i = 0; i < input.length(); ++i) {
-		if (!std::isspace(input[i]))
-			break;
-	}
-	if (i == 0) {
-		return absl::InvalidArgumentError(input);
-	} else {
-		return std::make_tuple(input.substr(i), input.substr(0, i));
-	}
+	return take_while1(std::isspace)(input);
 }
 
 inline auto tag(absl::string_view pattern)

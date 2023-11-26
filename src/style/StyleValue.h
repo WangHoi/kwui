@@ -30,7 +30,7 @@ struct Value {
 	float f32_val = 0.0f;
 	base::string_atom keyword_val;
 	ValueUnit unit = ValueUnit::Undefined;
-	std::string string_val;
+	std::string string_val; // HexColor or Url value
 
 	static Value auto_();
 	static Value fromKeyword(base::string_atom k);
@@ -121,6 +121,8 @@ struct StyleSpec {
 
 	ValueSpec overflow_x;
 	ValueSpec overflow_y;
+
+	void set(base::string_atom name, const ValueSpec& spec);
 };
 
 enum class DisplayType {

@@ -158,7 +158,7 @@ IResult<ValueUnit> mess_unit(absl::string_view input)
 }
 
 // Syntax: NUMBER mess_unit
-IResult<Value> mess(absl::string_view input)
+IResult<Value> mess_value(absl::string_view input)
 {
 	return map(seq(number, mess_unit), [](auto&& t) {
 		Value v;
@@ -167,11 +167,89 @@ IResult<Value> mess(absl::string_view input)
 		})(input);
 }
 
+static inline bool is_hexchar(char ch)
+{
+	return (ch >= '0' && ch <= '9')
+		|| (ch >= 'a' && ch <= 'f')
+		|| (ch >= 'A' && ch <= 'F');
+}
+
+// Syntax: #RGB | #RGBA | #RRGGBB | #RRGGBBAA
+IResult<Value> hexcolor_value(absl::string_view input)
+{
+	auto res = seq(tag("#"), take_while1(is_hexchar))(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [output, t] = res.value();
+	auto&& [_, hex_str] = t;
+	std::string hex_string(hex_str.data(), hex_str.data() + hex_str.length());
+	return std::make_tuple(output, Value::fromHexColor(hex_string));
+}
+
+// Syntax: "[^"]*"
+IResult<Value> string_value(absl::string_view input)
+{
+	if (!absl::StartsWith(input, "\""))
+		return absl::InvalidArgumentError(input);
+	std::string s;
+	size_t i;
+	for (i = 1; i < input.length(); ++i) {
+		if (input[i] == '\\') {
+			if (i + 1 >= input.length())
+				break;
+			auto ch = input[++i];
+			if (ch == 't') {
+				s += '\t';
+			} else if (ch == 'n') {
+				s += '\n';
+			} else if (ch == '\\') {
+				s += '\\';
+			} else if (ch == '"') {
+				s += '"';
+			} else {
+				s += '\\';
+				s += ch;
+			}
+		} else if (input[i] == '"') {
+			break;
+		} else {
+			s += input[i];
+		}
+	}
+	if (i >= input.length() || input[i] != '"')
+		return absl::InvalidArgumentError(input);
+	return std::make_tuple(input.substr(i + 1), Value::fromKeyword(base::string_intern(s)));
+}
+
 // Syntax: (IDENT | mess | STRING | hexcolor) S* 
 IResult<SingleDeclaration> single_decl(base::string_atom name, absl::string_view input)
 {
-	IResult<SingleDeclaration> a;
-	return a;
+	auto ident_res = ident(input);
+	if (ident_res.ok()) {
+		auto&& [output, atom_str] = ident_res.value();
+		base::string_atom atom = base::string_intern(atom_str);
+		SingleDeclaration decl;
+		decl.name = name;
+		if (atom == base::string_intern("inherit")) {
+			decl.value.type = ValueSpecType::Inherit;
+			std::tie(output, std::ignore) = opt(spaces)(output).value();
+			return std::make_tuple(output, decl);
+		} else if (atom == base::string_intern("initial")) {
+			decl.value.type = ValueSpecType::Inherit;
+			std::tie(output, std::ignore) = opt(spaces)(output).value();
+			return std::make_tuple(output, decl);
+		}
+	}
+
+	auto ident_value = map(ident, [](auto s) { return Value::fromKeyword(base::string_intern(s)); });
+	auto value = alt(ident_value, mess_value, string_value, hexcolor_value);
+	return map(seq(value, opt(spaces)), [&](auto tu) {
+		SingleDeclaration decl;
+		decl.name = name;
+		decl.value.type = ValueSpecType::Specified;
+		decl.value.value = std::get<0>(tu);
+		return decl;
+		})(input);
 }
 
 /* Syntax: mess S*
@@ -182,7 +260,7 @@ IResult<SingleDeclaration> single_decl(base::string_atom name, absl::string_view
 IResult<ShorthandDeclaration> magpad_shorthand_decl(base::string_atom name, absl::string_view input)
 {
 	IResult<ShorthandDeclaration> a;
-	return a;
+	return absl::InvalidArgumentError(input);
 }
 
 // Syntax: prop_name ":" S* prop_value prio? 
@@ -211,27 +289,16 @@ IResult<Declaration> declaration(absl::string_view input)
 	if (!decl.ok())
 		return decl.status();
 
+	// TODO: parse "prio?"
 
 	return decl.value();
 }
 
 // Syntax: S* declaration (";" S* declaration)*
-IResult<int> decls(absl::string_view input)
+IResult<std::vector<Declaration>> decls(absl::string_view input)
 {
-	auto res1 = tag("{")(input);
-	if (!res1.ok())
-		return res1.status();
-	std::tie(input, std::ignore) = res1.value();
-
-	std::tie(input, std::ignore) = opt(tag(";"))(input).value();
-	std::tie(input, std::ignore) = opt(spaces)(input).value();
-
-	auto res2 = tag("}")(input);
-	if (!res2.ok())
-		return res2.status();
-
-	auto&& [output, _] = res2.value();
-	return std::make_tuple(output, 0);
+	auto decl = map(seq(opt(spaces), declaration), [](auto&& t) { return absl::get<1>(t); });
+	return separated_list1(tag(";"), decl)(input);
 }
 
 // Syntax: rule_rhs <-"{" decls ";"? S* "}" S*
@@ -242,16 +309,32 @@ IResult<StyleSpec> style_spec(absl::string_view input)
 		return res1.status();
 	std::tie(input, std::ignore) = res1.value();
 
-	// auto decls_res = 
+	auto decls_res = decls(input);
+	if (!decls_res.ok())
+		return decls_res.status();
 
-	std::tie(input, std::ignore) = opt(tag(";"))(input).value();
-	std::tie(input, std::ignore) = opt(spaces)(input).value();
+	std::vector<Declaration> decls;
+	std::tie(input, decls) = decls_res.value();
 
-	auto res2 = tag("}")(input);
+	auto res2 = seq(opt(tag(";")), opt(spaces), tag("}"), opt(spaces))(input);
 	if (!res2.ok())
 		return res2.status();
 
-	std::tie(input, std::ignore) = opt(spaces)(input).value();
+	std::tie(input, std::ignore) = res2.value();
+
+	StyleSpec spec;
+	for (auto& decl : decls) {
+		if (absl::holds_alternative<SingleDeclaration>(decl)) {
+			const auto& sd = absl::get<SingleDeclaration>(decl);
+			spec.set(sd.name, sd.value);
+		} else if (absl::holds_alternative<ShorthandDeclaration>(decl)) {
+			const auto& shd = absl::get<ShorthandDeclaration>(decl);
+			for (const auto& sd : shd.decls) {
+				spec.set(sd.name, sd.value);
+			}
+		}
+	}
+	return std::make_tuple(input, spec);
 }
 
 } // namespace {}
