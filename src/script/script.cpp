@@ -160,6 +160,18 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
                 LOG(WARNING) << "parse selector '" << name << "' failed";
             }
         });
+    } else if (argc >= 2 && JS_IsString(argv[1])) {
+        auto scene = dialog->GetScene();
+        const char* s = JS_ToCString(ctx, argv[1]);
+        if (s) {
+            auto css_res = style::parse_css(s);
+            if (css_res.ok()) {
+                for (auto&& rule : css_res.value()) {
+                    scene->appendStyleRule(std::move(rule));
+                }
+            }
+        }
+        JS_FreeCString(ctx, s);
     }
     dialog->GetScene()->root()->appendChild(
         dialog->GetScene()->createComponentNode(argv[0]));

@@ -253,7 +253,7 @@ inline auto separated_list1(SEP&& sep, F&& f)
 				break;
 			}
 			std::tie(output1, std::ignore) = res2.value();
-			res = f(input);
+			res = f(output1);
 		}
 		return std::make_tuple(output, list);
 		};
@@ -316,7 +316,7 @@ inline IResult<absl::string_view> digits(absl::string_view input)
 inline IResult<float> number(absl::string_view input)
 {
 	auto res = seq(
-		alt(tag("-"), tag("+")),
+		alt(tag("-"), tag("+"), tag("")),
 		opt(digits),
 		opt(tag(".")),
 		opt(digits)

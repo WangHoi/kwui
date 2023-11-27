@@ -19,6 +19,7 @@ struct ShorthandDeclaration {
 
 using Declaration = absl::variant<SingleDeclaration, ShorthandDeclaration>;
 
+// Syntax: ("#" ident S* | "." ident S* | ":" ident S*)+
 IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 {
 	auto [output1, _] = *opt(spaces)(input);
@@ -69,6 +70,8 @@ IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 				std::tie(input, std::ignore) = res.value_or(std::make_tuple(input, n));
 		}
 		count += n;
+		
+		std::tie(input, std::ignore) = opt(spaces)(input).value();
 	} while (n > 0);
 
 	if (count > 0)
@@ -95,6 +98,7 @@ IResult<SelectorDependency> combinator(absl::string_view input)
 	return std::make_tuple(output1, dep);
 }
 
+// Syntax: selector_item (combinator selector_item)*
 IResult<std::unique_ptr<Selector>> selector(absl::string_view input)
 {
 	auto sel1_res = selector_item(input);
@@ -117,6 +121,7 @@ IResult<std::unique_ptr<Selector>> selector(absl::string_view input)
 	return std::make_tuple(output1, std::move(sel));
 }
 
+// Syntax: selector ("," S* selector)*
 IResult<std::vector<std::unique_ptr<Selector>>> selector_group(absl::string_view input)
 {
 	auto sel1_res = selector(input);
@@ -127,12 +132,12 @@ IResult<std::vector<std::unique_ptr<Selector>>> selector_group(absl::string_view
 	sels.emplace_back(std::move(sel1));
 
 	while (true) {
-		auto res2 = seq(seq(opt(spaces), tag(",")), selector)(output1);
+		auto res2 = seq(tag(","), opt(spaces), selector)(output1);
 		if (!res2.ok())
 			break;
 
 		auto&& [output2, tup] = *res2;
-		auto&& [_, sel2] = tup;
+		auto&& [_1, _2, sel2] = tup;
 		sels.emplace_back(std::move(sel2));
 
 		output1 = output2;
@@ -369,6 +374,26 @@ int Selector::specificity() const
 	if (dep_selector)
 		s += dep_selector->specificity();
 	return s;
+}
+
+absl::StatusOr<std::vector<std::unique_ptr<StyleRule>>> parse_css(absl::string_view input)
+{
+	auto res = selector_group(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [output, sels] = *res;
+	
+	auto res1 = style_spec(output);
+	if (!res1.ok())
+		return res1.status();
+	auto&& [output1, spec] = res1.value();
+
+	std::vector<std::unique_ptr<StyleRule>> rules;
+	for (auto it = sels.begin(); it != sels.end(); ++it) {
+		auto r = std::make_unique<StyleRule>(std::move(*it), spec);
+		rules.emplace_back(std::move(r));
+	}
+	return rules;
 }
 
 }

@@ -60,6 +60,17 @@ var simple_stylesheet = {
 		"background-color": "#ff0",
 	}
 };
+
+var simple_css = `.title-bar {
+	position: absolute;
+	top: 0;
+	right: 0;
+	margin-left: 10;
+	margin-top: 10;
+	margin-right: 10;
+	margin-bottom: 10;
+}`;
+
 var hello_world_full = (<body>
     <div style={{"background-color": "#0f0"}}>橙讯安装程序</div>
     <div class={"title-bar"} style={{ "background-color": "#0ff"}}>
@@ -109,4 +120,4 @@ var hello_world3 = (
 
 console.log(JSON.stringify(hello_world_full));
 
-app.showDialog(hello_world_full, simple_stylesheet);
+app.showDialog(title_bar, simple_css);
