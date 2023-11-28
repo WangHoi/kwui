@@ -61,7 +61,8 @@ var simple_stylesheet = {
 	}
 };
 
-var simple_css = `.title-bar {
+var simple_css = `
+.title-bar {
 	position: absolute;
 	top: 0;
 	right: 0;
@@ -69,26 +70,35 @@ var simple_css = `.title-bar {
 	margin-top: 10;
 	margin-right: 10;
 	margin-bottom: 10;
-}`;
+}
+img {
+	display: inline-block;
+	width: 80px;
+	height: 80px;
+}
+button:hover {
+	background-color: #ff0;
+}
+`;
 
 var hello_world_full = (<body>
-    <div style={{"background-color": "#0f0"}}>橙讯安装程序</div>
-    <div class={"title-bar"} style={{ "background-color": "#0ff"}}>
+    <div style="background-color: #0f0">橙讯安装程序</div>
+    <div class={"title-bar"} style="background-color: #0ff">
         <button>最小化</button>
-        <button style={{"background-color": "#f0f"}}>最大化</button>
+        <button style="background-color: #f0f">最大化</button>
         <button>关闭</button>
     </div>
-    <div style={{"margin-top": 40, "text-align": "center"}}>
+    <div style="margin-top: 40; text-align: center">
         <img src={"cx_logo_2.svg"} />
     </div>
-    <div style={{"margin-top": 40, "text-align": "center"}}>
-        <span style={{position:"relative", "font-size": 20}}>
+    <div style="margin-top: 40; text-align: center">
+        <span style="position:relative; font-size: 20">
             {"橙讯"}
-            <span style={{position:"absolute", left:"100%", top:-10, "font-size":10}}>2.7.0</span>
+            <span style="position:absolute; left:100%; top:-10; font-size:10">2.7.0</span>
         </span>
     </div>
-    <div style={{"text-align":"center"}}>
-        <button style={{"margin-top": 40, "background-color": "#f0f"}}>安装</button>
+    <div style="text-align:center">
+        <button style="margin-top: 40; background-color: #f0f;">安装</button>
     </div>
 </body>);
 
@@ -120,4 +130,4 @@ var hello_world3 = (
 
 console.log(JSON.stringify(hello_world_full));
 
-app.showDialog(title_bar, simple_css);
+app.showDialog(hello_world_full, simple_css);

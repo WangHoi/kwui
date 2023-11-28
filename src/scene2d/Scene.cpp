@@ -237,7 +237,15 @@ void Scene::setupProps(Node* node, JSValue props)
 		JSContext* jctx = script_ctx_->get();
 		auto name = base::string_intern(name_str);
 		if (name == base::string_intern("style")) {
-			node->setStyle(script_ctx_->parse<style::StyleSpec>(value));
+			if (JS_IsObject(value)) {
+				node->setStyle(script_ctx_->parse<style::StyleSpec>(value));
+			} else if (JS_IsString(value)) {
+				const char* s = JS_ToCString(jctx, value);
+				auto style_res = style::parse_inline_style(s);
+				JS_FreeCString(jctx, s);
+				if (style_res.ok())
+					node->setStyle(style_res.value());
+			}
 		} else if (name == base::string_intern("id")) {
 			node->setId(script_ctx_->parse<base::string_atom>(value));
 		} else if (name == base::string_intern("class")) {

@@ -59,5 +59,6 @@ public:
 };
 
 absl::StatusOr<std::vector<std::unique_ptr<StyleRule>>> parse_css(absl::string_view input);
+absl::StatusOr<StyleSpec> parse_inline_style(absl::string_view input);
 
 }

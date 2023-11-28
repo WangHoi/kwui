@@ -19,6 +19,23 @@ struct ShorthandDeclaration {
 
 using Declaration = absl::variant<SingleDeclaration, ShorthandDeclaration>;
 
+static StyleSpec make_style_spec(const std::vector<Declaration>& decls)
+{
+	StyleSpec spec;
+	for (auto& decl : decls) {
+		if (absl::holds_alternative<SingleDeclaration>(decl)) {
+			const auto& sd = absl::get<SingleDeclaration>(decl);
+			spec.set(sd.name, sd.value);
+		} else if (absl::holds_alternative<ShorthandDeclaration>(decl)) {
+			const auto& shd = absl::get<ShorthandDeclaration>(decl);
+			for (const auto& sd : shd.decls) {
+				spec.set(sd.name, sd.value);
+			}
+		}
+	}
+	return spec;
+}
+
 // Syntax: ("#" ident S* | "." ident S* | ":" ident S*)+
 IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 {
@@ -187,7 +204,7 @@ IResult<Value> hexcolor_value(absl::string_view input)
 		return res.status();
 	auto&& [output, t] = res.value();
 	auto&& [_, hex_str] = t;
-	std::string hex_string(hex_str.data(), hex_str.data() + hex_str.length());
+	std::string hex_string(hex_str.data() - 1, hex_str.data() + hex_str.length());
 	return std::make_tuple(output, Value::fromHexColor(hex_string));
 }
 
@@ -306,8 +323,8 @@ IResult<std::vector<Declaration>> decls(absl::string_view input)
 	return separated_list1(tag(";"), decl)(input);
 }
 
-// Syntax: rule_rhs <-"{" decls ";"? S* "}" S*
-IResult<StyleSpec> style_spec(absl::string_view input)
+// rule_rhs <-"{" decls ";"? S* "}" S*
+IResult<StyleSpec> rule_rhs(absl::string_view input)
 {
 	auto res1 = tag("{")(input);
 	if (!res1.ok())
@@ -327,19 +344,29 @@ IResult<StyleSpec> style_spec(absl::string_view input)
 
 	std::tie(input, std::ignore) = res2.value();
 
-	StyleSpec spec;
-	for (auto& decl : decls) {
-		if (absl::holds_alternative<SingleDeclaration>(decl)) {
-			const auto& sd = absl::get<SingleDeclaration>(decl);
-			spec.set(sd.name, sd.value);
-		} else if (absl::holds_alternative<ShorthandDeclaration>(decl)) {
-			const auto& shd = absl::get<ShorthandDeclaration>(decl);
-			for (const auto& sd : shd.decls) {
-				spec.set(sd.name, sd.value);
-			}
-		}
-	}
+	StyleSpec spec = make_style_spec(decls);
 	return std::make_tuple(input, spec);
+}
+
+// rule <- selector_group rule_rhs
+IResult<std::vector<std::unique_ptr<StyleRule>>> rule(absl::string_view input)
+{
+	auto res = selector_group(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [output, sels] = *res;
+
+	auto res1 = rule_rhs(output);
+	if (!res1.ok())
+		return res1.status();
+	auto&& [output1, spec] = res1.value();
+
+	std::vector<std::unique_ptr<StyleRule>> rules;
+	for (auto it = sels.begin(); it != sels.end(); ++it) {
+		auto r = std::make_unique<StyleRule>(std::move(*it), spec);
+		rules.emplace_back(std::move(r));
+	}
+	return std::make_tuple(output1, std::move(rules));
 }
 
 } // namespace {}
@@ -376,24 +403,37 @@ int Selector::specificity() const
 	return s;
 }
 
+// S* rule*
 absl::StatusOr<std::vector<std::unique_ptr<StyleRule>>> parse_css(absl::string_view input)
 {
-	auto res = selector_group(input);
-	if (!res.ok())
-		return res.status();
-	auto&& [output, sels] = *res;
-	
-	auto res1 = style_spec(output);
-	if (!res1.ok())
-		return res1.status();
-	auto&& [output1, spec] = res1.value();
+	std::tie(input, std::ignore) = opt(spaces)(input).value();
 
 	std::vector<std::unique_ptr<StyleRule>> rules;
-	for (auto it = sels.begin(); it != sels.end(); ++it) {
-		auto r = std::make_unique<StyleRule>(std::move(*it), spec);
-		rules.emplace_back(std::move(r));
+	auto res = rule(input);
+	while (res.ok()) {
+		auto&& [input1, sub_rules] = res.value();
+		std::move(sub_rules.begin(), sub_rules.end(), std::back_inserter(rules));
+		input = input1;
+		res = rule(input);
+	}
+	if (input.length() > 0) {
+		return absl::InvalidArgumentError(input);
 	}
 	return rules;
+}
+
+// decls S* ";"? S*
+absl::StatusOr<StyleSpec> parse_inline_style(absl::string_view input)
+{
+	auto res = decls(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [input1, decls] = res.value();
+	auto&& [output, _] = seq(opt(spaces), opt(tag(";")), opt(spaces))(input1).value();
+	if (output.length() > 0) {
+		return absl::InvalidArgumentError(output);
+	}
+	return make_style_spec(decls);
 }
 
 }
