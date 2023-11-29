@@ -243,86 +243,97 @@ IResult<Value> string_value(absl::string_view input)
 	return std::make_tuple(input.substr(i + 1), Value::fromKeyword(base::string_intern(s)));
 }
 
-// Syntax: (IDENT | mess | STRING | hexcolor) S* 
-IResult<SingleDeclaration> single_decl(base::string_atom name, absl::string_view input)
+// Syntax: IDENT | mess | STRING | hexcolor
+IResult<ValueSpec> value_spec(absl::string_view input)
 {
 	auto ident_res = ident(input);
 	if (ident_res.ok()) {
 		auto&& [output, atom_str] = ident_res.value();
 		base::string_atom atom = base::string_intern(atom_str);
-		SingleDeclaration decl;
-		decl.name = name;
+		ValueSpec spec;
 		if (atom == base::string_intern("inherit")) {
-			decl.value.type = ValueSpecType::Inherit;
-			std::tie(output, std::ignore) = opt(spaces)(output).value();
-			return std::make_tuple(output, decl);
+			spec.type = ValueSpecType::Inherit;
+			return std::make_tuple(output, spec);
 		} else if (atom == base::string_intern("initial")) {
-			decl.value.type = ValueSpecType::Inherit;
-			std::tie(output, std::ignore) = opt(spaces)(output).value();
-			return std::make_tuple(output, decl);
+			spec.type = ValueSpecType::Inherit;
+			return std::make_tuple(output, spec);
 		}
 	}
 
 	auto ident_value = map(ident, [](auto s) { return Value::fromKeyword(base::string_intern(s)); });
 	auto value = alt(ident_value, mess_value, string_value, hexcolor_value);
-	return map(seq(value, opt(spaces)), [&](auto tu) {
-		SingleDeclaration decl;
-		decl.name = name;
-		decl.value.type = ValueSpecType::Specified;
-		decl.value.value = std::get<0>(tu);
-		return decl;
+	return map(value, [&](auto val) {
+		ValueSpec spec;
+		spec.type = ValueSpecType::Specified;
+		spec.value = val;
+		return spec;
 		})(input);
 }
 
-/* Syntax: mess_value S*
-	| mess_value S+ mess_value S*
-	| mess_value S+ mess_value S+ mess_value S*
-	| mess_value S+ mess_value S+ mess_value S+ mess_value S*
- */
-IResult<ShorthandDeclaration> magpad_shorthand_decl(base::string_atom name, absl::string_view input)
+// Syntax: (IDENT | mess | STRING | hexcolor) S* 
+IResult<SingleDeclaration> single_decl(base::string_atom name, absl::string_view input)
 {
-	auto res = separated_list1(spaces, mess_value)(input);
+	auto res = value_spec(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [output, spec] = res.value();
+	std::tie(output, std::ignore) = opt(spaces)(output).value();
+
+	SingleDeclaration decl;
+	decl.name = name;
+	decl.value = spec;
+	return std::make_tuple(output, decl);
+}
+
+/* Syntax: value_spec S*
+	| value_spec S+ value_spec S*
+	| value_spec S+ value_spec S+ value_spec S*
+	| value_spec S+ value_spec S+ value_spec S+ value_spec S*
+ */
+IResult<ShorthandDeclaration> trbl_shorthand_decl(base::string_atom name,
+	base::string_atom top_name,
+	base::string_atom right_name,
+	base::string_atom bottom_name,
+	base::string_atom left_name,
+	absl::string_view input)
+{
+	auto res = separated_list1(spaces, value_spec)(input);
 	if (!res.ok())
 		return res.status();
 	auto&& [output, list] = res.value();
 	ShorthandDeclaration sd;
 	sd.name = name;
 	
-	base::string_atom top = base::string_intern(std::string(name.c_str()) + "-top");
-	base::string_atom right = base::string_intern(std::string(name.c_str()) + "-right");
-	base::string_atom bottom = base::string_intern(std::string(name.c_str()) + "-bottom");
-	base::string_atom left = base::string_intern(std::string(name.c_str()) + "-left");
-
 	if (list.size() == 1) {
-		ValueSpec v0{ ValueSpecType::Specified, list[0] };
-		sd.decls.push_back(SingleDeclaration{ top, v0 });
-		sd.decls.push_back(SingleDeclaration{ right, v0 });
-		sd.decls.push_back(SingleDeclaration{ bottom, v0 });
-		sd.decls.push_back(SingleDeclaration{ left, v0 });
+		const ValueSpec& v0 = list[0];
+		sd.decls.push_back(SingleDeclaration{ top_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ right_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ bottom_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ left_name, v0 });
 	} else if (list.size() == 2) {
-		ValueSpec v0{ ValueSpecType::Specified, list[0] };
-		ValueSpec v1{ ValueSpecType::Specified, list[1] };
-		sd.decls.push_back(SingleDeclaration{ top, v0 });
-		sd.decls.push_back(SingleDeclaration{ right, v1 });
-		sd.decls.push_back(SingleDeclaration{ bottom, v0 });
-		sd.decls.push_back(SingleDeclaration{ left, v1 });
+		const ValueSpec& v0 = list[0];
+		const ValueSpec& v1 = list[1];
+		sd.decls.push_back(SingleDeclaration{ top_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ right_name, v1 });
+		sd.decls.push_back(SingleDeclaration{ bottom_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ left_name, v1 });
 	} else if (list.size() == 3) {
-		ValueSpec v0{ ValueSpecType::Specified, list[0] };
-		ValueSpec v1{ ValueSpecType::Specified, list[1] };
-		ValueSpec v2{ ValueSpecType::Specified, list[2] };
-		sd.decls.push_back(SingleDeclaration{ top, v0 });
-		sd.decls.push_back(SingleDeclaration{ right, v1 });
-		sd.decls.push_back(SingleDeclaration{ bottom, v2 });
-		sd.decls.push_back(SingleDeclaration{ left, v1 });
+		const ValueSpec& v0 = list[0];
+		const ValueSpec& v1 = list[1];
+		const ValueSpec& v2 = list[2];
+		sd.decls.push_back(SingleDeclaration{ top_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ right_name, v1 });
+		sd.decls.push_back(SingleDeclaration{ bottom_name, v2 });
+		sd.decls.push_back(SingleDeclaration{ left_name, v1 });
 	} else if (list.size() == 4) {
-		ValueSpec v0{ ValueSpecType::Specified, list[0] };
-		ValueSpec v1{ ValueSpecType::Specified, list[1] };
-		ValueSpec v2{ ValueSpecType::Specified, list[2] };
-		ValueSpec v3{ ValueSpecType::Specified, list[3] };
-		sd.decls.push_back(SingleDeclaration{ top, v0 });
-		sd.decls.push_back(SingleDeclaration{ right, v1 });
-		sd.decls.push_back(SingleDeclaration{ bottom, v2 });
-		sd.decls.push_back(SingleDeclaration{ left, v3 });
+		const ValueSpec& v0 = list[0];
+		const ValueSpec& v1 = list[1];
+		const ValueSpec& v2 = list[2];
+		const ValueSpec& v3 = list[3];
+		sd.decls.push_back(SingleDeclaration{ top_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ right_name, v1 });
+		sd.decls.push_back(SingleDeclaration{ bottom_name, v2 });
+		sd.decls.push_back(SingleDeclaration{ left_name, v3 });
 	}
 	return std::make_tuple(output, sd);
 }
@@ -343,9 +354,34 @@ IResult<Declaration> declaration(absl::string_view input)
 
 	IResult<Declaration> decl;
 	base::string_atom prop_name = base::string_intern(prop_name_str);
-	if (prop_name == base::string_intern("margin")
-		|| prop_name == base::string_intern("padding")) {
-		decl = magpad_shorthand_decl(prop_name, input1);
+	if (prop_name == base::string_intern("margin")) {
+		decl = trbl_shorthand_decl(prop_name,
+			base::string_intern("margin-top"),
+			base::string_intern("margin-right"),
+			base::string_intern("margin-bottom"),
+			base::string_intern("margin-left"),
+			input1);
+	} else if (prop_name == base::string_intern("padding")) {
+		decl = trbl_shorthand_decl(prop_name,
+			base::string_intern("padding-top"),
+			base::string_intern("padding-right"),
+			base::string_intern("padding-bottom"),
+			base::string_intern("padding-left"),
+			input1);
+	} else if (prop_name == base::string_intern("border-width")) {
+		decl = trbl_shorthand_decl(prop_name,
+			base::string_intern("border-top-width"),
+			base::string_intern("border-right-width"),
+			base::string_intern("border-bottom-width"),
+			base::string_intern("border-left-width"),
+			input1);
+	} else if (prop_name == base::string_intern("inset")) {
+		decl = trbl_shorthand_decl(prop_name,
+			base::string_intern("top"),
+			base::string_intern("right"),
+			base::string_intern("bottom"),
+			base::string_intern("left"),
+			input1);
 	} else {
 		decl = single_decl(prop_name, input1);
 	}
