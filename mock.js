@@ -66,10 +66,7 @@ var simple_css = `
 	position: absolute;
 	top: 0;
 	right: 0;
-	margin-left: 10;
-	margin-top: 10;
-	margin-right: 10;
-	margin-bottom: 10;
+	margin: 10;
 }
 img {
 	display: inline-block;

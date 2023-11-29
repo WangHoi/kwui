@@ -274,15 +274,57 @@ IResult<SingleDeclaration> single_decl(base::string_atom name, absl::string_view
 		})(input);
 }
 
-/* Syntax: mess S*
-	| mess S+ mess S*
-	| mess S+ mess S+ mess S*
-	| mess S+ mess S+ mess S+ mess S*
+/* Syntax: mess_value S*
+	| mess_value S+ mess_value S*
+	| mess_value S+ mess_value S+ mess_value S*
+	| mess_value S+ mess_value S+ mess_value S+ mess_value S*
  */
 IResult<ShorthandDeclaration> magpad_shorthand_decl(base::string_atom name, absl::string_view input)
 {
-	IResult<ShorthandDeclaration> a;
-	return absl::InvalidArgumentError(input);
+	auto res = separated_list1(spaces, mess_value)(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [output, list] = res.value();
+	ShorthandDeclaration sd;
+	sd.name = name;
+	
+	base::string_atom top = base::string_intern(std::string(name.c_str()) + "-top");
+	base::string_atom right = base::string_intern(std::string(name.c_str()) + "-right");
+	base::string_atom bottom = base::string_intern(std::string(name.c_str()) + "-bottom");
+	base::string_atom left = base::string_intern(std::string(name.c_str()) + "-left");
+
+	if (list.size() == 1) {
+		ValueSpec v0{ ValueSpecType::Specified, list[0] };
+		sd.decls.push_back(SingleDeclaration{ top, v0 });
+		sd.decls.push_back(SingleDeclaration{ right, v0 });
+		sd.decls.push_back(SingleDeclaration{ bottom, v0 });
+		sd.decls.push_back(SingleDeclaration{ left, v0 });
+	} else if (list.size() == 2) {
+		ValueSpec v0{ ValueSpecType::Specified, list[0] };
+		ValueSpec v1{ ValueSpecType::Specified, list[1] };
+		sd.decls.push_back(SingleDeclaration{ top, v0 });
+		sd.decls.push_back(SingleDeclaration{ right, v1 });
+		sd.decls.push_back(SingleDeclaration{ bottom, v0 });
+		sd.decls.push_back(SingleDeclaration{ left, v1 });
+	} else if (list.size() == 3) {
+		ValueSpec v0{ ValueSpecType::Specified, list[0] };
+		ValueSpec v1{ ValueSpecType::Specified, list[1] };
+		ValueSpec v2{ ValueSpecType::Specified, list[2] };
+		sd.decls.push_back(SingleDeclaration{ top, v0 });
+		sd.decls.push_back(SingleDeclaration{ right, v1 });
+		sd.decls.push_back(SingleDeclaration{ bottom, v2 });
+		sd.decls.push_back(SingleDeclaration{ left, v1 });
+	} else if (list.size() == 4) {
+		ValueSpec v0{ ValueSpecType::Specified, list[0] };
+		ValueSpec v1{ ValueSpecType::Specified, list[1] };
+		ValueSpec v2{ ValueSpecType::Specified, list[2] };
+		ValueSpec v3{ ValueSpecType::Specified, list[3] };
+		sd.decls.push_back(SingleDeclaration{ top, v0 });
+		sd.decls.push_back(SingleDeclaration{ right, v1 });
+		sd.decls.push_back(SingleDeclaration{ bottom, v2 });
+		sd.decls.push_back(SingleDeclaration{ left, v3 });
+	}
+	return std::make_tuple(output, sd);
 }
 
 // Syntax: prop_name ":" S* prop_value prio? 
@@ -391,11 +433,11 @@ absl::StatusOr<std::vector<std::unique_ptr<Selector>>> Selector::parseGroup(absl
 
 int Selector::specificity() const
 {
-	// TODO: css rule specificity for pseudo-classes
 	int s = 0;
 	if (id != base::string_atom())
 		s += 100;
 	s += 10 * (int)klass.size();
+	s += 10 * (int)pseudo_classes.size();
 	if (tag != base::string_atom())
 		s += 1;
 	if (dep_selector)
