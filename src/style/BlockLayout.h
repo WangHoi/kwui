@@ -31,7 +31,7 @@ struct BlockBox {
 	EdgeOffsetF margin; // margin edges
 	EdgeOffsetF border; // border edges
 	EdgeOffsetF padding; // padding edges
-	EdgeOffsetF inner_padding;
+	EdgeOffsetF scrollbar_gutter; // scrollbar space between inner-border-edge and outer-padding-edge
 	scene2d::DimensionF content; // content size
 
 	absl::optional<float> prefer_height;
@@ -41,38 +41,38 @@ struct BlockBox {
 		return scene2d::RectF::fromXYWH(
 			0,
 			0,
-			margin.left + border.left + padding.left + inner_padding.left + content.width + inner_padding.right + padding.right + border.right + margin.right,
-			margin.top + border.top + padding.top + inner_padding.top + content.height + inner_padding.bottom + padding.bottom + border.bottom + margin.bottom);
+			margin.left + border.left + padding.left + scrollbar_gutter.left + content.width + scrollbar_gutter.right + padding.right + border.right + margin.right,
+			margin.top + border.top + padding.top + scrollbar_gutter.top + content.height + scrollbar_gutter.bottom + padding.bottom + border.bottom + margin.bottom);
 	}
 	inline scene2d::RectF borderRect() const
 	{
 		return scene2d::RectF::fromXYWH(
 			margin.left,
 			margin.top,
-			border.left + padding.left + inner_padding.left + content.width + inner_padding.right + padding.right + border.right,
-			border.top + padding.top + inner_padding.top + content.height + inner_padding.bottom + padding.bottom + border.bottom);
+			border.left + padding.left + scrollbar_gutter.left + content.width + scrollbar_gutter.right + padding.right + border.right,
+			border.top + padding.top + scrollbar_gutter.top + content.height + scrollbar_gutter.bottom + padding.bottom + border.bottom);
 	}
 	inline scene2d::RectF paddingRect() const
 	{
 		return scene2d::RectF::fromXYWH(
 			margin.left + border.left,
 			margin.top + border.top,
-			padding.left + inner_padding.left + content.width + inner_padding.right + padding.right,
-			padding.top + inner_padding.top + content.height + inner_padding.bottom + padding.bottom);
+			padding.left + scrollbar_gutter.left + content.width + scrollbar_gutter.right + padding.right,
+			padding.top + scrollbar_gutter.top + content.height + scrollbar_gutter.bottom + padding.bottom);
 	}
-	inline scene2d::RectF innerPaddingRect() const
+	inline scene2d::RectF clientRect() const
 	{
 		return scene2d::RectF::fromXYWH(
-			margin.left + border.left + inner_padding.left,
-			margin.top + border.top + inner_padding.top,
+			margin.left + border.left + scrollbar_gutter.left,
+			margin.top + border.top + scrollbar_gutter.top,
 			padding.left + content.width + padding.right,
 			padding.top + content.height + padding.bottom);
 	}
 	inline scene2d::RectF contentRect() const
 	{
 		return scene2d::RectF::fromXYWH(
-			margin.left + border.left + padding.left + inner_padding.left,
-			margin.top + border.top + padding.top + inner_padding.top,
+			margin.left + border.left + padding.left + scrollbar_gutter.left,
+			margin.top + border.top + padding.top + scrollbar_gutter.top,
 			content.width,
 			content.height);
 	}
@@ -97,7 +97,7 @@ struct BlockBox {
 		absl::Format(&sink, "margin=%v, ", o.margin);
 		absl::Format(&sink, "border=%v, ", o.border);
 		absl::Format(&sink, "padding=%v, ", o.padding);
-		absl::Format(&sink, "inner_pad=%v, ", o.inner_padding);
+		absl::Format(&sink, "inner_pad=%v, ", o.scrollbar_gutter);
 		absl::Format(&sink, "content=%v, ", o.content);
 		absl::Format(&sink, "}");
 	}

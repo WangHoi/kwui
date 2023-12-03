@@ -138,39 +138,39 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		absl::optional<scene2d::RectF> v_scrollbar_rect, h_scrollbar_rect;
 		if (absl::holds_alternative<BlockBox>(o->box)) {
 			const BlockBox& b = absl::get<BlockBox>(o->box);
-			scene2d::RectF ipad_rect = b.innerPaddingRect();
+			scene2d::RectF ipad_rect = b.clientRect();
 			ipad_origin = b.pos + ipad_rect.origin();
-			if (b.inner_padding.right > 0) {
+			if (b.scrollbar_gutter.right > 0) {
 				v_scrollbar_rect.emplace(scene2d::RectF::fromXYWH(
 					ipad_origin.x + so.viewport_rect.width(),
 					ipad_origin.y,
-					b.inner_padding.right,
+					b.scrollbar_gutter.right,
 					so.viewport_rect.height()));
 			}
-			if (b.inner_padding.bottom > 0) {
+			if (b.scrollbar_gutter.bottom > 0) {
 				h_scrollbar_rect.emplace(scene2d::RectF::fromXYWH(
 					ipad_origin.x,
 					ipad_origin.y + so.viewport_rect.height(),
 					so.viewport_rect.width(),
-					b.inner_padding.bottom));
+					b.scrollbar_gutter.bottom));
 			}
 		} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 			const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
-			scene2d::RectF ipad_rect = ibb.block_box.innerPaddingRect();
+			scene2d::RectF ipad_rect = ibb.block_box.clientRect();
 			ipad_origin = ibb.block_box.pos + ipad_rect.origin();
-			if (ibb.block_box.inner_padding.right > 0) {
+			if (ibb.block_box.scrollbar_gutter.right > 0) {
 				v_scrollbar_rect.emplace(scene2d::RectF::fromXYWH(
 					ipad_origin.x + so.viewport_rect.width(),
 					ipad_origin.y,
-					ibb.block_box.inner_padding.right,
+					ibb.block_box.scrollbar_gutter.right,
 					so.viewport_rect.height()));
 			}
-			if (ibb.block_box.inner_padding.bottom > 0) {
+			if (ibb.block_box.scrollbar_gutter.bottom > 0) {
 				h_scrollbar_rect.emplace(scene2d::RectF::fromXYWH(
 					ipad_origin.x,
 					ipad_origin.y + so.viewport_rect.height(),
 					so.viewport_rect.width(),
-					ibb.block_box.inner_padding.bottom));
+					ibb.block_box.scrollbar_gutter.bottom));
 			}
 		}
 
@@ -217,7 +217,7 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 			b.pos.y + border_rect.top,
 			border_rect.width(),
 			border_rect.height());
-		scene2d::PointF local_pos = pos - b.innerPaddingRect().origin();
+		scene2d::PointF local_pos = pos - b.clientRect().origin();
 		if (render_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 			if (out_local_pos)
 				*out_local_pos = local_pos;
@@ -242,7 +242,7 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 			b.pos.y + border_rect.top,
 			border_rect.width(),
 			border_rect.height());
-		scene2d::PointF local_pos = pos - b.innerPaddingRect().origin();
+		scene2d::PointF local_pos = pos - b.clientRect().origin();
 		if (render_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 			if (out_local_pos)
 				*out_local_pos = local_pos;
@@ -407,16 +407,16 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 		scroll_x = ScrollbarPolicy::Stable;
 	}
 	if (scroll_x == ScrollbarPolicy::Stable) {
-		b.inner_padding.bottom = SCROLLBAR_GUTTER_WIDTH;
+		b.scrollbar_gutter.bottom = SCROLLBAR_GUTTER_WIDTH;
 	} else if (scroll_x == ScrollbarPolicy::StableBothEdges) {
-		b.inner_padding.top = b.inner_padding.bottom = SCROLLBAR_GUTTER_WIDTH;
+		b.scrollbar_gutter.top = b.scrollbar_gutter.bottom = SCROLLBAR_GUTTER_WIDTH;
 	}
-	b.content.height = std::max(0.0f, b.content.height - b.inner_padding.top - b.inner_padding.bottom);
+	b.content.height = std::max(0.0f, b.content.height - b.scrollbar_gutter.top - b.scrollbar_gutter.bottom);
 
 	// Update ScrollObject
 	if (st.overflow_y != OverflowType::Visible || st.overflow_x != OverflowType::Visible) {
 		const BlockFormatContext& inner_bfc = o->bfc.value();
-		scene2d::RectF inner_rect = b.innerPaddingRect();
+		scene2d::RectF inner_rect = b.clientRect();
 		float padding_left_edge = b.pos.x + b.paddingRect().left;
 		float padding_top_edge = b.pos.y + b.paddingRect().top;
 		float border_bottom_edge = std::max(inner_bfc.border_bottom_edge, inner_bfc.max_border_bottom_edge);
@@ -597,12 +597,12 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 		b.margin.right = solver.marginRight();
 
 		if (scroll_y == ScrollbarPolicy::Stable) {
-			b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
+			b.scrollbar_gutter.right = SCROLLBAR_GUTTER_WIDTH;
 		} else if (scroll_y == ScrollbarPolicy::StableBothEdges) {
-			b.inner_padding.left = SCROLLBAR_GUTTER_WIDTH;
-			b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
+			b.scrollbar_gutter.left = SCROLLBAR_GUTTER_WIDTH;
+			b.scrollbar_gutter.right = SCROLLBAR_GUTTER_WIDTH;
 		}
-		b.content.width = std::max(0.0f, b.content.width - b.inner_padding.left - b.inner_padding.right);
+		b.content.width = std::max(0.0f, b.content.width - b.scrollbar_gutter.left - b.scrollbar_gutter.right);
 
 		// Compute height, top and bottom margins
 		b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);
@@ -653,8 +653,8 @@ void LayoutObject::arrangeBfcTop(LayoutObject* o, BlockFormatContext& bfc, Block
 			&& (st.bottom.isPixel() || st.bottom.isRaw())) {
 			float h = bfc.contg_height.value()
 				- try_resolve_to_px(st.top, bfc.contg_height).value_or(0)
-				- box.margin.top - box.border.top - box.padding.top - box.inner_padding.top
-				- box.inner_padding.bottom - box.padding.bottom - box.border.bottom - box.margin.bottom
+				- box.margin.top - box.border.top - box.padding.top - box.scrollbar_gutter.top
+				- box.scrollbar_gutter.bottom - box.padding.bottom - box.border.bottom - box.margin.bottom
 				- try_resolve_to_px(st.bottom, bfc.contg_height).value_or(0);
 			box.prefer_height.emplace(std::max(0.0f, h));
 		}
@@ -1031,7 +1031,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	// Update ScrollObject
 	if (st.overflow_y != OverflowType::Visible || st.overflow_x != OverflowType::Visible) {
 		const BlockFormatContext& inner_bfc = o->bfc.value();
-		scene2d::RectF inner_rect = b.innerPaddingRect();
+		scene2d::RectF inner_rect = b.clientRect();
 		float padding_left_edge = b.pos.x + b.paddingRect().left;
 		float padding_top_edge = b.pos.y + b.paddingRect().top;
 		float border_bottom_edge = std::max(inner_bfc.border_bottom_edge, inner_bfc.max_border_bottom_edge);
@@ -1106,12 +1106,12 @@ void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
 	}
 
 	if (scroll_y == ScrollbarPolicy::Stable) {
-		b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
+		b.scrollbar_gutter.right = SCROLLBAR_GUTTER_WIDTH;
 	} else if (scroll_y == ScrollbarPolicy::StableBothEdges) {
-		b.inner_padding.left = SCROLLBAR_GUTTER_WIDTH;
-		b.inner_padding.right = SCROLLBAR_GUTTER_WIDTH;
+		b.scrollbar_gutter.left = SCROLLBAR_GUTTER_WIDTH;
+		b.scrollbar_gutter.right = SCROLLBAR_GUTTER_WIDTH;
 	}
-	b.content.width = std::max(0.0f, b.content.width - b.inner_padding.left - b.inner_padding.right);
+	b.content.width = std::max(0.0f, b.content.width - b.scrollbar_gutter.left - b.scrollbar_gutter.right);
 
 	// Compute height, top and bottom margins
 	b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);
