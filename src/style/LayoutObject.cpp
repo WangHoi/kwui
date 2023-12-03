@@ -186,9 +186,12 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 
 	painter->save();
 	if (st.position == PositionType::Absolute) {
-		painter->setTranslation(absl::get<BlockBox>(o->box).pos + scroll_offset, true);
+		painter->setTranslation(
+			content_rect.value_or(scene2d::RectF()).origin()
+			+ scroll_offset,
+			true);
 	} else {
-		painter->setTranslation(scroll_offset, true);
+		painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
 	}
 
 	LayoutObject* child = o->first_child;
@@ -614,7 +617,7 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 		b.margin.bottom = try_resolve_to_px(st.margin_bottom, contg_width).value_or(0);
 
 		// Compute pos.x
-		b.pos.x = bfc.contg_left_edge;
+		b.pos.x = 0.0f;
 
 		// Update max border_right_edge
 		bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, bfc.contg_left_edge + b.borderRect().right);
@@ -677,8 +680,11 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 		float saved_border_bottom_edge = bfc.border_bottom_edge;
 		{
 			base::scoped_setter _1(bfc.contg_height, box.prefer_height);
-			base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
-			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
+			//base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
+			base::scoped_setter _3(bfc.contg_right_edge, box.contentRect().width());
+			float margin = bfc.margin_bottom_edge - bfc.border_bottom_edge;
+			base::scoped_setter _4(bfc.margin_bottom_edge, 0.0f);
+			base::scoped_setter _5(bfc.border_bottom_edge, -margin);
 			LayoutObject* child = o->first_child;
 			do {
 				arrangeBlock(child, bfc, viewport_size);
@@ -701,20 +707,17 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 			}
 		}
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
-		auto rect = box.contentRect();
+		auto content_rect = box.contentRect();
 		scene2d::PointF pos;
 		if (o->style->position == PositionType::Static || o->style->position == PositionType::Relative) {
 			pos = box.pos;
 		}
-		o->ifc.emplace(bfc, pos.x + rect.left, rect.width(), pos.y + rect.top);
-		LOG(INFO)
-			<< "begin IFC pos=" << scene2d::PointF(bfc.contg_left_edge, bfc.margin_bottom_edge)
-			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
-
+		// TODO: simplify InlineFormatContext::ctor(bfc, left, avail_width, top) to ctor(bfc, avail_width)
+		o->ifc.emplace(bfc, 0.0f, content_rect.width(), 0.0f);
 		{
 			base::scoped_setter _1(bfc.contg_height, box.prefer_height);
-			base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.pos.x + box.contentRect().left);
-			base::scoped_setter _3(bfc.contg_right_edge, bfc.contg_left_edge + box.contentRect().width());
+			// base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.pos.x + box.contentRect().left);
+			base::scoped_setter _3(bfc.contg_right_edge, box.contentRect().width());
 			LayoutObject* child = o->first_child;
 			do {
 				prepare(child, *o->ifc, viewport_size);
@@ -746,9 +749,6 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 				// check top and bottom margin collapse, below
 			}
 		}
-		LOG(INFO)
-			<< "end IFC size=" << box.content
-			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
 	} else {
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
@@ -909,12 +909,14 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 		if (!ibb.inline_boxes.empty()) {
 			const InlineBox& ib = ibb.inline_boxes.front();
 			ibb.block_box.pos = ib.pos;
+			/*
 			LOG(INFO) << "translate " << ib.pos;
 			LayoutObject* child = o->first_child;
 			if (child) do {
 				translate(child, ib.pos);
 				child = child->next_sibling;
 			} while (child != o->first_child);
+			*/
 		}
 	}
 }
