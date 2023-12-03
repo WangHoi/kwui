@@ -125,13 +125,18 @@ public:
     {
         p_.PopClipRect();
     }
-    void drawBox(const scene2d::RectF& rect, float border_width, const style::Value& background_color, const style::Value& border_color) override
+    void drawBox(const scene2d::RectF& padding_rect,
+        const style::EdgeOffsetF& border,
+        const style::Value& background_color,
+        const style::Value& border_color) override
     {
-        auto rect1 = scene2d::RectF::fromXYWH(
-            rect.left + border_width * 0.5f,
-            rect.top + border_width * 0.5f,
-            rect.width() - border_width,
-            rect.height() - border_width);
+        auto rect1 = scene2d::RectF::fromLTRB(
+            padding_rect.left - 0.5f * border.left,
+            padding_rect.top - 0.5f * border.top,
+            padding_rect.right + border.right,
+            padding_rect.bottom + border.bottom);
+        auto border_width = std::max(
+            { border.left, border.top, border.right, border.bottom });
         p_.SetStrokeWidth(border_width);
         p_.SetStrokeColor(get_color(border_color));
         p_.SetColor(get_color(background_color));

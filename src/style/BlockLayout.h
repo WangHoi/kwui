@@ -36,17 +36,6 @@ struct BlockBox {
 
 	absl::optional<float> prefer_height;
 
-	BlockBoxType type = BlockBoxType::Empty;
-	absl::variant<
-		absl::monostate,	// empty
-		BlockBox*,			// first-child
-		scene2d::Node*,		// Node containing inlines
-		std::unique_ptr<BlockFormatContext>		// nested BFC, in-flow
-	> payload;
-	const Style* style;
-	absl::optional<std::tuple<float, float>> measure_width;
-	std::optional<EdgeOffsetF> rel_offset; // Relative positioned box offset
-
 	inline scene2d::RectF marginRect() const
 	{
 		return scene2d::RectF::fromXYWH(

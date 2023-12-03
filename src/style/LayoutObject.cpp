@@ -91,15 +91,10 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		const BlockBox& b = absl::get<BlockBox>(o->box);
 		content_rect.emplace(b.contentRect().translated(b.pos));
 		scene2d::RectF border_rect = b.borderRect();
-		scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
-			b.pos.x + border_rect.left,
-			b.pos.y + border_rect.top,
-			border_rect.width(),
-			border_rect.height());
 		// LOG(INFO) << "paint box: " << render_rect;
 		painter->drawBox(
-			render_rect,
-			st.border_top_width.pixelOrZero(),
+			b.paddingRect().translated(b.pos),
+			b.border,
 			st.background_color,
 			st.border_color);
 	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
@@ -111,15 +106,10 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			const BlockBox& b = ibb.block_box;
 			content_rect.emplace(b.contentRect().translated(b.pos));
 			scene2d::RectF border_rect = b.borderRect();
-			scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
-				b.pos.x + border_rect.left,
-				b.pos.y + border_rect.top,
-				border_rect.width(),
-				border_rect.height());
 			//LOG(INFO) << "paint box: " << render_rect;
 			painter->drawBox(
-				render_rect,
-				st.border_top_width.pixelOrZero(),
+				b.paddingRect().translated(b.pos),
+				b.border,
 				st.background_color,
 				st.border_color);
 		}
