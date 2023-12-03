@@ -48,7 +48,6 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 	bfc.contg_right_edge = viewport_size.width;
 	bfc.border_bottom_edge = bfc.margin_bottom_edge = 0.0f;
 	bfc.contg_height.emplace(viewport_size.height);
-	bfc.max_border_right_edge = bfc.max_border_bottom_edge = 0.0f;
 
 	if (fl.positioned_parent) {
 		if (absl::holds_alternative<BlockBox>(fl.positioned_parent->box)) {
@@ -57,8 +56,6 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 			bfc.contg_right_edge = rect.right;
 			bfc.border_bottom_edge = bfc.margin_bottom_edge = rect.top;
 			bfc.contg_height.emplace(rect.height());
-			bfc.max_border_right_edge = bfc.contg_left_edge;
-			bfc.max_border_bottom_edge = bfc.border_bottom_edge;
 		} else if (absl::holds_alternative<std::vector<InlineBox>>(fl.positioned_parent->box)) {
 			const auto& ibs = absl::get<std::vector<InlineBox>>(fl.positioned_parent->box);
 			if (!ibs.empty()) {
@@ -68,8 +65,6 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 				bfc.contg_right_edge = last.pos.x + last.size.width;
 				bfc.border_bottom_edge = bfc.margin_bottom_edge = first.pos.y;
 				bfc.contg_height.emplace(std::max(0.0f, last.pos.y + last.size.height - first.pos.y));
-				bfc.max_border_right_edge = bfc.contg_left_edge;
-				bfc.max_border_right_edge = bfc.border_bottom_edge;
 			}
 		}
 	}
@@ -287,6 +282,69 @@ scene2d::PointF LayoutObject::getOffset(LayoutObject* o)
 	return scene2d::PointF();
 }
 
+absl::optional<scene2d::RectF> LayoutObject::getChildrenBoundingRect(LayoutObject* o)
+{
+	absl::optional<scene2d::RectF> rect;
+	auto child = o->first_child;
+	if (child) do {
+		scene2d::RectF child_border_rect = LayoutObject::borderRect(child);
+		if (rect.has_value()) {
+			rect.value().unite(child_border_rect);
+		} else {
+			rect = child_border_rect;
+		}
+		if (child->style->overflow_x == OverflowType::Visible
+			&& child->style->overflow_y == OverflowType::Visible) {
+
+			scene2d::RectF child_content_rect = LayoutObject::contentRect(child);
+			auto child_cbrect = LayoutObject::getChildrenBoundingRect(child);
+			if (child_cbrect.has_value()) {
+				child_cbrect.value().translate(child_content_rect.origin());
+				if (rect.has_value()) {
+					rect.value().unite(child_cbrect.value());
+				} else {
+					rect = child_cbrect.value();
+				}
+			}
+		}
+		child = child->next_sibling;
+	} while (child != o->first_child);
+	return rect;
+}
+
+scene2d::RectF LayoutObject::borderRect(LayoutObject* o)
+{
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		return absl::get<BlockBox>(o->box).borderRect();
+	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		return absl::get<InlineBlockBox>(o->box).block_box.borderRect();
+	} else {
+		return scene2d::RectF();
+	}
+}
+
+scene2d::RectF LayoutObject::paddingRect(LayoutObject* o)
+{
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		return absl::get<BlockBox>(o->box).paddingRect();
+	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		return absl::get<InlineBlockBox>(o->box).block_box.paddingRect();
+	} else {
+		return scene2d::RectF();
+	}
+}
+
+scene2d::RectF LayoutObject::contentRect(LayoutObject* o)
+{
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		return absl::get<BlockBox>(o->box).contentRect();
+	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		return absl::get<InlineBlockBox>(o->box).block_box.contentRect();
+	} else {
+		return scene2d::RectF();
+	}
+}
+
 void LayoutObject::measure(LayoutObject* o, float viewport_height)
 {
 	//static int depth = 0;
@@ -382,18 +440,21 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 
 	float saved_border_bottom_edge = bfc.border_bottom_edge;
 	float saved_margin_bottom_edge = bfc.margin_bottom_edge;
-	float saved_max_border_right_edge = bfc.max_border_right_edge;
-	float saved_max_border_bottom_edge = bfc.max_border_bottom_edge;
 	arrangeBlock(o, bfc, viewport_size, scroll_y);
 
 	BlockBox& b = absl::get<BlockBox>(o->box);
-	if (st.overflow_y == OverflowType::Auto && bfc.max_border_bottom_edge > b.pos.y + b.paddingRect().bottom) {
+	scene2d::RectF padding_rect = LayoutObject::paddingRect(o);
+	absl::optional<scene2d::RectF> children_bounding_rect = LayoutObject::getChildrenBoundingRect(o);
+	if (st.overflow_y == OverflowType::Auto || st.overflow_x == OverflowType::Auto) {
+		int kk = 1;
+	}
+	if (st.overflow_y == OverflowType::Auto
+		&& children_bounding_rect.has_value()
+		&& children_bounding_rect.value().bottom > padding_rect.bottom) {
 		// handle overflow-y
 		scroll_y = ScrollbarPolicy::Stable;
 		bfc.border_bottom_edge = saved_border_bottom_edge;
 		bfc.margin_bottom_edge = saved_margin_bottom_edge;
-		bfc.max_border_right_edge = saved_max_border_right_edge;
-		bfc.max_border_bottom_edge = saved_max_border_bottom_edge;
 		arrangeBlock(o, bfc, viewport_size, scroll_y);
 	}
 
@@ -402,7 +463,9 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 	if (st.overflow_x == OverflowType::Scroll) {
 		scroll_x = ScrollbarPolicy::Stable;
 	}
-	if (st.overflow_x == OverflowType::Auto && bfc.max_border_right_edge > b.pos.x + b.paddingRect().bottom) {
+	if (st.overflow_x == OverflowType::Auto
+		&& children_bounding_rect.has_value()
+		&& children_bounding_rect.value().right > padding_rect.bottom) {
 		scroll_x = ScrollbarPolicy::Stable;
 	}
 	if (scroll_x == ScrollbarPolicy::Stable) {
@@ -418,18 +481,18 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 		scene2d::RectF inner_rect = b.clientRect();
 		float padding_left_edge = b.pos.x + b.paddingRect().left;
 		float padding_top_edge = b.pos.y + b.paddingRect().top;
-		float border_bottom_edge = std::max(inner_bfc.border_bottom_edge, inner_bfc.max_border_bottom_edge);
+		scene2d::DimensionF content_size = LayoutObject::getChildrenBoundingRect(o).value_or(scene2d::RectF()).size();
 		if (!o->scroll_object.has_value()) {
 			o->scroll_object.emplace();
 			ScrollObject& sd = o->scroll_object.value();
-			sd.content_size.width = std::max(inner_rect.size().width, inner_bfc.max_border_right_edge - padding_left_edge);
-			sd.content_size.height = std::max(inner_rect.size().height, border_bottom_edge - padding_top_edge);
+			sd.content_size.width = std::max(inner_rect.size().width, content_size.width);
+			sd.content_size.height = std::max(inner_rect.size().height, content_size.height);
 			sd.viewport_rect.right = inner_rect.size().width;
 			sd.viewport_rect.bottom = inner_rect.size().height;
 		} else {
 			ScrollObject& sd = o->scroll_object.value();
-			sd.content_size.width = std::max(inner_rect.size().width, inner_bfc.max_border_right_edge - padding_left_edge);
-			sd.content_size.height = std::max(inner_rect.size().height, border_bottom_edge - padding_top_edge);
+			sd.content_size.width = std::max(inner_rect.size().width, content_size.width);
+			sd.content_size.height = std::max(inner_rect.size().height, content_size.height);
 			sd.viewport_rect.left = std::max(0.0f, std::min(sd.viewport_rect.left,
 				sd.content_size.width - inner_rect.size().width));
 			sd.viewport_rect.top = std::max(0.0f, std::min(sd.viewport_rect.top,
@@ -461,33 +524,21 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 				inner_bfc.contg_left_edge = 0;
 				inner_bfc.contg_right_edge = bfc.contg_right_edge - bfc.contg_left_edge;
 				inner_bfc.contg_height = bfc.contg_height;
-				inner_bfc.max_border_right_edge = 0;
 				inner_bfc.border_bottom_edge = 0;
 				inner_bfc.margin_bottom_edge = 0;
-				inner_bfc.max_border_bottom_edge = inner_bfc.border_bottom_edge;
 			} else {
 				inner_bfc.contg_left_edge = bfc.contg_left_edge;
 				inner_bfc.contg_right_edge = bfc.contg_right_edge;
 				inner_bfc.contg_height = box.prefer_height;
-				inner_bfc.max_border_right_edge = inner_bfc.contg_left_edge;
 				inner_bfc.border_bottom_edge = bfc.margin_bottom_edge;
 				inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
-				inner_bfc.max_border_bottom_edge = inner_bfc.border_bottom_edge;
 			}
 			arrangeBfcChildren(o, inner_bfc, box, viewport_size);
 			if (st.overflow_y == OverflowType::Visible) {
 				bfc.border_bottom_edge = bfc.margin_bottom_edge = inner_bfc.margin_bottom_edge;
-				bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge, inner_bfc.max_border_bottom_edge);
 			} else {
 				float box_content_bottom_edge = box.pos.y + box.contentRect().bottom;
 				bfc.border_bottom_edge = bfc.margin_bottom_edge = std::max(bfc.margin_bottom_edge, box_content_bottom_edge);
-				bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge, box_content_bottom_edge);
-			}
-			if (st.overflow_x == OverflowType::Visible) {
-				bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, inner_bfc.max_border_right_edge);
-			} else {
-				float box_margin_right_edge = box.pos.x + box.marginRect().right;
-				bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, box_margin_right_edge);
 			}
 
 			arrangeBfcBottom(o, bfc, box);
@@ -614,9 +665,6 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 
 		// Compute pos.x
 		b.pos.x = 0.0f;
-
-		// Update max border_right_edge
-		bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, bfc.contg_left_edge + b.borderRect().right);
 	}
 }
 
@@ -729,8 +777,6 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 
 		//bfc.max_border_right_edge = std::max(bfc.max_border_right_edge,
 		//	o->ifc->getMaxLineBoxRight());
-		bfc.max_border_bottom_edge = std::max(bfc.max_border_bottom_edge,
-			bfc.margin_bottom_edge + o->ifc->getLayoutHeight());
 
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
@@ -989,7 +1035,6 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	inner_bfc.contg_left_edge = 0;
 	inner_bfc.contg_right_edge = bfc.contg_right_edge - bfc.contg_left_edge;
 	inner_bfc.contg_height = bfc.contg_height;
-	inner_bfc.max_border_right_edge = 0;
 	inner_bfc.border_bottom_edge = 0;
 	inner_bfc.margin_bottom_edge = 0;
 	arrangeBfcTop(o, inner_bfc, b);
@@ -1122,9 +1167,6 @@ void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
 
 	// No need to compute pos.x
 	// b.pos.x = bfc.contg_left_edge;
-
-	// Update max border_right_edge
-	bfc.max_border_right_edge = std::max(bfc.max_border_right_edge, bfc.contg_left_edge + b.borderRect().right);
 }
 
 void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
@@ -1140,7 +1182,6 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 	BlockFormatContext& bfc = o->bfc.value();
 	bfc.contg_left_edge = box.contentRect().left;
 	bfc.contg_right_edge = box.contentRect().right;
-	bfc.max_border_right_edge = bfc.contg_left_edge;
 	bfc.border_bottom_edge = bfc.margin_bottom_edge = box.margin.top + borpad_top;
 	box.prefer_height = try_resolve_to_px(st.height, contg_height);
 	bfc.contg_height = box.prefer_height;

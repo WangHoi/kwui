@@ -45,7 +45,7 @@ var simple_stylesheet = {
 	".outer": {
 		"display": "block",
 		"overflow-y": "scroll",
-		"overflow-x": "scroll",
+		//"overflow-x": "scroll",
 		"width": "200px",
 		"height": "100px",
 		"margin-left": "8px",

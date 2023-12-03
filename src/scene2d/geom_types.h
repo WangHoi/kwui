@@ -173,16 +173,32 @@ struct RectF {
     {
         return (left <= pos.x && pos.x < right && top <= pos.y && pos.y < bottom);
     }
-    void translate(const PointF& pos)
+    RectF& translate(const PointF& pos)
     {
         left += pos.x;
         right += pos.x;
         top += pos.y;
         bottom += pos.y;
+        return *this;
     }
     RectF translated(const PointF& pos) const
     {
         return RectF(left + pos.x, top + pos.y, right + pos.x, bottom + pos.y);
+    }
+    RectF& unite(const RectF& r)
+    {
+        left = std::min(left, r.left);
+        right = std::max(right, r.right);
+        top = std::min(top, r.top);
+        bottom = std::max(bottom, r.bottom);
+        return *this;
+    }
+    RectF united(const RectF& r) const
+    {
+        return RectF(std::min(left, r.left),
+            std::min(top, r.top),
+            std::max(right, r.right),
+            std::max(bottom, r.bottom));
     }
 
     float left;

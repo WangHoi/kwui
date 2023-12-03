@@ -81,6 +81,15 @@ struct LayoutObject {
 	static void paint(LayoutObject* o, graph2d::PainterInterface* painter);
 	static LayoutObject* pick(LayoutObject* o, scene2d::PointF pos, int flag_mask, scene2d::PointF* out_local_pos);
 	static scene2d::PointF getOffset(LayoutObject* o);
+	// relative to o's margin origin
+	static absl::optional<scene2d::RectF> getChildrenBoundingRect(LayoutObject* o);
+
+	// relative to o's margin box origin
+	static scene2d::RectF borderRect(LayoutObject* o);
+	// relative to o's margin box origin
+	static scene2d::RectF paddingRect(LayoutObject* o);
+	// relative to o's margin box origin
+	static scene2d::RectF contentRect(LayoutObject* o);
 
 private:
 	enum ScrollbarPolicy {

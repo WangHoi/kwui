@@ -118,8 +118,6 @@ struct BlockFormatContext {
 	float border_bottom_edge = 0;
 	float margin_bottom_edge = 0;
 	absl::optional<float> contg_height;
-	float max_border_right_edge = 0;	// max children's border right edge
-	float max_border_bottom_edge = 0;	// max children's border bottom edge
 
 	BlockFormatContext(scene2d::Node* owner_)
 		: owner(owner_) {}
