@@ -90,7 +90,6 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
 		content_rect.emplace(b.contentRect().translated(b.pos));
-		scene2d::RectF border_rect = b.borderRect();
 		// LOG(INFO) << "paint box: " << render_rect;
 		painter->drawBox(
 			b.paddingRect().translated(b.pos),
@@ -105,7 +104,6 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			const InlineBox& ib = ibb.inline_boxes.front();
 			const BlockBox& b = ibb.block_box;
 			content_rect.emplace(b.contentRect().translated(b.pos));
-			scene2d::RectF border_rect = b.borderRect();
 			//LOG(INFO) << "paint box: " << render_rect;
 			painter->drawBox(
 				b.paddingRect().translated(b.pos),
@@ -123,10 +121,6 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			baseline_origin.y += ibox->baseline;
 			painter->drawGlyphRun(baseline_origin, gr, st.color);
 		}
-	}
-
-	if (o->node && o->node->control_ && content_rect.has_value()) {
-		painter->drawControl(content_rect.value(), o->node->control_.get());
 	}
 
 	scene2d::PointF scroll_offset;
@@ -194,6 +188,10 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
 	}
 
+	if (o->node && o->node->control_ && content_rect.has_value()) {
+		painter->drawControl(scene2d::RectF::fromOriginSize(scene2d::PointF(), content_rect.value().size()), o->node->control_.get());
+	}
+
 	LayoutObject* child = o->first_child;
 	if (child) do {
 		paint(child, painter);
@@ -220,12 +218,13 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 			b.pos.y + border_rect.top,
 			border_rect.width(),
 			border_rect.height());
-		scene2d::PointF local_pos = pos - b.clientRect().origin();
+		scene2d::PointF local_pos = pos - b.pos - b.clientRect().origin();
 		if (render_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 			if (out_local_pos)
 				*out_local_pos = local_pos;
 			pick_result = o;
 		}
+		pos = local_pos;
 	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
 		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
 		for (auto it = ibs.rbegin(); it != ibs.rend(); ++it) {
@@ -245,17 +244,14 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 			b.pos.y + border_rect.top,
 			border_rect.width(),
 			border_rect.height());
-		scene2d::PointF local_pos = pos - b.clientRect().origin();
+		scene2d::PointF local_pos = pos - b.pos - b.clientRect().origin();
 		if (render_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 			if (out_local_pos)
 				*out_local_pos = local_pos;
 			pick_result = o;
 		}
+		pos = local_pos;
 	} else if (absl::holds_alternative<TextBox>(o->box)) {
-	}
-
-	if (st.position == PositionType::Absolute) {
-		pos -= absl::get<BlockBox>(o->box).pos;
 	}
 
 	if (o->scroll_object.has_value()) {

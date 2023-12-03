@@ -76,6 +76,10 @@ img {
 button:hover {
 	background-color: #ff0;
 }
+line_edit {
+	width: 100%;
+	height: 100%;
+}
 `;
 
 var hello_world_full = (<body>
@@ -97,6 +101,9 @@ var hello_world_full = (<body>
     <div style="text-align:center">
         <button style="margin-top: 40; background-color: #f0f;">安装</button>
     </div>
+	<div style="width: 200px; height: 20px; margin:0px auto; background-color: #eee">
+		<line_edit />
+	</div>
 </body>);
 
 var hello_world = (
