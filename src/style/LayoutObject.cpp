@@ -282,33 +282,55 @@ scene2d::PointF LayoutObject::getOffset(LayoutObject* o)
 	return scene2d::PointF();
 }
 
+scene2d::PointF LayoutObject::pos(LayoutObject* o)
+{
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		return absl::get<BlockBox>(o->box).pos;
+	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		return absl::get<InlineBlockBox>(o->box).block_box.pos;
+	}
+	return scene2d::PointF();
+
+}
+
 absl::optional<scene2d::RectF> LayoutObject::getChildrenBoundingRect(LayoutObject* o)
 {
 	absl::optional<scene2d::RectF> rect;
-	auto child = o->first_child;
-	if (child) do {
-		scene2d::RectF child_border_rect = LayoutObject::borderRect(child);
-		if (rect.has_value()) {
-			rect.value().unite(child_border_rect);
-		} else {
-			rect = child_border_rect;
-		}
-		if (child->style->overflow_x == OverflowType::Visible
-			&& child->style->overflow_y == OverflowType::Visible) {
 
-			scene2d::RectF child_content_rect = LayoutObject::contentRect(child);
-			auto child_cbrect = LayoutObject::getChildrenBoundingRect(child);
-			if (child_cbrect.has_value()) {
-				child_cbrect.value().translate(child_content_rect.origin());
-				if (rect.has_value()) {
-					rect.value().unite(child_cbrect.value());
-				} else {
-					rect = child_cbrect.value();
+	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
+		auto child = o->first_child;
+		if (child) do {
+			auto p = LayoutObject::contentRect(o).origin() + LayoutObject::pos(child);
+			scene2d::RectF child_border_rect = LayoutObject::borderRect(child)
+				.translate(p);
+			if (rect.has_value()) {
+				rect.value().unite(child_border_rect);
+			} else {
+				rect = child_border_rect;
+			}
+			if (child->style->overflow_x == OverflowType::Visible
+				&& child->style->overflow_y == OverflowType::Visible) {
+
+				scene2d::RectF child_content_rect = LayoutObject::contentRect(child);
+				auto child_cbrect = LayoutObject::getChildrenBoundingRect(child);
+				if (child_cbrect.has_value()) {
+					child_cbrect.value().translate(child_content_rect.origin());
+					if (rect.has_value()) {
+						rect.value().unite(child_cbrect.value());
+					} else {
+						rect = child_cbrect.value();
+					}
 				}
 			}
+			child = child->next_sibling;
+		} while (child != o->first_child);
+	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
+		if (o->ifc.has_value()) {
+			rect = scene2d::RectF::fromOriginSize(scene2d::PointF(),
+				scene2d::DimensionF(o->ifc->getLayoutWidth(), o->ifc->getLayoutHeight()));
+			rect.value().translate(LayoutObject::contentRect(o).origin());
 		}
-		child = child->next_sibling;
-	} while (child != o->first_child);
+	}
 	return rect;
 }
 
@@ -481,18 +503,19 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 		scene2d::RectF inner_rect = b.clientRect();
 		float padding_left_edge = b.pos.x + b.paddingRect().left;
 		float padding_top_edge = b.pos.y + b.paddingRect().top;
-		scene2d::DimensionF content_size = LayoutObject::getChildrenBoundingRect(o).value_or(scene2d::RectF()).size();
+		scene2d::RectF content_rect = LayoutObject::getChildrenBoundingRect(o).value_or(scene2d::RectF());
 		if (!o->scroll_object.has_value()) {
 			o->scroll_object.emplace();
 			ScrollObject& sd = o->scroll_object.value();
-			sd.content_size.width = std::max(inner_rect.size().width, content_size.width);
-			sd.content_size.height = std::max(inner_rect.size().height, content_size.height);
+			// TODO: better coordinate
+			sd.content_size.width = std::max(inner_rect.size().width, content_rect.right - b.paddingRect().left);
+			sd.content_size.height = std::max(inner_rect.size().height, content_rect.bottom - b.paddingRect().top);
 			sd.viewport_rect.right = inner_rect.size().width;
 			sd.viewport_rect.bottom = inner_rect.size().height;
 		} else {
 			ScrollObject& sd = o->scroll_object.value();
-			sd.content_size.width = std::max(inner_rect.size().width, content_size.width);
-			sd.content_size.height = std::max(inner_rect.size().height, content_size.height);
+			sd.content_size.width = std::max(inner_rect.size().width, content_rect.right - b.paddingRect().left);
+			sd.content_size.height = std::max(inner_rect.size().height, content_rect.bottom - b.paddingRect().top);
 			sd.viewport_rect.left = std::max(0.0f, std::min(sd.viewport_rect.left,
 				sd.content_size.width - inner_rect.size().width));
 			sd.viewport_rect.top = std::max(0.0f, std::min(sd.viewport_rect.top,

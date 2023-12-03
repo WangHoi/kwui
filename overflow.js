@@ -73,7 +73,6 @@ var simple_stylesheet = {
 		"border-left-width": "2px",
 		"border-color": "#080",
 		"margin-left": "50px",
-		//"margin-top": "10px",
 	},
 	"span": {
 		"font-size": 16,
@@ -88,9 +87,19 @@ var simple_stylesheet = {
 var span1 = <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius Syntax</span>;
 var span2 = <span>a b c d e f g h i j k l m o p q r s t u v w x y z</span>;
 //	<p>{span2}</p>
-var hello_world = (<div class="outer">
+var complex_overflow = (<div class="outer">
 	<qqq style={{"background-color": "#0aa", "height":120, "overflow-y": "scroll"}}>{span1}</qqq>
     <div class="inner"><line_edit /></div>
 </div>);
 
-app.showDialog(hello_world, simple_stylesheet);
+var text_overflow = (<div class="outer">
+	{span1}
+</div>);
+
+var box_overflow = (<div class="outer">
+	<div class="inner" />
+    <div class="inner" />
+	<div class="inner" />
+</div>);
+
+app.showDialog(complex_overflow, simple_stylesheet);

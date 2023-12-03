@@ -81,6 +81,8 @@ struct LayoutObject {
 	static void paint(LayoutObject* o, graph2d::PainterInterface* painter);
 	static LayoutObject* pick(LayoutObject* o, scene2d::PointF pos, int flag_mask, scene2d::PointF* out_local_pos);
 	static scene2d::PointF getOffset(LayoutObject* o);
+
+	static scene2d::PointF pos(LayoutObject* o);
 	// relative to o's margin origin
 	static absl::optional<scene2d::RectF> getChildrenBoundingRect(LayoutObject* o);
 
