@@ -122,6 +122,8 @@ struct StyleSpec {
 	ValueSpec overflow_x;
 	ValueSpec overflow_y;
 
+	ValueSpec box_sizing;
+
 	void set(base::string_atom name, const ValueSpec& spec);
 };
 
@@ -149,6 +151,11 @@ enum class OverflowType {
 	Hidden,
 	Auto,
 	Scroll,
+};
+
+enum class BoxSizingType {
+	ContentBox,
+	BorderBox,
 };
 
 class FontWeight {
@@ -222,6 +229,8 @@ struct Style {
 
 	OverflowType overflow_x = OverflowType::Visible;
 	OverflowType overflow_y = OverflowType::Visible;
+
+	BoxSizingType box_sizing = BoxSizingType::ContentBox;
 };
 
 template <typename Sink>

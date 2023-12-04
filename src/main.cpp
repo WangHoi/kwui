@@ -40,8 +40,9 @@ int main()
     script::Context ctx;
     //ctx.loadFile("d:/projects/kwui/mock.js");
     //ctx.loadFile("d:/projects/kwui/overflow.js");
-    ctx.loadFile("d:/projects/kwui/button_layout.js");
+    //ctx.loadFile("d:/projects/kwui/button_layout.js");
     //ctx.loadFile("d:/projects/kwui/test.js");
+    ctx.loadFile("d:/projects/kwui/box_sizing.js");
 
     while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);

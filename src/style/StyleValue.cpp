@@ -90,6 +90,8 @@ void StyleSpec::set(base::string_atom prop, const ValueSpec& val)
 
 	CHECK_VALUE2(overflow_x, "overflow-x");
 	CHECK_VALUE2(overflow_y, "overflow-y");
+
+	CHECK_VALUE2(box_sizing, "box-sizing");
 #undef CHECK_VALUE
 #undef CHECK_VALUE2
 }

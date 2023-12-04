@@ -36,6 +36,8 @@ static void resolve_style(style::TextAlign& style, const style::TextAlign* paren
 	const style::ValueSpec& spec);
 static void resolve_style(style::OverflowType& style, const style::OverflowType* parent,
 	const style::ValueSpec& spec);
+static void resolve_style(style::BoxSizingType& style, const style::BoxSizingType* parent,
+	const style::ValueSpec& spec);
 
 Node::Node(Scene* scene, NodeType type)
 	: scene_(scene)
@@ -174,6 +176,9 @@ void Node::resolveDefaultStyle()
 	if (type_ == NodeType::NODE_TEXT) {
 		computed_style_.display = style::DisplayType::Inline;
 	} else {
+		/* box-sizing: border-box is the default styling that browsers use for the <table>, <select>, and <button> elements,
+		 * and for <input> elements whose type is radio, checkbox, reset, button, submit, color, or search
+		 */
 		if (tag_ == base::string_intern("img")
 			|| tag_ == base::string_intern("span")
 			|| tag_ == base::string_intern("strong")
@@ -182,6 +187,7 @@ void Node::resolveDefaultStyle()
 			computed_style_.display = style::DisplayType::Inline;
 		} else if (tag_ == base::string_intern("button")) {
 			computed_style_.display = style::DisplayType::InlineBlock;
+			computed_style_.box_sizing = style::BoxSizingType::BorderBox;
 		} else {
 			computed_style_.display = style::DisplayType::Block;
 		}
@@ -287,6 +293,7 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 	RESOLVE_STYLE(text_align);
 	RESOLVE_STYLE(overflow_x);
 	RESOLVE_STYLE(overflow_y);
+	RESOLVE_STYLE(box_sizing);
 #undef RESOLVE_STYLE
 }
 
@@ -524,6 +531,22 @@ void resolve_style(style::OverflowType& style, const style::OverflowType* parent
 				style = style::OverflowType::Auto;
 			else if (spec.value->keyword_val == base::string_intern("scroll"))
 				style = style::OverflowType::Scroll;
+		}
+	}
+}
+
+void resolve_style(style::BoxSizingType& style, const style::BoxSizingType* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Keyword) {
+			if (spec.value->keyword_val == base::string_intern("content-box"))
+				style = style::BoxSizingType::ContentBox;
+			else if (spec.value->keyword_val == base::string_intern("border-box"))
+				style = style::BoxSizingType::BorderBox;
 		}
 	}
 }
