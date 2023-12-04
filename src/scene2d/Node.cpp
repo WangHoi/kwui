@@ -378,6 +378,14 @@ void Node::updateTextLayout()
 		computed_style_.font_size.pixelOrZero());
 }
 
+void Node::updateControlLayout()
+{
+	if (control_) {
+		RectF content_rect = style::LayoutObject::contentRect(&layout_);
+		control_->onLayout(this, content_rect);
+	}
+}
+
 bool Node::matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const
 {
 	for (auto it = pseudo_classes.begin(); it != pseudo_classes.end(); ++it) {

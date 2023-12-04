@@ -44,8 +44,8 @@ function Div(props, kids) {
 var simple_stylesheet = {
 	".outer": {
 		"display": "block",
-		"overflow-y": "scroll",
-		//"overflow-x": "scroll",
+		"overflow-y": "auto",
+		"overflow-x": "auto",
 		"width": "200px",
 		"height": "100px",
 		"margin-left": "8px",
@@ -63,8 +63,10 @@ var simple_stylesheet = {
 	},
 	".inner": {
 		//"width": "90%",
+		"overflow-y": "auto",
+		"overflow-x": "auto",
 		"width": "200px",
-		"height": "50%",
+		"height": "100px",
 		"background-color": "#00ffff",
 		"font-size": "16px",
 		"border-top-width": "2px",
@@ -89,7 +91,7 @@ var span2 = <span>a b c d e f g h i j k l m o p q r s t u v w x y z</span>;
 //	<p>{span2}</p>
 var complex_overflow = (<div class="outer">
 	<qqq style={{"background-color": "#0aa", "height":120, "overflow-y": "scroll"}}>{span1}</qqq>
-    <div class="inner"><line_edit /></div>
+    <div class="inner"><line_edit /><div class="inner" /></div>
 </div>);
 
 var text_overflow = (<div class="outer">

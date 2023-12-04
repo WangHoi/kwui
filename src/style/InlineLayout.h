@@ -67,7 +67,7 @@ struct LineBox {
 
 class InlineFormatContext : public LineBoxInterface {
 public:
-	InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width, float top);
+	InlineFormatContext(BlockFormatContext& bfc, float avail_width);
 	~InlineFormatContext();
 
 	inline BlockFormatContext& bfc() const { return bfc_; }
@@ -95,9 +95,7 @@ public:
 
 private:
 	BlockFormatContext& bfc_;
-	float left_;
 	float avail_width_;
-	float top_;
 	std::vector<std::unique_ptr<LineBox>> line_boxes_;
 
 	float height_;

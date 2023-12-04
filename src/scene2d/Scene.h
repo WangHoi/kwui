@@ -53,7 +53,7 @@ public:
 	void requestPaint();
 	void requestUpdate();
 	void requestAnimationFrame(scene2d::Node* node);
-
+	// map from control coordinate to scene
 	PointF mapPointToScene(Node* node, const PointF& pos) const;
 
 	script::Context& scriptContext() const
@@ -67,6 +67,7 @@ private:
 	bool match(Node* node, style::Selector* selector);
 	void resolveNodeStyle(Node* node);
 	void paintNode(Node* node, graph2d::PainterInterface* painter);
+	void updateControlLayout(Node* node);
 
 	EventContext& event_ctx_;
 	std::unique_ptr<script::Context> script_ctx_;

@@ -122,7 +122,8 @@ void Scene::updateComponent(JSValue comp_state)
 Node* Scene::pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos)
 {
 	for (auto it = flow_roots_.rbegin(); it != flow_roots_.rend(); ++it) {
-		style::LayoutObject* o = style::LayoutObject::pick(it->root, pos - it->scene_pos, flag_mask, out_local_pos);
+		auto scene_pos = mapPointToScene(it->root->node, PointF());
+		style::LayoutObject* o = style::LayoutObject::pick(it->root, pos - scene_pos, flag_mask, out_local_pos);
 		if (o)
 			return o->node;
 	}
@@ -168,34 +169,17 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 		style::LayoutObject::reflow(flow_root, size);
 	}
 
-	// compute each flow's scene pos
-	std::map<style::LayoutObject*, std::tuple<PointF, style::LayoutObject*>> offsets;
-	for (auto& fl : flow_roots_) {
-		if (fl.positioned_parent) {
-			PointF offset;
-			auto it = offsets.find(fl.positioned_parent);
-			while (it != offsets.end()) {
-				const auto& [off, po] = it->second;
-				offset += off;
-				it = offsets.find(po);
-			}
-			fl.scene_pos = offset;
-		}
-		
-		offsets[fl.root] = { style::LayoutObject::getOffset(fl.root), fl.positioned_parent };
-		for (style::LayoutObject*o : fl.relatives) {
-			offsets[o] = { style::LayoutObject::getOffset(o), fl.root };
-		}
-	}
+	// trigger Control::onLayout
+	updateControlLayout(root_);
 }
 
 void Scene::paint(graph2d::PainterInterface* painter)
 {
 	for (auto& fl : flow_roots_) {
-		painter->setTranslation(fl.scene_pos, false);
-		LOG(INFO) << "setTranslation " << fl.scene_pos;
+		auto scene_pos = mapPointToScene(fl.root->node, PointF());
+		//LOG(INFO) << "Paint flow root " << *fl.root << ", scene_pos=" << scene_pos;
+		painter->setTranslation(scene_pos, false);
 		style::LayoutObject::paint(fl.root, painter);
-		LOG(INFO) << "restore";
 		painter->restore();
 	}
 }
@@ -222,8 +206,44 @@ void Scene::requestAnimationFrame(scene2d::Node* node)
 
 PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 {
-	LOG(INFO) << "Scene::mapPointToScene";
-	return pos;
+	// LOG(INFO) << "Scene::mapPointToScene";
+	style::LayoutObject* o = &node->layout_;
+	scene2d::PointF p = pos;
+	while (o->parent) {
+		p += style::LayoutObject::contentRect(o).origin();
+		p += style::LayoutObject::pos(o);
+		if (o->scroll_object.has_value()) {
+			p -= o->scroll_object.value().viewport_rect.origin();
+		}
+		o = o->parent;
+	}
+	if (o->scroll_object.has_value()) {
+		p -= o->scroll_object.value().viewport_rect.origin();
+	}
+
+	// TODO: handle scroll in positioned ascendants
+	auto it = std::find_if(flow_roots_.begin(), flow_roots_.end(), [&](const style::FlowRoot& fl) {
+		return fl.root == o;
+		});
+	if (it != flow_roots_.end()) {
+		const style::FlowRoot& fl = *it;
+		if (it->positioned_parent)
+			p += mapPointToScene(it->positioned_parent->node, PointF());
+
+		auto po = fl.positioned_parent;
+		while (po) {
+			if (po->scroll_object.has_value()) {
+				LOG(INFO) << "TODO: handle scroll in positioned ascendants";
+				break;
+			}
+			auto it = std::find_if(flow_roots_.begin(), flow_roots_.end(), [&](const style::FlowRoot& fl) {
+				return fl.root == po;
+				});
+			po = (it == flow_roots_.end()) ? nullptr : it->root;
+		}
+	}
+
+	return p;
 }
 
 Node* Scene::createComponentNodeWithState(JSValue comp_state)
@@ -325,6 +345,12 @@ void Scene::resolveNodeStyle(Node* node)
 void Scene::paintNode(Node* node, graph2d::PainterInterface* painter)
 {
 	style::LayoutObject::paint(&node->layout_, painter);
+}
+
+void Scene::updateControlLayout(Node* node)
+{
+	node->updateControlLayout();
+	Node::eachLayoutChild(node, absl::bind_front(&Scene::updateControlLayout, this));
 }
 
 } // namespace scene2d

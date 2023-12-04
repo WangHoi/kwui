@@ -41,43 +41,36 @@ function Div(props, kids) {
 	</div>;
 }
 
-var simple_stylesheet = {
-	"div.abs": {
-		"position": "absolute",
-		"top": "10px",
-		"left": "10px",
-		//"width": "200px",
-		//"line-height": "20px",
-		//"margin-top": "10",
-		// "width": "20px",
-		//"text-align": "left",
-	},
-	".bg-green": {
-		"background-color": "#b0e0a0",
-	},
-	"line-edit": {
-		"width": 100,
-		"height": 30,
-	},
-	".italic": {
-		"font-style": "italic"
-	},	
-	".bold": {
-		"font-weight": "bold",
-	},
-	".fs-20": {
-		"font-size": "30px",
-	},
-	"button": {
-		"width": "auto",
-		"border-color": "#000",
-		"border-left-width": 10,
-		"border-top-width": 10,
-		"border-right-width": 10,
-		"border-bottom-width": 10,
-		"text-align": "left"
+var simple_css = `
+	div.abs {
+		position: absolute;
+		top: 10px;
+		left: 10px;
 	}
-};
+	.bg-green {
+		background-color: #b0e0a0;
+	}
+	line-edit {
+		width: 100;
+		height: 30;
+	}
+	.italic {
+		font-style: italic;
+	}	
+	.bold {
+		font-weight: bold;
+	}
+	.fs-20 {
+		font-size: 30px;
+	}
+	button {
+		width: auto;
+		border-color: #888;
+		border-width: 10;
+		text-align: left;
+		background-color: #0b0;
+	}
+`;
 
 var hello_world2 = (
 	<div class="abs">
@@ -93,4 +86,4 @@ var hello_world3 = (
 	</div>
 );
 
-app.showDialog(hello_world2, simple_stylesheet);
+app.showDialog(hello_world2, simple_css);

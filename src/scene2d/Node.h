@@ -154,6 +154,7 @@ public:
 	void requestAnimationFrame(scene2d::Node* node);
 
 	void updateTextLayout();
+	void updateControlLayout();
 
 	template<typename F>
 	inline void eachChild(F&& f)

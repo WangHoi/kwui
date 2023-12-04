@@ -44,26 +44,21 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 
 	// Find containing bfc
 	BlockFormatContext bfc(nullptr);
-	bfc.contg_left_edge = 0.0f;
-	bfc.contg_right_edge = viewport_size.width;
+	bfc.contg_width = viewport_size.width;
 	bfc.border_bottom_edge = bfc.margin_bottom_edge = 0.0f;
 	bfc.contg_height.emplace(viewport_size.height);
 
 	if (fl.positioned_parent) {
 		if (absl::holds_alternative<BlockBox>(fl.positioned_parent->box)) {
 			const auto& rect = absl::get<BlockBox>(fl.positioned_parent->box).paddingRect();
-			bfc.contg_left_edge = rect.left;
-			bfc.contg_right_edge = rect.right;
-			bfc.border_bottom_edge = bfc.margin_bottom_edge = rect.top;
+			bfc.contg_width = rect.width();
 			bfc.contg_height.emplace(rect.height());
 		} else if (absl::holds_alternative<std::vector<InlineBox>>(fl.positioned_parent->box)) {
 			const auto& ibs = absl::get<std::vector<InlineBox>>(fl.positioned_parent->box);
 			if (!ibs.empty()) {
 				const InlineBox& first = ibs.front();
 				const InlineBox& last = ibs.back();
-				bfc.contg_left_edge = first.pos.x;
-				bfc.contg_right_edge = last.pos.x + last.size.width;
-				bfc.border_bottom_edge = bfc.margin_bottom_edge = first.pos.y;
+				bfc.contg_width = last.size.width;
 				bfc.contg_height.emplace(std::max(0.0f, last.pos.y + last.size.height - first.pos.y));
 			}
 		}
@@ -76,9 +71,9 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 {
 	const Style& st = *o->style;
 
-	static int depth = 0;
-	base::scoped_setter _(depth, depth + 1);
-	LOG(INFO) << std::string(depth, '-') << " paint " << *o;
+	//static int depth = 0;
+	//base::scoped_setter _(depth, depth + 1);
+	//LOG(INFO) << std::string(depth, '-') << " paint " << *o;
 
 	absl::optional<scene2d::RectF> content_rect;
 
@@ -207,14 +202,10 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
-		scene2d::RectF border_rect = b.borderRect();
-		scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
-			b.pos.x + border_rect.left,
-			b.pos.y + border_rect.top,
-			border_rect.width(),
-			border_rect.height());
-		scene2d::PointF local_pos = pos - b.pos - b.clientRect().origin();
-		if (render_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
+		scene2d::RectF border_rect = b.borderRect().translated(b.pos);
+		scene2d::PointF local_pos = pos - b.pos - b.contentRect().origin();
+		if (border_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
+			// LOG(INFO) << "hit " << o->node->tag_ << ", pos " << pos << ", border_rect " << border_rect << ", content_rect " << b.contentRect();
 			if (out_local_pos)
 				*out_local_pos = local_pos;
 			pick_result = o;
@@ -223,9 +214,9 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
 		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
 		for (auto it = ibs.rbegin(); it != ibs.rend(); ++it) {
-			const scene2d::RectF rect = scene2d::RectF::fromOriginSize(it->pos, it->size);
+			const scene2d::RectF local_rect = scene2d::RectF::fromOriginSize(scene2d::PointF(), it->size);
 			scene2d::PointF local_pos = pos - it->pos;
-			if (rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
+			if (local_rect.contains(local_pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 				if (out_local_pos)
 					*out_local_pos = local_pos;
 				pick_result = o;
@@ -233,14 +224,9 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 		}
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		const BlockBox& b = absl::get<InlineBlockBox>(o->box).block_box;
-		scene2d::RectF border_rect = b.borderRect();
-		scene2d::RectF render_rect = scene2d::RectF::fromXYWH(
-			b.pos.x + border_rect.left,
-			b.pos.y + border_rect.top,
-			border_rect.width(),
-			border_rect.height());
-		scene2d::PointF local_pos = pos - b.pos - b.clientRect().origin();
-		if (render_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
+		scene2d::RectF border_rect = b.borderRect().translated(b.pos);
+		scene2d::PointF local_pos = pos - b.pos - b.contentRect().origin();
+		if (border_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 			if (out_local_pos)
 				*out_local_pos = local_pos;
 			pick_result = o;
@@ -338,6 +324,20 @@ scene2d::RectF LayoutObject::borderRect(LayoutObject* o)
 {
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		return absl::get<BlockBox>(o->box).borderRect();
+	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+		if (ibs.empty())
+			return scene2d::RectF();
+		absl::optional<scene2d::RectF> rect;
+		for (auto it = ibs.begin(); it != ibs.end(); ++it) {
+			scene2d::RectF ib_rect = scene2d::RectF::fromOriginSize(it->pos, it->size);
+			if (!rect.has_value()) {
+				rect.emplace(ib_rect);
+			} else {
+				rect.value().unite(ib_rect);
+			}
+		}
+		return rect.has_value() ? rect.value() : scene2d::RectF();
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		return absl::get<InlineBlockBox>(o->box).block_box.borderRect();
 	} else {
@@ -349,6 +349,20 @@ scene2d::RectF LayoutObject::paddingRect(LayoutObject* o)
 {
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		return absl::get<BlockBox>(o->box).paddingRect();
+	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+		if (ibs.empty())
+			return scene2d::RectF();
+		absl::optional<scene2d::RectF> rect;
+		for (auto it = ibs.begin(); it != ibs.end(); ++it) {
+			scene2d::RectF ib_rect = scene2d::RectF::fromOriginSize(it->pos, it->size);
+			if (!rect.has_value()) {
+				rect.emplace(ib_rect);
+			} else {
+				rect.value().unite(ib_rect);
+			}
+		}
+		return rect.has_value() ? rect.value() : scene2d::RectF();
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		return absl::get<InlineBlockBox>(o->box).block_box.paddingRect();
 	} else {
@@ -360,6 +374,20 @@ scene2d::RectF LayoutObject::contentRect(LayoutObject* o)
 {
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		return absl::get<BlockBox>(o->box).contentRect();
+	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+		if (ibs.empty())
+			return scene2d::RectF();
+		absl::optional<scene2d::RectF> rect;
+		for (auto it = ibs.begin(); it != ibs.end(); ++it) {
+			scene2d::RectF ib_rect = scene2d::RectF::fromOriginSize(it->pos, it->size);
+			if (!rect.has_value()) {
+				rect.emplace(ib_rect);
+			} else {
+				rect.value().unite(ib_rect);
+			}
+		}
+		return rect.has_value() ? rect.value() : scene2d::RectF();
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		return absl::get<InlineBlockBox>(o->box).block_box.contentRect();
 	} else {
@@ -523,9 +551,9 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 			sd.viewport_rect.right = sd.viewport_rect.left + inner_rect.size().width;
 			sd.viewport_rect.bottom = sd.viewport_rect.top + inner_rect.size().height;
 		}
-		LOG(INFO)
-			<< "scrollData contentSize " << o->scroll_object->content_size
-			<< ", viewportRect " << o->scroll_object->viewport_rect;
+		//LOG(INFO)
+		//	<< "scrollData contentSize " << o->scroll_object->content_size
+		//	<< ", viewportRect " << o->scroll_object->viewport_rect;
 	} else {
 		o->scroll_object = absl::nullopt;
 	}
@@ -544,14 +572,12 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 			BlockFormatContext& inner_bfc = o->bfc.value();
 			arrangeBfcTop(o, bfc, box);
 			if (st.position == PositionType::Absolute) {
-				inner_bfc.contg_left_edge = 0;
-				inner_bfc.contg_right_edge = bfc.contg_right_edge - bfc.contg_left_edge;
+				inner_bfc.contg_width = bfc.contg_width;
 				inner_bfc.contg_height = bfc.contg_height;
 				inner_bfc.border_bottom_edge = 0;
 				inner_bfc.margin_bottom_edge = 0;
 			} else {
-				inner_bfc.contg_left_edge = bfc.contg_left_edge;
-				inner_bfc.contg_right_edge = bfc.contg_right_edge;
+				inner_bfc.contg_width = bfc.contg_width;
 				inner_bfc.contg_height = box.prefer_height;
 				inner_bfc.border_bottom_edge = bfc.margin_bottom_edge;
 				inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
@@ -595,7 +621,7 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 	CHECK(st.display == DisplayType::Block);
 	BlockBox& b = absl::get<BlockBox>(o->box);
 
-	float contg_width = bfc.contg_right_edge - bfc.contg_left_edge;
+	float contg_width = bfc.contg_width;
 	float clean_contg_width = contg_width
 		- try_resolve_to_px(st.border_left_width, contg_width).value_or(0)
 		- try_resolve_to_px(st.padding_left, contg_width).value_or(0)
@@ -745,19 +771,18 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 	float saved_bfc_margin_bottom = bfc.margin_bottom_edge;
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
 		float saved_border_bottom_edge = bfc.border_bottom_edge;
-		{
-			base::scoped_setter _1(bfc.contg_height, box.prefer_height);
-			//base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
-			base::scoped_setter _3(bfc.contg_right_edge, box.contentRect().width());
-			float margin = bfc.margin_bottom_edge - bfc.border_bottom_edge;
-			base::scoped_setter _4(bfc.margin_bottom_edge, 0.0f);
-			base::scoped_setter _5(bfc.border_bottom_edge, -margin);
-			LayoutObject* child = o->first_child;
-			do {
-				arrangeBlock(child, bfc, viewport_size);
-				child = child->next_sibling;
-			} while (child != o->first_child);
-		}
+
+		base::scoped_setter _1(bfc.contg_height, box.prefer_height);
+		//base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
+		base::scoped_setter _3(bfc.contg_width, box.contentRect().width());
+		float margin = bfc.margin_bottom_edge - bfc.border_bottom_edge;
+		base::scoped_setter _4(bfc.margin_bottom_edge, 0.0f);
+		base::scoped_setter _5(bfc.border_bottom_edge, -margin);
+		LayoutObject* child = o->first_child;
+		do {
+			arrangeBlock(child, bfc, viewport_size);
+			child = child->next_sibling;
+		} while (child != o->first_child);
 
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
@@ -779,12 +804,11 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 		if (o->style->position == PositionType::Static || o->style->position == PositionType::Relative) {
 			pos = box.pos;
 		}
-		// TODO: simplify InlineFormatContext::ctor(bfc, left, avail_width, top) to ctor(bfc, avail_width)
-		o->ifc.emplace(bfc, 0.0f, content_rect.width(), 0.0f);
+		o->ifc.emplace(bfc, content_rect.width());
 		{
 			base::scoped_setter _1(bfc.contg_height, box.prefer_height);
 			// base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.pos.x + box.contentRect().left);
-			base::scoped_setter _3(bfc.contg_right_edge, box.contentRect().width());
+			base::scoped_setter _3(bfc.contg_width, box.contentRect().width());
 			LayoutObject* child = o->first_child;
 			do {
 				prepare(child, *o->ifc, viewport_size);
@@ -1028,7 +1052,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	const Style& st = *o->style;
 	BlockFormatContext& bfc = ifc.bfc();
 
-	float contg_width = bfc.contg_right_edge - bfc.contg_left_edge;
+	float contg_width = bfc.contg_width;
 	float mbp_width = try_resolve_to_px(st.margin_left, contg_width).value_or(0)
 		+ try_resolve_to_px(st.border_left_width, contg_width).value_or(0)
 		+ try_resolve_to_px(st.padding_left, contg_width).value_or(0)
@@ -1055,8 +1079,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	arrangeInlineBlockX(o, bfc, viewport_size, scroll_y);
 
 	BlockFormatContext& inner_bfc = o->bfc.value();
-	inner_bfc.contg_left_edge = 0;
-	inner_bfc.contg_right_edge = bfc.contg_right_edge - bfc.contg_left_edge;
+	inner_bfc.contg_width = bfc.contg_width;
 	inner_bfc.contg_height = bfc.contg_height;
 	inner_bfc.border_bottom_edge = 0;
 	inner_bfc.margin_bottom_edge = 0;
@@ -1153,7 +1176,7 @@ void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
 	const Style& st = *o->style;
 	CHECK(st.display == DisplayType::InlineBlock);
 
-	float contg_width = bfc.contg_right_edge - bfc.contg_left_edge;
+	float contg_width = bfc.contg_width;
 
 	// Compute width, left and right margins
 	BlockBox& b = absl::get<InlineBlockBox>(o->box).block_box;
@@ -1203,8 +1226,7 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 	float borpad_bottom = box.border.bottom + box.padding.bottom;
 
 	BlockFormatContext& bfc = o->bfc.value();
-	bfc.contg_left_edge = box.contentRect().left;
-	bfc.contg_right_edge = box.contentRect().right;
+	bfc.contg_width = box.contentRect().width();
 	bfc.border_bottom_edge = bfc.margin_bottom_edge = box.margin.top + borpad_top;
 	box.prefer_height = try_resolve_to_px(st.height, contg_height);
 	bfc.contg_height = box.prefer_height;
@@ -1234,11 +1256,10 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 			}
 		}
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
-		auto rect = box.contentRect();
-		o->ifc.emplace(bfc, bfc.contg_left_edge, rect.width(), rect.top);
+		o->ifc.emplace(bfc, box.contentRect().width());
 		LOG(INFO)
-			<< "begin IFC pos=" << scene2d::PointF(bfc.contg_left_edge, bfc.margin_bottom_edge)
-			<< ", bfc_bottom=" << bfc.border_bottom_edge << ", " << bfc.margin_bottom_edge;
+			<< "begin IFC contg_width=" << bfc.contg_width
+			<< ", bfc_bottom: border=" << bfc.border_bottom_edge << ", margin=" << bfc.margin_bottom_edge;
 
 		{
 			LayoutObject* child = o->first_child;
@@ -1351,10 +1372,11 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		addText(node);
 	} else if (node->type() == scene2d::NodeType::NODE_ELEMENT) {
 		if (node->positioned()) {
-			flow_root_->relatives.push_back(&node->layout_);
 			if (node->absolutelyPositioned()) {
 				abs_pos_nodes_.push_back(node);
 				return;
+			} else {
+				flow_root_->relatives.push_back(&node->layout_);
 			}
 		}
 

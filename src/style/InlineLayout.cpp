@@ -7,10 +7,10 @@
 
 namespace style {
 
-InlineFormatContext::InlineFormatContext(BlockFormatContext& bfc, float left, float avail_width, float top)
-    : bfc_(bfc), left_(left), avail_width_(avail_width), top_(top), height_(0)
+InlineFormatContext::InlineFormatContext(BlockFormatContext& bfc, float avail_width)
+    : bfc_(bfc), avail_width_(avail_width), height_(0)
 {
-    LOG(INFO) << "ifc ctor " << left_ << ", " << top_ << " width " << avail_width;
+    // LOG(INFO) << "ifc ctor width " << avail_width;
 }
 
 InlineFormatContext::~InlineFormatContext() = default;
@@ -47,7 +47,7 @@ float InlineFormatContext::getLayoutWidth() const
 
 LineBox* InlineFormatContext::newLineBox()
 {
-    auto lb = std::make_unique<LineBox>(left_, avail_width_);
+    auto lb = std::make_unique<LineBox>(0.0f, avail_width_);
     auto ret = lb.get();
     line_boxes_.emplace_back(std::move(lb));
     return ret;
@@ -75,12 +75,12 @@ LineBox* InlineFormatContext::getNextLine()
 
 void InlineFormatContext::arrange(style::TextAlign text_align)
 {
-    float y = top_;
+    float y = 0.0f;
     for (auto& line_box : line_boxes_) {
         line_box->arrange(y, text_align);
         y += line_box->line_height;
     }
-    height_ = y - top_;
+    height_ = y;
 }
 
 LineBox::LineBox(float left_, float avail_w)

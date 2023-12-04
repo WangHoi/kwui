@@ -277,6 +277,11 @@ bool LineEditControl::hitTest(const scene2d::PointF& pos, int flags) const
 {
     return true;
 }
+void LineEditControl::onLayout(scene2d::Node* node, const scene2d::RectF& rect)
+{
+    _rect = rect;
+    UpdateCaretAndScroll();
+}
 void LineEditControl::onPaint(graph2d::PainterInterface &pi, const scene2d::RectF& rect) {
     graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
     p.Save();
@@ -629,8 +634,7 @@ void LineEditControl::UpdateCaretAndScroll() {
     int disp_caret_pos = GetDisplayCaretPos();
     _caret_rect = _layout->caretRect(disp_caret_pos);
     scene2d::RectF content_rect = _layout->rect();
-    // TODO: _node为空
-    float avail_width = 100;//_node->size().width - _padding * 2;
+    float avail_width = std::max(0.0f, _rect.width() - _padding * 2);
 
     float caret_x = _caret_rect.left + 0.5f * _caret_rect.width() + _scroll_offset.x;
     if (caret_x < 0) {

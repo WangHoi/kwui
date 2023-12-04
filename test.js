@@ -75,7 +75,7 @@ var edit = <line-edit style={{ left: 20, top: 20, width: 200, height: 40 }}></li
 // console.log(JSON.stringify(complex.render()));
 
 var hello_world = (<div>
-	<line-edit></line-edit>
+	Hello world!
 </div>);
 
 app.showDialog(hello_world, simple_stylesheet);

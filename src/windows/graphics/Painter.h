@@ -22,6 +22,7 @@ public:
     void SetColor(const Color& c);
     void SetStrokeColor(const Color& c);
     void SetStrokeWidth(float w);
+    // draw border rect with inset border width
     void DrawRect(float x, float y, float w, float h);
     void DrawRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) { DrawRect(origin.x, origin.y, size.width, size.height); }
     void DrawRoundedRect(float x, float y, float w, float h, float r);
@@ -131,8 +132,8 @@ public:
         const style::Value& border_color) override
     {
         auto rect1 = scene2d::RectF::fromLTRB(
-            padding_rect.left - 0.5f * border.left,
-            padding_rect.top - 0.5f * border.top,
+            padding_rect.left - border.left,
+            padding_rect.top - border.top,
             padding_rect.right + border.right,
             padding_rect.bottom + border.bottom);
         auto border_width = std::max(

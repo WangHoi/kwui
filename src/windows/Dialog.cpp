@@ -633,7 +633,6 @@ void Dialog::OnImeStartComposition() {
         scene2d::ImeEvent start_compose(node.get(), scene2d::START_COMPOSE);
         node->onEvent(start_compose);
         if (start_compose.caret_rect_) {
-            LOG(INFO) << "TODO: MapPointToRoot";
             UpdateCaretRect(_scene->mapPointToScene(node.get(), start_compose.caret_rect_->origin()),
                 start_compose.caret_rect_->size());
         }

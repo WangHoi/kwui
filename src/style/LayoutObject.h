@@ -36,7 +36,6 @@ struct TextBox {
 struct FlowRoot {
 	LayoutObject* root = nullptr;
 	LayoutObject* positioned_parent = nullptr;
-	scene2d::PointF scene_pos;
 	std::vector<LayoutObject*> relatives;
 };
 
