@@ -41,32 +41,21 @@ function Div(props, kids) {
 	</div>;
 }
 
-var simple_stylesheet = {
-	/*
-	"p": {
-		"margin-left": 10,
-		"margin-top": 10,
-		"margin-right": 10,
-		"margin-bottom": 10,
-		"border-left-width": 10,
-		"border-top-width": 10,
-		"border-right-width": 10,
-		"border-bottom-width": 10,
-		"padding-left": 10,
-		"padding-top": 10,
-		"padding-right": 10,
-		"padding-bottom": 10,
-		"border-color": "#0f0",
-		"background-color": "#0ff",
-	},
-	*/
-	"button": {
-		"background-color": "#fff",
-	},
-	"button:hover": {
-		"background-color": "#ff0",
-	},
-};
+var simple_stylesheet = `
+p: {
+	margin: 10;
+	border-width: 10;
+	padding: 10;
+	border-color: #0f0;
+	background-color: #0ff;
+}
+button {
+	background-color: #fff;
+}
+button:hover {
+	background-color: #ff0;
+}
+`;
 
 var simple = <p style={{ left: 30, top: 100 }}>第一栏<p style={{ left: 20, top: 30 }}>测试2</p></p>;
 var complex = <Div a="f1"><p>aa</p><p>bb</p></Div>;

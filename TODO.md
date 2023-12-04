@@ -7,6 +7,7 @@
 - 可滚动区域的计算要在布局完成后计算，inline-block有translate，不好边布局边算
 
 ### CSS:
+- named color, #RGBA color
 - cursor，:active 支持
 - font-size 支持更多单位
 

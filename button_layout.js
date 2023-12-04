@@ -65,8 +65,7 @@ var simple_css = `
 	}
 	button {
 		width: auto;
-		border-color: #888;
-		border-width: 10;
+		border: 10px solid #888;
 		text-align: left;
 		background-color: #0b0;
 	}

@@ -41,26 +41,6 @@ function Div(props, kids) {
 	</div>;
 }
 
-var simple_stylesheet = {
-	".title-bar": {
-		"position": "absolute",
-		"top": 0,
-		"right": 0,
-		"margin-left": 10,
-		"margin-top": 10,
-		"margin-right": 10,
-		"margin-bottom": 10
-	},
-	"img": {
-		"display": "inline-block",
-		"width": "80px",
-		"height": "80px",
-	},
-	"button:hover": {
-		"background-color": "#ff0",
-	}
-};
-
 var simple_css = `
 .title-bar {
 	position: absolute;
@@ -73,8 +53,16 @@ img {
 	width: 80px;
 	height: 80px;
 }
+button {
+	padding: 4px;
+	border-width: 1px;
+	border-color: #88e;
+}
 button:hover {
 	background-color: #ff0;
+}
+button:active {
+	background-color: #bb0;
 }
 line_edit {
 	width: 100%;
@@ -84,22 +72,22 @@ line_edit {
 
 var hello_world_full = (<body>
     <div style="background-color: #0f0">橙讯安装程序</div>
-    <div class={"title-bar"} style="background-color: #0ff">
+    <div class="title-bar" style="background-color: #e0ffff80">
         <button>最小化</button>
-        <button style="background-color: #f0f">最大化</button>
+        <button>最大化</button>
         <button>关闭</button>
     </div>
     <div style="margin-top: 40; text-align: center">
-        <img src={"cx_logo_2.svg"} />
+        <img src="cx_logo_2.svg" />
     </div>
     <div style="margin-top: 40; text-align: center">
         <span style="position:relative; font-size: 20">
-            {"橙讯"}
+            橙讯
             <span style="position:absolute; left:100%; top:-10; font-size:10">2.7.0</span>
         </span>
     </div>
     <div style="text-align:center">
-        <button style="margin-top: 40; background-color: #f0f;">安装</button>
+        <button style="margin-top: 40">安装</button>
     </div>
 	<div style="width: 200px; height: 20px; margin:0px auto; background-color: #eee">
 		<line_edit />
@@ -107,27 +95,27 @@ var hello_world_full = (<body>
 </body>);
 
 var hello_world = (
-    <div style={{"margin-top": 40, "text-align": "center"}}>
-        <span style={{position:"relative", "font-size": 20}}>
-            {"橙讯"}
-            <span style={{position:"absolute", left:"100%", top:-10, "font-size":10}}>2.7.0</span>
+    <div style="margin-top: 40; text-align: center">
+        <span style="position:relative; font-size: 20">
+            橙讯
+            <span style="position:absolute; left:100%; top:-10; font-size:10">2.7.0</span>
         </span>
     </div>
 );
 
 var title_bar = (
-	<div class={"title-bar"} style={{ "background-color": "#0ff"}}>
+	<div class="title-bar" style="background-color: #0ff">
         <button>最小化</button>
-        <button style={{"background-color": "#f0f"}}>最大化</button>
+        <button style="background-color: #f0f">最大化</button>
         <button>关闭</button>
     </div>
 );
 
 var hello_world3 = (
-	<div style={{"margin-top": 40, "text-align": "center"}}>
-		<span style={{position:"relative", "font-size": 20}}>
-			{"橙讯"}
-			<span style={{position:"absolute", left:"100%", top:-10, "font-size":10}}>2.7.0</span>
+	<div style="margin-top: 40; text-align: center">
+		<span style="position:relative; font-size: 20">
+			橙讯
+			<span style="position:absolute; left:100%; top:-10; font-size:10">2.7.0</span>
 		</span>
 	</div>
 );

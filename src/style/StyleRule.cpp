@@ -338,6 +338,75 @@ IResult<ShorthandDeclaration> trbl_shorthand_decl(base::string_atom name,
 	return std::make_tuple(output, sd);
 }
 
+/* Syntax: value_spec S*
+	| value_spec S+ value_spec S*
+ */
+IResult<ShorthandDeclaration> two_value_shorthand_decl(base::string_atom name,
+	base::string_atom one_name,
+	base::string_atom two_name,
+	absl::string_view input)
+{
+	auto res = separated_list1(spaces, value_spec)(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [output, list] = res.value();
+	ShorthandDeclaration sd;
+	sd.name = name;
+
+	if (list.size() == 1) {
+		const ValueSpec& v0 = list[0];
+		sd.decls.push_back(SingleDeclaration{ one_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ two_name, v0 });
+	} else if (list.size() == 2) {
+		const ValueSpec& v0 = list[0];
+		const ValueSpec& v1 = list[1];
+		sd.decls.push_back(SingleDeclaration{ one_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ two_name, v1 });
+	}
+	return std::make_tuple(output, sd);
+}
+
+/* Syntax: value_spec S*
+	| value_spec S+ value_spec S*
+	| value_spec S+ value_spec S+ value_spec S*
+ * Shorthand for: border-width || border-style || border-color
+ */
+IResult<ShorthandDeclaration> border_shorthand_decl(base::string_atom name, absl::string_view input)
+{
+	auto res = separated_list1(spaces, value_spec)(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [output, list] = res.value();
+	ShorthandDeclaration sd;
+	sd.name = name;
+
+	absl::optional<ValueSpec> border_color;
+	absl::optional<ValueSpec> border_width;
+	for (const ValueSpec& spec : list) {
+		if (spec.type != ValueSpecType::Specified)
+			continue;
+		const Value& val = spec.value.value();
+		if (val.unit == ValueUnit::Keyword) {
+			// TODO: css named color
+		} else if (val.unit == ValueUnit::HexColor) {
+			border_color.emplace(spec);
+		} else if (val.unit == ValueUnit::Raw || val.unit == ValueUnit::Pixel
+			|| val.unit == ValueUnit::Point || val.unit == ValueUnit::Percent) {
+			border_width.emplace(spec);
+		}
+	}
+	if (border_color.has_value()) {
+		sd.decls.push_back(SingleDeclaration{ base::string_intern("border-color"), border_color.value()});
+	}
+	if (border_width.has_value()) {
+		sd.decls.push_back(SingleDeclaration{ base::string_intern("border-left-width"), border_width.value() });
+		sd.decls.push_back(SingleDeclaration{ base::string_intern("border-top-width"), border_width.value() });
+		sd.decls.push_back(SingleDeclaration{ base::string_intern("border-right-width"), border_width.value() });
+		sd.decls.push_back(SingleDeclaration{ base::string_intern("border-bottom-width"), border_width.value() });
+	}
+	return std::make_tuple(output, sd);
+}
+
 // Syntax: prop_name ":" S* prop_value prio? 
 IResult<Declaration> declaration(absl::string_view input)
 {
@@ -382,6 +451,13 @@ IResult<Declaration> declaration(absl::string_view input)
 			base::string_intern("bottom"),
 			base::string_intern("left"),
 			input1);
+	} else if (prop_name == base::string_intern("overflow")) {
+		decl = two_value_shorthand_decl(prop_name,
+			base::string_intern("overflow-x"),
+			base::string_intern("overflow-y"),
+			input1);
+	} else if (prop_name == base::string_intern("border")) {
+		decl = border_shorthand_decl(prop_name, input1);
 	} else {
 		decl = single_decl(prop_name, input1);
 	}

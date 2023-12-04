@@ -41,32 +41,32 @@ function Div(props, kids) {
 	</div>;
 }
 
-var simple_stylesheet = {
-	"div": {
-		"position": "absolute",
-		"top": "10px",
-		"left": "10px",
-		"width": "200px",
-		//"line-height": "20px",
-		//"margin-top": "10",
-		// "width": "20px",
-		"background-color": "#b0e0a0",
-		//"text-align": "left",
-	},
-	"line-edit": {
-		"width": 100,
-		"height": 30,
-	},
-	".italic": {
-		"font-style": "italic"
-	},	
-	".bold": {
-		"font-weight": "bold",
-	},
-	".fs-20": {
-		"font-size": "30px",
-	},
-};
+var simple_stylesheet = `
+div {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	width: 200px;
+	//line-height: 20px;
+	//margin-top: 10;
+	// width: 20px;
+	background-color: #b0e0a0;
+	//text-align: left;
+}
+line-edit {
+	width: 100;
+	height: 30;
+}
+.italic {
+	font-style: italic
+}	
+.bold {
+	font-weight: bold;
+}
+.fs-20 {
+	font-size: 30px;
+}
+`;
 
 // <span class="bold">bold </span>
 // <span class="italic">italic </span>

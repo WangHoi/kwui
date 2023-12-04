@@ -41,56 +41,44 @@ function Div(props, kids) {
 	</div>;
 }
 
-var simple_stylesheet = {
-	".outer": {
-		"display": "block",
-		"overflow-y": "auto",
-		"overflow-x": "auto",
-		"width": "200px",
-		"height": "100px",
-		"margin-left": "8px",
-		"margin-top": "8px",
-		"padding-top": "50px",
-		"padding-bottom": "50px",
-		"padding-left": "0px",
-		"padding-right": "0px",
-		"background-color": "#fff",
-		"border-top-width": "2px",
-		"border-right-width": "2px",
-		"border-bottom-width": "2px",
-		"border-left-width": "2px",
-		"border-color": "#000",
-	},
-	".inner": {
-		//"width": "90%",
-		"overflow-y": "auto",
-		"overflow-x": "auto",
-		"width": "200px",
-		"height": "100px",
-		"background-color": "#00ffff",
-		"font-size": "16px",
-		"border-top-width": "2px",
-		"border-right-width": "2px",
-		"border-bottom-width": "2px",
-		"border-left-width": "2px",
-		"border-color": "#080",
-		"margin-left": "50px",
-	},
-	"span": {
-		"font-size": 16,
-	},
-	"line_edit": {
-		"width": 100,
-		"height": 20,
-		"background-color": "#fff",
-	}
-};
+var simple_stylesheet = `
+.outer {
+	display: block;
+	overflow: auto;
+	width: 200px;
+	height: 100px;
+	margin-left: 8px;
+	margin-top: 8px;
+	padding: 50px 0px;
+	background-color: #fff;
+	border-width: 2px;
+	border-color: #000;
+}
+.inner {
+	overflow: auto;
+	width: 200px;
+	height: 100px;
+	background-color: #00ffff;
+	font-size: 16px;
+	border-width: 2px;
+	border-color: #080;
+	margin-left: 50px;
+}
+span {
+	font-size: 16;
+}
+line_edit {
+	width: 100;
+	height: 20;
+	background-color: #fff;
+}
+`;
 
 var span1 = <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius Syntax</span>;
 var span2 = <span>a b c d e f g h i j k l m o p q r s t u v w x y z</span>;
 //	<p>{span2}</p>
 var complex_overflow = (<div class="outer">
-	<qqq style={{"background-color": "#0aa", "height":120, "overflow-y": "scroll"}}>{span1}</qqq>
+	<qqq style="background-color: #0aa; height:120; overflow-y: scroll">{span1}</qqq>
     <div class="inner"><line_edit /><div class="inner" /></div>
 </div>);
 
