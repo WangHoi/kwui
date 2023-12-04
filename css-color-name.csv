@@ -1,0 +1,149 @@
+Specification,Keyword,RGB hex value
+CSS Level 1,black,#000000
+CSS Level 1,silver,#c0c0c0
+CSS Level 1,gray,#808080
+CSS Level 1,white,#ffffff
+CSS Level 1,maroon,#800000
+CSS Level 1,red,#ff0000
+CSS Level 1,purple,#800080
+CSS Level 1,fuchsia,#ff00ff
+CSS Level 1,green,#008000
+CSS Level 1,lime,#00ff00
+CSS Level 1,olive,#808000
+CSS Level 1,yellow,#ffff00
+CSS Level 1,navy,#000080
+CSS Level 1,blue,#0000ff
+CSS Level 1,teal,#008080
+CSS Level 1,aqua,#00ffff
+CSS Level 2 (Revision 1),orange,#ffa500
+CSS Level 2 (Revision 1),aliceblue,#f0f8ff
+CSS Level 2 (Revision 1),antiquewhite,#faebd7
+CSS Level 2 (Revision 1),aquamarine,#7fffd4
+CSS Level 2 (Revision 1),azure,#f0ffff
+CSS Level 2 (Revision 1),beige,#f5f5dc
+CSS Level 2 (Revision 1),bisque,#ffe4c4
+CSS Level 2 (Revision 1),blanchedalmond,#ffebcd
+CSS Level 2 (Revision 1),blueviolet,#8a2be2
+CSS Level 2 (Revision 1),brown,#a52a2a
+CSS Level 2 (Revision 1),burlywood,#deb887
+CSS Level 2 (Revision 1),cadetblue,#5f9ea0
+CSS Level 2 (Revision 1),chartreuse,#7fff00
+CSS Level 2 (Revision 1),chocolate,#d2691e
+CSS Level 2 (Revision 1),coral,#ff7f50
+CSS Level 2 (Revision 1),cornflowerblue,#6495ed
+CSS Level 2 (Revision 1),cornsilk,#fff8dc
+CSS Level 2 (Revision 1),crimson,#dc143c
+CSS Level 2 (Revision 1),cyan,#00ffff
+CSS Level 2 (Revision 1),darkblue,#00008b
+CSS Level 2 (Revision 1),darkcyan,#008b8b
+CSS Level 2 (Revision 1),darkgoldenrod,#b8860b
+CSS Level 2 (Revision 1),darkgray,#a9a9a9
+CSS Level 2 (Revision 1),darkgreen,#006400
+CSS Level 2 (Revision 1),darkgrey,#a9a9a9
+CSS Level 2 (Revision 1),darkkhaki,#bdb76b
+CSS Level 2 (Revision 1),darkmagenta,#8b008b
+CSS Level 2 (Revision 1),darkolivegreen,#556b2f
+CSS Level 2 (Revision 1),darkorange,#ff8c00
+CSS Level 2 (Revision 1),darkorchid,#9932cc
+CSS Level 2 (Revision 1),darkred,#8b0000
+CSS Level 2 (Revision 1),darksalmon,#e9967a
+CSS Level 2 (Revision 1),darkseagreen,#8fbc8f
+CSS Level 2 (Revision 1),darkslateblue,#483d8b
+CSS Level 2 (Revision 1),darkslategray,#2f4f4f
+CSS Level 2 (Revision 1),darkslategrey,#2f4f4f
+CSS Level 2 (Revision 1),darkturquoise,#00ced1
+CSS Level 2 (Revision 1),darkviolet,#9400d3
+CSS Level 2 (Revision 1),deeppink,#ff1493
+CSS Level 2 (Revision 1),deepskyblue,#00bfff
+CSS Level 2 (Revision 1),dimgray,#696969
+CSS Level 2 (Revision 1),dimgrey,#696969
+CSS Level 2 (Revision 1),dodgerblue,#1e90ff
+CSS Level 2 (Revision 1),firebrick,#b22222
+CSS Level 2 (Revision 1),floralwhite,#fffaf0
+CSS Level 2 (Revision 1),forestgreen,#228b22
+CSS Level 2 (Revision 1),gainsboro,#dcdcdc
+CSS Level 2 (Revision 1),ghostwhite,#f8f8ff
+CSS Level 2 (Revision 1),gold,#ffd700
+CSS Level 2 (Revision 1),goldenrod,#daa520
+CSS Level 2 (Revision 1),greenyellow,#adff2f
+CSS Level 2 (Revision 1),grey,#808080
+CSS Level 2 (Revision 1),honeydew,#f0fff0
+CSS Level 2 (Revision 1),hotpink,#ff69b4
+CSS Level 2 (Revision 1),indianred,#cd5c5c
+CSS Level 2 (Revision 1),indigo,#4b0082
+CSS Level 2 (Revision 1),ivory,#fffff0
+CSS Level 2 (Revision 1),khaki,#f0e68c
+CSS Level 2 (Revision 1),lavender,#e6e6fa
+CSS Level 2 (Revision 1),lavenderblush,#fff0f5
+CSS Level 2 (Revision 1),lawngreen,#7cfc00
+CSS Level 2 (Revision 1),lemonchiffon,#fffacd
+CSS Level 2 (Revision 1),lightblue,#add8e6
+CSS Level 2 (Revision 1),lightcoral,#f08080
+CSS Level 2 (Revision 1),lightcyan,#e0ffff
+CSS Color Module Level 3,lightgoldenrodyellow,#fafad2
+CSS Color Module Level 3,lightgray,#d3d3d3
+CSS Color Module Level 3,lightgreen,#90ee90
+CSS Color Module Level 3,lightgrey,#d3d3d3
+CSS Color Module Level 3,lightpink,#ffb6c1
+CSS Color Module Level 3,lightsalmon,#ffa07a
+CSS Color Module Level 3,lightseagreen,#20b2aa
+CSS Color Module Level 3,lightskyblue,#87cefa
+CSS Color Module Level 3,lightslategray,#778899
+CSS Color Module Level 3,lightslategrey,#778899
+CSS Color Module Level 3,lightsteelblue,#b0c4de
+CSS Color Module Level 3,lightyellow,#ffffe0
+CSS Color Module Level 3,limegreen,#32cd32
+CSS Color Module Level 3,linen,#faf0e6
+CSS Color Module Level 3,"magenta",#ff00ff
+CSS Color Module Level 3,mediumaquamarine,#66cdaa
+CSS Color Module Level 3,mediumblue,#0000cd
+CSS Color Module Level 3,mediumorchid,#ba55d3
+CSS Color Module Level 3,mediumpurple,#9370db
+CSS Color Module Level 3,mediumseagreen,#3cb371
+CSS Color Module Level 3,mediumslateblue,#7b68ee
+CSS Color Module Level 3,mediumspringgreen,#00fa9a
+CSS Color Module Level 3,mediumturquoise,#48d1cc
+CSS Color Module Level 3,mediumvioletred,#c71585
+CSS Color Module Level 3,midnightblue,#191970
+CSS Color Module Level 3,mintcream,#f5fffa
+CSS Color Module Level 3,mistyrose,#ffe4e1
+CSS Color Module Level 3,moccasin,#ffe4b5
+CSS Color Module Level 3,navajowhite,#ffdead
+CSS Color Module Level 3,oldlace,#fdf5e6
+CSS Color Module Level 3,olivedrab,#6b8e23
+CSS Color Module Level 3,orangered,#ff4500
+CSS Color Module Level 3,orchid,#da70d6
+CSS Color Module Level 3,palegoldenrod,#eee8aa
+CSS Color Module Level 3,palegreen,#98fb98
+CSS Color Module Level 3,paleturquoise,#afeeee
+CSS Color Module Level 3,palevioletred,#db7093
+CSS Color Module Level 3,papayawhip,#ffefd5
+CSS Color Module Level 3,peachpuff,#ffdab9
+CSS Color Module Level 3,peru,#cd853f
+CSS Color Module Level 3,pink,#ffc0cb
+CSS Color Module Level 3,plum,#dda0dd
+CSS Color Module Level 3,powderblue,#b0e0e6
+CSS Color Module Level 3,rosybrown,#bc8f8f
+CSS Color Module Level 3,royalblue,#4169e1
+CSS Color Module Level 3,saddlebrown,#8b4513
+CSS Color Module Level 3,salmon,#fa8072
+CSS Color Module Level 3,sandybrown,#f4a460
+CSS Color Module Level 3,seagreen,#2e8b57
+CSS Color Module Level 3,seashell,#fff5ee
+CSS Color Module Level 3,sienna,#a0522d
+CSS Color Module Level 3,skyblue,#87ceeb
+CSS Color Module Level 3,slateblue,#6a5acd
+CSS Color Module Level 3,slategray,#708090
+CSS Color Module Level 3,slategrey,#708090
+CSS Color Module Level 3,snow,#fffafa
+CSS Color Module Level 3,springgreen,#00ff7f
+CSS Color Module Level 3,steelblue,#4682b4
+CSS Color Module Level 3,tan,#d2b48c
+CSS Color Module Level 3,thistle,#d8bfd8
+CSS Color Module Level 3,tomato,#ff6347
+CSS Color Module Level 3,turquoise,#40e0d0
+CSS Color Module Level 3,violet,#ee82ee
+CSS Color Module Level 3,wheat,#f5deb3
+CSS Color Module Level 3,whitesmoke,#f5f5f5
+CSS Color Module Level 3,yellowgreen,#9acd32
+CSS Color Module Level 4,rebeccapurple,#663399
