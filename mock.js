@@ -60,10 +60,10 @@ button {
 	cursor: pointer;
 }
 button:hover {
-	background-color: #ff0;
+	background-color: yellow;
 }
 button:active {
-	background-color: #bb0;
+	background-color: red;
 }
 line_edit {
 	width: 100%;
