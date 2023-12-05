@@ -408,6 +408,64 @@ IResult<ShorthandDeclaration> border_shorthand_decl(base::string_atom name, absl
 	return std::make_tuple(output, sd);
 }
 
+/* Syntax: value_spec S*
+	| value_spec S+ value_spec S*
+	| value_spec S+ value_spec S+ value_spec S*
+	| value_spec S+ value_spec S+ value_spec S+ value_spec S*
+ * Shorthand for: all
+ *  | top-left-and-bottom-right top-right-and-bottom-left
+ *  | top-left top-right-and-bottom-left bottom-right
+ *  | top-left top-right bottom-right bottom-left
+ */
+IResult<ShorthandDeclaration> border_radius_shorthand_decl(base::string_atom name,
+	base::string_atom top_left_name,
+	base::string_atom top_right_name,
+	base::string_atom bottom_right_name,
+	base::string_atom bottom_left_name,
+	absl::string_view input)
+{
+	auto res = separated_list1(spaces, value_spec)(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [output, list] = res.value();
+	ShorthandDeclaration sd;
+	sd.name = name;
+
+	if (list.size() == 1) {
+		const ValueSpec& v0 = list[0];
+		sd.decls.push_back(SingleDeclaration{ top_left_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ top_right_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ bottom_right_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ bottom_left_name, v0 });
+	} else if (list.size() == 2) {
+		const ValueSpec& v0 = list[0];
+		const ValueSpec& v1 = list[1];
+		sd.decls.push_back(SingleDeclaration{ top_left_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ top_right_name, v1 });
+		sd.decls.push_back(SingleDeclaration{ bottom_right_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ bottom_left_name, v1 });
+	} else if (list.size() == 3) {
+		const ValueSpec& v0 = list[0];
+		const ValueSpec& v1 = list[1];
+		const ValueSpec& v2 = list[2];
+		sd.decls.push_back(SingleDeclaration{ top_left_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ top_right_name, v1 });
+		sd.decls.push_back(SingleDeclaration{ bottom_right_name, v2 });
+		sd.decls.push_back(SingleDeclaration{ bottom_left_name, v1 });
+	} else if (list.size() == 4) {
+		const ValueSpec& v0 = list[0];
+		const ValueSpec& v1 = list[1];
+		const ValueSpec& v2 = list[2];
+		const ValueSpec& v3 = list[3];
+		sd.decls.push_back(SingleDeclaration{ top_left_name, v0 });
+		sd.decls.push_back(SingleDeclaration{ top_right_name, v1 });
+		sd.decls.push_back(SingleDeclaration{ bottom_right_name, v2 });
+		sd.decls.push_back(SingleDeclaration{ bottom_left_name, v3 });
+	}
+	return std::make_tuple(output, sd);
+}
+
+
 // Syntax: prop_name ":" S* prop_value prio? 
 IResult<Declaration> declaration(absl::string_view input)
 {
@@ -444,6 +502,13 @@ IResult<Declaration> declaration(absl::string_view input)
 			base::string_intern("border-right-width"),
 			base::string_intern("border-bottom-width"),
 			base::string_intern("border-left-width"),
+			input1);
+	} else if (prop_name == base::string_intern("border-radius")) {
+		decl = border_radius_shorthand_decl(prop_name,
+			base::string_intern("border-top-left-radius"),
+			base::string_intern("border-top-right-radius"),
+			base::string_intern("border-bottom-right-radius"),
+			base::string_intern("border-bottom-left-radius"),
 			input1);
 	} else if (prop_name == base::string_intern("inset")) {
 		decl = trbl_shorthand_decl(prop_name,

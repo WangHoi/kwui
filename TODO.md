@@ -7,15 +7,13 @@
 - 可滚动区域的计算要在布局完成后计算，inline-block有translate，不好边布局边算
 
 ### CSS:
-- cursor 支持
 - font-size 支持更多单位
 
 ### DOM:
-- mouseover/mouseout 事件没有 bubble
+- MOUSE_OVER/MOUSE_OVER/MOUSE_WHEEL 事件没有 bubble
 - fragment 处理有问题，没有跳过
 
 ### Control:
-- LineEditControl 输入法提示框位置不对，鼠标点击事件坐标不对
 - NodeAttributeValue 增加toString, toNumber
 - LineEditControl 剪贴板支持
 
