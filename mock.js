@@ -57,6 +57,7 @@ button {
 	padding: 4px;
 	border-width: 1px;
 	border-color: #88e;
+	cursor: pointer;
 }
 button:hover {
 	background-color: #ff0;
@@ -67,6 +68,7 @@ button:active {
 line_edit {
 	width: 100%;
 	height: 100%;
+	cursor: text;
 }
 `;
 

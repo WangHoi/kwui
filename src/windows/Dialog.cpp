@@ -401,8 +401,15 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         return 0;
     case WM_SETCURSOR:
         if (auto node = _hovered_node.upgrade()) {
-            // CursorType c = node->GetCursorType().value_or(CURSOR_ARROW);
-            // SetCursor(s_preloaded_cursors[c]);
+            style::CursorType cursor = node->computedStyle().cursor;
+            if (cursor == style::CursorType::None) SetCursor(NULL);
+            else if (cursor == style::CursorType::Auto) SetCursor(s_preloaded_cursors[CURSOR_ARROW]);
+            else if (cursor == style::CursorType::Default) SetCursor(s_preloaded_cursors[CURSOR_ARROW]);
+            else if (cursor == style::CursorType::Crosshair) SetCursor(s_preloaded_cursors[CURSOR_CROSS]);
+            else if (cursor == style::CursorType::Pointer) SetCursor(s_preloaded_cursors[CURSOR_HAND]);
+            else if (cursor == style::CursorType::Text) SetCursor(s_preloaded_cursors[CURSOR_IBEAM]);
+            else if (cursor == style::CursorType::Wait) SetCursor(s_preloaded_cursors[CURSOR_WAIT]);
+            else SetCursor(s_preloaded_cursors[CURSOR_ARROW]);
         } else {
             SetCursor(s_preloaded_cursors[CURSOR_ARROW]);
         }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <memory>
@@ -124,6 +124,7 @@ struct StyleSpec {
 	ValueSpec overflow_y;
 
 	ValueSpec box_sizing;
+	ValueSpec cursor;
 
 	void set(base::string_atom name, const ValueSpec& spec);
 };
@@ -157,6 +158,16 @@ enum class OverflowType {
 enum class BoxSizingType {
 	ContentBox,
 	BorderBox,
+};
+
+enum class CursorType {
+	None,		// 隐藏光标。
+	Auto,		// 默认。浏览器设置的光标。
+	Default,	// 默认光标（通常是一个箭头）
+	Crosshair,	// 光标呈现为十字线。
+	Pointer,	// 光标呈现为指示链接的指针（一只手）
+	Text,		// 此光标指示文本。
+	Wait,		// 此光标指示程序正忙（通常是一只表或沙漏）。
 };
 
 class FontWeight {
@@ -232,6 +243,7 @@ struct Style {
 	OverflowType overflow_y = OverflowType::Visible;
 
 	BoxSizingType box_sizing = BoxSizingType::ContentBox;
+	CursorType cursor = CursorType::Auto;
 };
 
 template <typename Sink>

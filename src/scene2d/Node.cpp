@@ -40,6 +40,8 @@ static void resolve_style(style::BoxSizingType& style, const style::BoxSizingTyp
 	const style::ValueSpec& spec);
 static void resolve_style(style::Color& style, const style::Color* parent,
 	const style::ValueSpec& spec);
+static void resolve_style(style::CursorType& style, const style::CursorType* parent,
+	const style::ValueSpec& spec);
 
 Node::Node(Scene* scene, NodeType type)
 	: scene_(scene)
@@ -244,6 +246,7 @@ void Node::resolveDefaultStyle()
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_style, style::FontStyle::Normal);
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_weight, style::FontWeight());
 	RESOLVE_STYLE_DEFAULT_INHERIT(text_align, style::TextAlign::Left);
+	RESOLVE_STYLE_DEFAULT_INHERIT(cursor, style::CursorType::Auto);
 #undef RESOLVE_STYLE_DEFAULT_INHERIT
 }
 
@@ -296,6 +299,7 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 	RESOLVE_STYLE(overflow_x);
 	RESOLVE_STYLE(overflow_y);
 	RESOLVE_STYLE(box_sizing);
+	RESOLVE_STYLE(cursor);
 #undef RESOLVE_STYLE
 }
 
@@ -567,6 +571,35 @@ void resolve_style(style::Color& style, const style::Color* parent,
 			style = style::Color::fromString(spec.value->keyword_val.c_str());
 		} else if (spec.value->unit == style::ValueUnit::HexColor) {
 			style = style::Color::fromString(spec.value->string_val);
+		}
+	}
+}
+
+void resolve_style(style::CursorType& style, const style::CursorType* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Keyword) {
+			if (spec.value->keyword_val == base::string_intern("none")) {
+				style = style::CursorType::None;
+			} else if (spec.value->keyword_val == base::string_intern("auto")) {
+				style = style::CursorType::Auto;
+			} else if (spec.value->keyword_val == base::string_intern("default")) {
+				style = style::CursorType::Default;
+			} else if (spec.value->keyword_val == base::string_intern("crosshair")) {
+				style = style::CursorType::Crosshair;
+			} else if (spec.value->keyword_val == base::string_intern("pointer")) {
+				style = style::CursorType::Pointer;
+			} else if (spec.value->keyword_val == base::string_intern("text")) {
+				style = style::CursorType::Text;
+			} else if (spec.value->keyword_val == base::string_intern("wait")) {
+				style = style::CursorType::Wait;
+			} else {
+				LOG(WARNING) << "unimplemented css cursor " << spec.value->keyword_val;
+			}
 		}
 	}
 }
