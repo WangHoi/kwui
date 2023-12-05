@@ -405,6 +405,9 @@ bool Node::matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const
 		} else if (klass == base::string_intern("hover")) {
 			if (!(state_ & NODE_STATE_HOVER))
 				return false;
+		} else if (klass == base::string_intern("focus")) {
+			if (!(state_ & NODE_STATE_FOCUSED))
+				return false;
 		} else {
 			return false;
 		}

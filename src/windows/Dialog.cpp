@@ -387,12 +387,14 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         break;
     case WM_SETFOCUS:
         if (auto node = _focused_node.upgrade()) {
+            node->state_ |= scene2d::NODE_STATE_FOCUSED;
             scene2d::FocusEvent focus_in(node.get(), scene2d::FOCUS_IN);
             node->onEvent(focus_in);
         }
         return 0;
     case WM_KILLFOCUS:
         if (auto node = _focused_node.upgrade()) {
+            node->state_ &= ~scene2d::NODE_STATE_FOCUSED;
             scene2d::FocusEvent focus_out(node.get(), scene2d::FOCUS_OUT);
             node->onEvent(focus_out);
         }
@@ -657,7 +659,9 @@ void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers
     scene2d::PointF local_pos;
     node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_CLICKABLE, &local_pos);
     if (node) {
-        LOG(INFO) << "mouse down " << local_pos;
+        //LOG(INFO) << "mouse down " << local_pos;
+        _active_node = node->weaken();
+        node->state_ |= scene2d::NODE_STATE_ACTIVE;
         scene2d::MouseEvent mouse_down(node, scene2d::MOUSE_DOWN, _mouse_position, local_pos, button, buttons, modifiers);
         node->onEvent(mouse_down);
     }
@@ -665,12 +669,15 @@ void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers
     node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_FOCUSABLE);
     base::object_refptr<scene2d::Node> old_focused = _focused_node.upgrade();
     if (node) {
-        if (node != old_focused.get())
+        if (node != old_focused.get()) {
             if (old_focused) {
+                old_focused->state_ &= ~scene2d::NODE_STATE_FOCUSED;
                 scene2d::FocusEvent focus_out(old_focused.get(), scene2d::FOCUS_OUT);
                 old_focused->onEvent(focus_out);
             }
+        }
         _focused_node = node->weaken();
+        node->state_ |= scene2d::NODE_STATE_FOCUSED;
         scene2d::FocusEvent focus_in(node, scene2d::FOCUS_IN);
         node->onEvent(focus_in);
     }
@@ -684,11 +691,12 @@ void Dialog::OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers) 
 
     if (button != scene2d::LEFT_BUTTON) return;
 
-    scene2d::Node* node;
-    scene2d::PointF local_pos;
-    node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_CLICKABLE, &local_pos);
+    base::object_refptr<scene2d::Node> node = _active_node.upgrade();
     if (node) {
-        scene2d::MouseEvent mouse_up(node, scene2d::MOUSE_UP, _mouse_position, local_pos, button, buttons, modifiers);
+        _active_node = nullptr;
+        node->state_ &= ~scene2d::NODE_STATE_ACTIVE;
+        scene2d::PointF local_pos = _mouse_position - _scene->mapPointToScene(node.get(), scene2d::PointF());
+        scene2d::MouseEvent mouse_up(node.get(), scene2d::MOUSE_UP, _mouse_position, local_pos, button, buttons, modifiers);
         node->onEvent(mouse_up);
     }
 }
@@ -731,6 +739,7 @@ void Dialog::UpdateFocusedNode() {
     // Focused node become invisible
     if (auto node = _focused_node.upgrade()) {
         if (!node->visibleInHierarchy()) {
+            node->state_ &= ~scene2d::NODE_STATE_FOCUSED;
             scene2d::FocusEvent focus_out(node.get(), scene2d::FOCUS_OUT);
             node->onEvent(focus_out);
             _focused_node = nullptr;

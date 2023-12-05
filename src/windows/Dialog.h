@@ -122,7 +122,8 @@ private:
     // Node2DRef _root;
     // LabelNodeRef _title_label;
     // ImageButtonNodeRef _close_button;
-    base::object_weakptr<scene2d::Node> _hovered_node;   // under mouse node
+    base::object_weakptr<scene2d::Node> _hovered_node;
+    base::object_weakptr<scene2d::Node> _active_node;
     base::object_weakptr<scene2d::Node> _focused_node;
     bool _mouse_event_tracking;
     bool _mouse_capture;

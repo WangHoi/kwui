@@ -54,26 +54,24 @@ var simple_css = `
 		width: 100;
 		height: 30;
 	}
-	.italic {
-		font-style: italic;
-	}	
-	.bold {
-		font-weight: bold;
-	}
-	.fs-20 {
-		font-size: 30px;
-	}
 	button {
 		width: auto;
-		border: 10px solid #888;
+		border: 2px solid #888;
 		text-align: left;
 		background-color: #0b0;
+	}
+	button:hover {
+		background-color: #080;
+	}
+	button:active {
+		border-color: lightblue;
+		background-color: #0e0;
 	}
 `;
 
 var hello_world2 = (
 	<div class="abs">
-		<button style={{"margin-top":20}}>First</button>
+		<button style="margin-top:20;">First</button>
 		<button>Second</button>
 		<button>Third<button>Fourth</button></button>
 	</div>

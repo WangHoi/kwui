@@ -36,8 +36,9 @@ enum class NodeType {
 };
 
 enum NodeState {
-	NODE_STATE_ACTIVE = 1,
-	NODE_STATE_HOVER = 2,
+	NODE_STATE_HOVER = 1,
+	NODE_STATE_ACTIVE = 2,
+	NODE_STATE_FOCUSED = 4,
 };
 
 template <typename Sink>

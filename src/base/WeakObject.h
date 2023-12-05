@@ -35,12 +35,14 @@ public:
 	object_weakptr(WeakObjectProxy<O>* ptr)
 		: ptr_(ptr)
 	{
-		ptr_->retain();
+		if (ptr_)
+			ptr_->retain();
 	}
 	object_weakptr(const object_weakptr& o)
 		: ptr_(o.ptr_)
 	{
-		ptr_->retain();
+		if (ptr_)
+			ptr_->retain();
 	}
 	object_weakptr(object_weakptr&& o) noexcept
 		: ptr_(o.ptr_)
