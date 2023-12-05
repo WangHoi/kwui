@@ -10,14 +10,14 @@ Painter::Painter(ID2D1RenderTarget* rt, const scene2d::PointF& mouse_pos)
 	_dpi_scale /= USER_DEFAULT_SCREEN_DPI;
 }
 
-void Painter::Clear(const Color& c) {
-	D2D1_COLOR_F color = D2D1::ColorF(c.GetRed(), c.GetGreen(), c.GetBlue(), c.GetAlpha());
+void Painter::Clear(const style::Color& c) {
+	D2D1_COLOR_F color = D2D1::ColorF(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
 	_rt->Clear(color);
 }
-void Painter::SetColor(const Color& c) {
+void Painter::SetColor(const style::Color& c) {
 	_current.color = c;
 }
-void Painter::SetStrokeColor(const Color& c) {
+void Painter::SetStrokeColor(const style::Color& c) {
 	_current.stroke_color = c;
 }
 void Painter::SetStrokeWidth(float w) {
@@ -148,8 +148,8 @@ void Painter::Restore() {
 		_current.Reset();
 	}
 }
-ComPtr<ID2D1Brush> Painter::CreateBrush(const Color& c) {
-	D2D1_COLOR_F color = D2D1::ColorF(c.GetRed(), c.GetGreen(), c.GetBlue(), c.GetAlpha());
+ComPtr<ID2D1Brush> Painter::CreateBrush(const style::Color& c) {
+	D2D1_COLOR_F color = D2D1::ColorF(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
 	ComPtr<ID2D1SolidColorBrush> brush;
 	HRESULT hr = _rt->CreateSolidColorBrush(color, brush.GetAddressOf());
 	return brush;
@@ -332,14 +332,14 @@ ComPtr<ID2D1LinearGradientBrush> Painter::CreateLinearGradientBrush_Logo() {
 	HRESULT hr;
 	ComPtr<ID2D1LinearGradientBrush> brush;
 	ComPtr<ID2D1GradientStopCollection> pGradientStops;
-	Color c0 = Color::FromString(/*"#FF8833"*/"#FF6A00");
-	Color c1 = Color::FromString("#FF3F00");
+	style::Color c0 = style::Color::fromString(/*"#FF8833"*/"#FF6A00");
+	style::Color c1 = style::Color::fromString("#FF3F00");
 	//c0 = RED;
 	//c1 = BLUE;
 	D2D1_GRADIENT_STOP gradientStops[2];
-	gradientStops[0].color = D2D1::ColorF(c0.GetRed(), c0.GetGreen(), c0.GetBlue(), c0.GetAlpha());
+	gradientStops[0].color = D2D1::ColorF(c0.getRed(), c0.getGreen(), c0.getBlue(), c0.getAlpha());
 	gradientStops[0].position = 0.0f;
-	gradientStops[1].color = D2D1::ColorF(c1.GetRed(), c1.GetGreen(), c1.GetBlue(), c1.GetAlpha());
+	gradientStops[1].color = D2D1::ColorF(c1.getRed(), c1.getGreen(), c1.getBlue(), c1.getAlpha());
 	gradientStops[1].position = 1.0f;
 	hr = _rt->CreateGradientStopCollection(
 		gradientStops,
@@ -361,12 +361,12 @@ ComPtr<ID2D1RadialGradientBrush> Painter::CreateRadialGradientBrush_Highlight() 
 	HRESULT hr;
 	ComPtr<ID2D1RadialGradientBrush> brush;
 	ComPtr<ID2D1GradientStopCollection> pGradientStops;
-	Color c0 = Color::FromString("#FFFFFF40");
-	Color c1 = Color::FromString("#FFFFFF00");
+	style::Color c0 = style::Color::fromString("#FFFFFF40");
+	style::Color c1 = style::Color::fromString("#FFFFFF00");
 	D2D1_GRADIENT_STOP gradientStops[2];
-	gradientStops[0].color = D2D1::ColorF(c0.GetRed(), c0.GetGreen(), c0.GetBlue(), c0.GetAlpha());
+	gradientStops[0].color = D2D1::ColorF(c0.getRed(), c0.getGreen(), c0.getBlue(), c0.getAlpha());
 	gradientStops[0].position = 0.0f;
-	gradientStops[1].color = D2D1::ColorF(c1.GetRed(), c1.GetGreen(), c1.GetBlue(), c1.GetAlpha());
+	gradientStops[1].color = D2D1::ColorF(c1.getRed(), c1.getGreen(), c1.getBlue(), c1.getAlpha());
 	gradientStops[1].position = 1.0f;
 	hr = _rt->CreateGradientStopCollection(
 		gradientStops,

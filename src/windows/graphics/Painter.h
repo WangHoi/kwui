@@ -4,7 +4,6 @@
 #include "scene2d/Control.h"
 #include "graph2d/Painter.h"
 #include "windows/windows_header.h"
-#include "Color.h"
 #include "TextLayout.h"
 #include "TextFlow.h"
 #include "GraphicDevice.h"
@@ -18,9 +17,9 @@ public:
 	Painter(ID2D1RenderTarget* rt, const scene2d::PointF& mouse_pos);
     inline scene2d::PointF GetMousePosition() const { return _mouse_position; }
 	inline float GetDpiScale() const { return _dpi_scale; }
-    void Clear(const Color& c);
-    void SetColor(const Color& c);
-    void SetStrokeColor(const Color& c);
+    void Clear(const style::Color& c);
+    void SetColor(const style::Color& c);
+    void SetStrokeColor(const style::Color& c);
     void SetStrokeWidth(float w);
     // draw border rect with inset border width
     void DrawRect(float x, float y, float w, float h);
@@ -51,7 +50,7 @@ public:
     void SetBrush(ComPtr<ID2D1Brush> brush);
 
 private:
-    ComPtr<ID2D1Brush> CreateBrush(const Color& c);
+    ComPtr<ID2D1Brush> CreateBrush(const style::Color& c);
     inline float Painter::PixelSnap(float x) {
         return roundf(x * _dpi_scale) / _dpi_scale;
     }
@@ -63,8 +62,8 @@ private:
 
     struct State {
         scene2d::PointF offset;
-        Color color;
-        Color stroke_color;
+        style::Color color;
+        style::Color stroke_color;
         float stroke_width;
         bool pixel_snap;
         ComPtr<ID2D1Brush> gradient_brush;
@@ -74,17 +73,17 @@ private:
         }
         inline void Reset() {
             offset = scene2d::PointF::fromZeros();
-            color = NO_COLOR;
-            stroke_color = NO_COLOR;
+            color = style::Color();
+            stroke_color = style::Color();
             stroke_width = 0.0f;
             pixel_snap = true;
             gradient_brush = nullptr;
         }
         inline bool HasFill() const {
-            return color.GetAlpha() != 0 || gradient_brush != nullptr;
+            return color.getAlpha() != 0 || gradient_brush != nullptr;
         }
         inline bool HasStroke() const {
-            return stroke_width != 0 && stroke_color.GetAlpha() != 0;
+            return stroke_width != 0 && stroke_color.getAlpha() != 0;
         }
     };
     ID2D1RenderTarget *_rt;
@@ -128,8 +127,8 @@ public:
     }
     void drawBox(const scene2d::RectF& padding_rect,
         const style::EdgeOffsetF& border,
-        const style::Value& background_color,
-        const style::Value& border_color) override
+        const style::Color& background_color,
+        const style::Color& border_color) override
     {
         auto rect1 = scene2d::RectF::fromLTRB(
             padding_rect.left - border.left,
@@ -139,13 +138,13 @@ public:
         auto border_width = std::max(
             { border.left, border.top, border.right, border.bottom });
         p_.SetStrokeWidth(border_width);
-        p_.SetStrokeColor(get_color(border_color));
-        p_.SetColor(get_color(background_color));
+        p_.SetStrokeColor(border_color);
+        p_.SetColor(background_color);
         p_.DrawRect(rect1.origin(), rect1.size());
     }
-    void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* gr, const style::Value& color) override
+    void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* gr, const style::Color& color) override
     {
-        p_.SetColor(get_color(color));
+        p_.SetColor(color);
         auto glyph_run = (graphics::GlyphRun*)gr;
         p_.DrawGlyphRun(pos, *glyph_run);
     }
@@ -154,16 +153,6 @@ public:
         control->onPaint(*this, rect);
     }
 private:
-    static graphics::Color get_color(const style::Value& v) {
-        if (v.isAuto())
-            return NO_COLOR;
-        if (v.unit == style::ValueUnit::HexColor) {
-            return graphics::Color::FromString(v.string_val);
-        } else if (v.unit == style::ValueUnit::Keyword) {
-            return graphics::Color::FromString(v.keyword_val.c_str());
-        }
-        return NO_COLOR;
-    }
     graphics::Painter& p_;
 };
 

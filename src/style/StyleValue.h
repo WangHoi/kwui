@@ -8,6 +8,7 @@
 #include "base/base.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/variant.h"
+#include "StyleColor.h"
 
 namespace style {
 
@@ -216,9 +217,9 @@ struct Style {
 	Value border_bottom_right_radius;
 	Value border_bottom_left_radius;
 
-	Value border_color;
-	Value background_color;
-	Value color;
+	Color border_color;
+	Color background_color;
+	Color color;
 
 	Value line_height;
 	Value font_family;

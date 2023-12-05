@@ -2,7 +2,7 @@
 #include "EncodingManager.h"
 #include "graphics/GraphicDevice.h"
 #include "graphics/Painter.h"
-#include "graphics/Color.h"
+#include "style/StyleColor.h"
 #include "Dialog.h"
 #include "theme.h"
 #include <dwmapi.h>
@@ -196,7 +196,7 @@ void PopupShadow::OnPaint() {
 	_rt.target->BeginDraw();
 	
 	graphics::Painter p(_rt.target.Get(), scene2d::PointF::fromAll(-1));
-	p.Clear(NO_COLOR);
+	p.Clear(style::Color());
 	if (!_bitmap) {
 		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
 			->GetBitmap(_data.image_name, _render_dpi_scale);

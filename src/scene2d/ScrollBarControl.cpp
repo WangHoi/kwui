@@ -7,8 +7,8 @@ namespace control {
 const char* ScrollbarControl::CONTROL_NAME = "scroll_bar";
 
 ScrollbarControl::ScrollbarControl()
-	: bg_color_(WHITE)
-	, color_(BLUE)
+	: bg_color_(style::named_color::white)
+	, color_(style::named_color::lightblue)
 	, border_radius_(0.0f) {}
 base::string_atom ScrollbarControl::name()
 {

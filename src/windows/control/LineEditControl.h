@@ -2,7 +2,7 @@
 #include "absl/types/optional.h"
 #include "scene2d/Control.h"
 #include "scene2d/geom_types.h"
-#include "windows/graphics/Color.h"
+#include "style/StyleColor.h"
 #include "windows/graphics/TextLayout.h"
 #include <string>
 #include <deque>
@@ -71,15 +71,15 @@ public:
     void onKeyEvent(scene2d::Node* node, scene2d::KeyEvent& evt) override;
     void onImeEvent(scene2d::Node* node, scene2d::ImeEvent& evt) override;
     void onAnimationFrame(scene2d::Node* node, absl::Time timestamp) override;
-    void SetColor(const windows::graphics::Color& c) { _color = c; }
-    void SetBackgroundColor(const windows::graphics::Color& c) { _bg_color = c; }
+    void SetColor(const style::Color& c) { _color = c; }
+    void SetBackgroundColor(const style::Color& c) { _bg_color = c; }
     void SetBackgroundPadding(float padding) { _padding = padding; }
     void SetBorderRadius(float radius) { _border_radius = radius; }
-    inline void SetSelectionColor(const windows::graphics::Color& bg_color, const windows::graphics::Color& text_color) {
+    inline void SetSelectionColor(const style::Color& bg_color, const style::Color& text_color) {
         _selection_bg_color = bg_color;
         _selection_text_color = text_color;
     }
-    inline void SetCaretColor(const windows::graphics::Color& color) { _caret_color = color; }
+    inline void SetCaretColor(const style::Color& color) { _caret_color = color; }
     std::string GetText() const;
     void SetText(const std::string& text);
     void SetFontSize(float font_size);
@@ -135,11 +135,11 @@ private:
     std::wstring _text;
     float _font_size;
     std::unique_ptr<windows::graphics::TextLayout> _layout;
-    windows::graphics::Color _color;
-    windows::graphics::Color _bg_color;
-    windows::graphics::Color _selection_bg_color;
-    windows::graphics::Color _selection_text_color;
-    windows::graphics::Color _caret_color;
+    style::Color _color;
+    style::Color _bg_color;
+    style::Color _selection_bg_color;
+    style::Color _selection_text_color;
+    style::Color _caret_color;
     bool _is_focused;
     int _caret_pos;
     scene2d::RectF _caret_rect; // 坐标相对于文字左上角，不考虑scroll_offset

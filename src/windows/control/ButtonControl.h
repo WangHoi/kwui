@@ -2,7 +2,7 @@
 
 #include "scene2d/Control.h"
 #include "scene2d/geom_types.h"
-#include "windows/graphics/Color.h"
+#include "style/StyleColor.h"
 #include "windows/windows_header.h"
 
 namespace windows {
@@ -20,8 +20,8 @@ public:
     void onSetEventHandler(base::string_atom name, JSValue func) override;
 
 private:
-    graphics::Color bg_color_;
-    graphics::Color bg_hover_color_;
+    style::Color bg_color_;
+    style::Color bg_hover_color_;
     JSValue onclick_func_ = JS_UNINITIALIZED;
 };
 

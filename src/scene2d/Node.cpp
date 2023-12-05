@@ -38,6 +38,8 @@ static void resolve_style(style::OverflowType& style, const style::OverflowType*
 	const style::ValueSpec& spec);
 static void resolve_style(style::BoxSizingType& style, const style::BoxSizingType* parent,
 	const style::ValueSpec& spec);
+static void resolve_style(style::Color& style, const style::Color* parent,
+	const style::ValueSpec& spec);
 
 Node::Node(Scene* scene, NodeType type)
 	: scene_(scene)
@@ -225,8 +227,8 @@ void Node::resolveDefaultStyle()
 	RESOLVE_STYLE_DEFAULT(width, style::Value::auto_());
 	RESOLVE_STYLE_DEFAULT(height, style::Value::auto_());
 
-	RESOLVE_STYLE_DEFAULT(border_color, style::Value::auto_());
-	RESOLVE_STYLE_DEFAULT(background_color, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_color, style::Color());
+	RESOLVE_STYLE_DEFAULT(background_color, style::Color());
 
 	RESOLVE_STYLE_DEFAULT(overflow_x, style::OverflowType::Visible);
 	RESOLVE_STYLE_DEFAULT(overflow_y, style::OverflowType::Visible);
@@ -235,7 +237,7 @@ void Node::resolveDefaultStyle()
 #define RESOLVE_STYLE_DEFAULT_INHERIT(x, def) \
     computed_style_.x = (parent_ ? parent_->computed_style_.x : def)
 	
-	RESOLVE_STYLE_DEFAULT_INHERIT(color, style::Value::fromHexColor("#000000"));
+	RESOLVE_STYLE_DEFAULT_INHERIT(color, style::named_color::black);
 	RESOLVE_STYLE_DEFAULT_INHERIT(line_height, style::Value::fromPixel(18));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_family, style::Value::fromKeyword(base::string_intern("Microsoft YaHei")));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_size, style::Value::fromPixel(12));
@@ -547,6 +549,21 @@ void resolve_style(style::BoxSizingType& style, const style::BoxSizingType* pare
 				style = style::BoxSizingType::ContentBox;
 			else if (spec.value->keyword_val == base::string_intern("border-box"))
 				style = style::BoxSizingType::BorderBox;
+		}
+	}
+}
+
+void resolve_style(style::Color& style, const style::Color* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Keyword) {
+			style = style::Color::fromString(spec.value->keyword_val.c_str());
+		} else if (spec.value->unit == style::ValueUnit::HexColor) {
+			style = style::Color::fromString(spec.value->string_val);
 		}
 	}
 }

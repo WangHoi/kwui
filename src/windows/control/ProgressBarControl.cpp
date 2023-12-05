@@ -8,8 +8,8 @@ const char* ProgressBarControl::CONTROL_NAME = "progress_bar";
 
 ProgressBarControl::ProgressBarControl()
 	: _progress(0.0f)
-	, _bg_color(WHITE)
-	, _color(BLUE)
+	, _bg_color(style::named_color::white)
+	, _color(style::named_color::lightblue)
 	, _border_radius(0.0f) {}
 base::string_atom ProgressBarControl::name()
 {

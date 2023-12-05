@@ -387,7 +387,8 @@ IResult<ShorthandDeclaration> border_shorthand_decl(base::string_atom name, absl
 			continue;
 		const Value& val = spec.value.value();
 		if (val.unit == ValueUnit::Keyword) {
-			// TODO: css named color
+			if (style::named_color::fromString(val.keyword_val.c_str()).has_value())
+				border_color.emplace(spec);
 		} else if (val.unit == ValueUnit::HexColor) {
 			border_color.emplace(spec);
 		} else if (val.unit == ValueUnit::Raw || val.unit == ValueUnit::Pixel

@@ -8,6 +8,8 @@ target_sources(kwui PRIVATE
   StylePseudoClass.h
   StyleRule.h
   StyleRule.cpp
+  StyleColor.h
+  StyleColor.cpp
   Layout.h
   Layout.cpp
   BlockLayout.h

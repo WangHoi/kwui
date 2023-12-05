@@ -2,21 +2,21 @@
 
 namespace windows {
 namespace theme {
-	const graphics::Color BACKGROUND_COLOR = graphics::Color::FromString("#F8F8F8");
-	const graphics::Color ACTION_COLOR = graphics::Color::FromString("#FF6500");
-	const graphics::Color ACTION_HOVERED_COLOR = graphics::Color::FromString("#ED6207");
-    const graphics::Color ACTION_DISABLED_COLOR = graphics::Color::FromString("#CCCCCC");
-	const graphics::Color ACTION_TEXT_COLOR = graphics::Color::FromString("#F3F3F3");
-	const graphics::Color H1_TEXT_COLOR = graphics::Color::FromString("#000000");
-	const graphics::Color H2_TEXT_COLOR = graphics::Color::FromString("#333333");
-	const graphics::Color H3_TEXT_COLOR = graphics::Color::FromString("#777777");
-    const graphics::Color PROGRESS_TEXT_COLOR = graphics::Color::FromString("#909090");
+	const style::Color BACKGROUND_COLOR = style::Color::fromString("#F8F8F8");
+	const style::Color ACTION_COLOR = style::Color::fromString("#FF6500");
+	const style::Color ACTION_HOVERED_COLOR = style::Color::fromString("#ED6207");
+    const style::Color ACTION_DISABLED_COLOR = style::Color::fromString("#CCCCCC");
+	const style::Color ACTION_TEXT_COLOR = style::Color::fromString("#F3F3F3");
+	const style::Color H1_TEXT_COLOR = style::Color::fromString("#000000");
+	const style::Color H2_TEXT_COLOR = style::Color::fromString("#333333");
+	const style::Color H3_TEXT_COLOR = style::Color::fromString("#777777");
+    const style::Color PROGRESS_TEXT_COLOR = style::Color::fromString("#909090");
 	const float H1_FONT_SIZE = 44.0f;
 	const float H2_FONT_SIZE = 24.0f;
 	const float H3_FONT_SIZE = 14.0f;
     const float PROGRESS_FONT_SIZE = 40.0f;
-	const graphics::Color BORDER_COLOR = graphics::Color::FromString("#E5E5E5");
-	const graphics::Color CLOSE_BUTTON_HOVER_COLOR = graphics::Color::FromString("#F45454");
+	const style::Color BORDER_COLOR = style::Color::fromString("#E5E5E5");
+	const style::Color CLOSE_BUTTON_HOVER_COLOR = style::Color::fromString("#F45454");
 
 	const float DIALOG_BORDER_RADIUS = 4.0f;
 	const float DIALOG_SHADOW_MARGIN_PIXELS = 24.0f;
@@ -45,9 +45,9 @@ namespace theme {
 	const scene2d::PointF EXPAND_PNG_POSITION = { 106, 12 };
 	const float EXPAND_DIALOG_HEIGHT = 480;
 
-	const graphics::Color TEXT_EDIT_BACKGROUND_COLOR = graphics::Color::FromString("#ffffff");
-	const graphics::Color TEXT_EDIT_SELECTION_COLOR = graphics::Color::FromString("#FF6500").MakeAlpha(0.25);
-	const graphics::Color TEXT_EDIT_CARET_COLOR = graphics::Color::FromString("#000000");
+	const style::Color TEXT_EDIT_BACKGROUND_COLOR = style::Color::fromString("#ffffff");
+	const style::Color TEXT_EDIT_SELECTION_COLOR = style::Color::fromString("#FF6500").makeAlpha(0.25);
+	const style::Color TEXT_EDIT_CARET_COLOR = style::Color::fromString("#000000");
 	const scene2d::DimensionF TEXT_EDIT_SIZE = { 442, 32 };
 	const scene2d::PointF TEXT_EDIT_POSITION = { 16, 396 };
 	const float TEXT_EDIT_BORDER_RADIUS = 4.0f;

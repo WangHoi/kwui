@@ -1,25 +1,25 @@
 #pragma once
-#include "graphics/Color.h"
+#include "style/StyleColor.h"
 #include <string>
 #include "scene2d/geom_types.h"
 
 namespace windows {
 namespace theme {
-	extern const graphics::Color BACKGROUND_COLOR;
-	extern const graphics::Color ACTION_COLOR;
-	extern const graphics::Color ACTION_HOVERED_COLOR;
-    extern const graphics::Color ACTION_DISABLED_COLOR;
-	extern const graphics::Color ACTION_TEXT_COLOR;
-	extern const graphics::Color H1_TEXT_COLOR;
-	extern const graphics::Color H2_TEXT_COLOR;
-	extern const graphics::Color H3_TEXT_COLOR;
-    extern const graphics::Color PROGRESS_TEXT_COLOR;
+	extern const style::Color BACKGROUND_COLOR;
+	extern const style::Color ACTION_COLOR;
+	extern const style::Color ACTION_HOVERED_COLOR;
+    extern const style::Color ACTION_DISABLED_COLOR;
+	extern const style::Color ACTION_TEXT_COLOR;
+	extern const style::Color H1_TEXT_COLOR;
+	extern const style::Color H2_TEXT_COLOR;
+	extern const style::Color H3_TEXT_COLOR;
+    extern const style::Color PROGRESS_TEXT_COLOR;
 	extern const float H1_FONT_SIZE;
 	extern const float H2_FONT_SIZE;
 	extern const float H3_FONT_SIZE;
     extern const float PROGRESS_FONT_SIZE;
-	extern const graphics::Color BORDER_COLOR;
-	extern const graphics::Color CLOSE_BUTTON_HOVER_COLOR;
+	extern const style::Color BORDER_COLOR;
+	extern const style::Color CLOSE_BUTTON_HOVER_COLOR;
 	
 	extern const float DIALOG_BORDER_RADIUS;
 	extern const float DIALOG_SHADOW_MARGIN_PIXELS;
@@ -47,9 +47,9 @@ namespace theme {
 	extern const scene2d::PointF EXPAND_PNG_POSITION;
 	extern const float EXPAND_DIALOG_HEIGHT;
 
-	extern const graphics::Color TEXT_EDIT_BACKGROUND_COLOR;
-	extern const graphics::Color TEXT_EDIT_SELECTION_COLOR;
-	extern const graphics::Color TEXT_EDIT_CARET_COLOR;
+	extern const style::Color TEXT_EDIT_BACKGROUND_COLOR;
+	extern const style::Color TEXT_EDIT_SELECTION_COLOR;
+	extern const style::Color TEXT_EDIT_CARET_COLOR;
 	extern const scene2d::DimensionF TEXT_EDIT_SIZE;
 	extern const scene2d::PointF TEXT_EDIT_POSITION;
 	extern const float TEXT_EDIT_BORDER_RADIUS;

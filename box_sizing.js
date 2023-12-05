@@ -38,7 +38,7 @@ body {
 }
 .button {
     display: inline-block;
-    border: 1px solid #000;
+    border: 1px solid black;
     padding: 4px;
     width: 80px;
     height: 40px;

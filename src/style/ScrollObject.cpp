@@ -39,7 +39,7 @@ void ScrollObject::onEvent(ScrollObject* sd, scene2d::MouseEvent& event, scene2d
 
 void ScrollObject::paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
-	const auto color = Value::fromHexColor("#ccc");
+	const auto color = Color::fromString("#ccc");
 	if (sd->viewport_rect.height() >= sd->content_size.height) {
 		painter->drawBox(rect, EdgeOffsetF(), color, color);
 		return;
@@ -53,7 +53,7 @@ void ScrollObject::paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* 
 
 void ScrollObject::paintHScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
-	const auto color = Value::fromHexColor("#ccc");
+	const auto color = Color::fromString("#ccc");
 	if (sd->viewport_rect.width() >= sd->content_size.width) {
 		painter->drawBox(rect, EdgeOffsetF(), color, color);
 		return;

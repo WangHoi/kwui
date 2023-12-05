@@ -1,7 +1,7 @@
 #pragma once
 #include "scene2d/Control.h"
 #include "scene2d/geom_types.h"
-#include "windows/graphics/Color.h"
+#include "style/StyleColor.h"
 #include "windows/graphics/TextLayout.h"
 
 namespace windows {
@@ -28,8 +28,8 @@ public:
     float scrollOffset() const { return scroll_offset_; }
     void setScrollOffset(float offset) { scroll_offset_ = offset; }
 
-    inline void setColor(const graphics::Color& c) { color_ = c; }
-    inline void setBackgroundColor(const graphics::Color& c) { bg_color_ = c; }
+    inline void setColor(const style::Color& c) { color_ = c; }
+    inline void setBackgroundColor(const style::Color& c) { bg_color_ = c; }
     void setBorderRadius(float r) { border_radius_ = r; }
 
 private:
@@ -37,8 +37,8 @@ private:
     float scroll_len_ = 0.0f;
     float client_len_ = 0.0f;
     float scroll_offset_ = 0.0f;
-    graphics::Color bg_color_;
-    graphics::Color color_;
+    style::Color bg_color_;
+    style::Color color_;
     float border_radius_;
 };
 

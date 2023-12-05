@@ -1,7 +1,7 @@
 #pragma once
 #include "scene2d/Control.h"
 #include "scene2d/geom_types.h"
-#include "windows/graphics/Color.h"
+#include "style/StyleColor.h"
 #include "windows/graphics/TextLayout.h"
 
 namespace windows {
@@ -16,14 +16,14 @@ public:
     void onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value) override;
     inline float GetProgress() const { return _progress; }
     void SetProgress(float value);
-    inline void SetColor(const graphics::Color& c) { _color = c; }
-    inline void SetBackgroundColor(const graphics::Color& c) { _bg_color = c; }
+    inline void SetColor(const style::Color& c) { _color = c; }
+    inline void SetBackgroundColor(const style::Color& c) { _bg_color = c; }
     void SetBorderRadius(float r) { _border_radius = r; }
 
 private:
     float _progress;
-    graphics::Color _bg_color;
-    graphics::Color _color;
+    style::Color _bg_color;
+    style::Color _color;
     float _border_radius;
 };
 
