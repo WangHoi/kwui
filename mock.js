@@ -84,7 +84,7 @@ var hello_world_full = (<body>
     </div>
     <div style="margin-top: 40; text-align: center">
         <span style="position:relative; font-size: 20">
-            橙讯
+            {"橙讯"}
             <span style="position:absolute; left:100%; top:-10; font-size:10">2.7.0</span>
         </span>
     </div>
@@ -99,7 +99,7 @@ var hello_world_full = (<body>
 var hello_world = (
     <div style="margin-top: 40; text-align: center">
         <span style="position:relative; font-size: 20">
-            橙讯
+            {"橙讯"}
             <span style="position:absolute; left:100%; top:-10; font-size:10">2.7.0</span>
         </span>
     </div>
@@ -116,7 +116,7 @@ var title_bar = (
 var hello_world3 = (
 	<div style="margin-top: 40; text-align: center">
 		<span style="position:relative; font-size: 20">
-			橙讯
+			{"橙讯"}
 			<span style="position:absolute; left:100%; top:-10; font-size:10">2.7.0</span>
 		</span>
 	</div>

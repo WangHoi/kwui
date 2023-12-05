@@ -248,7 +248,7 @@ void TextEditModel::AddCommand(std::unique_ptr<TextEditModel::Command>&& cmd, bo
 }
 LineEditControl::LineEditControl()
     : _font_size(16/*DEFAULT_FONT_SIZE*/)
-    , _color(style::named_color::white), _bg_color(style::named_color::white)
+    , _color(style::named_color::black), _bg_color(style::named_color::white)
     , _selection_bg_color(style::named_color::lightblue), _selection_text_color(style::named_color::white)
     , _caret_color(style::named_color::black), _is_focused(false), _caret_pos(-1)
     , _scroll_offset(0, 0)
