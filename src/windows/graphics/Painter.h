@@ -126,21 +126,28 @@ public:
         p_.PopClipRect();
     }
     void drawBox(const scene2d::RectF& padding_rect,
-        const style::EdgeOffsetF& border,
+        const style::EdgeOffsetF& border_width,
+        const style::CornerRadiusF& border_radius,
         const style::Color& background_color,
         const style::Color& border_color) override
     {
         auto rect1 = scene2d::RectF::fromLTRB(
-            padding_rect.left - border.left,
-            padding_rect.top - border.top,
-            padding_rect.right + border.right,
-            padding_rect.bottom + border.bottom);
-        auto border_width = std::max(
-            { border.left, border.top, border.right, border.bottom });
-        p_.SetStrokeWidth(border_width);
+            padding_rect.left - border_width.left,
+            padding_rect.top - border_width.top,
+            padding_rect.right + border_width.right,
+            padding_rect.bottom + border_width.bottom);
+        float max_border_width = std::max(
+            { border_width.left, border_width.top, border_width.right, border_width.bottom });
+        p_.SetStrokeWidth(max_border_width);
         p_.SetStrokeColor(border_color);
         p_.SetColor(background_color);
-        p_.DrawRect(rect1.origin(), rect1.size());
+        float max_border_raidus = std::max(
+            { border_radius.top_left, border_radius.top_right, border_radius.bottom_right, border_radius.bottom_left });
+        if (max_border_raidus > 0.0f) {
+            p_.DrawRoundedRect(rect1.origin(), rect1.size(), max_border_raidus);
+        } else {
+            p_.DrawRect(rect1.origin(), rect1.size());
+        }
     }
     void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* gr, const style::Color& color) override
     {

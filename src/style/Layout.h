@@ -42,6 +42,27 @@ struct EdgeOffsetF {
 	}
 };
 
+struct CornerRadiusF {
+	float top_left = 0;
+	float top_right = 0;
+	float bottom_right = 0;
+	float bottom_left = 0;
+
+	template <typename Sink>
+	friend void AbslStringify(Sink& sink, const CornerRadiusF& o) {
+		absl::Format(&sink, "CornerRadiusF { ");
+		if (o.left != 0.0f)
+			absl::Format(&sink, "top_left=%.0f, ", o.top_left);
+		if (o.top != 0.0f)
+			absl::Format(&sink, "top_right=%.0f, ", o.top_right);
+		if (o.right != 0.0f)
+			absl::Format(&sink, "bottom_right=%.0f, ", o.bottom_right);
+		if (o.bottom != 0.0f)
+			absl::Format(&sink, "bottom_left=%.0f, ", o.bottom_left);
+		absl::Format(&sink, "}");
+	}
+};
+
 struct BoxF {
 	// margin edges
 	EdgeOffsetF margin;

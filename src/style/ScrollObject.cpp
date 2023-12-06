@@ -41,28 +41,28 @@ void ScrollObject::paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* 
 {
 	const auto color = Color::fromString("#ccc");
 	if (sd->viewport_rect.height() >= sd->content_size.height) {
-		painter->drawBox(rect, EdgeOffsetF(), color, color);
+		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), color, color);
 		return;
 	}
 	float factor = rect.height() / sd->content_size.height;
 	float y1 = sd->viewport_rect.top * factor;
 	float y2 = sd->viewport_rect.bottom * factor;
 	painter->drawBox(scene2d::RectF::fromLTRB(rect.left, rect.top + y1, rect.right, rect.top + y2),
-		EdgeOffsetF(), color, color);
+		EdgeOffsetF(), CornerRadiusF(), color, color);
 }
 
 void ScrollObject::paintHScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
 	const auto color = Color::fromString("#ccc");
 	if (sd->viewport_rect.width() >= sd->content_size.width) {
-		painter->drawBox(rect, EdgeOffsetF(), color, color);
+		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), color, color);
 		return;
 	}
 	float factor = rect.width() / sd->content_size.width;
 	float x1 = sd->viewport_rect.left * factor;
 	float x2 = sd->viewport_rect.right * factor;
 	painter->drawBox(scene2d::RectF::fromLTRB(rect.left + x1, rect.top, rect.left + x2, rect.bottom),
-		EdgeOffsetF(), color, color);
+		EdgeOffsetF(), CornerRadiusF(), color, color);
 }
 
 }

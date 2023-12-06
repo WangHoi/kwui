@@ -80,10 +80,16 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
 		content_rect.emplace(b.contentRect().translated(b.pos));
+		CornerRadiusF border_radius;
+		border_radius.top_left = st.border_top_left_radius.pixelOrZero();
+		border_radius.top_right = st.border_top_right_radius.pixelOrZero();
+		border_radius.bottom_right = st.border_bottom_right_radius.pixelOrZero();
+		border_radius.bottom_left = st.border_bottom_left_radius.pixelOrZero();
 		// LOG(INFO) << "paint box: " << render_rect;
 		painter->drawBox(
 			b.paddingRect().translated(b.pos),
 			b.border,
+			border_radius,
 			st.background_color,
 			st.border_color);
 	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
@@ -94,10 +100,16 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			const InlineBox& ib = ibb.inline_boxes.front();
 			const BlockBox& b = ibb.block_box;
 			content_rect.emplace(b.contentRect().translated(b.pos));
+			CornerRadiusF border_radius;
+			border_radius.top_left = st.border_top_left_radius.pixelOrZero();
+			border_radius.top_right = st.border_top_right_radius.pixelOrZero();
+			border_radius.bottom_right = st.border_bottom_right_radius.pixelOrZero();
+			border_radius.bottom_left = st.border_bottom_left_radius.pixelOrZero();
 			//LOG(INFO) << "paint box: " << render_rect;
 			painter->drawBox(
 				b.paddingRect().translated(b.pos),
 				b.border,
+				border_radius,
 				st.background_color,
 				st.border_color);
 		}

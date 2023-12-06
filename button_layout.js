@@ -59,6 +59,7 @@ var simple_css = `
 		border: 2px solid #888;
 		text-align: left;
 		background-color: #0b0;
+		border-radius: 4px;
 	}
 	button:hover {
 		background-color: #080;

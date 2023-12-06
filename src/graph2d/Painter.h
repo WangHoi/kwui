@@ -8,6 +8,7 @@ class Control;
 }
 namespace style {
 struct EdgeOffsetF;
+struct CornerRadiusF;
 }
 
 namespace graph2d {
@@ -23,6 +24,7 @@ public:
 	virtual void popClipRect() = 0;
 	virtual void drawBox(const scene2d::RectF& border_rect,
 		const style::EdgeOffsetF& inset_border_width,
+		const style::CornerRadiusF& border_radius,
 		const style::Color& background_color,
 		const style::Color& border_color) = 0;
 	virtual void drawGlyphRun(const scene2d::PointF& pos,

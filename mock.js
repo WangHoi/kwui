@@ -55,12 +55,13 @@ img {
 }
 button {
 	padding: 4px;
-	border-width: 1px;
 	border-color: #88e;
+	border-radius: 4px;
+	background-color: orangered;
 	cursor: pointer;
 }
 button:hover {
-	background-color: yellow;
+	background-color: orange;
 }
 button:active {
 	background-color: red;
