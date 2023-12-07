@@ -36,7 +36,6 @@ struct TextBox {
 struct FlowRoot {
 	LayoutObject* root = nullptr;
 	LayoutObject* positioned_parent = nullptr;
-	std::vector<LayoutObject*> relatives;
 };
 
 struct LayoutObject {
@@ -71,6 +70,8 @@ struct LayoutObject {
 	LayoutObject* prev_sibling = nullptr;
 	LayoutObject* first_child = nullptr;
 
+	std::vector<LayoutObject*> positioned_children;
+
 	scene2d::Node* node = nullptr;
 
 	void init(const Style* style, scene2d::Node* node);
@@ -82,7 +83,9 @@ struct LayoutObject {
 	static scene2d::PointF getOffset(LayoutObject* o);
 
 	static scene2d::PointF pos(LayoutObject* o);
-	// relative to o's margin origin
+	/* relative to o's margin origin,
+	 * bounding box of in-flow children's border-box
+	 * and positioned-children's border-box */
 	static absl::optional<scene2d::RectF> getChildrenBoundingRect(LayoutObject* o);
 
 	// relative to o's margin box origin
@@ -132,7 +135,12 @@ private:
 	static void arrangeInlineBlockChildren(LayoutObject* o,
 		absl::optional<float> contg_height,
 		const scene2d::DimensionF& viewport_size);
-	static absl::optional<float> find_first_baseline(LayoutObject* o, float accum_y = 0.0f);
+	static absl::optional<float> findFirstBaseline(LayoutObject* o, float accum_y = 0.0f);
+	/* For box-container: clientRect(),
+	 *   inline box container: bounding rect of first line-box's inline-box's top-left
+	 *     and last line-box's inline-box's bottom-right.
+	 * used by reflow() and getChildrenBoundingRect() */
+	static absl::optional<scene2d::RectF> containingRectForPositionedChildren(LayoutObject* o);
 
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const LayoutObject& o) {

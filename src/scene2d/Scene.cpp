@@ -156,17 +156,11 @@ void Scene::resolveStyle()
 
 void Scene::computeLayout(const scene2d::DimensionF& size)
 {
-	/*
-	root_->computed_style_.display = style::DisplayType::Block;
-	root_->computed_style_.position = style::PositionType::Absolute;
-	root_->computed_style_.width = style::Value::fromPixel(size.width);
-	root_->computed_style_.height = style::Value::fromPixel(size.height);
-	root_->reflowAbsolutelyPositioned(size.width, size.height);
-	*/
 	style::LayoutTreeBuilder b(root_);
 	flow_roots_ = b.build();
 	for (auto& flow_root : flow_roots_) {
 		style::LayoutObject::reflow(flow_root, size);
+		break;
 	}
 
 	// trigger Control::onLayout

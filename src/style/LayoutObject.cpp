@@ -49,18 +49,12 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 	bfc.contg_height.emplace(viewport_size.height);
 
 	if (fl.positioned_parent) {
-		if (absl::holds_alternative<BlockBox>(fl.positioned_parent->box)) {
-			const auto& rect = absl::get<BlockBox>(fl.positioned_parent->box).paddingRect();
-			bfc.contg_width = rect.width();
-			bfc.contg_height.emplace(rect.height());
-		} else if (absl::holds_alternative<std::vector<InlineBox>>(fl.positioned_parent->box)) {
-			const auto& ibs = absl::get<std::vector<InlineBox>>(fl.positioned_parent->box);
-			if (!ibs.empty()) {
-				const InlineBox& first = ibs.front();
-				const InlineBox& last = ibs.back();
-				bfc.contg_width = last.size.width;
-				bfc.contg_height.emplace(std::max(0.0f, last.pos.y + last.size.height - first.pos.y));
-			}
+		auto containing_rect = LayoutObject::containingRectForPositionedChildren(fl.positioned_parent);
+		if (containing_rect.has_value()) {
+			bfc.contg_width = containing_rect.value().width();
+			bfc.contg_height.emplace(containing_rect.value().height());
+		} else {
+			LOG(INFO) << "reflow: containing block rect for positioned parent not found.";
 		}
 	}
 
@@ -329,6 +323,35 @@ absl::optional<scene2d::RectF> LayoutObject::getChildrenBoundingRect(LayoutObjec
 			rect.value().translate(LayoutObject::contentRect(o).origin());
 		}
 	}
+
+	absl::optional<scene2d::RectF> crect = LayoutObject::containingRectForPositionedChildren(o);
+	if (crect.has_value()) {
+		for (LayoutObject* child : o->positioned_children) {
+			auto p = crect.value().origin() + LayoutObject::pos(child);
+			scene2d::RectF child_border_rect = LayoutObject::borderRect(child)
+				.translate(p);
+			if (rect.has_value()) {
+				rect.value().unite(child_border_rect);
+			} else {
+				rect = child_border_rect;
+			}
+			if (child->style->overflow_x == OverflowType::Visible
+				&& child->style->overflow_y == OverflowType::Visible) {
+
+				scene2d::RectF child_content_rect = LayoutObject::contentRect(child);
+				auto child_cbrect = LayoutObject::getChildrenBoundingRect(child);
+				if (child_cbrect.has_value()) {
+					child_cbrect.value().translate(child_content_rect.origin());
+					if (rect.has_value()) {
+						rect.value().unite(child_cbrect.value());
+					} else {
+						rect = child_cbrect.value();
+					}
+				}
+			}
+		}
+	}
+
 	return rect;
 }
 
@@ -618,6 +641,13 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 			arrangeBfcTop(o, bfc, box);
 			arrangeBfcChildren(o, bfc, box, viewport_size);
 			arrangeBfcBottom(o, bfc, box);
+		}
+
+		for (LayoutObject* po : o->positioned_children) {
+			if (po->style->position == PositionType::Absolute
+				|| po->style->position == PositionType::Fixed) {
+				reflow(FlowRoot{ po, o }, viewport_size);
+			}
 		}
 	} else {
 		LOG(WARNING) << "LayoutObject::arrangeBlock " << st.display << " not implemented.";
@@ -1004,6 +1034,10 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 			}
 
 			o->box.emplace<std::vector<InlineBox>>(std::move(merged_boxes));
+
+			for (LayoutObject* po : o->positioned_children) {
+				LayoutObject::reflow(FlowRoot{ po, o }, viewport_size);
+			}
 		}
 	} else if (st.display == DisplayType::InlineBlock) {
 		InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
@@ -1098,6 +1132,10 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	arrangeBfcTop(o, inner_bfc, b);
 	arrangeBfcChildren(o, inner_bfc, b, viewport_size);
 	arrangeBfcBottom(o, inner_bfc, b);
+
+	for (LayoutObject* po : o->positioned_children) {
+		LayoutObject::reflow(FlowRoot{ po, o }, viewport_size);
+	}
 	/*
 	if (st.overflow_y == OverflowType::Visible) {
 		bfc.border_bottom_edge = bfc.margin_bottom_edge = inner_bfc.margin_bottom_edge;
@@ -1172,7 +1210,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	ib.pos.x = inline_pos_x;
 	ib.size = ibb.block_box.marginRect().size();
 	if (scroll_y == ScrollbarPolicy::Hidden) {
-		absl::optional<float> baseline = find_first_baseline(o);
+		absl::optional<float> baseline = findFirstBaseline(o);
 		ib.baseline = baseline.value_or(ib.size.height);
 	} else {
 		ib.baseline = ib.size.height;
@@ -1315,7 +1353,7 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 	bfc.margin_bottom_edge = bfc.border_bottom_edge + box.margin.bottom;
 }
 
-absl::optional<float> LayoutObject::find_first_baseline(LayoutObject* o, float accum_y)
+absl::optional<float> LayoutObject::findFirstBaseline(LayoutObject* o, float accum_y)
 {
 	if (o->ifc.has_value()) {
 		for (const std::unique_ptr<LineBox>& line : o->ifc->lineBoxes()) {
@@ -1333,11 +1371,36 @@ absl::optional<float> LayoutObject::find_first_baseline(LayoutObject* o, float a
 
 	LayoutObject* child = o->first_child;
 	if (child) do {
-		auto baseline = find_first_baseline(child, accum_y);
+		auto baseline = findFirstBaseline(child, accum_y);
 		if (baseline.has_value())
 			return baseline;
 		child = child->next_sibling;
 	} while (child != o->first_child);
+	return absl::nullopt;
+}
+
+absl::optional<scene2d::RectF> LayoutObject::containingRectForPositionedChildren(LayoutObject* o)
+{
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		return absl::get<BlockBox>(o->box).clientRect();
+	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+		if (!ibs.empty()) {
+			const InlineBox& first = ibs.front();
+			const InlineBox& last = ibs.back();
+			return scene2d::RectF::fromLTRB(
+				std::min(first.pos.x, last.pos.x),
+				std::min(first.pos.y, last.pos.y),
+				std::max(first.pos.x + first.size.width, last.pos.x + last.size.width),
+				std::max(first.pos.y + first.size.height, last.pos.y + last.size.height));
+		}
+	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		const auto& ibb = absl::get<InlineBlockBox>(o->box);
+		if (ibb.inline_boxes.size() == 1) {
+			const auto& ib = ibb.inline_boxes.front();
+			return scene2d::RectF::fromOriginSize(ib.pos, ib.size);
+		}
+	}
 	return absl::nullopt;
 }
 
@@ -1384,11 +1447,13 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		addText(node);
 	} else if (node->type() == scene2d::NodeType::NODE_ELEMENT) {
 		if (node->positioned()) {
+			scene2d::Node* pn = node->positionedAncestor();
+			if (pn) {
+				pn->layout_.positioned_children.push_back(&node->layout_);
+			}
 			if (node->absolutelyPositioned()) {
 				abs_pos_nodes_.push_back(node);
 				return;
-			} else {
-				flow_root_->relatives.push_back(&node->layout_);
 			}
 		}
 
