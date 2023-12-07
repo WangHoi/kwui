@@ -13,6 +13,7 @@
 #include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"
 #include "windows/ResourceManager.h"
+#include <ConsoleApi2.h>
 
 int main()
 {
@@ -21,10 +22,12 @@ int main()
     base::initialize_log();
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
+    ::SetConsoleOutputCP(65001);
+
     int exit_code = 0;
     MSG msg;
     PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
-
+    
     windows::ResourceManager::createInstance(::GetModuleHandleW(NULL));
     windows::graphics::GraphicDevice::createInstance()->Init();
 
