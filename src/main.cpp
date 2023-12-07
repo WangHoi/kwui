@@ -46,6 +46,7 @@ int main()
     //ctx.loadFile("d:/projects/kwui/button_layout.js");
     //ctx.loadFile("d:/projects/kwui/test.js");
     //ctx.loadFile("d:/projects/kwui/box_sizing.js");
+    //ctx.loadFile("d:/projects/kwui/scroll_relative.js");
 
     while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);

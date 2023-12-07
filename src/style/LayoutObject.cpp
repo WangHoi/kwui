@@ -87,7 +87,18 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			st.background_color,
 			st.border_color);
 	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
-
+		/*
+		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+		if (!ibs.empty()) {
+			const auto& first = ibs.front();
+			const auto& last = ibs.back();
+			content_rect.emplace(scene2d::RectF::fromLTRB(
+				std::min(first.pos.x, last.pos.x),
+				std::min(first.pos.y, last.pos.y),
+				std::max(first.pos.x + first.size.width, last.pos.x + last.size.width),
+				std::max(first.pos.y + first.size.height, last.pos.y + last.size.height)));
+		}
+		*/
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 		if (!ibb.inline_boxes.empty()) {
@@ -175,14 +186,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 	}
 
 	painter->save();
-	if (st.position == PositionType::Absolute) {
-		painter->setTranslation(
-			content_rect.value_or(scene2d::RectF()).origin()
-			+ scroll_offset,
-			true);
-	} else {
-		painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
-	}
+	painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
 
 	if (o->node && o->node->control_ && content_rect.has_value()) {
 		painter->drawControl(scene2d::RectF::fromOriginSize(scene2d::PointF(), content_rect.value().size()), o->node->control_.get());
@@ -196,6 +200,16 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 
 	painter->restore();
 
+	for (LayoutObject* child : o->positioned_children) {
+		if (child->style->position == PositionType::Relative) {
+			painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
+		} else {
+			painter->setTranslation(containingRectForPositionedChildren(o).value_or(scene2d::RectF()).origin() + scroll_offset, true);
+		}
+		paint(child, painter);
+		painter->restore();
+	}
+
 	if (o->scroll_object.has_value()) {
 		painter->popClipRect();
 	}
@@ -206,6 +220,7 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 	const Style& st = *o->style;
 	LayoutObject* pick_result = nullptr;
 
+	auto saved_pos = pos;
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
 		scene2d::RectF border_rect = b.borderRect().translated(b.pos);
@@ -254,6 +269,17 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 		}
 		child = child->prev_sibling;
 	} while (child != o->first_child->prev_sibling);
+
+	for (auto it = o->positioned_children.rbegin(); it != o->positioned_children.rend(); ++it) {
+		auto p = (*it)->style->position == PositionType::Relative
+			? pos
+			: saved_pos - containingRectForPositionedChildren(o).value_or(scene2d::RectF()).origin();
+		LayoutObject* picked_child = pick(*it, p, flag_mask, out_local_pos);
+		if (picked_child) {
+			pick_result = picked_child;
+			break;
+		}
+	}
 
 	return pick_result;
 }
@@ -530,9 +556,6 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 	BlockBox& b = absl::get<BlockBox>(o->box);
 	scene2d::RectF padding_rect = LayoutObject::paddingRect(o);
 	absl::optional<scene2d::RectF> children_bounding_rect = LayoutObject::getChildrenBoundingRect(o);
-	if (st.overflow_y == OverflowType::Auto || st.overflow_x == OverflowType::Auto) {
-		int kk = 1;
-	}
 	if (st.overflow_y == OverflowType::Auto
 		&& children_bounding_rect.has_value()
 		&& children_bounding_rect.value().bottom > padding_rect.bottom) {
@@ -785,10 +808,11 @@ void LayoutObject::arrangeBfcTop(LayoutObject* o, BlockFormatContext& bfc, Block
 	}
 
 	// Box prefer height
+	box.prefer_height = try_resolve_to_px(st.height, bfc.contg_height);
 	if (st.position == PositionType::Absolute) {
 		if (bfc.contg_height.has_value() && !box.prefer_height.has_value()
-			&& (st.top.isPixel() || st.top.isRaw())
-			&& (st.bottom.isPixel() || st.bottom.isRaw())) {
+			&& (st.top.isPixel() || st.top.isRaw() || st.top.unit == ValueUnit::Percent)
+			&& (st.bottom.isPixel() || st.bottom.isRaw() || st.bottom.unit == ValueUnit::Percent)) {
 			float h = bfc.contg_height.value()
 				- try_resolve_to_px(st.top, bfc.contg_height).value_or(0)
 				- box.margin.top - box.border.top - box.padding.top - box.scrollbar_gutter.top
@@ -796,8 +820,6 @@ void LayoutObject::arrangeBfcTop(LayoutObject* o, BlockFormatContext& bfc, Block
 				- try_resolve_to_px(st.bottom, bfc.contg_height).value_or(0);
 			box.prefer_height.emplace(std::max(0.0f, h));
 		}
-	} else {
-		box.prefer_height = try_resolve_to_px(st.height, bfc.contg_height);
 	}
 }
 
@@ -1133,9 +1155,6 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	arrangeBfcChildren(o, inner_bfc, b, viewport_size);
 	arrangeBfcBottom(o, inner_bfc, b);
 
-	for (LayoutObject* po : o->positioned_children) {
-		LayoutObject::reflow(FlowRoot{ po, o }, viewport_size);
-	}
 	/*
 	if (st.overflow_y == OverflowType::Visible) {
 		bfc.border_bottom_edge = bfc.margin_bottom_edge = inner_bfc.margin_bottom_edge;
@@ -1216,6 +1235,10 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 		ib.baseline = ib.size.height;
 	}
 	line->line_height = std::max(line->line_height, ib.size.height);
+
+	for (LayoutObject* po : o->positioned_children) {
+		LayoutObject::reflow(FlowRoot{ po, o }, viewport_size);
+	}
 }
 
 void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
@@ -1428,6 +1451,12 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 	}
 	flow_root_ = nullptr;
 
+	for (auto it = flow_roots.begin(); it != flow_roots.end();) {
+		if (it->positioned_parent)
+			it = flow_roots.erase(it);
+		else
+			++it;
+	}
 	return flow_roots;
 }
 
@@ -1447,7 +1476,9 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		addText(node);
 	} else if (node->type() == scene2d::NodeType::NODE_ELEMENT) {
 		if (node->positioned()) {
-			scene2d::Node* pn = node->positionedAncestor();
+			scene2d::Node* pn = node->absolutelyPositioned()
+				? node->positionedAncestor()
+				: node->parent();
 			if (pn) {
 				pn->layout_.positioned_children.push_back(&node->layout_);
 			}

@@ -719,7 +719,7 @@ void Dialog::OnMouseWheel(int delta, int buttons, int modifiers)
     node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_SCROLLABLE, &local_pos);
     if (node) {
         float wheel_delta = float(delta) / WHEEL_DELTA;
-        LOG(INFO) << "mouse wheel " << local_pos << ", delta=" << wheel_delta;
+        //LOG(INFO) << "mouse wheel " << local_pos << ", delta=" << wheel_delta;
         scene2d::MouseEvent mouse_wheel(node, scene2d::MOUSE_WHEEL, _mouse_position, local_pos, wheel_delta, buttons, modifiers);
         node->onEvent(mouse_wheel);
     }

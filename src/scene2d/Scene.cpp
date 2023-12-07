@@ -9,7 +9,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "base/log.h"
 #include "graph2d/Painter.h"
-
+#include "absl/time/clock.h"
 namespace scene2d {
 
 Scene::Scene(EventContext& ctx)
@@ -158,9 +158,9 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 {
 	style::LayoutTreeBuilder b(root_);
 	flow_roots_ = b.build();
+
 	for (auto& flow_root : flow_roots_) {
 		style::LayoutObject::reflow(flow_root, size);
-		break;
 	}
 
 	// trigger Control::onLayout
