@@ -111,8 +111,6 @@ struct BlockFormatContext {
 	// Owner of this BFC
 	scene2d::Node* owner = nullptr;
 
-	std::vector<scene2d::Node*> abs_pos_nodes; // 'absolute' and 'fixed' positioned nodes
-
 	float contg_width = 0.0f;
 	float border_bottom_edge = 0;
 	float margin_bottom_edge = 0;

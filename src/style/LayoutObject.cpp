@@ -21,12 +21,17 @@ void LayoutObject::init(const Style* st, scene2d::Node* nd)
 void LayoutObject::reset()
 {
 	flags = 0;
+	bfc = absl::nullopt;
+	ifc = absl::nullopt;
+	anon_span = nullptr;
 	min_width = 0.0f;
 	max_width = std::numeric_limits<float>::infinity();
 	prefer_height = absl::nullopt;
+	scroll_object = absl::nullopt;
 	parent = nullptr;
 	first_child = nullptr;
 	next_sibling = prev_sibling = this;
+	positioned_children.clear();
 }
 
 void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
@@ -202,10 +207,10 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 
 	for (LayoutObject* child : o->positioned_children) {
 		if (child->style->position == PositionType::Relative) {
-			painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
-		} else {
-			painter->setTranslation(containingRectForPositionedChildren(o).value_or(scene2d::RectF()).origin() + scroll_offset, true);
+			continue;
+			//painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
 		}
+		painter->setTranslation(containingRectForPositionedChildren(o).value_or(scene2d::RectF()).origin() + scroll_offset, true);
 		paint(child, painter);
 		painter->restore();
 	}
