@@ -83,6 +83,7 @@ struct LayoutObject {
 	static scene2d::PointF getOffset(LayoutObject* o);
 
 	static scene2d::PointF pos(LayoutObject* o);
+	static void setPos(LayoutObject* o, const scene2d::PointF& pos);
 	/* relative to o's margin origin,
 	 * bounding box of in-flow children's border-box
 	 * and positioned-children's border-box */
@@ -141,6 +142,7 @@ private:
 	 *     and last line-box's inline-box's bottom-right.
 	 * used by reflow() and getChildrenBoundingRect() */
 	static absl::optional<scene2d::RectF> containingRectForPositionedChildren(LayoutObject* o);
+	static void arrangePositionedChildren(LayoutObject* o, const scene2d::DimensionF& viewport_size);
 
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const LayoutObject& o) {

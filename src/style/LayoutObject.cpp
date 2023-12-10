@@ -313,7 +313,15 @@ scene2d::PointF LayoutObject::pos(LayoutObject* o)
 		return absl::get<InlineBlockBox>(o->box).block_box.pos;
 	}
 	return scene2d::PointF();
+}
 
+void LayoutObject::setPos(LayoutObject* o, const scene2d::PointF& pos)
+{
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		absl::get<BlockBox>(o->box).pos = pos;
+	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		absl::get<InlineBlockBox>(o->box).block_box.pos = pos;
+	}
 }
 
 absl::optional<scene2d::RectF> LayoutObject::getChildrenBoundingRect(LayoutObject* o)
@@ -671,12 +679,7 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 			arrangeBfcBottom(o, bfc, box);
 		}
 
-		for (LayoutObject* po : o->positioned_children) {
-			if (po->style->position == PositionType::Absolute
-				|| po->style->position == PositionType::Fixed) {
-				reflow(FlowRoot{ po, o }, viewport_size);
-			}
-		}
+		LayoutObject::arrangePositionedChildren(o, viewport_size);
 	} else {
 		LOG(WARNING) << "LayoutObject::arrangeBlock " << st.display << " not implemented.";
 	}
@@ -1062,9 +1065,7 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 
 			o->box.emplace<std::vector<InlineBox>>(std::move(merged_boxes));
 
-			for (LayoutObject* po : o->positioned_children) {
-				LayoutObject::reflow(FlowRoot{ po, o }, viewport_size);
-			}
+			LayoutObject::arrangePositionedChildren(o, viewport_size);
 		}
 	} else if (st.display == DisplayType::InlineBlock) {
 		InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
@@ -1241,9 +1242,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	}
 	line->line_height = std::max(line->line_height, ib.size.height);
 
-	for (LayoutObject* po : o->positioned_children) {
-		LayoutObject::reflow(FlowRoot{ po, o }, viewport_size);
-	}
+	LayoutObject::arrangePositionedChildren(o, viewport_size);
 }
 
 void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
@@ -1430,6 +1429,46 @@ absl::optional<scene2d::RectF> LayoutObject::containingRectForPositionedChildren
 		}
 	}
 	return absl::nullopt;
+}
+
+void LayoutObject::arrangePositionedChildren(LayoutObject* o, const scene2d::DimensionF& viewport_size)
+{
+	for (LayoutObject* po : o->positioned_children) {
+		if (po->style->position == PositionType::Absolute
+			|| po->style->position == PositionType::Fixed) {
+			reflow(FlowRoot{ po, o }, viewport_size);
+		} else {
+			CHECK(po->style->position == PositionType::Relative);
+			auto& st = *po->style;
+			scene2d::RectF crect = LayoutObject::contentRect(o);
+			EdgeOffsetF off;
+			if (st.left.isAuto() && st.right.isAuto()) {
+				;
+			} else if (st.right.isAuto()) {
+				off.left = try_resolve_to_px(st.left, crect.width()).value_or(0.0f);
+				off.right = -off.left;
+			} else if (st.left.isAuto()) {
+				off.right = try_resolve_to_px(st.right, crect.width()).value_or(0.0f);
+				off.left = -off.right;
+			} else {
+				off.left = try_resolve_to_px(st.left, crect.width()).value_or(0.0f);
+				off.right = -off.left;
+			}
+			if (st.top.isAuto() && st.bottom.isAuto()) {
+				;
+			} else if (st.bottom.isAuto()) {
+				off.top = try_resolve_to_px(st.top, crect.width()).value_or(0.0f);
+				off.bottom = -off.top;
+			} else if (st.top.isAuto()) {
+				off.bottom = try_resolve_to_px(st.bottom, crect.width()).value_or(0.0f);
+				off.top = -off.bottom;
+			} else {
+				off.top = try_resolve_to_px(st.top, crect.width()).value_or(0.0f);
+				off.bottom = -off.top;
+			}
+			LayoutObject::setPos(po, scene2d::PointF(off.left, off.top));
+		}
+	}
 }
 
 LayoutTreeBuilder::LayoutTreeBuilder(scene2d::Node* node)

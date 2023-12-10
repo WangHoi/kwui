@@ -73,7 +73,7 @@ var simple_stylesheet = `
 
 var rel_overflow = (<body>
     <div class="parent rel-pos">
-        <div class="content abs-pos"></div>
+        <div class="content rel-pos"></div>
     </div>
 </body>);
 
