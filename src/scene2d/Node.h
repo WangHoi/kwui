@@ -155,7 +155,7 @@ public:
 	void requestAnimationFrame(scene2d::Node* node);
 
 	void updateTextLayout();
-	void updateControlLayout();
+	void layoutComputed();
 
 	template<typename F>
 	inline void eachChild(F&& f)
@@ -211,10 +211,8 @@ protected:
 	style::StyleSpec specStyle_;
 	style::Style computed_style_;
 
-	bool scrollbar_x = false;
-	bool scrollbar_y = false;
-
 	bool visible_ = true;
+	PointF scroll_offset_;
 
 	friend class Scene;
 	friend class windows::Dialog;

@@ -67,7 +67,7 @@ private:
 	bool match(Node* node, style::Selector* selector);
 	void resolveNodeStyle(Node* node);
 	void paintNode(Node* node, graph2d::PainterInterface* painter);
-	void updateControlLayout(Node* node);
+	void layoutComputed(Node* node);
 
 	EventContext& event_ctx_;
 	std::unique_ptr<script::Context> script_ctx_;

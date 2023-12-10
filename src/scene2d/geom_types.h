@@ -200,6 +200,18 @@ struct RectF {
             std::max(right, r.right),
             std::max(bottom, r.bottom));
     }
+    RectF& moveTo(float x, float y)
+    {
+        right = x + (right - left);
+        bottom = y + (bottom - top);
+        left = x;
+        top = y;
+        return *this;
+    }
+    inline RectF& moveTo(const PointF& p)
+    {
+        return moveTo(p.x, p.y);
+    }
 
     float left;
     float top;

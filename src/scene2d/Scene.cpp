@@ -164,7 +164,7 @@ void Scene::computeLayout(const scene2d::DimensionF& size)
 	}
 
 	// trigger Control::onLayout
-	updateControlLayout(root_);
+	layoutComputed(root_);
 }
 
 void Scene::paint(graph2d::PainterInterface* painter)
@@ -341,10 +341,10 @@ void Scene::paintNode(Node* node, graph2d::PainterInterface* painter)
 	style::LayoutObject::paint(&node->layout_, painter);
 }
 
-void Scene::updateControlLayout(Node* node)
+void Scene::layoutComputed(Node* node)
 {
-	node->updateControlLayout();
-	Node::eachLayoutChild(node, absl::bind_front(&Scene::updateControlLayout, this));
+	node->layoutComputed();
+	Node::eachLayoutChild(node, absl::bind_front(&Scene::layoutComputed, this));
 }
 
 } // namespace scene2d

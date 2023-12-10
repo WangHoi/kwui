@@ -61,6 +61,7 @@ var simple_stylesheet = `
     left: 50%;
     top: 50%;
     background-color: lightgreen;
+	border-radius: 50px;
 }
 .child {
     bottom: 0;

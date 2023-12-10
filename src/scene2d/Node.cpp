@@ -116,8 +116,10 @@ bool Node::hitTest(const PointF &pos, int flags) const
 
 void Node::onEvent(MouseEvent& event)
 {
-	if (layout_.scroll_object.has_value())
+	if (layout_.scroll_object.has_value()) {
 		style::ScrollObject::onEvent(&layout_.scroll_object.value(), event, this);
+		scroll_offset_ = layout_.scroll_object->viewport_rect.origin();
+	}
 	if (control_)
 		control_->onMouseEvent(this, event);
 }
@@ -391,8 +393,18 @@ void Node::updateTextLayout()
 		computed_style_.font_size.pixelOrZero());
 }
 
-void Node::updateControlLayout()
+void Node::layoutComputed()
 {
+	if (layout_.scroll_object.has_value()) {
+		DimensionF viewport_size = layout_.scroll_object->viewport_rect.size();
+		float max_x = std::max(layout_.scroll_object->content_size.width - viewport_size.width, 0.0f);
+		float max_y = std::max(layout_.scroll_object->content_size.height - viewport_size.height, 0.0f);
+		scroll_offset_.x = std::min(scroll_offset_.x, max_x);
+		scroll_offset_.y = std::min(scroll_offset_.y, max_y);
+		layout_.scroll_object->viewport_rect.moveTo(scroll_offset_);
+	} else {
+		scroll_offset_ = PointF();
+	}
 	if (control_) {
 		RectF content_rect = style::LayoutObject::contentRect(&layout_);
 		control_->onLayout(this, content_rect);
