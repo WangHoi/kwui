@@ -174,6 +174,7 @@ public:
 
 protected:
 	bool matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const;
+	void handleScrollEvent(scene2d::MouseEvent& event);
 
 	// Tree nodes
 	Scene* scene_ = nullptr;
@@ -212,7 +213,11 @@ protected:
 	style::Style computed_style_;
 
 	bool visible_ = true;
-	PointF scroll_offset_;
+	struct ScrollData {
+		PointF offset;
+		absl::optional<PointF> mouse_down_v_scrollbar;
+		absl::optional<PointF> mouse_down_h_scrollbar;
+	} scroll_data_;
 
 	friend class Scene;
 	friend class windows::Dialog;

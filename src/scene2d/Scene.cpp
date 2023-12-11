@@ -207,12 +207,12 @@ PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 		p += style::LayoutObject::contentRect(o).origin();
 		p += style::LayoutObject::pos(o);
 		if (o->scroll_object.has_value()) {
-			p -= o->scroll_object.value().viewport_rect.origin();
+			p -= o->scroll_object.value().scroll_offset;
 		}
 		o = o->parent;
 	}
 	if (o->scroll_object.has_value()) {
-		p -= o->scroll_object.value().viewport_rect.origin();
+		p -= o->scroll_object.value().scroll_offset;
 	}
 
 	// TODO: handle scroll in positioned ascendants

@@ -54,11 +54,12 @@ img {
 	height: 80px;
 }
 button {
-	padding: 4px;
+	padding: 4px 8px;
 	border-color: #88e;
 	border-radius: 4px;
 	background-color: orangered;
 	cursor: pointer;
+	margin-left: 4px;
 }
 button:hover {
 	background-color: orange;
@@ -90,7 +91,7 @@ var hello_world_full = (<body>
         </span>
     </div>
     <div style="text-align:center">
-        <button style="margin-top: 40">安装</button>
+        <button style="margin-top: 40;margin-left:0px;font-size:16px;">安装</button>
     </div>
 	<div style="width: 200px; height: 20px; margin:0px auto; background-color: #eee">
 		<line_edit />

@@ -117,8 +117,7 @@ bool Node::hitTest(const PointF &pos, int flags) const
 void Node::onEvent(MouseEvent& event)
 {
 	if (layout_.scroll_object.has_value()) {
-		style::ScrollObject::onEvent(&layout_.scroll_object.value(), event, this);
-		scroll_offset_ = layout_.scroll_object->viewport_rect.origin();
+		handleScrollEvent(event);
 	}
 	if (control_)
 		control_->onMouseEvent(this, event);
@@ -396,14 +395,19 @@ void Node::updateTextLayout()
 void Node::layoutComputed()
 {
 	if (layout_.scroll_object.has_value()) {
-		DimensionF viewport_size = layout_.scroll_object->viewport_rect.size();
+		// update: ScrollData <-- ScrollObject
+		DimensionF viewport_size = layout_.scroll_object->viewport_size;
 		float max_x = std::max(layout_.scroll_object->content_size.width - viewport_size.width, 0.0f);
 		float max_y = std::max(layout_.scroll_object->content_size.height - viewport_size.height, 0.0f);
-		scroll_offset_.x = std::min(scroll_offset_.x, max_x);
-		scroll_offset_.y = std::min(scroll_offset_.y, max_y);
-		layout_.scroll_object->viewport_rect.moveTo(scroll_offset_);
+		scroll_data_.offset.x = std::min(scroll_data_.offset.x, max_x);
+		scroll_data_.offset.y = std::min(scroll_data_.offset.y, max_y);
+		
+		// sync: ScrollData --> ScrollObject
+		layout_.scroll_object->scroll_offset = scroll_data_.offset;
+		layout_.scroll_object->mouse_down_v_scrollbar = scroll_data_.mouse_down_v_scrollbar.has_value();
+		layout_.scroll_object->mouse_down_h_scrollbar = scroll_data_.mouse_down_h_scrollbar.has_value();
 	} else {
-		scroll_offset_ = PointF();
+		scroll_data_.offset = PointF();
 	}
 	if (control_) {
 		RectF content_rect = style::LayoutObject::contentRect(&layout_);
@@ -429,6 +433,54 @@ bool Node::matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const
 		}
 	}
 	return true;
+}
+
+void Node::handleScrollEvent(scene2d::MouseEvent& event)
+{
+	static const float SCROLLBAR_WHEEL_FACTOR = 16.0f;
+
+	if (!layout_.scroll_object.has_value())
+		return;
+
+	style::ScrollObject& so = layout_.scroll_object.value();
+
+	if (event.cmd == scene2d::MOUSE_WHEEL) {
+		float d = -event.wheel_delta * SCROLLBAR_WHEEL_FACTOR;
+		if (event.modifiers == scene2d::LSHIFT_MODIFIER || event.modifiers == scene2d::RSHIFT_MODIFIER) {
+			float w = so.viewport_size.width;
+			float x = std::clamp(so.scroll_offset.x + d, 0.0f, so.content_size.width - w);
+			if (so.scroll_offset.x != x) {
+				so.scroll_offset.x = x;
+				scroll_data_.offset = so.scroll_offset;
+				requestPaint();
+			}
+		} else {
+			float h = so.viewport_size.height;
+			float y = std::clamp(so.scroll_offset.y + d, 0.0f, so.content_size.height - h);
+			if (so.scroll_offset.y != y) {
+				so.scroll_offset.y = y;
+				scroll_data_.offset = so.scroll_offset;
+				requestPaint();
+			}
+		}
+	} else if (event.cmd == scene2d::MOUSE_DOWN) {
+		if (event.button & scene2d::LEFT_BUTTON) {
+			style::ScrollObject::HitTestResult part = style::ScrollObject::hitTestPart(&so, event.pos);
+			if (part == style::ScrollObject::HitTestResult::HScrollBar) {
+				scroll_data_.mouse_down_h_scrollbar.emplace(event.pos);
+				requestPaint();
+			} else if (part == style::ScrollObject::HitTestResult::VScrollBar) {
+				scroll_data_.mouse_down_v_scrollbar.emplace(event.pos);
+				requestPaint();
+			}
+		}
+	} else if (event.cmd == scene2d::MOUSE_UP) {
+		if (event.button & scene2d::LEFT_BUTTON) {
+			scroll_data_.mouse_down_h_scrollbar = absl::nullopt;
+			scroll_data_.mouse_down_v_scrollbar = absl::nullopt;
+			requestPaint();
+		}
+	}
 }
 
 void resolve_style(style::DisplayType& style, const style::DisplayType* parent,
