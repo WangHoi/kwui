@@ -44,6 +44,18 @@ void Runtime::gc()
     JS_RunGC(rt_);
 }
 
+void Runtime::addContextSetupFunc(std::function<void(Context*)>&& new_ctx_func)
+{
+    new_ctx_funcs_.emplace_back(std::move(new_ctx_func));
+}
+
+void Runtime::eachContext(absl::FunctionRef<void(Context*)> func)
+{
+    for (Context* ctx : contexts_) {
+        func(ctx);
+    }
+}
+
 void Context::initSceneClass()
 {
     JS_NewClassID(&scene_class_id);
@@ -101,6 +113,11 @@ Context::Context(Runtime* rt)
     JS_SetPropertyStr(ctx_, global_obj, "app", app_);
 
     JS_FreeValue(ctx_, global_obj);
+
+    rt->contexts_.push_back(this);
+    for (auto& func : rt->new_ctx_funcs_) {
+        rt->eachContext(func);
+    }
 }
 
 Context::~Context()

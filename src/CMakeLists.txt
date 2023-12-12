@@ -1,5 +1,6 @@
 add_executable(kwui "")
 
+add_subdirectory(api)
 add_subdirectory(base)
 add_subdirectory(script)
 add_subdirectory(style)

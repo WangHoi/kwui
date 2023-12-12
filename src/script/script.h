@@ -14,6 +14,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/status/statusor.h"
+#include "absl/functional/function_ref.h"
 
 namespace scene2d {
 class Scene;
@@ -29,6 +30,8 @@ public:
 		return &rt;
 	}
 	void gc();
+	void addContextSetupFunc(std::function<void(Context*)>&& new_ctx_func);
+	void eachContext(absl::FunctionRef<void(Context*)> func);
 
 private:
 	Runtime()
@@ -43,6 +46,8 @@ private:
 	}
 
 	JSRuntime* rt_;
+	std::vector<Context*> contexts_;
+	std::vector<std::function<void(Context*)>> new_ctx_funcs_;
 	friend class Context;
 };
 
