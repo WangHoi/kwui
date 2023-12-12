@@ -9,16 +9,20 @@ struct ScrollObject {
 	scene2d::DimensionF content_size;
 	scene2d::DimensionF viewport_size;
 	scene2d::PointF scroll_offset;
-	bool mouse_down_v_scrollbar = false;
-	bool mouse_down_h_scrollbar = false;
+	bool v_scrollbar_active = false;
+	bool v_scrollbar_hover = false;
+	bool h_scrollbar_active = false;
+	bool h_scrollbar_hover = false;
 
-	enum HitTestResult {
+	enum class HitTestResult {
 		None,
 		Client,
-		HScrollBar,
-		HScrollTrack,
-		VScrollBar,
-		VScrollTrack,
+		HScrollbarTrackStartPiece,
+		HScrollbarThumb,
+		HScrollbarTrackEndPiece,
+		VScrollbarTrackStartPiece,
+		VScrollbarThumb,
+		VScrollbarTrackEndPiece,
 		ResizeCorner,
 	};
 

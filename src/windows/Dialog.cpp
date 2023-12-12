@@ -711,6 +711,13 @@ void Dialog::OnMouseMove(int buttons, int modifiers) {
     //c2_log("OnMouseMove %.0f, %.0f\n", _mouse_position.x, _mouse_position.y);
     UpdateMouseTracking();
     UpdateHoveredNode();
+    base::object_refptr<scene2d::Node> node = _active_node ? _active_node.upgrade() : _hovered_node.upgrade();
+    if (node) {
+        scene2d::PointF local_pos = _mouse_position - _scene->mapPointToScene(node.get(), scene2d::PointF());
+        scene2d::MouseEvent mouse_move(node.get(), scene2d::MOUSE_MOVE, _mouse_position, local_pos, scene2d::NO_BUTTON, buttons, modifiers);
+        node->onEvent(mouse_move);
+        RequestPaint();
+    }
 }
 void Dialog::OnMouseWheel(int delta, int buttons, int modifiers)
 {

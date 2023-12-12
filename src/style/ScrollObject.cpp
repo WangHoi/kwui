@@ -24,19 +24,33 @@ ScrollObject::HitTestResult ScrollObject::hitTestPart(const ScrollObject* sd, co
 		float factor = sd->viewport_size.height / sd->content_size.height;
 		float y1 = sd->scroll_offset.y * factor;
 		float y2 = (sd->scroll_offset.y + sd->viewport_size.height) * factor;
-		return (y1 <= pos.y && pos.y < y2) ? HitTestResult::VScrollBar : HitTestResult::VScrollTrack;
+		if (pos.y < y1) {
+			return HitTestResult::VScrollbarTrackStartPiece;
+		} else if (y1 <= pos.y && pos.y < y2) {
+			return HitTestResult::VScrollbarThumb;
+		} else {
+			return HitTestResult::VScrollbarTrackEndPiece;
+		}
 	} else if (pos.y >= sd->viewport_size.height) {
 		float factor = sd->viewport_size.width / sd->content_size.width;
 		float x1 = sd->scroll_offset.x * factor;
 		float x2 = (sd->scroll_offset.x + sd->viewport_size.width) * factor;
-		return (x1 <= pos.x && pos.x < x2) ? HitTestResult::HScrollBar : HitTestResult::HScrollTrack;
+		if (pos.x < x1) {
+			return HitTestResult::HScrollbarTrackStartPiece;
+		} else if (x1 <= pos.x && pos.x < x2) {
+			return HitTestResult::HScrollbarThumb;
+		} else {
+			return HitTestResult::HScrollbarTrackEndPiece;
+		}
 	}
 	return HitTestResult::None;
 }
 
 void ScrollObject::paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
-	const auto color = sd->mouse_down_v_scrollbar ? Color::fromString("#aaa") : Color::fromString("#ccc");
+	const auto color = sd->v_scrollbar_active
+		? Color::fromString("#aaa")
+		: (sd->v_scrollbar_hover ? Color::fromString("#bbb") : Color::fromString("#ccc"));
 	if (sd->viewport_size.height >= sd->content_size.height) {
 		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), color, color);
 		return;
@@ -50,7 +64,9 @@ void ScrollObject::paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* 
 
 void ScrollObject::paintHScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
-	const auto color = sd->mouse_down_h_scrollbar ? Color::fromString("#aaa") : Color::fromString("#ccc");
+	const auto color = sd->h_scrollbar_active
+		? Color::fromString("#aaa")
+		: (sd->h_scrollbar_hover ? Color::fromString("#bbb") : Color::fromString("#ccc"));
 	if (sd->viewport_size.width >= sd->content_size.width) {
 		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), color, color);
 		return;

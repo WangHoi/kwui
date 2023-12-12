@@ -404,8 +404,10 @@ void Node::layoutComputed()
 		
 		// sync: ScrollData --> ScrollObject
 		layout_.scroll_object->scroll_offset = scroll_data_.offset;
-		layout_.scroll_object->mouse_down_v_scrollbar = scroll_data_.mouse_down_v_scrollbar.has_value();
-		layout_.scroll_object->mouse_down_h_scrollbar = scroll_data_.mouse_down_h_scrollbar.has_value();
+		layout_.scroll_object->v_scrollbar_active = scroll_data_.v_scrollbar_active_pos.has_value();
+		layout_.scroll_object->v_scrollbar_hover = scroll_data_.v_scrollbar_hover;
+		layout_.scroll_object->h_scrollbar_active = scroll_data_.h_scrollbar_active_pos.has_value();
+		layout_.scroll_object->h_scrollbar_hover = scroll_data_.h_scrollbar_hover;
 	} else {
 		scroll_data_.offset = PointF();
 	}
@@ -466,18 +468,85 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 	} else if (event.cmd == scene2d::MOUSE_DOWN) {
 		if (event.button & scene2d::LEFT_BUTTON) {
 			style::ScrollObject::HitTestResult part = style::ScrollObject::hitTestPart(&so, event.pos);
-			if (part == style::ScrollObject::HitTestResult::HScrollBar) {
-				scroll_data_.mouse_down_h_scrollbar.emplace(event.pos);
+			if (part == style::ScrollObject::HitTestResult::HScrollbarThumb
+				&& !scroll_data_.h_scrollbar_active_pos.has_value()) {
+				scroll_data_.h_scrollbar_active_pos.emplace(event.pos);
 				requestPaint();
-			} else if (part == style::ScrollObject::HitTestResult::VScrollBar) {
-				scroll_data_.mouse_down_v_scrollbar.emplace(event.pos);
+			} else if (part == style::ScrollObject::HitTestResult::VScrollbarThumb
+				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
+				scroll_data_.v_scrollbar_active_pos.emplace(event.pos);
+				requestPaint();
+			} else if (part == style::ScrollObject::HitTestResult::VScrollbarTrackStartPiece
+				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
+				
+				style::ScrollObject& so = layout_.scroll_object.value();
+				float factor = so.viewport_size.height / so.content_size.height;
+				float y1 = so.scroll_offset.y * factor;
+				float y2 = (so.scroll_offset.y + so.viewport_size.height) * factor;
+
+				scroll_data_.offset.y = std::max(0.0f, scroll_data_.offset.y - (y2 - y1));
+				so.scroll_offset = scroll_data_.offset;
+
+				requestPaint();
+			} else if (part == style::ScrollObject::HitTestResult::VScrollbarTrackEndPiece
+				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
+
+				style::ScrollObject& so = layout_.scroll_object.value();
+				float factor = so.viewport_size.height / so.content_size.height;
+				float y1 = so.scroll_offset.y * factor;
+				float y2 = (so.scroll_offset.y + so.viewport_size.height) * factor;
+
+				scroll_data_.offset.y = std::min(so.content_size.height - so.viewport_size.height,
+					scroll_data_.offset.y + (y2 - y1));
+				so.scroll_offset = scroll_data_.offset;
+
+				requestPaint();
+			} else if (part == style::ScrollObject::HitTestResult::HScrollbarTrackStartPiece
+				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
+
+				style::ScrollObject& so = layout_.scroll_object.value();
+				float factor = so.viewport_size.width / so.content_size.width;
+				float x1 = so.scroll_offset.x * factor;
+				float x2 = (so.scroll_offset.x + so.viewport_size.width) * factor;
+
+				scroll_data_.offset.x = std::max(0.0f, scroll_data_.offset.x - (x2 - x1));
+				so.scroll_offset = scroll_data_.offset;
+
+				requestPaint();
+			} else if (part == style::ScrollObject::HitTestResult::HScrollbarTrackEndPiece
+				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
+
+				style::ScrollObject& so = layout_.scroll_object.value();
+				float factor = so.viewport_size.width / so.content_size.width;
+				float x1 = so.scroll_offset.x * factor;
+				float x2 = (so.scroll_offset.x + so.viewport_size.width) * factor;
+
+				scroll_data_.offset.x = std::min(so.content_size.width - so.viewport_size.width,
+					scroll_data_.offset.x + (x2 - x1));
+				so.scroll_offset = scroll_data_.offset;
+
+				requestPaint();
+			}
+		}
+	} else if (event.cmd == scene2d::MOUSE_MOVE || event.cmd == scene2d::MOUSE_OVER || event.cmd == scene2d::MOUSE_OUT) {
+		scroll_data_.h_scrollbar_hover = false;
+		scroll_data_.v_scrollbar_hover = false;
+		if (!event.buttons) {
+			style::ScrollObject::HitTestResult part = style::ScrollObject::hitTestPart(&so, event.pos);
+			if (part == style::ScrollObject::HitTestResult::HScrollbarThumb
+				&& !scroll_data_.h_scrollbar_active_pos.has_value()) {
+				scroll_data_.h_scrollbar_hover = true;
+				requestPaint();
+			} else if (part == style::ScrollObject::HitTestResult::VScrollbarThumb
+				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
+				scroll_data_.v_scrollbar_hover = true;
 				requestPaint();
 			}
 		}
 	} else if (event.cmd == scene2d::MOUSE_UP) {
 		if (event.button & scene2d::LEFT_BUTTON) {
-			scroll_data_.mouse_down_h_scrollbar = absl::nullopt;
-			scroll_data_.mouse_down_v_scrollbar = absl::nullopt;
+			scroll_data_.h_scrollbar_active_pos = absl::nullopt;
+			scroll_data_.v_scrollbar_active_pos = absl::nullopt;
 			requestPaint();
 		}
 	}
