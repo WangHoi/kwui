@@ -9,21 +9,11 @@ namespace kwui {
 
 struct FunctionDef {
 	std::string name;
-	int min_args;
 	ScriptFunction* func;
-};
 
-struct ScriptWrapper
-{
-	template <ScriptValue(*func)(ScriptEngine* ctx, ScriptValue this_val, int argc, ScriptValue* argv)>
-	static JSValue thunk(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-	{
-		//auto ctx = (script::Context*)JS_GetContextOpaque(ctx);
-		
-		return nullptr;
-	}
+	FunctionDef(const char* n, ScriptFunction* f)
+		: name(n), func(f) {}
 };
-
 
 class ScriptEngine::Private {
 public:
@@ -42,14 +32,43 @@ public:
 	{
 		JSContext* j = ctx->get();
 		JSValue global = JS_GetGlobalObject(j);
-		JS_SetPropertyStr(j, global, def->name.c_str(),
-			JS_NewCFunction(j, &ScriptWrapper::thunk<def->func>, def->name.c_str(), def->min_args));
+		
+		JS_NewClassID(&script_func_clsid);
+		JS_NewClass(JS_GetRuntime(j), script_func_clsid, &script_func_class);
+		JSValue jobj = JS_NewObjectClass(j, script_func_clsid);
+		JS_SetOpaque(jobj, def->func);
+
+		JS_SetPropertyStr(j, global, def->name.c_str(), jobj);
+		
 		JS_FreeValue(j, global);
 	}
 	
+
+	static JSValue callScriptFunc(
+		JSContext* ctx, JSValueConst func_obj,
+		JSValueConst this_val, int argc, JSValueConst* argv,
+		int flags)
+	{
+		ScriptFunction* func = (ScriptFunction*)JS_GetOpaque2(ctx, func_obj, script_func_clsid);
+
+		func(argc, &ScriptValue(ctx, argv[0]));
+
+		return JS_UNDEFINED;
+	}
+	static JSClassID script_func_clsid;
+	static JSClassDef script_func_class;
+
 	ScriptEngine* q = nullptr;
 	std::vector<std::unique_ptr<FunctionDef>> global_funcs;
-	std::vector<std::unique_ptr<ModuleRegister>> modules;
+	//std::vector<std::unique_ptr<ModuleRegister>> modules;
+};
+
+JSClassID ScriptEngine::Private::script_func_clsid = {};
+JSClassDef ScriptEngine::Private::script_func_class = {
+	"ScriptFunction",
+	nullptr, // finalizer
+	nullptr, // gcmark
+	&ScriptEngine::Private::callScriptFunc // call
 };
 
 ScriptEngine* ScriptEngine::get()
@@ -64,23 +83,23 @@ ScriptEngine* ScriptEngine::get()
 	return g_engine;
 }
 
-void ScriptEngine::addGlobalFunction(const char* name, int min_args, ScriptFunction* func)
+void ScriptEngine::addGlobalFunction(const char* name, ScriptFunction* func)
 {
-	d->global_funcs.emplace_back(std::make_unique<FunctionDef>(name, min_args, func));
+	d->global_funcs.emplace_back(std::make_unique<FunctionDef>(name, func));
 	script::Runtime::get()->eachContext(absl::bind_front(
 		&Private::setGlobalFunction, d, d->global_funcs.back().get()));
 }
 
-ScriptEngine::ModuleRegister& ScriptEngine::addGlobalModule(const char* name)
-{
-	d->modules.emplace_back(std::make_unique<ModuleRegister>());
-	return *d->modules.back();
-}
+//ScriptEngine::ModuleRegister& ScriptEngine::addGlobalModule(const char* name)
+//{
+//	d->modules.emplace_back(std::make_unique<ModuleRegister>());
+//	return *d->modules.back();
+//}
 
 ScriptEngine::ScriptEngine()
 	: d(new Private(this))
 {}
-
+/*
 class ScriptEngine::ModuleRegister::Private {
 public:
 	Private(ModuleRegister* mr)
@@ -102,5 +121,5 @@ void ScriptEngine::ModuleRegister::addProperty(const char* name, ScriptPropertyG
 
 ScriptEngine::ModuleRegister::ModuleRegister()
 	: d(new Private(this)) {}
-
+*/
 }

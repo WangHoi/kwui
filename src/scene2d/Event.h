@@ -16,7 +16,7 @@ enum EventGroups {
 
 class Node;
 struct Event {
-    base::object_refptr<Node> target;
+    Node* target;
     int cmd;
 
     Event(Node* t, int c)
