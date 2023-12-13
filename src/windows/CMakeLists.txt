@@ -1,19 +1,22 @@
 add_subdirectory(graphics)
 add_subdirectory(control)
 
-target_sources(kwui PUBLIC
-    Dialog.h
-    PopupShadow.h
-    EncodingManager.h
-    encoding_helpers.h
-    ResourceManager.h
+list(APPEND kwui_pub_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/Dialog.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PopupShadow.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/EncodingManager.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/encoding_helpers.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ResourceManager.h
 )
-target_sources(kwui PRIVATE
-    Dialog.cpp
-    PopupShadow.cpp
-    EncodingManager.cpp
-    encoding_helpers.cpp
-    theme.h
-    theme.cpp
-    ResourceManager.cpp
+list(APPEND kwui_priv_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/Dialog.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PopupShadow.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/EncodingManager.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/encoding_helpers.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/theme.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/theme.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ResourceManager.cpp
 )
+
+set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)
+set(kwui_priv_srcs ${kwui_priv_srcs} PARENT_SCOPE)

@@ -1,3 +1,4 @@
 #pragma once
 
-#include "Application.h"
+#include "kwui/Application.h"
+#include "kwui/ScriptEngine.h"

@@ -1,14 +1,16 @@
-target_sources(kwui PUBLIC
-    control.h)
-target_sources(kwui PRIVATE
-    ButtonControl.h    
-    ButtonControl.cpp
-    ImageControl.h    
-    ImageControl.cpp
-    ImageButtonControl.h    
-    ImageButtonControl.cpp
-    LineEditControl.h
-    LineEditControl.cpp
-    ProgressBarControl.h
-    ProgressBarControl.cpp
+list(APPEND kwui_pub_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/control.h)
+list(APPEND kwui_priv_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/ButtonControl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ButtonControl.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ImageControl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ImageControl.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ImageButtonControl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ImageButtonControl.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/LineEditControl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/LineEditControl.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ProgressBarControl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ProgressBarControl.cpp
 )
+set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)
+set(kwui_priv_srcs ${kwui_priv_srcs} PARENT_SCOPE)

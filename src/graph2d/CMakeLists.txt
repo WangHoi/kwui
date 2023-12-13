@@ -1,6 +1,9 @@
-target_sources(kwui PUBLIC
-    graph2d.h    
-    TextLayout.h
-    Painter.h)
-target_sources(kwui PRIVATE
-    graph2d.cpp)
+list(APPEND kwui_pub_srcs
+    ${CMAKE_CURRENT_SOURCE_DIR}/graph2d.h    
+    ${CMAKE_CURRENT_SOURCE_DIR}/TextLayout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Painter.h)
+list(APPEND kwui_priv_srcs
+    ${CMAKE_CURRENT_SOURCE_DIR}/graph2d.cpp)
+
+set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)
+set(kwui_priv_srcs ${kwui_priv_srcs} PARENT_SCOPE)

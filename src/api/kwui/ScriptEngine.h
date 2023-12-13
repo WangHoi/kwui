@@ -1,18 +1,22 @@
 #pragma once
+#include "kwui_export.h"
 #include "ScriptValue.h"
 
 namespace kwui {
 
-class ScriptEngine {
+class KWUI_EXPORT ScriptEngine {
 public:
 	//class ModuleRegister;
 
 	static ScriptEngine* get();
+	static void release();
 	void addGlobalFunction(const char* name, ScriptFunction* func);
+	void loadFile(const char* path);
 	//ModuleRegister& addGlobalModule(const char* name);
 
 private:
 	ScriptEngine();
+	~ScriptEngine();
 	ScriptEngine(const ScriptEngine&) = delete;
 	ScriptEngine& operator=(const ScriptEngine&) = delete;
 
