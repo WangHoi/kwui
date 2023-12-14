@@ -74,6 +74,10 @@ line_edit {
 }
 `;
 
+var onclick = function() {
+	console.log("button clicked");
+}
+
 var hello_world_full = (<body>
     <div style="background-color: #0f0">橙讯安装程序</div>
     <div class="title-bar" style="background-color: #e0ffff80">
@@ -91,7 +95,7 @@ var hello_world_full = (<body>
         </span>
     </div>
     <div style="text-align:center">
-        <button style="margin-top: 40;margin-left:0px;font-size:16px;">安装</button>
+        <button style="margin-top: 40;margin-left:0px;font-size:16px;" onclick={onclick}>安装</button>
     </div>
 	<div style="width: 200px; height: 20px; margin:0px auto; background-color: #eee">
 		<line_edit />

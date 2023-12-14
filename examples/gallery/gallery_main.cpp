@@ -1,4 +1,4 @@
-#include "api/kwui.h"
+#include "kwui.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

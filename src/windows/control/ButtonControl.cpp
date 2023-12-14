@@ -14,6 +14,11 @@ const char* ButtonControl::CONTROL_NAME = "button";
 ButtonControl::ButtonControl()
 {}
 
+ButtonControl::~ButtonControl()
+{
+	int k = 1;
+}
+
 base::string_atom ButtonControl::name()
 {
 	return base::string_intern(CONTROL_NAME);
@@ -37,7 +42,7 @@ void ButtonControl::onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt)
 		LOG(INFO) << "button click";
 		JSContext* jctx = node->scene()->scriptContext().get();
 		if (JS_IsFunction(jctx, onclick_func_)) {
-			JS_EvalFunction(jctx, onclick_func_);
+			JS_Call(jctx, onclick_func_, JS_UNDEFINED, 0, nullptr);
 		}
 	}
 }

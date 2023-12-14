@@ -10,3 +10,5 @@ add_subdirectory(3rdparty/quickjspp)
 add_subdirectory(3rdparty/fifo_map)
 
 add_subdirectory(src)
+
+add_subdirectory(examples)

@@ -12,6 +12,7 @@ class ButtonControl : public scene2d::Control {
 public:
     static const char* CONTROL_NAME;
     ButtonControl();
+    ~ButtonControl();
     base::string_atom name() override;
     bool hitTest(const scene2d::PointF& pos, int flags) const override;
     void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;

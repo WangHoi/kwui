@@ -32,24 +32,19 @@ set(dep_libs
     Imm32.lib)
 
 # Build shared library
+#[[
 add_library(kwui SHARED "")
 target_sources(kwui PUBLIC ${kwui_pub_srcs} PRIVATE ${kwui_priv_srcs})
 target_compile_options(kwui PUBLIC /utf-8)
 target_compile_definitions(kwui PRIVATE -DKWUI_SHARED_LIBRARY)
 target_include_directories(kwui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(kwui PUBLIC ${dep_libs})
+]]
 
 # Build static library
-#[[
 add_library(c31 STATIC "")
 target_sources(c31 PUBLIC ${kwui_pub_srcs} PRIVATE ${kwui_priv_srcs})
 target_compile_options(c31 PUBLIC /utf-8)
 target_compile_definitions(c31 PUBLIC -DKWUI_STATIC_LIBRARY)
 target_include_directories(c31 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(c31 PUBLIC ${dep_libs})
-]]
-
-# Build test application
-add_executable(hello main.cpp)
-target_link_libraries(hello PUBLIC kwui)
-

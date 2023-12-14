@@ -22,6 +22,7 @@ public:
 class Node;
 class Control {
 public:
+    virtual ~Control() {}
     virtual base::string_atom name() = 0;
     virtual int eventGroups() const { return NO_GROUP; }
     virtual void onAttach(Node *node) {}
