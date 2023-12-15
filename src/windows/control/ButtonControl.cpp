@@ -59,5 +59,13 @@ void ButtonControl::onSetEventHandler(base::string_atom name, JSValue func)
 	}
 }
 
+void ButtonControl::onDetach(scene2d::Node* node)
+{
+	if (onclick_func_ != JS_UNINITIALIZED) {
+		JS_FreeValue(node->scene()->scriptContext().get(), onclick_func_);
+		onclick_func_ = JS_UNINITIALIZED;
+	}
+}
+
 }
 }

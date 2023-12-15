@@ -19,6 +19,7 @@ public:
     void onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt) override;
     void onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value) override;
     void onSetEventHandler(base::string_atom name, JSValue func) override;
+    void onDetach(scene2d::Node* node) override;
 
 private:
     style::Color bg_color_;
