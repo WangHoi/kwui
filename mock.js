@@ -1,12 +1,8 @@
 "use strict";
 "use math";
 
-function Div(props, kids) {
-	return <div>
-		<p>{props.a}</p>
-		{kids}
-		<p>next</p>
-	</div>;
+function Button(props, kids) {
+	return <button>{kids[0]}</button>;
 }
 
 var simple_css = `

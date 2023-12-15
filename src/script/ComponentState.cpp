@@ -1,5 +1,6 @@
 #include "ComponentState.h"
 #include "absl/base/macros.h"
+#include "absl/log/log.h"
 
 namespace script {
 
@@ -10,6 +11,7 @@ static void component_state_finalizer(JSRuntime* rt, JSValue val)
     //JSPointData* s = JS_GetOpaque(val, g_component_state_clsid);
     /* Note: 's' can be NULL in case JS_SetOpaque() was not called */
     //js_free_rt(rt, s);
+    LOG(INFO) << "__ComponentState finalizer called";
 }
 
 // 	constructor(renderFn, props, children)

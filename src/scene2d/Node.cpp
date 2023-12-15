@@ -70,6 +70,7 @@ Node::Node(Scene* scene, NodeType type, base::string_atom tag)
 Node::Node(Scene* scene, NodeType type, JSValue comp_state)
 	: Node(scene, type)
 {
+	//comp_state_ = JS_DupValue(scene->script_ctx_->get(), comp_state);
 	comp_state_ = comp_state;
 	weakptr_ = new base::WeakObjectProxy<Node>(this);
 	weakptr_->retain();
