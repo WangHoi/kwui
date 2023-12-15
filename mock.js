@@ -1,38 +1,6 @@
 "use strict";
 "use math";
 
-class __ComponentState__ extends Object {
-	renderFn;
-	props;
-	children;
-
-	constructor(builder, props, children) {
-		super();
-		this.renderFn = builder;
-		this.props = props;
-		this.children = children;
-	}
-	update() {
-		// this.scene.updateComponent(this);
-	}
-	render() {
-		return this.renderFn(this.props, this.children);
-	}
-};
-
-
-function JSX(tag, atts, kids) {
-	if (typeof tag == 'function') {
-		return new __ComponentState__(tag, atts, kids);
-	} else {
-		return {
-			tag,
-			atts,
-			kids,
-		};
-	}
-}
-
 function Div(props, kids) {
 	return <div>
 		<p>{props.a}</p>

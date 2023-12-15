@@ -94,6 +94,40 @@ JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, 
 static JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 
+static JSValue jsx_func(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+    /*
+    function JSX(tag, atts, kids) {
+	    if (typeof tag == 'function') {
+		    return new __ComponentState__(tag, atts, kids);
+	    } else {
+		    return {
+			    tag,
+			    atts,
+			    kids,
+		    };
+	    }
+    }
+    */
+    if (JS_IsFunction(ctx, argv[0])) {
+        return ComponentState::newObject(ctx, argc, argv);
+    } else {
+        JSValue obj = JS_NewObject(ctx);
+        JS_SetPropertyStr(ctx, obj, "tag", JS_DupValue(ctx, argv[0]));
+        JS_SetPropertyStr(ctx, obj, "atts", JS_DupValue(ctx, argv[1]));
+        JS_SetPropertyStr(ctx, obj, "kids", JS_DupValue(ctx, argv[2]));
+        return obj;
+    }
+}
+
+static void register_jsx_function(JSContext* ctx)
+{
+    JSValue jsx = JS_NewCFunction(ctx, &jsx_func, "JSX", 3);
+    JSValue global = JS_GetGlobalObject(ctx);
+    JS_SetPropertyStr(ctx, global, "JSX", jsx);
+    JS_FreeValue(ctx, global);
+}
+
 Context::Context(Runtime* rt)
 {
     ctx_ = JS_NewContext(rt->rt_);
@@ -102,6 +136,8 @@ Context::Context(Runtime* rt)
     js_init_module_os(ctx_, "os");
     js_std_add_helpers(ctx_, 0, nullptr);
     initSceneClass();
+    register_jsx_function(ctx_);
+    ComponentState::registerClass(ctx_);
 
     auto global_obj = JS_GetGlobalObject(ctx_);
 

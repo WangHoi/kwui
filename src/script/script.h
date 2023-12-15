@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ComponentState.h"
+
 #include "quickjs.h"
 #include "quickjs-libc.h"
 //#include "cutils.h"
