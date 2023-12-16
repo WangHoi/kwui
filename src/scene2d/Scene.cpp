@@ -49,29 +49,32 @@ Node* Scene::createComponentNode(JSValue comp_data)
 	JSContext* jctx = script_ctx_->get();
 	if (JS_IsString(comp_data)) {
 		std::string text = script_ctx_->parse<std::string>(comp_data);
-		//LOG(INFO) << "createTextNode: " << text;
+		LOG(INFO) << "createTextNode: " << text;
 		return createTextNode(text);
 	} else if (JS_IsArray(jctx, comp_data)) {
-		//LOG(INFO) << "createElementNode: " << "fragment";
+		LOG(INFO) << "createElementNode: " << "fragment";
 		Node* node = createElementNode(base::string_intern("fragment"));
 		int64_t length = 0;
 		JS_GetPropertyLength(jctx, &length, comp_data);
 		for (uint32_t i = 0; i < (uint32_t)length; ++i) {
 			JSValue child_comp_data = JS_GetPropertyUint32(jctx, comp_data, i);
 			Node* child = createComponentNode(child_comp_data);
+			JS_FreeValue(jctx, child_comp_data);
 			node->appendChild(child);
 		}
 		return node;
 	} else if (JS_IsObject(comp_data)) {
 		JSValue render = JS_GetPropertyStr(jctx, comp_data, "render");
-		absl::Cleanup _ = [&]() { JS_FreeValue(jctx, render); };
+		absl::Cleanup _ = [&]() {
+			JS_FreeValue(jctx, render);
+			};
 		if (JS_IsFunction(jctx, render)) {
-			//LOG(INFO) << "createComponentNode";
+			LOG(INFO) << "createComponentNode";
 			Node* node = createComponentNodeWithState(comp_data);
-			JS_SetOpaque(comp_data, node->weakProxy());
 
 			JSValue child_comp_data = JS_Call(jctx, render, comp_data, 0, nullptr);
 			node->appendChild(createComponentNode(child_comp_data));
+			JS_FreeValue(jctx, child_comp_data);
 			return node;
 		} else {
 			JSValue tag = JS_GetPropertyStr(jctx, comp_data, "tag");
@@ -84,7 +87,7 @@ Node* Scene::createComponentNode(JSValue comp_data)
 				};
 			if (JS_IsString(tag) && JS_IsObject(atts) && JS_IsArray(jctx, kids)) {
 				std::string tagName = script_ctx_->parse<std::string>(tag);
-				//LOG(INFO) << "createElementNode: " << tagName;
+				LOG(INFO) << "createElementNode: " << tagName;
 				Node* node = createElementNode(base::string_intern(tagName));
 
 				// Setup properties
@@ -97,7 +100,6 @@ Node* Scene::createComponentNode(JSValue comp_data)
 					JSValue child_comp_data = JS_GetPropertyUint32(jctx, kids, i);
 					Node* child = createComponentNode(child_comp_data);
 					JS_FreeValue(jctx, child_comp_data);
-
 					node->appendChild(child);
 				}
 

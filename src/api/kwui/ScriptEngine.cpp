@@ -20,9 +20,14 @@ static ScriptEngine* g_engine = nullptr;
 class ScriptEngine::Private {
 public:
 	Private(ScriptEngine* se)
-		: q(se), default_ctx(script::Runtime::get())
+		: q(se), default_ctx(std::make_unique<script::Context>(script::Runtime::createInstance()))
 	{
 		script::Runtime::get()->addContextSetupFunc(absl::bind_front(&Private::initContext, this));
+	}
+	~Private()
+	{
+		default_ctx = nullptr;
+		script::Runtime::releaseInstance();
 	}
 	void initContext(script::Context* ctx)
 	{
@@ -101,7 +106,7 @@ public:
 	static JSClassDef script_func_class;
 
 	ScriptEngine* q = nullptr;
-	script::Context default_ctx;
+	std::unique_ptr<script::Context> default_ctx;
 	std::vector<std::unique_ptr<FunctionDef>> global_funcs;
 	//std::vector<std::unique_ptr<ModuleRegister>> modules;
 };
@@ -140,7 +145,7 @@ void ScriptEngine::addGlobalFunction(const char* name, ScriptFunction* func)
 
 void ScriptEngine::loadFile(const char* path)
 {
-	d->default_ctx.loadFile(path);
+	d->default_ctx->loadFile(path);
 }
 
 //ScriptEngine::ModuleRegister& ScriptEngine::addGlobalModule(const char* name)
@@ -151,7 +156,8 @@ void ScriptEngine::loadFile(const char* path)
 
 ScriptEngine::ScriptEngine()
 	: d(new Private(this))
-{}
+{
+}
 ScriptEngine::~ScriptEngine()
 {
 	delete d;

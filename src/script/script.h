@@ -27,10 +27,9 @@ namespace script {
 class Context;
 class Runtime {
 public:
-	static Runtime* get() {
-		static Runtime rt;
-		return &rt;
-	}
+	static Runtime* createInstance();
+	static void releaseInstance();
+	static Runtime* get();
 	void gc();
 	void addContextSetupFunc(std::function<void(Context*)>&& new_ctx_func);
 	void eachContext(absl::FunctionRef<void(Context*)> func);

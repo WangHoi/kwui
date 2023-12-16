@@ -39,6 +39,28 @@ static const JSCFunctionListEntry scene_methods[] = {
     func_def("updateComponent", 1, scene_update_component),
 };
 
+static Runtime* g_rt = nullptr;
+
+Runtime* Runtime::createInstance()
+{
+    if (!g_rt)
+        g_rt = new Runtime();
+    return g_rt;
+}
+
+void Runtime::releaseInstance()
+{
+    if (g_rt) {
+        delete g_rt;
+        g_rt = nullptr;
+    }
+}
+
+Runtime* Runtime::get()
+{
+    return g_rt;
+}
+
 void Runtime::gc()
 {
     JS_RunGC(rt_);
@@ -226,8 +248,9 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
         }
         JS_FreeCString(ctx, s);
     }
-    dialog->GetScene()->root()->appendChild(
-        dialog->GetScene()->createComponentNode(argv[0]));
+    scene2d::Node* content_root = dialog->GetScene()->createComponentNode(argv[0]);
+    if (content_root)
+        dialog->GetScene()->root()->appendChild(content_root);
     LOG(INFO) << "show dialog";
     dialog->Show();
     return JS_UNDEFINED;

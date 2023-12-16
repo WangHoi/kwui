@@ -1468,7 +1468,7 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 	flow_roots.push_back({ &root_->layout_, nullptr });
 	initFlowRoot(root_);
 	flow_root_ = &flow_roots.back();
-	scene2d::Node::eachChild(root_, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
+	scene2d::Node::eachLayoutChild(root_, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
 
 	while (!abs_pos_nodes_.empty()) {
 		auto nodes = std::move(abs_pos_nodes_);
@@ -1478,7 +1478,7 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 			flow_roots.push_back({ &node->layout_, po });
 			flow_root_ = &flow_roots.back();
 			initFlowRoot(node);
-			scene2d::Node::eachChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
+			scene2d::Node::eachLayoutChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
 		}
 	}
 	flow_root_ = nullptr;
@@ -1558,7 +1558,7 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 			current_->flags |= LayoutObject::NEW_BFC_FLAG;
 			current_->bfc.emplace(node);
 		}
-		scene2d::Node::eachChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
+		scene2d::Node::eachLayoutChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
 		endChild();
 	}
 }

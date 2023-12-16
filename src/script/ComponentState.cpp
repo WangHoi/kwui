@@ -1,6 +1,8 @@
 #include "ComponentState.h"
+#include "scene2d/Node.h"
 #include "absl/base/macros.h"
 #include "absl/log/log.h"
+#include "absl/cleanup/cleanup.h"
 
 namespace script {
 
@@ -8,9 +10,9 @@ static JSClassID g_component_state_clsid;
 
 static void component_state_finalizer(JSRuntime* rt, JSValue val)
 {
-    //JSPointData* s = JS_GetOpaque(val, g_component_state_clsid);
-    /* Note: 's' can be NULL in case JS_SetOpaque() was not called */
-    //js_free_rt(rt, s);
+    auto weak_ptr = (base::WeakObjectProxy<scene2d::Node>*)JS_GetOpaque(val, g_component_state_clsid);
+    if (weak_ptr)
+        weak_ptr->release();
     LOG(INFO) << "__ComponentState finalizer called";
 }
 
@@ -52,6 +54,11 @@ JSValue component_state_render(JSContext* ctx, JSValueConst this_val, int argc, 
     render_fn = JS_GetPropertyStr(ctx, this_val, "renderFn");
     args[0] = JS_GetPropertyStr(ctx, this_val, "props");
     args[1] = JS_GetPropertyStr(ctx, this_val, "children");
+    absl::Cleanup _ = [&]() {
+        JS_FreeValue(ctx, render_fn);
+        JS_FreeValue(ctx, args[0]);
+        JS_FreeValue(ctx, args[1]);
+        };
     return JS_Call(ctx, render_fn, this_val, 2, args);
 }
 
@@ -110,6 +117,7 @@ JSValue ComponentState::newObject(JSContext* ctx, int argc, JSValueConst* argv)
     JSValue global = JS_GetGlobalObject(ctx);
     JSValue klass = JS_GetPropertyStr(ctx, global, g_component_state_class.class_name);
     JSValue obj = JS_CallConstructor(ctx, klass, argc, argv);
+    JS_FreeValue(ctx, klass);
     JS_FreeValue(ctx, global);
     return obj;
 }
