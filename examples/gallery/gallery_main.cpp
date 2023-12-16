@@ -7,6 +7,7 @@ using namespace kwui;
 int main(int argc, char* argv[])
 {
     Application app(argc, argv);
-    ScriptEngine::get()->loadFile("d:/projects/kwui/examples/gallery/assets/gallery.js");
+    ScriptEngine::get()
+        ->loadFile("d:/projects/kwui/examples/gallery/assets/gallery.mjs");
     return app.exec();
 }

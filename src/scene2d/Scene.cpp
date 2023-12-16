@@ -111,14 +111,16 @@ Node* Scene::createComponentNode(JSValue comp_data)
 				return nullptr;
 			}
 		}
+	} else if (JS_IsException(comp_data)) {
+		js_std_dump_error(jctx);
 	}
 	LOG(WARNING) << "Unknown: " << script_ctx_->parse<std::string>(comp_data);
 	return nullptr;
 }
 
-void Scene::updateComponent(JSValue comp_state)
+void Scene::updateComponentNode(Node* node, JSValue comp_state)
 {
-
+	LOG(INFO) << "Scene::updateComponentNode";
 }
 
 Node* Scene::pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos)

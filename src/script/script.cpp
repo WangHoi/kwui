@@ -2,6 +2,7 @@
 #include "scene2d/Scene.h"
 #include "windows/Dialog.h"
 #include "windows/ResourceManager.h"
+#include "Keact.h"
 
 namespace script {
 
@@ -109,7 +110,7 @@ JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, 
     auto scene = scene_weakptr->get();
     if (!scene)
         return JS_UNDEFINED;
-    scene->updateComponent(argv[1]);
+    scene->updateComponentNode(nullptr, argv[1]);
     return JS_UNDEFINED;
 }
 
@@ -160,6 +161,7 @@ Context::Context(Runtime* rt)
     initSceneClass();
     register_jsx_function(ctx_);
     ComponentState::registerClass(ctx_);
+    Keact::initModule(ctx_);
 
     auto global_obj = JS_GetGlobalObject(ctx_);
 
@@ -197,9 +199,9 @@ void Context::loadFile(const std::string& fname)
     content.resize(size);
     fseek(f, 0, SEEK_SET);
     fread(content.data(), 1, size, f);
-    int eval_type = JS_DetectModule(content.data(), content.size())
+    int eval_type = absl::EndsWithIgnoreCase(fname, ".mjs")
         ? JS_EVAL_TYPE_MODULE
-        : JS_EVAL_TYPE_GLOBAL;
+        : (JS_DetectModule(content.data(), content.size()) ? JS_EVAL_TYPE_MODULE : JS_EVAL_TYPE_GLOBAL);
     JSValue ret = JS_Eval(ctx_, content.data(), size, fname.c_str(), eval_type);
     if (JS_IsException(ret)) {
         js_std_dump_error(ctx_);

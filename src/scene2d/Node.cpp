@@ -73,13 +73,16 @@ Node::Node(Scene* scene, NodeType type, JSValue comp_state)
 	comp_state_ = JS_DupValue(scene_->script_ctx_->get(), comp_state);
 	weakptr_ = new base::WeakObjectProxy<Node>(this);
 	weakptr_->retain();
-	
-	JS_SetOpaque(comp_state_, weakptr_);
-	weakptr_->retain();
+	script::ComponentState::setNode(comp_state_, this);
 }
 
 Node::~Node()
 {
+	if (comp_state_ != JS_UNINITIALIZED) {
+		script::ComponentState::setNode(comp_state_, nullptr);
+		JS_FreeValue(scene_->script_ctx_->get(), comp_state_);
+		comp_state_ = JS_UNINITIALIZED;
+	}
 	if (control_) {
 		control_->onDetach(this);
 		control_ = nullptr;
@@ -92,10 +95,6 @@ Node::~Node()
 		child->release();
 	}
 	children_.clear();
-	if (comp_state_ != JS_UNINITIALIZED) {
-		JS_FreeValue(scene_->script_ctx_->get(), comp_state_);
-		comp_state_ = JS_UNINITIALIZED;
-	}
 }
 
 void Node::appendChild(Node* child)

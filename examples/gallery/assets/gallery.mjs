@@ -1,8 +1,13 @@
 "use strict";
 "use math";
+//import { useHook } from 'Keact';
 
 function Button(props, kids) {
-	return <button>{kids[0]}</button>;
+	//let [n, setN] = useHook(0, (_, n) => [n, true]);
+	let a = useHook(1, 2);
+	console.log(a);
+	let n =2;
+	return <button>{kids[0] + n}</button>;
 }
 
 var simple_css = `
