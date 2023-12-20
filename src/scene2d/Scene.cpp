@@ -70,7 +70,7 @@ Node* Scene::createComponentNode(JSValue comp_data)
 			};
 		if (JS_IsFunction(jctx, render)) {
 			LOG(INFO) << "createComponentNode";
-			Node* node = createComponentNodeWithState(comp_data);
+			Node* node = new Node(this, NodeType::NODE_COMPONENT, comp_data);
 
 			JSValue child_comp_data = JS_Call(jctx, render, comp_data, 0, nullptr);
 			node->appendChild(createComponentNode(child_comp_data));
@@ -118,9 +118,22 @@ Node* Scene::createComponentNode(JSValue comp_data)
 	return nullptr;
 }
 
-void Scene::updateComponentNode(Node* node, JSValue comp_state)
+void Scene::updateComponentNode(Node* node, JSValue comp_data)
 {
 	LOG(INFO) << "Scene::updateComponentNode";
+	CHECK(node->type_ == NodeType::NODE_COMPONENT)
+		<< "Scene::updateComponentNode(): expect component node";
+	JSContext* ctx = script_ctx_->get();
+	
+	size_t child_count = node->children_.size();
+	Node* new_child = createComponentNode(comp_data);
+	node->appendChild(new_child);
+	for (size_t i = 0; i < child_count; ++i) {
+		Node* old_child = node->removeChildAt(0);
+		old_child->release();
+	}
+	requestUpdate();
+	requestPaint();
 }
 
 Node* Scene::pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos)
@@ -239,11 +252,6 @@ PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 	}
 
 	return p;
-}
-
-Node* Scene::createComponentNodeWithState(JSValue comp_state)
-{
-	return new Node(this, NodeType::NODE_COMPONENT, comp_state);
 }
 
 void Scene::setupProps(Node* node, JSValue props)

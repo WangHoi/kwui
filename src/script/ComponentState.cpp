@@ -12,8 +12,10 @@ JSClassID ComponentState::JS_CLASS_ID = 0;
 static void component_state_finalizer(JSRuntime* rt, JSValue val)
 {
 	auto ptr = (ComponentState*)JS_GetOpaque(val, ComponentState::JS_CLASS_ID);
-	if (ptr)
+	if (ptr) {
+		ptr->cleanup(rt);
 		delete ptr;
+	}
 	LOG(INFO) << "__ComponentState finalizer called";
 }
 
@@ -50,8 +52,17 @@ fail:
 	return JS_EXCEPTION;
 }
 
+// TODO: move into class ComponentState
 JSValue component_state_render(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+	auto me = (ComponentState*)JS_GetOpaque(this_val, ComponentState::JS_CLASS_ID);
+	if (me) {
+		me->curr_slot_ = 0;
+	}
+
+	JSValue global = JS_GetGlobalObject(ctx);
+	JS_SetPropertyStr(ctx, global, "__comp_state", JS_DupValue(ctx, this_val));
+
 	JSValue render_fn, args[2];
 	render_fn = JS_GetPropertyStr(ctx, this_val, "renderFn");
 	args[0] = JS_GetPropertyStr(ctx, this_val, "props");
@@ -61,12 +72,17 @@ JSValue component_state_render(JSContext* ctx, JSValueConst this_val, int argc, 
 		JS_FreeValue(ctx, args[0]);
 		JS_FreeValue(ctx, args[1]);
 		};
-	return JS_Call(ctx, render_fn, this_val, 2, args);
+	JSValue ret = JS_Call(ctx, render_fn, this_val, 2, args);
+	
+	JS_SetPropertyStr(ctx, global, "__comp_state", JS_UNDEFINED);
+	JS_FreeValue(ctx, global);
+	return ret;
 }
 
 static JSClassDef g_component_state_class = {
 	"__ComponentState",
 	component_state_finalizer, // finalizer
+	&ComponentState::gcMark,
 };
 
 // TODO: remove duplicated func in script.cpp
@@ -124,42 +140,96 @@ JSValue ComponentState::newObject(JSContext* ctx, int argc, JSValueConst* argv)
 	return obj;
 }
 
-void ComponentState::setNode(JSValue this_val, scene2d::Node* node)
+void ComponentState::setNode(JSContext* ctx, JSValue this_val, scene2d::Node* node)
 {
-	JS_SetOpaque(this_val, node);
+	auto comp_state = (ComponentState*)JS_GetOpaque2(ctx, this_val, JS_CLASS_ID);
+	if (comp_state)
+		comp_state->node_ = node;
 }
 
 JSValue ComponentState::useHook(JSContext* ctx, JSValue this_val, JSValue initial_state, JSValue mutater)
 {
 	JSValue updater = JS_NewCFunctionData(ctx, &ComponentState::useHookUpdater, 1, (int)curr_slot_, 1, &this_val);
+	absl::Cleanup _ = [&]() {
+		JS_FreeValue(ctx, updater);
+		};
 	if (curr_slot_ < slots_.size()) {
 		JSValue argv[2] = { slots_[curr_slot_].state, updater };
 		return JS_NewFastArray(ctx, 2, argv);
 	} else if (curr_slot_ > slots_.size()) {
-		JS_FreeValue(ctx, updater);
 		return JS_UNDEFINED;
 	} else {
 		++curr_slot_;
-		slots_.emplace_back(Slot{ initial_state, mutater });
+		slots_.emplace_back(Slot{
+			JS_DupValue(ctx, initial_state),
+			JS_DupValue(ctx, mutater),
+			});
 		JSValue argv[2] = { slots_[curr_slot_ - 1].state, updater };
 		return JS_NewFastArray(ctx, 2, argv);
 	}
 }
 
-JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv, int magic, JSValue* func_data)
+void ComponentState::cleanup(JSRuntime* rt)
 {
-	LOG(INFO) << "useHookUpdater";
-	auto me = (ComponentState*)JS_GetOpaque(this_val, ComponentState::JS_CLASS_ID);
+	for (auto& slot : slots_) {
+		JS_FreeValueRT(rt, slot.state);
+		JS_FreeValueRT(rt, slot.mutater);
+	}
+	slots_.clear();
+	curr_slot_ = 0;
+}
+
+JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/, int argc, JSValueConst* argv, int magic, JSValue* func_data)
+{
+	LOG(INFO) << "useHookUpdater slot " << magic;
+	auto me = (ComponentState*)JS_GetOpaque(func_data[0], ComponentState::JS_CLASS_ID);
 	if (me && me->node_) {
+		CHECK(magic >= 0 && magic < (int)me->slots_.size());
 		auto scene = me->node_->scene();
 		if (scene) {
-			JSValue render_func = JS_GetPropertyStr(ctx, this_val, "render");
-			JSValue comp_data = JS_Call(ctx, render_func, this_val, 0, nullptr);
-			scene->updateComponentNode(me->node_, comp_data);
-			JS_FreeValue(ctx, comp_data);
+			bool need_render = false;
+			
+			if (JS_IsFunction(ctx, me->slots_[magic].mutater)) {
+				JSValue mutater_args[2] = { me->slots_[magic].state, argv[0] };
+				JSValue ret = JS_Call(ctx, me->slots_[magic].mutater, func_data[0], 2, mutater_args);
+				if (JS_IsArray(ctx, ret)) {
+					int64_t len = 0;
+					JS_GetPropertyLength(ctx, &len, ret);
+					if (len == 2) {
+						JSValue new_state = JS_GetPropertyUint32(ctx, ret, 0);
+						JSValue should_render = JS_GetPropertyUint32(ctx, ret, 1);
+						JS_FreeValue(ctx, me->slots_[magic].state);
+						me->slots_[magic].state = new_state;
+						need_render = JS_ToBool(ctx, should_render);
+						JS_FreeValue(ctx, should_render);
+					}
+				}
+				JS_FreeValue(ctx, ret);
+			}
+
+			if (need_render) {
+				JSValue render_func = JS_GetPropertyStr(ctx, func_data[0], "render");
+				JSValue comp_data = JS_Call(ctx, render_func, func_data[0], 0, nullptr);
+				absl::Cleanup _ = [&]() {
+					JS_FreeValue(ctx, render_func);
+					JS_FreeValue(ctx, comp_data);
+					};
+				scene->updateComponentNode(me->node_, comp_data);
+			}
 		}
 	}
 	return JS_UNDEFINED;
+}
+
+void ComponentState::gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)
+{
+	auto me = (ComponentState*)JS_GetOpaque(val, ComponentState::JS_CLASS_ID);
+	if (me) {
+		for (auto& slot : me->slots_) {
+			JS_MarkValue(rt, slot.state, mark_func);
+			JS_MarkValue(rt, slot.mutater, mark_func);
+		}
+	}
 }
 
 }

@@ -6,6 +6,8 @@ namespace scene2d {
 class Node;
 }
 
+JSValue component_state_render(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+
 namespace script {
 class ComponentState {
 public:
@@ -14,10 +16,12 @@ public:
 	// register class to global object
 	static void registerClass(JSContext* ctx);
 	static JSValue newObject(JSContext* ctx, int argc, JSValueConst* argv);
-	static void setNode(JSValue this_val, scene2d::Node* node);
+	static void setNode(JSContext* ctx, JSValue this_val, scene2d::Node* node);
 
 	JSValue useHook(JSContext* ctx, JSValue this_val, JSValue initial_state, JSValue mutater);
+	void cleanup(JSRuntime* rt);
 
+	static void gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func);
 private:
 	static JSValue useHookUpdater(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv, int magic, JSValue* func_data);
 
@@ -31,6 +35,7 @@ private:
 	std::vector<Slot> slots_;
 
 	friend class scene2d::Node;
+	friend JSValue component_state_render(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 };
 
 }

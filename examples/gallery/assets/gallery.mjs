@@ -3,14 +3,22 @@
 //import { useHook } from 'Keact';
 
 function Button(props, kids) {
-	//let [n, setN] = useHook(0, (_, n) => [n, true]);
-	let a = useHook(1, 2);
-	console.log(a);
-	let n =2;
-	return <button>{kids[0] + n}</button>;
+	let [n, setN] = useHook(0, (_, n) => {
+		console.log("update n to ");
+		return [n, true];
+		});
+	let onclick = () => setN(n + 1);
+	return (<div class="center" style="width:100px;margin-top:100px">
+		<div><button onclick={onclick}>{kids[0]}</button></div>
+		<p>{"点击了" + n + "次"}</p>
+		</div>);
 }
 
 var simple_css = `
+.center {
+	margin-left: auto;
+	margin-right: auto;
+}
 button {
 	padding: 4px 8px;
 	border-color: #88e;

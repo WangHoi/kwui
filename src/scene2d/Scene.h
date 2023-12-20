@@ -62,7 +62,6 @@ public:
 	}
 
 private:
-	Node* createComponentNodeWithState(JSValue comp_data);
 	void setupProps(Node* node, JSValue props);
 	bool match(Node* node, style::Selector* selector);
 	void resolveNodeStyle(Node* node);

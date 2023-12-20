@@ -526,6 +526,9 @@ void Dialog::RequestPaint() {
     InvalidateRect(_hwnd, NULL, FALSE);
 }
 void Dialog::RequestUpdate() {
+    _scene->resolveStyle();
+    _scene->computeLayout(_size);
+
     POINT point;
     RECT wnd_rect;
     if (GetCursorPos(&point) && GetWindowRect(_hwnd, &wnd_rect)) {

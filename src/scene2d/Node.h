@@ -91,6 +91,8 @@ public:
 		return parent_;
 	}
 	void appendChild(Node* child);
+	// keep return child's reference 
+	Node* removeChildAt(size_t idx);
 	inline const std::vector<Node*>& children() const
 	{
 		return children_;

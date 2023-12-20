@@ -73,13 +73,13 @@ Node::Node(Scene* scene, NodeType type, JSValue comp_state)
 	comp_state_ = JS_DupValue(scene_->script_ctx_->get(), comp_state);
 	weakptr_ = new base::WeakObjectProxy<Node>(this);
 	weakptr_->retain();
-	script::ComponentState::setNode(comp_state_, this);
+	script::ComponentState::setNode(scene->scriptContext().get(), comp_state_, this);
 }
 
 Node::~Node()
 {
 	if (comp_state_ != JS_UNINITIALIZED) {
-		script::ComponentState::setNode(comp_state_, nullptr);
+		script::ComponentState::setNode(scene_->scriptContext().get(), comp_state_, nullptr);
 		JS_FreeValue(scene_->script_ctx_->get(), comp_state_);
 		comp_state_ = JS_UNINITIALIZED;
 	}
@@ -105,6 +105,20 @@ void Node::appendChild(Node* child)
 	child->parent_ = this;
 	child->child_index = (int)children_.size();
 	children_.push_back(child);
+}
+
+Node* Node::removeChildAt(size_t idx)
+{
+	if (idx >= children_.size())
+		return nullptr;
+	Node* node = children_[idx];
+	for (size_t i = idx + 1; i < children_.size(); ++i) {
+		--children_[i]->child_index;
+	}
+	children_.erase(children_.begin() + idx);
+	node->parent_ = nullptr;
+	node->child_index = -1;
+	return node;
 }
 
 bool Node::hitTest(const PointF &pos, int flags) const

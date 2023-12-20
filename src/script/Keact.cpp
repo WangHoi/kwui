@@ -1,14 +1,22 @@
 #include "Keact.h"
 #include "ComponentState.h"
+#include "absl/cleanup/cleanup.h"
 
 namespace script {
 namespace Keact {
 
-static JSValue useHook(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+static JSValue useHook(JSContext* ctx, JSValueConst /*this_val*/, int argc, JSValueConst* argv)
 {
-    auto comp_state = (ComponentState *)JS_GetOpaque(this_val, ComponentState::JS_CLASS_ID);
+    auto global = JS_GetGlobalObject(ctx);
+    auto comp_state_var = JS_GetPropertyStr(ctx, global, "__comp_state");
+    absl::Cleanup _ = [&]() {
+        JS_FreeValue(ctx, comp_state_var);
+        JS_FreeValue(ctx, global);
+        };
+    
+    auto comp_state = (ComponentState *)JS_GetOpaque2(ctx, comp_state_var, ComponentState::JS_CLASS_ID);
     if (comp_state) {
-        return comp_state->useHook(ctx, this_val, argv[0], argv[1]);
+        return comp_state->useHook(ctx, comp_state_var, argv[0], argv[1]);
     } else {
         return JS_UNDEFINED;
     }
