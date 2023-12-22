@@ -65,6 +65,10 @@ public:
 			std::string str(s, len);
 			JS_FreeCString(ctx, s);
 			return ScriptValue(str);
+		} else if (JS_IsObject(c)) {
+			auto port = (script::EventPort*)JS_GetOpaque2(ctx, c, script::EventPort::JS_CLASS_ID);
+			if (port)
+				return ScriptValue(port->id());
 		}
 		return ScriptValue();
 	}
@@ -156,7 +160,7 @@ void ScriptEngine::loadFile(const char* path)
 
 bool ScriptEngine::postEvent(int port, const ScriptValue& value)
 {
-	return false;
+	return script::EventPort::postEvent(port, value);
 }
 
 ScriptEngine::ScriptEngine()

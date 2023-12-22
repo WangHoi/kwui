@@ -18,7 +18,13 @@ public:
 	ScriptValue(int v);
 	ScriptValue(double v);
 	ScriptValue(const std::string& s);
+	ScriptValue(const ScriptValue& o);
+	ScriptValue(ScriptValue&& o) noexcept;
 	~ScriptValue();
+
+	ScriptValue& operator=(const ScriptValue& o);
+	ScriptValue& operator=(ScriptValue&& o) noexcept;
+
 	bool isNull() const;
 	bool isBool() const;
 	bool isNumber() const;

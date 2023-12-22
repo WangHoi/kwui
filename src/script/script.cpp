@@ -6,21 +6,6 @@
 
 namespace script {
 
-inline JSCFunctionListEntry func_def(const char* name, byte minargs, JSCFunction* pf)
-{
-    //#define JS_CFUNC_DEF(name, length, func1) { name, JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE, JS_DEF_CFUNC, 0, 
-             //.u = { .func = { length, JS_CFUNC_generic, { .generic = func1 } } } }
-    JSCFunctionListEntry def = { 0 };
-    def.name = name;
-    def.prop_flags = JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE;
-    def.def_type = JS_DEF_CFUNC;
-    def.magic = 0;
-    def.u.func.length = minargs;
-    def.u.func.cfunc.generic = pf;
-    def.u.func.cproto = JS_CFUNC_generic;
-    return def;
-}
-
 static JSClassID scene_class_id = 0;
 static void scene_finalizer(JSRuntime* rt, JSValue val);
 static void scene_gcmarker(JSRuntime* rt, JSValueConst val,
@@ -36,8 +21,8 @@ static JSClassDef scene_class_def = {
     nullptr,
 };
 static const JSCFunctionListEntry scene_methods[] = {
-    func_def("render", 1, scene_render),
-    func_def("updateComponent", 1, scene_update_component),
+    js_cfunc_def("render", 1, scene_render),
+    js_cfunc_def("updateComponent", 1, scene_update_component),
 };
 
 static Runtime* g_rt = nullptr;
@@ -77,6 +62,19 @@ void Runtime::eachContext(absl::FunctionRef<void(Context*)> func)
     for (Context* ctx : contexts_) {
         func(ctx);
     }
+}
+
+Runtime::Runtime()
+{
+    rt_ = JS_NewRuntime();
+    JS_SetRuntimeOpaque(rt_, this);
+}
+
+Runtime::~Runtime()
+{
+    EventPort::cleanupAll();
+    JS_FreeRuntime(rt_);
+    rt_ = nullptr;
 }
 
 void Context::initSceneClass()
@@ -162,6 +160,7 @@ Context::Context(Runtime* rt)
     register_jsx_function(ctx_);
     ComponentState::registerClass(ctx_);
     Keact::initModule(ctx_);
+    js_add_event_port(ctx_);
 
     auto global_obj = JS_GetGlobalObject(ctx_);
 

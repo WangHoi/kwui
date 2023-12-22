@@ -85,24 +85,8 @@ static JSClassDef g_component_state_class = {
 	&ComponentState::gcMark,
 };
 
-// TODO: remove duplicated func in script.cpp
-inline JSCFunctionListEntry func_def(const char* name, uint8_t minargs, JSCFunction* pf)
-{
-	//#define JS_CFUNC_DEF(name, length, func1) { name, JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE, JS_DEF_CFUNC, 0, 
-			 //.u = { .func = { length, JS_CFUNC_generic, { .generic = func1 } } } }
-	JSCFunctionListEntry def = { 0 };
-	def.name = name;
-	def.prop_flags = JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE;
-	def.def_type = JS_DEF_CFUNC;
-	def.magic = 0;
-	def.u.func.length = minargs;
-	def.u.func.cfunc.generic = pf;
-	def.u.func.cproto = JS_CFUNC_generic;
-	return def;
-}
-
 static const JSCFunctionListEntry g_component_state_funcs[1] = {
-	func_def("render", 0, &component_state_render),
+	js_cfunc_def("render", 0, &component_state_render),
 };
 
 void ComponentState::registerClass(JSContext* ctx)

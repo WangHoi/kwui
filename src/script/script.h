@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Value.h"
 #include "ComponentState.h"
+#include "EventPort.h"
 
 #include "quickjs.h"
 #include "quickjs-libc.h"
@@ -35,16 +37,8 @@ public:
 	void eachContext(absl::FunctionRef<void(Context*)> func);
 
 private:
-	Runtime()
-	{
-		rt_ = JS_NewRuntime();
-		JS_SetRuntimeOpaque(rt_, this);
-	}
-	~Runtime()
-	{
-		JS_FreeRuntime(rt_);
-		rt_ = nullptr;
-	}
+	Runtime();
+	~Runtime();
 
 	JSRuntime* rt_;
 	std::vector<Context*> contexts_;
@@ -314,6 +308,21 @@ inline style::Value Context::parse<style::Value>(JSContext* ctx_, JSValue j)
 		}
 	}
 	return v;
+}
+
+static inline JSCFunctionListEntry js_cfunc_def(const char* name, uint8_t minargs, JSCFunction* pf)
+{
+	//#define JS_CFUNC_DEF(name, length, func1) { name, JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE, JS_DEF_CFUNC, 0, 
+			 //.u = { .func = { length, JS_CFUNC_generic, { .generic = func1 } } } }
+	JSCFunctionListEntry def = { 0 };
+	def.name = name;
+	def.prop_flags = JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE;
+	def.def_type = JS_DEF_CFUNC;
+	def.magic = 0;
+	def.u.func.length = minargs;
+	def.u.func.cfunc.generic = pf;
+	def.u.func.cproto = JS_CFUNC_generic;
+	return def;
 }
 
 }

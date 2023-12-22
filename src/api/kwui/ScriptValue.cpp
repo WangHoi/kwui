@@ -16,29 +16,53 @@ ScriptValue::ScriptValue()
 	: d(new Private)
 {}
 ScriptValue::ScriptValue(bool v)
-	: d(new Private)
+	: ScriptValue()
 {
 	d->var.emplace<bool>(v);
 }
 ScriptValue::ScriptValue(int v)
-	: d(new Private)
+	: ScriptValue()
 {
 	d->var.emplace<double>((double)v);
 }
 ScriptValue::ScriptValue(double v)
-	: d(new Private)
+	: ScriptValue()
 {
 	d->var.emplace<double>(v);
 }
 ScriptValue::ScriptValue(const std::string& v)
-	: d(new Private)
+	: ScriptValue()
 {
 	d->var.emplace<std::string>(v);
+}
+
+ScriptValue::ScriptValue(const ScriptValue& o)
+	: ScriptValue()
+{
+	d->var = o.d->var;
+}
+
+ScriptValue::ScriptValue(ScriptValue&& o) noexcept
+	: ScriptValue()
+{
+	d->var = std::move(o.d->var);
 }
 
 ScriptValue::~ScriptValue()
 {
 	delete d;
+}
+
+ScriptValue& ScriptValue::operator=(const ScriptValue& o)
+{
+	d->var = o.d->var;
+	return *this;
+}
+
+ScriptValue& ScriptValue::operator=(ScriptValue&& o) noexcept
+{
+	d->var = std::move(o.d->var);
+	return *this;
 }
 
 bool ScriptValue::isNull() const
