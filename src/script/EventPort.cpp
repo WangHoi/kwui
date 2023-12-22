@@ -109,7 +109,6 @@ JSValue EventPort::addListener(JSContext* ctx, JSValueConst this_val, int argc, 
     auto it = std::find(port->listeners_.begin(), port->listeners_.end(), argv[0]);
     if (it == port->listeners_.end()) {
         port->listeners_.emplace_back(ctx, argv[0]);
-        JS_DupValue(ctx, this_val);
     }
     return JS_TRUE;
 }
@@ -122,17 +121,7 @@ JSValue EventPort::removeListener(JSContext* ctx, JSValueConst this_val, int arg
         return JS_FALSE;
     }
     port->listeners_.erase(it);
-    JS_FreeValue(ctx, this_val);
     return JS_TRUE;
-}
-
-void EventPort::cleanupAll()
-{
-    for (auto& p : g_event_port_map) {
-        EventPort* port = p.second;
-        delete port;
-    }
-    g_event_port_map.clear();
 }
 
 }

@@ -17,8 +17,6 @@ public:
 	static JSValue addListener(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 	static JSValue removeListener(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 	
-	static void cleanupAll();
-
 	inline int id() const
 	{
 		return id_;

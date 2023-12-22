@@ -72,7 +72,6 @@ Runtime::Runtime()
 
 Runtime::~Runtime()
 {
-    EventPort::cleanupAll();
     JS_FreeRuntime(rt_);
     rt_ = nullptr;
 }

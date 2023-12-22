@@ -1,12 +1,13 @@
 "use strict";
 "use math";
 
-var port = new __EventPort();
+globalThis.port = new __EventPort();
 
 function event_handler(a) {
 	console.log("timeout_handler arg ", a);
-	if (a === 9) {
+	if (a === 3) {
 		port.removeListener(event_handler);
+		port = undefined;
 	}
 }
 
