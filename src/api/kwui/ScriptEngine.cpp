@@ -154,6 +154,11 @@ void ScriptEngine::loadFile(const char* path)
 //	return *d->modules.back();
 //}
 
+bool ScriptEngine::postEvent(int port, const ScriptValue& value)
+{
+	return false;
+}
+
 ScriptEngine::ScriptEngine()
 	: d(new Private(this))
 {

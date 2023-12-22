@@ -13,6 +13,7 @@ public:
 	void addGlobalFunction(const char* name, ScriptFunction* func);
 	void loadFile(const char* path);
 	//ModuleRegister& addGlobalModule(const char* name);
+	bool postEvent(int port, const ScriptValue& value);
 
 private:
 	ScriptEngine();
