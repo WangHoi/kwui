@@ -26,7 +26,8 @@ public:
 		const style::EdgeOffsetF& inset_border_width,
 		const style::CornerRadiusF& border_radius,
 		const style::Color& background_color,
-		const style::Color& border_color) = 0;
+		const style::Color& border_color,
+		const absl::optional<base::string_atom>& background_image = absl::nullopt) = 0;
 	virtual void drawGlyphRun(const scene2d::PointF& pos,
 		const GlyphRunInterface* text_flow,
 		const style::Color& color) = 0;

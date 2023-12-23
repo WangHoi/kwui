@@ -112,6 +112,7 @@ struct StyleSpec {
 	ValueSpec border_color;
 	ValueSpec background_color;
 	ValueSpec color;
+	ValueSpec background_image;
 
 	ValueSpec line_height;
 	ValueSpec font_family;
@@ -231,6 +232,8 @@ struct Style {
 	Color border_color;
 	Color background_color;
 	Color color;
+
+	absl::optional<base::string_atom> background_image;
 
 	Value line_height;
 	Value font_family;

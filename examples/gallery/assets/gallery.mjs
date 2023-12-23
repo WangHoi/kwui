@@ -6,12 +6,21 @@ function Button(props, kids) {
 	let [n, setN] = useHook(0, (_, n) => {
 		console.log("update n to ");
 		return [n, true];
-		});
+	});
 	let onclick = () => setN(n + 1);
-	return (<div class="center" style="width:100px;margin-top:100px">
-		<div><button onclick={onclick}>{kids[0]}</button></div>
-		<p>{"点击了" + n + "次"}</p>
+	if (n == 0) {
+		return (<div class="center" style="width:100px;margin-top:100px">
+			<div><button onclick={onclick}>{kids[0]}</button></div>
+			<p>{"点击了" + n + "次"}</p>
 		</div>);
+	} else {
+		return <div><p>Clicked</p><line_edit style="width:100px;height:20px;" /></div>
+	}
+}
+
+function ImageButton(props, kids) {
+	return (<image_button style="width:80px;height:80px;" onclick={props.onclick} src={props.src}>
+	</image_button>)
 }
 
 var simple_css = `
@@ -40,7 +49,7 @@ line_edit {
 }
 `;
 
-var onclick = function() {
+var onclick = function () {
 	console.log("button clicked");
 }
 
@@ -48,6 +57,10 @@ var button = (
 	<Button>测试</Button>
 );
 
-console.log(JSON.stringify(button));
+var test_image_button = (
+	<ImageButton onclick={onclick} src="cx_logo_2.svg"></ImageButton>
+);
 
-app.showDialog(button, simple_css);
+// console.log(JSON.stringify(button));
+
+app.showDialog(test_image_button, simple_css);

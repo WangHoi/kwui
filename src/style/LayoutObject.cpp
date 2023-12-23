@@ -90,7 +90,8 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			b.border,
 			border_radius,
 			st.background_color,
-			st.border_color);
+			st.border_color,
+			st.background_image);
 	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
 		/*
 		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
@@ -121,7 +122,8 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 				b.border,
 				border_radius,
 				st.background_color,
-				st.border_color);
+				st.border_color,
+				st.background_image);
 		}
 	} else if (absl::holds_alternative<TextBox>(o->box)) {
 		const TextBox& tb = absl::get<TextBox>(o->box);

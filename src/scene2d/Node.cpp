@@ -42,6 +42,8 @@ static void resolve_style(style::Color& style, const style::Color* parent,
 	const style::ValueSpec& spec);
 static void resolve_style(style::CursorType& style, const style::CursorType* parent,
 	const style::ValueSpec& spec);
+static void resolve_style(absl::optional<base::string_atom>& style, const absl::optional<base::string_atom>* parent,
+	const style::ValueSpec& spec);
 
 Node::Node(Scene* scene, NodeType type)
 	: scene_(scene)
@@ -751,6 +753,19 @@ void resolve_style(style::CursorType& style, const style::CursorType* parent,
 			} else {
 				LOG(WARNING) << "unimplemented css cursor " << spec.value->keyword_val;
 			}
+		}
+	}
+}
+
+static void resolve_style(absl::optional<base::string_atom>& style, const absl::optional<base::string_atom>* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Url) {
+			style.emplace(base::string_intern(spec.value->string_val));
 		}
 	}
 }

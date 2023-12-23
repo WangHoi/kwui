@@ -151,6 +151,37 @@ inline auto alt(F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
 		return f4(input);
 		};
 }
+template <typename F1, typename F2, typename F3, typename F4, typename F5>
+inline auto alt(F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
+	using T1 = StatusOrType<typename std::result_of<F1(std::string_view)>::type>::value_type;
+	using T2 = StatusOrType<typename std::result_of<F2(std::string_view)>::type>::value_type;
+	using T3 = StatusOrType<typename std::result_of<F3(std::string_view)>::type>::value_type;
+	using T4 = StatusOrType<typename std::result_of<F4(std::string_view)>::type>::value_type;
+	using T5 = StatusOrType<typename std::result_of<F5(std::string_view)>::type>::value_type;
+	static_assert(std::is_same<T1, T2>::value, "alt type mismatch error.");
+	static_assert(std::is_same<T1, T3>::value, "alt type mismatch error.");
+	static_assert(std::is_same<T1, T4>::value, "alt type mismatch error.");
+	static_assert(std::is_same<T1, T5>::value, "alt type mismatch error.");
+	return [f1, f2, f3, f4, f5](absl::string_view input) -> IResult<T1> {
+		auto res1 = f1(input);
+		if (res1.ok())
+			return res1;
+
+		auto res2 = f2(input);
+		if (res2.ok())
+			return res2;
+
+		auto res3 = f3(input);
+		if (res3.ok())
+			return res3;
+
+		auto res4 = f4(input);
+		if (res4.ok())
+			return res4;
+
+		return f5(input);
+		};
+}
 
 template <typename F1>
 inline auto opt(F1&& f1) {

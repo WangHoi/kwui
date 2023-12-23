@@ -80,6 +80,7 @@ void StyleSpec::set(base::string_atom prop, const ValueSpec& val)
 	CHECK_VALUE2(border_color, "border-color");
 	CHECK_VALUE2(background_color, "background-color");
 	CHECK_VALUE(color);
+	CHECK_VALUE2(background_image, "background-image");
 
 	CHECK_VALUE2(line_height, "line-height");
 	CHECK_VALUE2(font_family, "font-family");

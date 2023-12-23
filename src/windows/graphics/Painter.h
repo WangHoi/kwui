@@ -129,7 +129,8 @@ public:
         const style::EdgeOffsetF& border_width,
         const style::CornerRadiusF& border_radius,
         const style::Color& background_color,
-        const style::Color& border_color) override
+        const style::Color& border_color,
+        const absl::optional<base::string_atom>& background_image) override
     {
         auto rect1 = scene2d::RectF::fromLTRB(
             padding_rect.left - border_width.left,

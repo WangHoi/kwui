@@ -243,7 +243,42 @@ IResult<Value> string_value(absl::string_view input)
 	return std::make_tuple(input.substr(i + 1), Value::fromKeyword(base::string_intern(s)));
 }
 
-// Syntax: IDENT | mess | STRING | hexcolor
+// Syntax: 'url("' [^"]* '")'
+IResult<Value> url_value(absl::string_view input)
+{
+	if (!absl::StartsWith(input, "url(\""))
+		return absl::InvalidArgumentError(input);
+	std::string s;
+	size_t i;
+	for (i = 1; i < input.length(); ++i) {
+		if (input[i] == '\\') {
+			if (i + 1 >= input.length())
+				break;
+			auto ch = input[++i];
+			if (ch == 't') {
+				s += '\t';
+			} else if (ch == 'n') {
+				s += '\n';
+			} else if (ch == '\\') {
+				s += '\\';
+			} else if (ch == '"') {
+				s += '"';
+			} else {
+				s += '\\';
+				s += ch;
+			}
+		} else if (input[i] == '"') {
+			break;
+		} else {
+			s += input[i];
+		}
+	}
+	if (i >= input.length() || !absl::StartsWith(input.substr(i), "\")"))
+		return absl::InvalidArgumentError(input);
+	return std::make_tuple(input.substr(i + 2), Value::fromUrl(s));
+}
+
+// Syntax: IDENT | mess | STRING | hexcolor | url
 IResult<ValueSpec> value_spec(absl::string_view input)
 {
 	auto ident_res = ident(input);
@@ -261,7 +296,7 @@ IResult<ValueSpec> value_spec(absl::string_view input)
 	}
 
 	auto ident_value = map(ident, [](auto s) { return Value::fromKeyword(base::string_intern(s)); });
-	auto value = alt(ident_value, mess_value, string_value, hexcolor_value);
+	auto value = alt(ident_value, mess_value, string_value, hexcolor_value, url_value);
 	return map(value, [&](auto val) {
 		ValueSpec spec;
 		spec.type = ValueSpecType::Specified;
