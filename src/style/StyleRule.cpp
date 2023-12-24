@@ -250,7 +250,7 @@ IResult<Value> url_value(absl::string_view input)
 		return absl::InvalidArgumentError(input);
 	std::string s;
 	size_t i;
-	for (i = 1; i < input.length(); ++i) {
+	for (i = 5; i < input.length(); ++i) {
 		if (input[i] == '\\') {
 			if (i + 1 >= input.length())
 				break;
@@ -278,7 +278,7 @@ IResult<Value> url_value(absl::string_view input)
 	return std::make_tuple(input.substr(i + 2), Value::fromUrl(s));
 }
 
-// Syntax: IDENT | mess | STRING | hexcolor | url
+// Syntax: url | IDENT | mess | STRING | hexcolor
 IResult<ValueSpec> value_spec(absl::string_view input)
 {
 	auto ident_res = ident(input);
@@ -296,7 +296,7 @@ IResult<ValueSpec> value_spec(absl::string_view input)
 	}
 
 	auto ident_value = map(ident, [](auto s) { return Value::fromKeyword(base::string_intern(s)); });
-	auto value = alt(ident_value, mess_value, string_value, hexcolor_value, url_value);
+	auto value = alt(url_value, ident_value, mess_value, string_value, hexcolor_value);
 	return map(value, [&](auto val) {
 		ValueSpec spec;
 		spec.type = ValueSpecType::Specified;
@@ -308,6 +308,9 @@ IResult<ValueSpec> value_spec(absl::string_view input)
 // Syntax: (IDENT | mess | STRING | hexcolor) S* 
 IResult<SingleDeclaration> single_decl(base::string_atom name, absl::string_view input)
 {
+	if (name == base::string_intern("background-image")) {
+		int kk = 1;
+	}
 	auto res = value_spec(input);
 	if (!res.ok())
 		return res.status();

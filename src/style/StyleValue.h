@@ -10,6 +10,10 @@
 #include "absl/types/variant.h"
 #include "StyleColor.h"
 
+namespace graph2d {
+class BitmapInterface;
+}
+
 namespace style {
 
 enum class ValueUnit {
@@ -233,7 +237,7 @@ struct Style {
 	Color background_color;
 	Color color;
 
-	absl::optional<base::string_atom> background_image;
+	std::shared_ptr<graph2d::BitmapInterface> background_image;
 
 	Value line_height;
 	Value font_family;

@@ -19,8 +19,9 @@ function Button(props, kids) {
 }
 
 function ImageButton(props, kids) {
-	return (<image_button style="width:80px;height:80px;" onclick={props.onclick} src={props.src}>
-	</image_button>)
+	return (<button style="width:80px;height:80px;" onclick={props.onclick} src={props.src}>
+	<div class="image-button" style="width:100%;height:100%;"></div>
+	</button>)
 }
 
 var simple_css = `
@@ -32,12 +33,13 @@ button {
 	padding: 4px 8px;
 	border-color: #88e;
 	border-radius: 4px;
-	background-color: orangered;
+	background-image: url("close_button.png");
 	cursor: pointer;
 	margin: 8px;
 }
 button:hover {
-	background-color: orange;
+	background-color: orangered;
+	background-image: url("close_button_hover.png");
 }
 button:active {
 	background-color: red;

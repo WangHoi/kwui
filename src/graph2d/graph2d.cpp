@@ -2,6 +2,7 @@
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/graphics/TextLayout.h"
 #include "windows/graphics/TextFlow.h"
+#include "windows/graphics/Painter.h"
 #include "windows/EncodingManager.h"
 
 namespace graph2d {
@@ -35,6 +36,11 @@ FlowMetrics getFontMetrics(const char* font_family, float font_size)
     }
 
     return fm;
+}
+
+std::shared_ptr<BitmapInterface> createBitmap(const std::string& url)
+{
+    return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapImpl(url));
 }
 
 }

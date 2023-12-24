@@ -3,6 +3,7 @@
 #include "scene2d/geom_types.h"
 #include "scene2d/Control.h"
 #include "graph2d/Painter.h"
+#include "graph2d/Bitmap.h"
 #include "windows/windows_header.h"
 #include "TextLayout.h"
 #include "TextFlow.h"
@@ -93,6 +94,41 @@ private:
     std::vector<State> _state_stack;
 };
 
+class BitmapImpl : public graph2d::BitmapInterface
+{
+public:
+    BitmapImpl(const std::string& url)
+        : url_(url)
+    {
+    }
+    const std::string& url() const override
+    {
+        return url_;
+    }
+    scene2d::DimensionF size() override
+    {
+        if (!bitmap_) {
+            return scene2d::DimensionF();
+        }
+        D2D1_SIZE_U ps = bitmap_->GetPixelSize();
+        return scene2d::DimensionF(ps.width, ps.height);
+    }
+    ID2D1Bitmap* d2dBitmap(Painter& p) const
+    {
+        if (!bitmap_) {
+            BitmapSubItem item = GraphicDevice::instance()
+                ->GetBitmap(url_, p.GetDpiScale());
+            if (item)
+                bitmap_ = p.CreateBitmap(item);
+        }
+
+        return bitmap_.Get();
+    }
+private:
+    std::string url_; // utf-8
+    mutable ComPtr<ID2D1Bitmap> bitmap_;
+};
+
 class PainterImpl : public graph2d::PainterInterface
 {
 public:
@@ -130,7 +166,7 @@ public:
         const style::CornerRadiusF& border_radius,
         const style::Color& background_color,
         const style::Color& border_color,
-        const absl::optional<base::string_atom>& background_image) override
+        const graph2d::BitmapInterface* background_image) override
     {
         auto rect1 = scene2d::RectF::fromLTRB(
             padding_rect.left - border_width.left,
@@ -148,6 +184,12 @@ public:
             p_.DrawRoundedRect(rect1.origin(), rect1.size(), max_border_raidus);
         } else {
             p_.DrawRect(rect1.origin(), rect1.size());
+        }
+        if (background_image) {
+            auto bitmap = static_cast<const BitmapImpl*>(background_image)->d2dBitmap(p_);
+            if (bitmap) {
+                p_.DrawBitmap(bitmap, padding_rect.origin(), padding_rect.size());
+            }
         }
     }
     void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* gr, const style::Color& color) override

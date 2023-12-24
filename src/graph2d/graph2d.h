@@ -1,6 +1,7 @@
 #pragma once
 
 #include "TextLayout.h"
+#include "Bitmap.h"
 #include "Painter.h"
 #include "style/StyleValue.h"
 #include <memory>
@@ -16,5 +17,7 @@ std::unique_ptr<TextFlowInterface> createTextFlow(
 	style::FontWeight font_weight,
 	float font_size);
 FlowMetrics getFontMetrics(const char* font_family, float font_size);
+
+std::shared_ptr<BitmapInterface> createBitmap(const std::string& url);
 
 }

@@ -30,6 +30,10 @@ Application::Application(int argc, char* argv[])
 
     windows::graphics::GraphicDevice::instance()
         ->LoadBitmapToCache("cx_logo_2.svg", L"D:\\projects\\kwui\\chengxun80.png");
+    windows::graphics::GraphicDevice::instance()
+        ->LoadBitmapToCache("close_button.png", L"D:\\projects\\kwui\\close_button.png");
+    windows::graphics::GraphicDevice::instance()
+        ->LoadBitmapToCache("close_button_hover.png", L"D:\\projects\\kwui\\close_button_hover.png");
 
     scene2d::ControlRegistry::get()->registerControl<windows::control::LineEditControl>();
     scene2d::ControlRegistry::get()->registerControl<windows::control::ProgressBarControl>();

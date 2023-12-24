@@ -42,7 +42,7 @@ static void resolve_style(style::Color& style, const style::Color* parent,
 	const style::ValueSpec& spec);
 static void resolve_style(style::CursorType& style, const style::CursorType* parent,
 	const style::ValueSpec& spec);
-static void resolve_style(absl::optional<base::string_atom>& style, const absl::optional<base::string_atom>* parent,
+static void resolve_style(std::shared_ptr<graph2d::BitmapInterface>& style, const std::shared_ptr<graph2d::BitmapInterface>* parent,
 	const style::ValueSpec& spec);
 
 Node::Node(Scene* scene, NodeType type)
@@ -252,6 +252,7 @@ void Node::resolveDefaultStyle()
 
 	RESOLVE_STYLE_DEFAULT(border_color, style::Color());
 	RESOLVE_STYLE_DEFAULT(background_color, style::Color());
+	RESOLVE_STYLE_DEFAULT(background_image, nullptr);
 
 	RESOLVE_STYLE_DEFAULT(overflow_x, style::OverflowType::Visible);
 	RESOLVE_STYLE_DEFAULT(overflow_y, style::OverflowType::Visible);
@@ -311,6 +312,7 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 	RESOLVE_STYLE(border_color);
 	RESOLVE_STYLE(background_color);
 	RESOLVE_STYLE(color);
+	RESOLVE_STYLE(background_image);
 	RESOLVE_STYLE(line_height);
 	RESOLVE_STYLE(font_family);
 	RESOLVE_STYLE(font_size);
@@ -757,7 +759,7 @@ void resolve_style(style::CursorType& style, const style::CursorType* parent,
 	}
 }
 
-static void resolve_style(absl::optional<base::string_atom>& style, const absl::optional<base::string_atom>* parent,
+static void resolve_style(std::shared_ptr<graph2d::BitmapInterface>& style, const std::shared_ptr<graph2d::BitmapInterface>* parent,
 	const style::ValueSpec& spec)
 {
 	if (spec.type == style::ValueSpecType::Inherit) {
@@ -765,7 +767,7 @@ static void resolve_style(absl::optional<base::string_atom>& style, const absl::
 			style = *parent;
 	} else if (spec.type == style::ValueSpecType::Specified) {
 		if (spec.value->unit == style::ValueUnit::Url) {
-			style.emplace(base::string_intern(spec.value->string_val));
+			style = graph2d::createBitmap(spec.value->string_val);
 		}
 	}
 }
