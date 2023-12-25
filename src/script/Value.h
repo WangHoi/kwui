@@ -22,6 +22,10 @@ public:
 	bool operator==(const Value& o);
 	bool operator==(JSValue o);
 
+	inline JSContext* jsContext() const
+	{
+		return ctx_;
+	}
 	inline const JSValue& jsValue() const
 	{
 		return value_;

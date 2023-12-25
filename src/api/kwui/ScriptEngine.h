@@ -1,6 +1,7 @@
 #pragma once
 #include "kwui_export.h"
 #include "ScriptValue.h"
+#include <functional>
 
 namespace kwui {
 
@@ -12,8 +13,15 @@ public:
 	static void release();
 	void addGlobalFunction(const char* name, ScriptFunction* func);
 	void loadFile(const char* path);
+	ScriptValue callGlobalFunction(const char* name, int argc, ScriptValue* argv);
 	//ModuleRegister& addGlobalModule(const char* name);
 	bool postEvent(int port, const ScriptValue& value);
+	// func is assosicated with EventPort's JSContext
+	bool addEventListener(int port, ScriptFunction* func);
+	bool removeEventListener(int port, ScriptFunction* func);
+	// create in default JSContext
+	int createEventPort();
+	void releaseEventPort(int port);
 
 private:
 	ScriptEngine();

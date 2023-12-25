@@ -8,6 +8,7 @@ namespace script {
 class EventPort {
 public:
 	static JSClassID JS_CLASS_ID;
+	static const char* JS_CLASS_NAME;
 
 	static bool postEvent(int port, const kwui::ScriptValue& val);
 
@@ -16,7 +17,16 @@ public:
 	static void gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func);
 	static JSValue addListener(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 	static JSValue removeListener(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+
+	static EventPort* findEventPort(int id);
+
+	bool addListener(JSClassID func_class_id, kwui::ScriptFunction* func);
+	bool removeListener(JSClassID func_class_id, kwui::ScriptFunction* func);
 	
+	inline JSContext* context() const
+	{
+		return ctx_;
+	}
 	inline int id() const
 	{
 		return id_;

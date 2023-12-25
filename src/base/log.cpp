@@ -23,9 +23,30 @@ public:
     }
 };
 
-void initialize_log()
+class CallbackLogSink : public absl::LogSink {
+public:
+    CallbackLogSink(kwui::LogCallback cb)
+        : callback_(cb)
+    {}
+    void Send(const absl::LogEntry& entry) override
+    {
+        const char* msg = entry.text_message_with_prefix_and_newline_c_str();
+        callback_(msg);
+    }
+
+private:
+    kwui::LogCallback callback_;
+};
+
+void initialize_log(kwui::LogCallback func)
 {
-    absl::AddLogSink(new StdErrLogSink);
+    absl::LogSink* sink;
+    if (func) {
+        sink = new CallbackLogSink(func);
+    } else {
+        sink = new StdErrLogSink;
+    }
+    absl::AddLogSink(sink);
     absl::InitializeLog();
 }
 

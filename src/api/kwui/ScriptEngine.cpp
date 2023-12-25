@@ -152,6 +152,29 @@ void ScriptEngine::loadFile(const char* path)
 	d->default_ctx->loadFile(path);
 }
 
+ScriptValue ScriptEngine::callGlobalFunction(const char* name, int argc, ScriptValue* argv)
+{
+	JSContext* ctx = d->default_ctx->get();
+	JSValue global = JS_GetGlobalObject(ctx);
+	JSValue func = JS_GetPropertyStr(ctx, global, name);
+	ScriptValue ret;
+	if (JS_IsFunction(ctx, func)) {
+		std::vector<JSValue> jargs;
+		for (int i = 0; i < argc; ++i) {
+			jargs.push_back(Private::unwrap(ctx, argv[i]));
+		}
+		JSValue jret = JS_Call(ctx, func, JS_UNDEFINED, argc, jargs.data());
+		ret = Private::wrap(ctx, jret);
+		JS_FreeValue(ctx, jret);
+		for (int i = 0; i < argc; ++i) {
+			JS_FreeValue(ctx, jargs[i]);
+		}
+	}
+	JS_FreeValue(ctx, func);
+	JS_FreeValue(ctx, global);
+	return ret;
+}
+
 //ScriptEngine::ModuleRegister& ScriptEngine::addGlobalModule(const char* name)
 //{
 //	d->modules.emplace_back(std::make_unique<ModuleRegister>());
@@ -161,6 +184,45 @@ void ScriptEngine::loadFile(const char* path)
 bool ScriptEngine::postEvent(int port, const ScriptValue& value)
 {
 	return script::EventPort::postEvent(port, value);
+}
+
+bool ScriptEngine::addEventListener(int port_id, ScriptFunction* func)
+{
+	script::EventPort* port = script::EventPort::findEventPort(port_id);
+	if (!port)
+		return false;
+	return port->addListener(d->script_func_clsid, func);
+}
+
+bool ScriptEngine::removeEventListener(int port_id, ScriptFunction* func)
+{
+	script::EventPort* port = script::EventPort::findEventPort(port_id);
+	if (!port)
+		return true;
+	return port->removeListener(d->script_func_clsid, func);
+}
+
+int ScriptEngine::createEventPort()
+{
+	JSContext* ctx = d->default_ctx->get();
+	JSValue obj = JS_NewObjectClass(ctx, script::EventPort::JS_CLASS_ID);
+	auto port = (script::EventPort*)JS_GetOpaque2(ctx, obj, script::EventPort::JS_CLASS_ID);
+	int port_id = port->id();
+	JSValue global = JS_GetGlobalObject(ctx);
+	std::string name = absl::StrFormat("__event_port_%d", port_id);
+	JS_SetPropertyStr(ctx, global, name.c_str(), obj);
+	JS_FreeValue(ctx, obj);
+	JS_FreeValue(ctx, global);
+	return port_id;
+}
+
+void ScriptEngine::releaseEventPort(int port)
+{
+	JSContext* ctx = d->default_ctx->get();
+	JSValue global = JS_GetGlobalObject(ctx);
+	std::string name = absl::StrFormat("__event_port_%d", port);
+	JS_SetPropertyStr(ctx, global, name.c_str(), JS_UNDEFINED);
+	JS_FreeValue(ctx, global);
 }
 
 ScriptEngine::ScriptEngine()

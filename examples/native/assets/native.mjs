@@ -3,6 +3,10 @@
 
 globalThis.port = new __EventPort();
 
+globalThis.scriptAdd = function (a, b) {
+	return a + b;
+}
+
 function event_handler(a) {
 	console.log("timeout_handler arg ", a);
 	if (a === 3) {

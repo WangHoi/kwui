@@ -13,11 +13,13 @@
 
 namespace kwui {
 
+static LogCallback g_log_callback = nullptr;
+
 Application::Application(int argc, char* argv[])
 {
     ::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
-    base::initialize_log();
+    base::initialize_log(g_log_callback);
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
     ::SetConsoleOutputCP(65001);
@@ -49,6 +51,11 @@ Application::~Application()
     windows::ResourceManager::releaseInstance();
 
     CoUninitialize();
+}
+
+void Application::setLogCallback(LogCallback callback)
+{
+    g_log_callback = callback;
 }
 
 int Application::exec()

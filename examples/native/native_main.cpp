@@ -32,10 +32,13 @@ int main(int argc, char* argv[])
     SE->addGlobalFunction("add", &add);
     SE->addGlobalFunction("onNativeEvent", &onNativeEvent);
     SE->loadFile("d:/projects/kwui/examples/native/assets/native.mjs");
+
+    ScriptValue args[2] = { 3, 4 };
+    ScriptValue ret = SE->callGlobalFunction("scriptAdd", 2, args);
+    int val = ret.toInt();
     
     for (int i = 0; i < g_arg; ++i) {
         SE->postEvent(g_port, i + 1);
     }
-    return 0;
     return app.exec();
 }
