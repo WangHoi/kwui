@@ -31,6 +31,11 @@ set(dep_libs
     d2d1.lib dwrite.lib Windowscodecs.lib
     Imm32.lib)
 
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/api/
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.h*")
+install(TARGETS quickjs)
+
 # Build shared library
 #[[
 add_library(kwui SHARED "")
@@ -48,3 +53,5 @@ target_compile_options(c31 PUBLIC /utf-8)
 target_compile_definitions(c31 PUBLIC -DKWUI_STATIC_LIBRARY)
 target_include_directories(c31 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(c31 PUBLIC ${dep_libs})
+install(TARGETS c31)
+

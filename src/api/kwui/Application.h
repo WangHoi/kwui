@@ -8,9 +8,14 @@ typedef void KWUI_EXPORT (*LogCallback)(const char* msg);
 class KWUI_EXPORT Application {
 public:
 	Application(int argc, char* argv[]);
+	Application(int argc, wchar_t* argv[]);
 	~Application();
 	static void setLogCallback(LogCallback callback);
 	int exec();
+
+private:
+	class Private;
+	Private* d;
 };
 
 }
