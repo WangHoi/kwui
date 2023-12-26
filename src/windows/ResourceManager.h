@@ -18,8 +18,8 @@ struct Resource {
 
 class ResourceManager {
 public:
-    absl::optional<base::ResourceArchive::Item> LoadResource(int id);
-    absl::optional<base::ResourceArchive::Item> LoadResource(const wchar_t* name);
+    absl::optional<base::ResourceArchive::ResourceItem> LoadResource(int id);
+    absl::optional<base::ResourceArchive::ResourceItem> LoadResource(const wchar_t* name);
     bool preloadResourceArchive(int id);
     
     static ResourceManager* createInstance(HMODULE hModule);

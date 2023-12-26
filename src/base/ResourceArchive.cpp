@@ -6,6 +6,14 @@
 
 namespace base {
 
+namespace {
+enum AlgorithmType {
+	Store,
+	Lzf,
+	Lzms,
+};
+}
+
 /*
 std::unique_ptr<ResourceArchive> ResourceArchive::CreateFromFile(const wchar_t* filename)
 {
@@ -24,6 +32,11 @@ std::unique_ptr<ResourceArchive> ResourceArchive::CreateFromFile(const wchar_t* 
 }
 */
 
+ResourceArchive::~ResourceArchive()
+{
+	Reset();
+}
+
 std::unique_ptr<ResourceArchive> ResourceArchive::CreateFromData(const uint8_t* data, size_t size)
 {
 	auto arc = std::make_unique<ResourceArchive>();
@@ -39,7 +52,7 @@ size_t ResourceArchive::GetItemCount() const
 	return _items.size();
 }
 
-absl::optional<ResourceArchive::Item> ResourceArchive::FindItem(const wchar_t* path) const
+absl::optional<ResourceArchive::ResourceItem> ResourceArchive::FindItem(const wchar_t* path) const
 {
 	const wchar_t* p = path;
 	int16_t idx = 0;
@@ -51,8 +64,15 @@ absl::optional<ResourceArchive::Item> ResourceArchive::FindItem(const wchar_t* p
 		} else if (ch > n.splitchar) {
 			idx = n.hikid;
 		} else {
-			if (*p++ == 0)
-				return _items[n.value() - 1];
+			if (*p++ == 0) {
+				const Item& item = _items[n.eqkid];
+				const Chunk& chunk = _chunk_map.find(item.offset)->second;
+				ResourceItem ret;
+				ret.name = path;
+				ret.data = chunk.data;
+				ret.size = item.length;
+				return ret;
+			}
 			idx = n.eqkid;
 		}
 	}
@@ -67,24 +87,30 @@ bool ResourceArchive::Init(std::unique_ptr<MmapFile> file)
 */
 bool ResourceArchive::Init(const uint8_t* data, size_t size)
 {
-	if (size < 8) {
+	if (size < 24) {
 		LOG(WARNING) << "Invalid data length.";
 		return false;
 	}
+	const uint8_t* const data_end = data + size;
 	const uint8_t* p = data;
-	if (p[0] != 'S' || p[1] != 'A' || p[2] != 'r' || p[3] != '\0') {
+	if (p[0] != 'K' || p[1] != 'A' || p[2] != 'r' || p[3] != ' ') {
 		LOG(WARNING) << "Invalid header magic";
 		return false;
 	}
 	p += 4;
-	int32_t num_nodes = absl::little_endian::Load32(p);
+	uint16_t version = absl::little_endian::Load16(p);
+	p += 2;
+	uint16_t flags = absl::little_endian::Load16(p);
+	p += 2;
+	p += 12; // ChunkSize, DirCount, FileCount
+	uint32_t num_nodes = absl::little_endian::Load32(p);
 	p += 4;
-	if (size < 8 + 8 * (size_t)num_nodes + 4) {
+	if (p + 8 * num_nodes > data_end) {
 		LOG(WARNING) << "Invalid data length.";
 		return false;
 	}
 	_nodes.resize(num_nodes);
-	for (int32_t i = 0; i < num_nodes; ++i) {
+	for (uint32_t i = 0; i < num_nodes; ++i) {
 		Node& n = _nodes[i];
 		n.splitchar = absl::little_endian::Load16(p);
 		n.lokid = absl::little_endian::Load16(p + 2);
@@ -93,47 +119,107 @@ bool ResourceArchive::Init(const uint8_t* data, size_t size)
 		p += 8;
 	}
 
-	int32_t num_items = absl::little_endian::Load32(p);
-	p += 4;
-	if (size < 8 + 8 * (size_t)num_nodes + 4 + 12 * (size_t)num_items) {
+	if (p + 4 > data_end) {
 		LOG(WARNING) << "Invalid data length.";
 		return false;
 	}
-	_item_locations.resize(num_items);
+	uint32_t num_items = absl::little_endian::Load32(p);
+	p += 4;
+	if (p + 12 * num_items > data_end) {
+		LOG(WARNING) << "Invalid data length.";
+		return false;
+	}
 	_items.resize(num_items);
-	_udata.resize(num_items);
-	for (int32_t i = 0; i < num_items; ++i) {
-		ItemLocation& loc = _item_locations[i];
-		loc.offset = absl::little_endian::Load32(p);
-		loc.length = absl::little_endian::Load32(p + 4);
-		loc.ulength = absl::little_endian::Load32(p + 8);
-		p += 12;
-
-		if ((size_t)loc.offset > size || (size_t)(loc.offset + loc.length) > size) {
-			LOG(WARNING) << "Data offset overflow.";
-			return false;
-		}
-
+	for (uint32_t i = 0; i < num_items; ++i) {
 		Item& item = _items[i];
-		if (loc.ulength) {
-			auto& u = _udata[i];
-			u.resize(loc.ulength);
-			unsigned int olen = lzf_decompress(data + loc.offset, loc.length, u.data(), loc.ulength);
-			if (olen != loc.ulength) {
-				LOG(WARNING) << "Decompressed size mismatch.";
-				return false;
+		item.reference = absl::little_endian::Load16(p);
+		item.flags = absl::little_endian::Load16(p + 2);
+		item.offset = absl::little_endian::Load32(p + 4);
+		item.length = absl::little_endian::Load32(p + 8);
+		p += 12;
+	}
+
+	if (p + 4 > data_end) {
+		LOG(WARNING) << "Invalid data length.";
+		return false;
+	}
+	uint32_t num_chunks = absl::little_endian::Load32(p);
+	p += 4;
+	if (p + 12 * num_chunks > data_end) {
+		LOG(WARNING) << "Invalid data length.";
+		return false;
+	}
+	off_t compressed_offset = 0;
+	off_t uncompressed_offset = 0;
+	for (uint32_t i = 0; i < num_chunks; ++i) {
+		Chunk chunk;
+		chunk.algorithm = absl::little_endian::Load16(p);
+		chunk.flags = absl::little_endian::Load16(p + 2);
+		chunk.length = absl::little_endian::Load32(p + 4);
+		chunk.compressed_length = absl::little_endian::Load32(p + 8);
+		chunk.data = nullptr;
+		_chunk_map[uncompressed_offset] = chunk;
+		compressed_offset += chunk.compressed_length;
+		uncompressed_offset += chunk.length;
+		p += 12;
+	}
+
+	if (p + compressed_offset > data_end) {
+		LOG(WARNING) << "Invalid data length.";
+		return false;
+	}
+	
+	// Decompress data
+	compressed_offset = 0;
+	uncompressed_offset = 0;
+	for (auto& chunk_pair : _chunk_map) {
+		uncompressed_offset = chunk_pair.first;
+		Chunk& chunk = chunk_pair.second;
+		if (chunk.algorithm == AlgorithmType::Store) {
+			chunk.data = p + compressed_offset;
+		} else if (chunk.algorithm == AlgorithmType::Lzf) {
+			uint8_t* buf = (uint8_t*)malloc(chunk.length);
+			if (buf) {
+				unsigned ret = lzf_decompress(p + compressed_offset, chunk.compressed_length, buf, chunk.length);
+				if (ret != chunk.length) {
+					LOG(WARNING) << "Invalid compress data.";
+					return false;
+				}
 			}
-			item.data = u.data();
-			item.size = loc.ulength;
+			chunk.data = buf;
 		} else {
-			item.data = data + loc.offset;
-			item.size = loc.length;
+			LOG(WARNING) << "Invalid compress algorithm.";
+			return false;
 		}
 	}
 
 	bool valid = true;
-	IterateNodes(0, std::wstring(), valid);
+	// Validate item's chunk offset
+	for (size_t i = 1; i < _items.size(); ++i) {
+		auto it = _chunk_map.find(_items[i].offset);
+		if (it == _chunk_map.end()) {
+			LOG(WARNING) << "Invalid item offset.";
+			valid = false;
+			break;
+		}
+	}
+	// Validate node's index
+	if (valid)
+		IterateNodes(0, std::wstring(), valid);
 	return valid;
+}
+
+void ResourceArchive::Reset()
+{
+	for (auto& chunk_pair : _chunk_map) {
+		Chunk& chunk = chunk_pair.second;
+		if (chunk.algorithm != AlgorithmType::Store) {
+			free(const_cast<uint8_t*>(chunk.data));
+		}
+	}
+	_nodes.clear();
+	_items.clear();
+	_chunk_map.clear();
 }
 
 void ResourceArchive::IterateNodes(int16_t idx, std::wstring& name, bool& valid)
@@ -145,13 +231,12 @@ void ResourceArchive::IterateNodes(int16_t idx, std::wstring& name, bool& valid)
 
 	const auto& n = _nodes.at(idx);
 	if (!n.splitchar) {
-		if (n.eqkid <= 0 || (size_t)n.eqkid > _items.size()) {
+		if (n.eqkid >= _items.size()) {
 			LOG(WARNING) << "Invalid node data index.";
 			valid = false;
 			return;
 		}
-		auto& item = _items[n.eqkid - 1];
-		item.name = name;
+		auto& item = _items[n.eqkid];
 		LOG(INFO) << "Loaded resource [" << windows::EncodingManager::WideToUTF8(name) << "]";
 	} else {
 		IterateNodes(n.lokid, name, valid);

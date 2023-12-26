@@ -23,10 +23,10 @@ static absl::optional<absl::Span<uint8_t>> win32_load_resource(HMODULE hmod, int
 
 }
 
-absl::optional<base::ResourceArchive::Item> ResourceManager::LoadResource(int id) {
+absl::optional<base::ResourceArchive::ResourceItem> ResourceManager::LoadResource(int id) {
     absl::optional<absl::Span<uint8_t>> res = win32_load_resource(_hmodule, id);
     if (res.has_value()) {
-        base::ResourceArchive::Item item;
+        base::ResourceArchive::ResourceItem item;
         item.name = L"<" + std::to_wstring(id) + L">";
         item.data = res->data();
         item.size = res->size();
@@ -36,7 +36,7 @@ absl::optional<base::ResourceArchive::Item> ResourceManager::LoadResource(int id
     }
 }
 
-absl::optional<base::ResourceArchive::Item> ResourceManager::LoadResource(const wchar_t* name)
+absl::optional<base::ResourceArchive::ResourceItem> ResourceManager::LoadResource(const wchar_t* name)
 {
     if (_archive)
         return _archive->FindItem(name);
