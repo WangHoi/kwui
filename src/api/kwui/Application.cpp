@@ -79,6 +79,11 @@ void Application::setLogCallback(LogCallback callback)
     g_log_callback = callback;
 }
 
+bool Application::preloadResourceArchive(int id)
+{
+    return windows::ResourceManager::instance()->preloadResourceArchive(id);
+}
+
 int Application::exec()
 {
     MSG msg;

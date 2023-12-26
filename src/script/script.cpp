@@ -2,6 +2,7 @@
 #include "scene2d/Scene.h"
 #include "windows/Dialog.h"
 #include "windows/ResourceManager.h"
+#include "windows/EncodingManager.h"
 #include "Keact.h"
 
 namespace script {
@@ -186,21 +187,40 @@ Context::~Context()
 
 void Context::loadFile(const std::string& fname)
 {
-    FILE* f = fopen(fname.c_str(), "rb");
-    if (!f)
-        return;
-    fseek(f, 0, SEEK_END);
-    long size = ftell(f);
-    if (size <= 0)
-        return;
-    std::string content;
-    content.resize(size);
-    fseek(f, 0, SEEK_SET);
-    fread(content.data(), 1, size, f);
+    if (absl::StartsWith(fname, ":/")) {
+        std::wstring u16_fname = windows::EncodingManager::UTF8ToWide(fname.substr(1));
+        auto res_opt = windows::ResourceManager::instance()->LoadResource(u16_fname.c_str());
+        if (res_opt.has_value() && res_opt->data) {
+            std::string content((const char*)res_opt->data, res_opt->size);
+            loadScript(fname, content);
+        } else {
+            LOG(WARNING) << "Load file [" << fname << "] from resource failed.";
+            return;
+        }
+    } else {
+        FILE* f = fopen(fname.c_str(), "rb");
+        if (!f)
+            return;
+        fseek(f, 0, SEEK_END);
+        long size = ftell(f);
+        if (size <= 0)
+            return;
+        std::string content;
+        content.resize(size);
+        fseek(f, 0, SEEK_SET);
+        fread(content.data(), 1, size, f);
+        fclose(f);
+
+        loadScript(fname, content);
+    }
+}
+
+void Context::loadScript(const std::string& fname, absl::string_view content)
+{
     int eval_type = absl::EndsWithIgnoreCase(fname, ".mjs")
         ? JS_EVAL_TYPE_MODULE
         : (JS_DetectModule(content.data(), content.size()) ? JS_EVAL_TYPE_MODULE : JS_EVAL_TYPE_GLOBAL);
-    JSValue ret = JS_Eval(ctx_, content.data(), size, fname.c_str(), eval_type);
+    JSValue ret = JS_Eval(ctx_, content.data(), content.length(), fname.c_str(), eval_type);
     if (JS_IsException(ret)) {
         js_std_dump_error(ctx_);
     }

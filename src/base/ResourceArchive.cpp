@@ -226,7 +226,7 @@ void ResourceArchive::IterateNodes(int16_t idx, std::wstring& name, bool& valid)
 {
 	if (!valid)
 		return;
-	if (idx < 0 || (size_t)idx >= _nodes.size())
+	if ((size_t)idx >= _nodes.size())
 		return;
 
 	const auto& n = _nodes.at(idx);
@@ -238,13 +238,14 @@ void ResourceArchive::IterateNodes(int16_t idx, std::wstring& name, bool& valid)
 		}
 		auto& item = _items[n.eqkid];
 		LOG(INFO) << "Loaded resource [" << windows::EncodingManager::WideToUTF8(name) << "]";
-	} else {
-		IterateNodes(n.lokid, name, valid);
+	}
+	IterateNodes(n.lokid, name, valid);
+	if (n.splitchar) {
 		name.push_back(n.splitchar);
 		IterateNodes(n.eqkid, name, valid);
 		name.pop_back();
-		IterateNodes(n.hikid, name, valid);
 	}
+	IterateNodes(n.hikid, name, valid);
 }
 
 }

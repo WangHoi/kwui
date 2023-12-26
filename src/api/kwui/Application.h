@@ -11,6 +11,7 @@ public:
 	Application(int argc, wchar_t* argv[]);
 	~Application();
 	static void setLogCallback(LogCallback callback);
+	bool preloadResourceArchive(int id);
 	int exec();
 
 private:
