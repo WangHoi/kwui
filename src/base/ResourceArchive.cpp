@@ -191,6 +191,7 @@ bool ResourceArchive::Init(const uint8_t* data, size_t size)
 			LOG(WARNING) << "Invalid compress algorithm.";
 			return false;
 		}
+		compressed_offset += chunk.length;
 	}
 
 	bool valid = true;

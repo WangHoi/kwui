@@ -56,7 +56,7 @@ public:
 	inline JSContext* get() const { return ctx_; }
 
 	void loadFile(const std::string& fname);
-	void loadScript(const std::string& fname, absl::string_view content);
+	void loadScript(const std::string& fname, const std::string& content);
 
 	template<typename T>
 	T parse(JSValue j)

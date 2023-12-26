@@ -215,12 +215,12 @@ void Context::loadFile(const std::string& fname)
     }
 }
 
-void Context::loadScript(const std::string& fname, absl::string_view content)
+void Context::loadScript(const std::string& fname, const std::string& content)
 {
     int eval_type = absl::EndsWithIgnoreCase(fname, ".mjs")
         ? JS_EVAL_TYPE_MODULE
         : (JS_DetectModule(content.data(), content.size()) ? JS_EVAL_TYPE_MODULE : JS_EVAL_TYPE_GLOBAL);
-    JSValue ret = JS_Eval(ctx_, content.data(), content.length(), fname.c_str(), eval_type);
+    JSValue ret = JS_Eval(ctx_, content.c_str(), content.length(), fname.c_str(), eval_type);
     if (JS_IsException(ret)) {
         js_std_dump_error(ctx_);
     }
