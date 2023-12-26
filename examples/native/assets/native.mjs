@@ -1,6 +1,10 @@
 "use strict";
 "use math";
 
+import { add } from "./test_mod.mjs";
+
+console.log("module add 2 + 3 =", add(2, 3));
+
 globalThis.port = new __EventPort();
 
 globalThis.scriptAdd = function (a, b) {
