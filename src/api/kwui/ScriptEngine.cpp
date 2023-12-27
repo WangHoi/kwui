@@ -192,6 +192,9 @@ ScriptValue ScriptEngine::callGlobalFunction(const char* name, int argc, ScriptV
 			jargs.push_back(Private::unwrap(ctx, argv[i]));
 		}
 		JSValue jret = JS_Call(ctx, func, JS_UNDEFINED, argc, jargs.data());
+		if (JS_IsException(jret)) {
+			js_std_dump_error(ctx);
+		}
 		ret = Private::wrap(ctx, jret);
 		JS_FreeValue(ctx, jret);
 		for (int i = 0; i < argc; ++i) {

@@ -17,6 +17,7 @@ public:
 	static void gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func);
 	static JSValue addListener(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 	static JSValue removeListener(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+	static JSValue postEvent(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 
 	static EventPort* findEventPort(int id);
 

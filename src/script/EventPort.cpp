@@ -14,6 +14,7 @@ static JSClassDef js_event_port_clsdef = {
 static const JSCFunctionListEntry js_event_port_proto_funcs[] = {
 	js_cfunc_def("addListener", 1, &EventPort::addListener),
 	js_cfunc_def("removeListener", 1, &EventPort::removeListener),
+	js_cfunc_def("postEvent", 1, &EventPort::postEvent),
 };
 
 static int g_next_port_id = 1;
@@ -47,8 +48,18 @@ bool EventPort::postEvent(int port_id, const kwui::ScriptValue& val)
 	EventPort* port = it->second;
 	std::vector<Value> listeners = port->listeners_;
 	Value v(port->ctx_, val);
-	for (const auto& func : listeners) {
-		JS_Call(port->ctx_, func.jsValue(), JS_UNDEFINED, 1, &v.jsValue());
+	for (const auto& l : listeners) {
+		if (JS_IsFunction(port->ctx_, l.jsValue())) {
+			JSValue ret = JS_Call(port->ctx_, l.jsValue(), JS_UNDEFINED, 1, &v.jsValue());
+			if (JS_IsException(ret)) {
+				js_std_dump_error(port->ctx_);
+			}
+			JS_FreeValue(port->ctx_, ret);
+		} else if (JS_IsObject(l.jsValue())) {
+			kwui::ScriptFunction* func;
+			JS_GetClassID(l.jsValue(), (void**)&func);
+			func(1, (kwui::ScriptValue*)&val);
+		}
 	}
 	return true;
 }
@@ -121,6 +132,34 @@ JSValue EventPort::removeListener(JSContext* ctx, JSValueConst this_val, int arg
 		return JS_FALSE;
 	}
 	port->listeners_.erase(it);
+	return JS_TRUE;
+}
+
+JSValue EventPort::postEvent(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	EventPort* port = (EventPort*)JS_GetOpaque(this_val, JS_CLASS_ID);
+	std::vector<Value> listeners = port->listeners_;
+	Value v(port->ctx_, argv[0]);
+	for (const auto& l : listeners) {
+		if (JS_IsFunction(port->ctx_, l.jsValue())) {
+			JSValue ret = JS_Call(port->ctx_, l.jsValue(), JS_UNDEFINED, 1, &v.jsValue());
+			if (JS_IsException(ret)) {
+				js_std_dump_error(ctx);
+			}
+			JS_FreeValue(ctx, ret);
+		} else if (JS_IsObject(l.jsValue())) {
+			// TODO: hacky code
+			kwui::ScriptFunction* func;
+			JS_GetClassID(l.jsValue(), (void**)&func);
+			kwui::ScriptValue val;
+			if (JS_IsString(argv[0])) {
+				const char* s = JS_ToCString(ctx, argv[0]);
+				val = std::string(s);
+				JS_FreeCString(ctx, s);
+			}
+			func(1, &val);
+		}
+	}
 	return JS_TRUE;
 }
 
