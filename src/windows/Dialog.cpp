@@ -56,9 +56,9 @@ void Dialog::SetVisible(bool visible) {
     if (_visible != visible) {
         _visible = visible;
     }
-    // if (_popup_shadow) {
-        // _popup_shadow->SetVisible(visible);
-    // }
+    if (_popup_shadow) {
+        _popup_shadow->SetVisible(visible);
+    }
     ShowWindow(_hwnd, _visible ? SW_SHOWNORMAL : SW_HIDE);
     if (_hwnd_parent) {
         EnableWindow(_hwnd_parent, !_visible);
