@@ -2,7 +2,9 @@
 #include "GraphicDevice.h"
 #include "base/log.h"
 #include "windows/EncodingManager.h"
+#include "windows/ResourceManager.h"
 #include "TextAnalysis.h"
+#include "absl/strings/match.h"
 #include <numeric>
 
 namespace windows {
@@ -198,15 +200,15 @@ bool GraphicDevice::GetFontMetrics(const std::string& font_family, DWRITE_FONT_M
 	return false;
 }
 
-void GraphicDevice::LoadBitmapToCache(const std::string& name, absl::Span<uint8_t> res_x1) {
+void GraphicDevice::LoadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1) {
 	BitmapItem bitmap;
 	bitmap.x1 = LoadBitmapFromResource(res_x1, scene2d::PointF::fromAll(1.0f));
 	bitmap.x1_5 = bitmap.x1;
 	bitmap.x2 = bitmap.x1;
 	_bitmap_cache[name] = bitmap;
 }
-void GraphicDevice::LoadBitmapToCache(const std::string& name, absl::Span<uint8_t> res_x1,
-	absl::Span<uint8_t> res_x1_5, absl::Span<uint8_t> res_x2) {
+void GraphicDevice::LoadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1,
+	absl::Span<const uint8_t> res_x1_5, absl::Span<const uint8_t> res_x2) {
 	BitmapItem bitmap;
 	bitmap.x1 = LoadBitmapFromResource(res_x1, scene2d::PointF::fromAll(1.0f));
 	bitmap.x1_5 = LoadBitmapFromResource(res_x1_5, scene2d::PointF::fromAll(1.5f));
@@ -221,7 +223,7 @@ void GraphicDevice::LoadBitmapToCache(const std::string& name, const std::wstrin
 	bitmap.x2 = bitmap.x1;
 	_bitmap_cache[name] = bitmap;
 }
-BitmapSubItem GraphicDevice::LoadBitmapFromResource(absl::Span<uint8_t> res, const scene2d::PointF& dpi_scale) {
+BitmapSubItem GraphicDevice::LoadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF& dpi_scale) {
 	HRESULT hr;
 	ComPtr<IWICStream> stream;
 
@@ -280,8 +282,34 @@ BitmapSubItem GraphicDevice::LoadBitmapFromStream(ComPtr<IWICStream> stream, con
 	}
 	return item;
 }
-BitmapSubItem GraphicDevice::GetBitmap(const std::string& name, float dpi_scale) const {
+void GraphicDevice::LoadBitmapToCache(const std::string& name)
+{
+	std::string name_res = absl::StartsWith(name, ":") ? name.substr(1) : name;
+	auto RM = windows::ResourceManager::instance();
+	absl::optional<base::ResourceArchive::ResourceItem> x1, x1_5, x2;
+	x1 = RM->LoadResource(windows::EncodingManager::UTF8ToWide(name_res).c_str());
+	int idx = name_res.rfind('.');
+	if (idx != std::string::npos) {
+		std::string name_res_x1_5 = name_res.substr(0, idx) + "@1.5x" + name_res.substr(idx);
+		x1_5 = RM->LoadResource(windows::EncodingManager::UTF8ToWide(name_res_x1_5).c_str());
+		std::string name_res_x2 = name_res.substr(0, idx) + "@2x" + name_res.substr(idx);
+		x2 = RM->LoadResource(windows::EncodingManager::UTF8ToWide(name_res_x2).c_str());
+	}
+	if (!x1.has_value())
+		return;
+	if (!x1_5.has_value())
+		x1_5 = x1;
+	if (!x2.has_value())
+		x2 = x1_5;
+	LoadBitmapToCache(name, absl::MakeSpan(x1->data, x1->size),
+		absl::MakeSpan(x1_5->data, x1_5->size), absl::MakeSpan(x2->data, x2->size));
+}
+BitmapSubItem GraphicDevice::GetBitmap(const std::string& name, float dpi_scale) {
 	auto it = _bitmap_cache.find(name);
+	if (it == _bitmap_cache.end()) {
+		LoadBitmapToCache(name);
+		it = _bitmap_cache.find(name);
+	}
 	if (it == _bitmap_cache.end())
 		return BitmapSubItem();
 	if (dpi_scale >= 1.75f)

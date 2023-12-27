@@ -58,10 +58,9 @@ absl::optional<ResourceArchive::ResourceItem> ResourceArchive::FindItem(const wc
 	int16_t idx = 0;
 	while ((size_t)idx < _nodes.size()) {
 		const auto& n = _nodes[idx];
-		wchar_t ch = towlower(*p);
-		if (ch < n.splitchar) {
+		if (*p < n.splitchar) {
 			idx = n.lokid;
-		} else if (ch > n.splitchar) {
+		} else if (*p > n.splitchar) {
 			idx = n.hikid;
 		} else {
 			if (*p++ == 0) {
@@ -191,7 +190,7 @@ bool ResourceArchive::Init(const uint8_t* data, size_t size)
 			LOG(WARNING) << "Invalid compress algorithm.";
 			return false;
 		}
-		compressed_offset += chunk.length;
+		compressed_offset += chunk.compressed_length;
 	}
 
 	bool valid = true;

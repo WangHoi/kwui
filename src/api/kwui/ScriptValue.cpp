@@ -2,14 +2,20 @@
 #include "absl/types/variant.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#include "fifo_map.hpp"
+#include <vector>
+using nlohmann::fifo_map;
 
 namespace kwui {
+
+static const ScriptValue g_null_value;
+static ScriptValue g_null_ref;
 
 class ScriptValue::Private {
 public:
 	struct Null {};
 
-	absl::variant<Null, bool, double, std::string> var;
+	absl::variant<Null, bool, double, std::string, std::vector<ScriptValue>, fifo_map<std::string, ScriptValue>> var;
 };
 
 ScriptValue::ScriptValue()
@@ -53,6 +59,20 @@ ScriptValue::~ScriptValue()
 	delete d;
 }
 
+ScriptValue ScriptValue::newArray()
+{
+	ScriptValue val;
+	val.d->var.emplace<std::vector<ScriptValue>>();
+	return val;
+}
+
+ScriptValue ScriptValue::newObject()
+{
+	ScriptValue val;
+	val.d->var.emplace<fifo_map<std::string, ScriptValue>>();
+	return val;
+}
+
 ScriptValue& ScriptValue::operator=(const ScriptValue& o)
 {
 	d->var = o.d->var;
@@ -63,6 +83,56 @@ ScriptValue& ScriptValue::operator=(ScriptValue&& o) noexcept
 {
 	d->var = std::move(o.d->var);
 	return *this;
+}
+
+const ScriptValue& ScriptValue::operator[](int idx) const
+{
+	if (!isArray())
+		return g_null_value;
+	const auto& arr = absl::get<std::vector<ScriptValue>>(d->var);
+	if (idx < 0 || idx >= (int)arr.size())
+		return g_null_value;
+	return arr[idx];
+}
+
+ScriptValue& ScriptValue::operator[](int idx)
+{
+	if (!isArray() || idx < 0) {
+		g_null_ref = ScriptValue();
+		return g_null_ref;
+	}
+	auto& arr = absl::get<std::vector<ScriptValue>>(d->var);
+	if (idx >= (int)arr.size()) {
+		arr.resize(idx + 1);
+	}
+	return arr[idx];
+}
+
+const ScriptValue& ScriptValue::operator[](const char* key) const
+{
+	if (!isObject())
+		return g_null_value;
+	const auto& obj = absl::get<fifo_map<std::string, ScriptValue>>(d->var);
+	auto it = obj.find(key);
+	if (it == obj.end())
+		return g_null_value;
+	return it->second;
+}
+
+ScriptValue& ScriptValue::operator[](const char* key)
+{
+	if (!isObject()) {
+		g_null_ref = ScriptValue();
+		return g_null_ref;
+	}
+	auto& obj = absl::get<fifo_map<std::string, ScriptValue>>(d->var);
+	auto it = obj.find(key);
+	if (it == obj.end()) {
+		std::string k(key);
+		obj[k] = ScriptValue();
+		return obj[k];
+	}
+	return it->second;
 }
 
 bool ScriptValue::isNull() const
@@ -83,6 +153,16 @@ bool ScriptValue::isNumber() const
 bool ScriptValue::isString() const
 {
 	return absl::holds_alternative<std::string>(d->var);
+}
+
+bool ScriptValue::isArray() const
+{
+	return absl::holds_alternative<std::vector<ScriptValue>>(d->var);
+}
+
+bool ScriptValue::isObject() const
+{
+	return absl::holds_alternative<fifo_map<std::string, ScriptValue>>(d->var);
 }
 
 bool ScriptValue::toBool() const
@@ -130,10 +210,34 @@ std::string ScriptValue::toString() const
 		return absl::get<bool>(d->var) ? "true" : "false";
 	} else if (absl::holds_alternative<double>(d->var)) {
 		return absl::StrCat(absl::get<double>(d->var));
+	} else if (absl::holds_alternative<std::vector<ScriptValue>>(d->var)) {
+		return "[array]";
+	} else if (absl::holds_alternative<fifo_map<std::string, ScriptValue>>(d->var)) {
+		return "[object]";
 	} else {
 		return std::string();
 	}
 }
 
+void ScriptValue::visitArray(std::function<void(int, const ScriptValue&)>&& f) const
+{
+	if (!isArray())
+		return;
+	const auto& arr = absl::get<std::vector<ScriptValue>>(d->var);
+	int i = 0;
+	for (const auto& val : arr) {
+		f(i++, val);
+	}
+}
+
+void ScriptValue::visitObject(std::function<void(const std::string&, const ScriptValue&)>&& f) const
+{
+	if (!isObject())
+		return;
+	const auto& obj = absl::get<fifo_map<std::string, ScriptValue>>(d->var);
+	for (const auto& p : obj) {
+		f(p.first, p.second);
+	}
+}
 
 }

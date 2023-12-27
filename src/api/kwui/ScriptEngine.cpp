@@ -65,6 +65,22 @@ public:
 			std::string str(s, len);
 			JS_FreeCString(ctx, s);
 			return ScriptValue(str);
+		} else if (JS_IsArray(ctx, c)) {
+			ScriptValue arr = ScriptValue::newArray();
+			int64_t len = 0;
+			JS_GetPropertyLength(ctx, &len, c);
+			for (int i = 0; i < len; ++i) {
+				JSValue elem = JS_GetPropertyUint32(ctx, c, (uint32_t)i);
+				arr[i] = wrap(ctx, elem);
+				JS_FreeValue(ctx, elem);
+			}
+			return arr;
+		} else if (JS_IsObjectPlain(ctx, c)) {
+			ScriptValue obj = ScriptValue::newObject();
+			script::Context::eachObjectField(ctx, c, [&](const char* prop_name, JSValue prop_value) {
+				obj[prop_name] = wrap(ctx, prop_value);
+				});
+			return obj;
 		} else if (JS_IsObject(c)) {
 			auto port = (script::EventPort*)JS_GetOpaque2(ctx, c, script::EventPort::JS_CLASS_ID);
 			if (port)
@@ -82,6 +98,18 @@ public:
 		} else if (c.isString()) {
 			std::string s = c.toString();
 			return JS_NewStringLen(ctx, s.data(), s.length());
+		} else if (c.isArray()) {
+			JSValue arr = JS_NewArray(ctx);
+			c.visitArray([&](int idx, const ScriptValue& elem) {
+				JS_DefinePropertyValueUint32(ctx, arr, (uint32_t)idx, unwrap(ctx, elem), JS_PROP_C_W_E);
+				});
+			return arr;
+		} else if (c.isObject()) {
+			JSValue obj = JS_NewObject(ctx);
+			c.visitObject([&](const std::string& key, const ScriptValue& elem) {
+				JS_DefinePropertyValueStr(ctx, obj, key.c_str(), unwrap(ctx, elem), JS_PROP_C_W_E);
+				});
+			return obj;
 		} else {
 			return JS_NULL;
 		}

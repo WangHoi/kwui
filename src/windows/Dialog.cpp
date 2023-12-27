@@ -454,6 +454,7 @@ void Dialog::OnCreate() {
     _close_button->SetOrigin({ _size.x - 40, 0 });
     _root->AddChild(_close_button);
     _close_button->SetClickedCallback(MakeCallback(this, &Dialog::OnCloseButtonClicked));
+    */
     if (_popup_shadow_data.has_value()) {
         float px = (float)_popup_shadow_data->padding;
         float py = (float)_popup_shadow_data->padding;
@@ -461,12 +462,11 @@ void Dialog::OnCreate() {
             ? _create_data->monitor
             : NULL;
         _popup_shadow_data->dpi_scale = _dpi_scale;
-        _popup_shadow = make_shared<PopupShadow>(
-            _size.x + px * 2,
-            _size.y + py * 2,
-            _hwnd, L"popupshadow", *_popup_shadow_data);
+        _popup_shadow = std::make_unique<PopupShadow>(
+            _size.width + px * 2,
+            _size.height + py * 2,
+            _hwnd, L"kwui::PopupShadow", *_popup_shadow_data);
     }
-    */
 }
 void Dialog::OnPaint() {
     if (!_rt) {

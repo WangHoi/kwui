@@ -108,7 +108,7 @@ static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* o
 
 static char* normalize_module(JSContext* ctx, const char* base_name, const char* name, void* opaque)
 {
-	char* filename, *p;
+	char* filename, * p;
 	const char* r;
 	int len;
 
@@ -335,10 +335,59 @@ JSValue Context::wrapScene(scene2d::Scene* scene)
 
 JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+	float width = 640.0;
+	float height = 480.0;
+	int flags = windows::DIALOG_FLAG_MAIN;
+	absl::optional<windows::PopupShadowData> popup_shadow = absl::nullopt;
+	JSValue root = JS_UNDEFINED;
+	JSValue stylesheet = JS_UNDEFINED;
+	Context::eachObjectField(ctx, argv[0], [&](const char* name, JSValue value) {
+		if (!strcmp(name, "width") && JS_IsNumber(value)) {
+			double f64;
+			JS_ToFloat64(ctx, &f64, value);
+			width = (float)f64;
+		} else if (!strcmp(name, "height") && JS_IsNumber(value)) {
+			double f64;
+			JS_ToFloat64(ctx, &f64, value);
+			height = (float)f64;
+		} else if (!strcmp(name, "flags") && JS_IsNumber(value)) {
+			int32_t i32;
+			JS_ToInt32(ctx, &i32, value);
+			flags = i32;
+		} else if (!strcmp(name, "popup_shadow") && JS_IsObjectPlain(ctx, value)) {
+			std::string image;
+			int padding = 0;
+			JSValue val;
+
+			val = JS_GetPropertyStr(ctx, value, "image");
+			if (JS_IsString(val)) {
+				size_t image_len = 0;
+				const char* image_str = JS_ToCStringLen(ctx, &image_len, val);
+				image.assign(image_str, image_len);
+				JS_FreeCString(ctx, image_str);
+			}
+			JS_FreeValue(ctx, val);
+
+			val = JS_GetPropertyStr(ctx, value, "padding");
+			if (JS_IsNumber(val)) {
+				int32_t i32;
+				JS_ToInt32(ctx, &i32, val);
+				padding = i32;
+			}
+			JS_FreeValue(ctx, val);
+
+			popup_shadow.emplace<windows::PopupShadowData>({ image, padding });
+		} else if (!strcmp(name, "root")) {
+			root = JS_DupValue(ctx, value);
+		} else if (!strcmp(name, "stylesheet")) {
+			root = JS_DupValue(ctx, value);
+		}
+		});
+
 	auto dialog = new windows::Dialog(
-		640, 480, L"dialog", NULL, windows::DIALOG_FLAG_MAIN,
-		absl::nullopt, absl::nullopt);
-	if (argc >= 2 && JS_IsObject(argv[1])) {
+		width, height, L"dialog", NULL, flags,
+		popup_shadow, absl::nullopt);
+	if (JS_IsObject(stylesheet)) {
 		auto scene = dialog->GetScene();
 		Context::eachObjectField(ctx, argv[1], [ctx, scene](const char* name, JSValue value) {
 			auto selectors_res = style::Selector::parseGroup(name);
@@ -352,7 +401,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 				LOG(WARNING) << "parse selector '" << name << "' failed";
 			}
 			});
-	} else if (argc >= 2 && JS_IsString(argv[1])) {
+	} else if (JS_IsString(stylesheet)) {
 		auto scene = dialog->GetScene();
 		const char* s = JS_ToCString(ctx, argv[1]);
 		if (s) {
@@ -365,7 +414,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		}
 		JS_FreeCString(ctx, s);
 	}
-	scene2d::Node* content_root = dialog->GetScene()->createComponentNode(argv[0]);
+	scene2d::Node* content_root = dialog->GetScene()->createComponentNode(root);
 	if (content_root)
 		dialog->GetScene()->root()->appendChild(content_root);
 	LOG(INFO) << "show dialog";
