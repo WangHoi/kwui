@@ -11,17 +11,14 @@ public:
 
 	static ScriptEngine* get();
 	static void release();
-	void addGlobalFunction(const char* name, ScriptFunction* func);
+	void addGlobalFunction(const char* name, ScriptFunction* func, void* udata);
 	void loadFile(const char* path);
 	ScriptValue callGlobalFunction(const char* name, int argc, ScriptValue* argv);
 	//ModuleRegister& addGlobalModule(const char* name);
-	bool postEvent(int port, const ScriptValue& value);
-	// func is assosicated with EventPort's JSContext
-	bool addEventListener(int port, ScriptFunction* func);
-	bool removeEventListener(int port, ScriptFunction* func);
-	// create in default JSContext
-	int createEventPort();
-	void releaseEventPort(int port);
+	
+	void postEvent(const std::string& event, const ScriptValue& value);
+	void addEventListener(const std::string& event, ScriptFunction* func, void* udata);
+	bool removeEventListener(const std::string& event, ScriptFunction* func, void* udata);
 
 private:
 	ScriptEngine();

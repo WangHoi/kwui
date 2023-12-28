@@ -1,193 +1,130 @@
 #include "EventPort.h"
 #include "absl/base/macros.h"
+#include <unordered_map>
 
 namespace script {
 
-JSClassID EventPort::JS_CLASS_ID = 0;
-const char* EventPort::JS_CLASS_NAME = "__EventPort";
-
-static JSClassDef js_event_port_clsdef = {
-	EventPort::JS_CLASS_NAME,
-	&EventPort::finalizer,
-	&EventPort::gcMark,
-};
-static const JSCFunctionListEntry js_event_port_proto_funcs[] = {
-	js_cfunc_def("addListener", 1, &EventPort::addListener),
-	js_cfunc_def("removeListener", 1, &EventPort::removeListener),
-	js_cfunc_def("postEvent", 1, &EventPort::postEvent),
+struct NativeSubItem {
+	kwui::ScriptFunction* func;
+	void* udata;
 };
 
-static int g_next_port_id = 1;
-static std::map<int, EventPort*> g_event_port_map;
+struct ScriptSubItem {
+	JSContext* ctx;
+	JSValue func;
+};
 
-void js_add_event_port(JSContext* ctx)
+struct Subscription {
+	std::vector<NativeSubItem> native_subs;
+	std::vector<ScriptSubItem> script_subs;
+};
+
+std::unordered_map<std::string, Subscription> g_subscription;
+
+void EventPort::postFromNative(const std::string& event, const kwui::ScriptValue& value)
 {
-	JSValue global = JS_GetGlobalObject(ctx);
-
-	JS_NewClassID(&EventPort::JS_CLASS_ID);
-	JS_NewClass(JS_GetRuntime(ctx), EventPort::JS_CLASS_ID, &js_event_port_clsdef);
-
-	JSValue proto = JS_NewObject(ctx);
-	JS_SetPropertyFunctionList(ctx, proto, js_event_port_proto_funcs, ABSL_ARRAYSIZE(js_event_port_proto_funcs));
-
-	JSValue klass = JS_NewCFunction2(ctx, &EventPort::constructor, EventPort::JS_CLASS_NAME, 0, JS_CFUNC_constructor, 0);
-	/* set proto.constructor and ctor.prototype */
-	JS_SetConstructor(ctx, klass, proto);
-	JS_SetClassProto(ctx, EventPort::JS_CLASS_ID, proto);
-
-	JS_SetPropertyStr(ctx, global, EventPort::JS_CLASS_NAME, klass);
-
-	JS_FreeValue(ctx, global);
+	return doPost(event, value);
 }
-
-bool EventPort::postEvent(int port_id, const kwui::ScriptValue& val)
+void EventPort::addListenerFromNative(const std::string& event, kwui::ScriptFunction* func, void* udata)
 {
-	auto it = g_event_port_map.find(port_id);
-	if (it == g_event_port_map.end())
+	Subscription& sub = g_subscription[event];
+	
+	// TODO: check duplicate add
+	
+	sub.native_subs.emplace_back<NativeSubItem>({ func, udata });
+}
+bool EventPort::removeListenerFromNative(const std::string& event, kwui::ScriptFunction* func, void* udata)
+{
+	auto it = g_subscription.find(event);
+	if (it == g_subscription.end())
 		return false;
-	EventPort* port = it->second;
-	std::vector<Value> listeners = port->listeners_;
-	Value v(port->ctx_, val);
-	for (const auto& l : listeners) {
-		if (JS_IsFunction(port->ctx_, l.jsValue())) {
-			JSValue ret = JS_Call(port->ctx_, l.jsValue(), JS_UNDEFINED, 1, &v.jsValue());
-			if (JS_IsException(ret)) {
-				js_std_dump_error(port->ctx_);
-			}
-			JS_FreeValue(port->ctx_, ret);
-		} else if (JS_IsObject(l.jsValue())) {
-			kwui::ScriptFunction* func;
-			JS_GetClassID(l.jsValue(), (void**)&func);
-			func(1, (kwui::ScriptValue*)&val);
-		}
-	}
-	return true;
-}
-
-JSValue EventPort::constructor(JSContext* ctx, JSValueConst new_target, int argc, JSValueConst* argv)
-{
-	EventPort* port = nullptr;
-	JSValue obj = JS_UNDEFINED;
-	JSValue proto;
-
-	if (g_next_port_id == 0) {
-		return JS_ThrowInternalError(ctx, "event port exhausted.");
-	}
-
-	port = new EventPort();
-	if (!port)
-		return JS_EXCEPTION;
-	/* using new_target to get the prototype is necessary when the
-	   class is extended. */
-	proto = JS_GetPropertyStr(ctx, new_target, "prototype");
-	if (JS_IsException(proto))
-		goto fail;
-	obj = JS_NewObjectProtoClass(ctx, proto, JS_CLASS_ID);
-	JS_FreeValue(ctx, proto);
-	if (JS_IsException(obj))
-		goto fail;
-	JS_SetOpaque(obj, port);
-
-	port->ctx_ = ctx;
-	port->id_ = g_next_port_id++;
-	g_event_port_map[port->id_] = port;
-
-	return obj;
-fail:
-	delete port;
-	JS_FreeValue(ctx, obj);
-	return JS_EXCEPTION;
-}
-
-void EventPort::finalizer(JSRuntime* rt, JSValue val)
-{
-	EventPort* port = (EventPort*)JS_GetOpaque(val, JS_CLASS_ID);
-	g_event_port_map.erase(port->id_);
-	delete port;
-}
-
-void EventPort::gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)
-{
-	EventPort* port = (EventPort*)JS_GetOpaque(val, JS_CLASS_ID);
-	for (const auto& l : port->listeners_) {
-		JS_MarkValue(rt, l.jsValue(), mark_func);
-	}
-}
-
-JSValue EventPort::addListener(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-{
-	EventPort* port = (EventPort*)JS_GetOpaque(this_val, JS_CLASS_ID);
-	auto it = std::find(port->listeners_.begin(), port->listeners_.end(), argv[0]);
-	if (it == port->listeners_.end()) {
-		port->listeners_.emplace_back(ctx, argv[0]);
-	}
-	return JS_TRUE;
-}
-
-JSValue EventPort::removeListener(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-{
-	EventPort* port = (EventPort*)JS_GetOpaque(this_val, JS_CLASS_ID);
-	auto it = std::find(port->listeners_.begin(), port->listeners_.end(), argv[0]);
-	if (it == port->listeners_.end()) {
-		return JS_FALSE;
-	}
-	port->listeners_.erase(it);
-	return JS_TRUE;
-}
-
-JSValue EventPort::postEvent(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-{
-	EventPort* port = (EventPort*)JS_GetOpaque(this_val, JS_CLASS_ID);
-	std::vector<Value> listeners = port->listeners_;
-	Value v(port->ctx_, argv[0]);
-	for (const auto& l : listeners) {
-		if (JS_IsFunction(port->ctx_, l.jsValue())) {
-			JSValue ret = JS_Call(port->ctx_, l.jsValue(), JS_UNDEFINED, 1, &v.jsValue());
-			if (JS_IsException(ret)) {
-				js_std_dump_error(ctx);
-			}
-			JS_FreeValue(ctx, ret);
-		} else if (JS_IsObject(l.jsValue())) {
-			// TODO: hacky code
-			kwui::ScriptFunction* func;
-			JS_GetClassID(l.jsValue(), (void**)&func);
-			kwui::ScriptValue val;
-			if (JS_IsString(argv[0])) {
-				const char* s = JS_ToCString(ctx, argv[0]);
-				val = std::string(s);
-				JS_FreeCString(ctx, s);
-			}
-			func(1, &val);
-		}
-	}
-	return JS_TRUE;
-}
-
-EventPort* EventPort::findEventPort(int id)
-{
-	auto it = g_event_port_map.find(id);
-	return (it == g_event_port_map.end()) ? nullptr : it->second;
-}
-
-bool EventPort::addListener(JSClassID func_class_id, kwui::ScriptFunction* func)
-{
-	JSValue jfunc = JS_NewObjectClass(ctx_, func_class_id);
-	JS_SetOpaque(jfunc, func);
-	listeners_.emplace_back(ctx_, jfunc);
-	JS_FreeValue(ctx_, jfunc);
-	return true;
-}
-
-bool EventPort::removeListener(JSClassID func_class_id, kwui::ScriptFunction* func)
-{
-	for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
-		auto f = (kwui::ScriptFunction*)JS_GetOpaque2(it->jsContext(), it->jsValue(), func_class_id);
-		if (f == func) {
-			listeners_.erase(it);
+	auto& native_subs = it->second.native_subs;
+	for (auto& i = native_subs.begin(); i != native_subs.end(); ++i) {
+		if (i->func == func && i->udata == udata) {
+			native_subs.erase(i);
 			return true;
 		}
 	}
 	return false;
+}
+JSValue EventPort::postFromScript(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	if (!JS_IsString(argv[0])) {
+		return JS_ThrowTypeError(ctx, "post: expect string event");
+	}
+	const char* event = JS_ToCString(ctx, argv[0]);
+	doPost(event, wrap(ctx, argv[1]));
+	JS_FreeCString(ctx, event);
+	return JS_UNDEFINED;
+}
+JSValue EventPort::addListenerFromScript(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	if (!JS_IsString(argv[0])) {
+		return JS_ThrowTypeError(ctx, "addListener: expect string event");
+	}
+	const char* event = JS_ToCString(ctx, argv[0]);
+	Subscription& sub = g_subscription[std::string(event)];
+	JS_FreeCString(ctx, event);
+
+	// TODO: check duplicate add
+
+	sub.script_subs.emplace_back<ScriptSubItem>({ ctx, JS_DupValue(ctx, argv[1]) });
+	return JS_UNDEFINED;
+}
+JSValue EventPort::removeListenerFromScript(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	if (!JS_IsString(argv[0])) {
+		return JS_ThrowTypeError(ctx, "addListener: expect string event");
+	}
+	const char* event_str = JS_ToCString(ctx, argv[0]);
+	std::string event(event_str);
+	Subscription& sub = g_subscription[std::string(event)];
+	JS_FreeCString(ctx, event_str);
+	
+	auto it = g_subscription.find(event);
+	if (it == g_subscription.end())
+		return JS_FALSE;
+	auto& script_subs = it->second.script_subs;
+	for (auto& i = script_subs.begin(); i != script_subs.end(); ++i) {
+		if (i->func == argv[1]) {
+			JS_FreeValue(i->ctx, i->func);
+			script_subs.erase(i);
+			return JS_TRUE;
+		}
+	}
+	return JS_FALSE;
+}
+void EventPort::setupAppObject(JSContext* ctx, JSValue app)
+{
+	JS_SetPropertyStr(ctx, app, "post",
+		JS_NewCFunction(ctx, &EventPort::postFromScript, "app.post", 2));
+	JS_SetPropertyStr(ctx, app, "addListener",
+		JS_NewCFunction(ctx, &EventPort::addListenerFromScript, "app.addListener", 2));
+	JS_SetPropertyStr(ctx, app, "removeListener",
+		JS_NewCFunction(ctx, &EventPort::removeListenerFromScript, "app.removeListener", 2));
+}
+void EventPort::doPost(const std::string& event, const kwui::ScriptValue& value)
+{
+	auto it = g_subscription.find(event);
+	if (it == g_subscription.end())
+		return;
+	Subscription sub = it->second;
+	kwui::ScriptValue argv[2] = { event, value };
+	for (auto& item : sub.native_subs) {
+		item.func(2, argv, item.udata);
+	}
+
+	for (auto& item : sub.script_subs) {
+		JSValue jval[2];
+		jval[0] = JS_NewString(item.ctx, event.c_str());
+		jval[1] = script::unwrap(item.ctx, value);
+		JSValue ret = JS_Call(item.ctx, item.func, JS_UNDEFINED, 2, jval);
+		if (JS_IsException(ret)) {
+			js_std_dump_error(item.ctx);
+		}
+		JS_FreeValue(item.ctx, jval[0]);
+		JS_FreeValue(item.ctx, jval[1]);
+	}
 }
 
 }

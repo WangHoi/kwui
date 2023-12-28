@@ -8,7 +8,7 @@ namespace kwui {
 
 class ScriptValue;
 
-typedef ScriptValue (ScriptFunction)(int argc, ScriptValue* argv);
+typedef ScriptValue (ScriptFunction)(int argc, const ScriptValue* argv, void* udata);
 //typedef ScriptValue (*ScriptPropertyGetter)(ScriptEngine* ctx, ScriptValue this_val);
 //typedef ScriptValue (*ScriptPropertySetter)(ScriptEngine* ctx, ScriptValue this_val, ScriptValue val);
 
@@ -18,6 +18,7 @@ public:
 	ScriptValue(bool v);
 	ScriptValue(int v);
 	ScriptValue(double v);
+	ScriptValue(const char* s);
 	ScriptValue(const std::string& s);
 	ScriptValue(const ScriptValue& o);
 	ScriptValue(ScriptValue&& o) noexcept;

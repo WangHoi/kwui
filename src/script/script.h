@@ -326,4 +326,7 @@ static inline JSCFunctionListEntry js_cfunc_def(const char* name, uint8_t minarg
 	return def;
 }
 
+kwui::ScriptValue wrap(JSContext* ctx, JSValueConst c);
+JSValue unwrap(JSContext* ctx, const kwui::ScriptValue& c);
+
 }

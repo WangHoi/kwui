@@ -10,9 +10,12 @@ namespace kwui {
 struct FunctionDef {
 	std::string name;
 	ScriptFunction* func;
+	void* udata;
+};
 
-	FunctionDef(const char* n, ScriptFunction* f)
-		: name(n), func(f) {}
+struct ScriptFunctionClosure {
+	ScriptFunction* func;
+	void* udata;
 };
 
 static ScriptEngine* g_engine = nullptr;
@@ -43,97 +46,34 @@ public:
 		JS_NewClassID(&script_func_clsid);
 		JS_NewClass(JS_GetRuntime(j), script_func_clsid, &script_func_class);
 		JSValue jobj = JS_NewObjectClass(j, script_func_clsid);
-		JS_SetOpaque(jobj, def->func);
+		auto closure = new ScriptFunctionClosure{ def->func, def->udata };
+		JS_SetOpaque(jobj, closure);
 
 		JS_SetPropertyStr(j, global, def->name.c_str(), jobj);
 		
 		JS_FreeValue(j, global);
 	}
 	
-	static ScriptValue wrap(JSContext* ctx, JSValueConst c)
-	{
-		if (JS_IsBool(c)) {
-			return JS_ToBool(ctx, c);
-		} else if (JS_IsNumber(c)) {
-			double f64 = 0.0;
-			JS_ToFloat64(ctx, &f64, c);
-			return ScriptValue(f64);
-		} else if (JS_IsString(c)) {
-			const char* s = nullptr;
-			size_t len = 0;
-			s = JS_ToCStringLen(ctx, &len, c);
-			std::string str(s, len);
-			JS_FreeCString(ctx, s);
-			return ScriptValue(str);
-		} else if (JS_IsArray(ctx, c)) {
-			ScriptValue arr = ScriptValue::newArray();
-			int64_t len = 0;
-			JS_GetPropertyLength(ctx, &len, c);
-			for (int i = 0; i < len; ++i) {
-				JSValue elem = JS_GetPropertyUint32(ctx, c, (uint32_t)i);
-				arr[i] = wrap(ctx, elem);
-				JS_FreeValue(ctx, elem);
-			}
-			return arr;
-		} else if (JS_IsObjectPlain(ctx, c)) {
-			ScriptValue obj = ScriptValue::newObject();
-			script::Context::eachObjectField(ctx, c, [&](const char* prop_name, JSValue prop_value) {
-				obj[prop_name] = wrap(ctx, prop_value);
-				});
-			return obj;
-		} else if (JS_IsObject(c)) {
-			auto port = (script::EventPort*)JS_GetOpaque2(ctx, c, script::EventPort::JS_CLASS_ID);
-			if (port)
-				return ScriptValue(port->id());
-		}
-		return ScriptValue();
-	}
-
-	static JSValue unwrap(JSContext* ctx, const ScriptValue& c)
-	{
-		if (c.isBool()) {
-			return JS_NewBool(ctx, c.toBool());
-		} else if (c.isNumber()) {
-			return JS_NewFloat64(ctx, c.toDouble());
-		} else if (c.isString()) {
-			std::string s = c.toString();
-			return JS_NewStringLen(ctx, s.data(), s.length());
-		} else if (c.isArray()) {
-			JSValue arr = JS_NewArray(ctx);
-			c.visitArray([&](int idx, const ScriptValue& elem) {
-				JS_DefinePropertyValueUint32(ctx, arr, (uint32_t)idx, unwrap(ctx, elem), JS_PROP_C_W_E);
-				});
-			return arr;
-		} else if (c.isObject()) {
-			JSValue obj = JS_NewObject(ctx);
-			c.visitObject([&](const std::string& key, const ScriptValue& elem) {
-				JS_DefinePropertyValueStr(ctx, obj, key.c_str(), unwrap(ctx, elem), JS_PROP_C_W_E);
-				});
-			return obj;
-		} else {
-			return JS_NULL;
-		}
-	}
-
 	static JSValue callScriptFunc(
 		JSContext* ctx, JSValueConst func_obj,
 		JSValueConst this_val, int argc, JSValueConst* argv,
 		int flags)
 	{
-		ScriptFunction* func = (ScriptFunction*)JS_GetOpaque2(ctx, func_obj, script_func_clsid);
+		auto closure = (ScriptFunctionClosure*)JS_GetOpaque2(ctx, func_obj, script_func_clsid);
 
 		std::vector<ScriptValue> args;
 		args.reserve(argc + 1);
 
 		for (int i = 0; i < argc; ++i) {
-			args.emplace_back(wrap(ctx, argv[i]));
+			args.emplace_back(script::wrap(ctx, argv[i]));
 		}
 		args.emplace_back();
 
-		ScriptValue ret = func(argc, args.data());
+		ScriptValue ret = closure->func(argc, args.data(), closure->udata);
 
-		return unwrap(ctx, ret);
+		return script::unwrap(ctx, ret);
 	}
+	static void script_func_finalizer(JSRuntime* rt, JSValue val);
 	static JSClassID script_func_clsid;
 	static JSClassDef script_func_class;
 
@@ -143,10 +83,16 @@ public:
 	//std::vector<std::unique_ptr<ModuleRegister>> modules;
 };
 
+void ScriptEngine::Private::script_func_finalizer(JSRuntime* rt, JSValue val)
+{
+	auto closure = (ScriptFunctionClosure*)JS_GetOpaque(val, script_func_clsid);
+	delete closure;
+}
+
 JSClassID ScriptEngine::Private::script_func_clsid = {};
 JSClassDef ScriptEngine::Private::script_func_class = {
 	"ScriptFunction",
-	nullptr, // finalizer
+	&Private::script_func_finalizer, // finalizer
 	nullptr, // gcmark
 	&ScriptEngine::Private::callScriptFunc // call
 };
@@ -168,9 +114,9 @@ void ScriptEngine::release()
 	g_engine = nullptr;
 }
 
-void ScriptEngine::addGlobalFunction(const char* name, ScriptFunction* func)
+void ScriptEngine::addGlobalFunction(const char* name, ScriptFunction* func, void* udata)
 {
-	d->global_funcs.emplace_back(std::make_unique<FunctionDef>(name, func));
+	d->global_funcs.emplace_back(std::make_unique<FunctionDef>(FunctionDef{ name, func, udata }));
 	script::Runtime::get()->eachContext(absl::bind_front(
 		&Private::setGlobalFunction, d, d->global_funcs.back().get()));
 }
@@ -189,13 +135,13 @@ ScriptValue ScriptEngine::callGlobalFunction(const char* name, int argc, ScriptV
 	if (JS_IsFunction(ctx, func)) {
 		std::vector<JSValue> jargs;
 		for (int i = 0; i < argc; ++i) {
-			jargs.push_back(Private::unwrap(ctx, argv[i]));
+			jargs.push_back(script::unwrap(ctx, argv[i]));
 		}
 		JSValue jret = JS_Call(ctx, func, JS_UNDEFINED, argc, jargs.data());
 		if (JS_IsException(jret)) {
 			js_std_dump_error(ctx);
 		}
-		ret = Private::wrap(ctx, jret);
+		ret = script::wrap(ctx, jret);
 		JS_FreeValue(ctx, jret);
 		for (int i = 0; i < argc; ++i) {
 			JS_FreeValue(ctx, jargs[i]);
@@ -212,48 +158,21 @@ ScriptValue ScriptEngine::callGlobalFunction(const char* name, int argc, ScriptV
 //	return *d->modules.back();
 //}
 
-bool ScriptEngine::postEvent(int port, const ScriptValue& value)
+void ScriptEngine::postEvent(const std::string& event, const ScriptValue& value)
 {
-	return script::EventPort::postEvent(port, value);
+	return script::EventPort::postFromNative(event, value);
 }
 
-bool ScriptEngine::addEventListener(int port_id, ScriptFunction* func)
+void ScriptEngine::addEventListener(const std::string& event,
+	ScriptFunction* func, void* udata)
 {
-	script::EventPort* port = script::EventPort::findEventPort(port_id);
-	if (!port)
-		return false;
-	return port->addListener(d->script_func_clsid, func);
+	return script::EventPort::addListenerFromNative(event, func, udata);
 }
 
-bool ScriptEngine::removeEventListener(int port_id, ScriptFunction* func)
+bool ScriptEngine::removeEventListener(const std::string& event,
+	ScriptFunction* func, void* udata)
 {
-	script::EventPort* port = script::EventPort::findEventPort(port_id);
-	if (!port)
-		return true;
-	return port->removeListener(d->script_func_clsid, func);
-}
-
-int ScriptEngine::createEventPort()
-{
-	JSContext* ctx = d->default_ctx->get();
-	JSValue obj = JS_NewObjectClass(ctx, script::EventPort::JS_CLASS_ID);
-	auto port = (script::EventPort*)JS_GetOpaque2(ctx, obj, script::EventPort::JS_CLASS_ID);
-	int port_id = port->id();
-	JSValue global = JS_GetGlobalObject(ctx);
-	std::string name = absl::StrFormat("__event_port_%d", port_id);
-	JS_SetPropertyStr(ctx, global, name.c_str(), obj);
-	JS_FreeValue(ctx, obj);
-	JS_FreeValue(ctx, global);
-	return port_id;
-}
-
-void ScriptEngine::releaseEventPort(int port)
-{
-	JSContext* ctx = d->default_ctx->get();
-	JSValue global = JS_GetGlobalObject(ctx);
-	std::string name = absl::StrFormat("__event_port_%d", port);
-	JS_SetPropertyStr(ctx, global, name.c_str(), JS_UNDEFINED);
-	JS_FreeValue(ctx, global);
+	return script::EventPort::removeListenerFromNative(event, func, udata);
 }
 
 ScriptEngine::ScriptEngine()

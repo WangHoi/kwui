@@ -1,24 +1,15 @@
 "use strict";
 "use math";
 
-import { add } from "./test_mod.mjs";
-
-console.log("module add 2 + 3 =", add(2, 3));
-
-globalThis.port = new __EventPort();
-
 globalThis.scriptAdd = function (a, b) {
 	return a + b;
 }
 
-function event_handler(a) {
-	console.log("timeout_handler arg ", a);
-	if (a === 3) {
-		port.removeListener(event_handler);
-		port = undefined;
-	}
+function event_handler(event, arg) {
+	console.log("script recv: event", event, ", arg", arg);
 }
 
-console.log(add(2, 3));
-port.addListener(event_handler);
-onNativeEvent(5, port);
+console.log("native add 2 + 3 =", add(2, 3));
+console.log("post event from script:");
+app.post("test-event", "abc")
+app.addListener("test-event", event_handler);

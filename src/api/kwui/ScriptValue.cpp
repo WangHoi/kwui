@@ -36,6 +36,10 @@ ScriptValue::ScriptValue(double v)
 {
 	d->var.emplace<double>(v);
 }
+ScriptValue::ScriptValue(const char* v)
+	: ScriptValue(std::string(v))
+{
+}
 ScriptValue::ScriptValue(const std::string& v)
 	: ScriptValue()
 {
