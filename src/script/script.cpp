@@ -380,7 +380,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		} else if (!strcmp(name, "root")) {
 			root = JS_DupValue(ctx, value);
 		} else if (!strcmp(name, "stylesheet")) {
-			root = JS_DupValue(ctx, value);
+			stylesheet = JS_DupValue(ctx, value);
 		}
 		});
 
