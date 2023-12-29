@@ -53,7 +53,8 @@ JSValue EventPort::postFromScript(JSContext* ctx, JSValueConst this_val, int arg
 		return JS_ThrowTypeError(ctx, "post: expect string event");
 	}
 	const char* event = JS_ToCString(ctx, argv[0]);
-	doPost(event, wrap(ctx, argv[1]));
+	kwui::ScriptValue arg = (argc > 1) ? wrap(ctx, argv[1]) : kwui::ScriptValue();
+	doPost(event, arg);
 	JS_FreeCString(ctx, event);
 	return JS_UNDEFINED;
 }
@@ -97,7 +98,7 @@ JSValue EventPort::removeListenerFromScript(JSContext* ctx, JSValueConst this_va
 void EventPort::setupAppObject(JSContext* ctx, JSValue app)
 {
 	JS_SetPropertyStr(ctx, app, "post",
-		JS_NewCFunction(ctx, &EventPort::postFromScript, "app.post", 2));
+		JS_NewCFunction(ctx, &EventPort::postFromScript, "app.post", 1));
 	JS_SetPropertyStr(ctx, app, "addListener",
 		JS_NewCFunction(ctx, &EventPort::addListenerFromScript, "app.addListener", 2));
 	JS_SetPropertyStr(ctx, app, "removeListener",

@@ -65,4 +65,7 @@ var test_image_button = (
 
 // console.log(JSON.stringify(button));
 
-app.showDialog(test_image_button, simple_css);
+app.showDialog({
+	root: test_image_button,
+	stylesheet: simple_css,
+	});

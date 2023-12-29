@@ -29,6 +29,9 @@ static void PreloadCursor() {
     s_preloaded_cursors[CURSOR_WAIT] = LoadCursor(NULL, IDC_WAIT);
 }
 
+static uint32_t g_next_dialog_id = 1;
+static std::unordered_map<std::string, Dialog*> g_dialog_map;
+
 Dialog::Dialog(float width, float height,
     const WCHAR* wnd_class_name,
     HICON icon, int flags,
@@ -45,11 +48,20 @@ Dialog::Dialog(float width, float height,
     , _himc(NULL)
     , _animation_timer_id(0) {
     _mouse_position = scene2d::PointF(_size.width * 0.5f, _size.height * 0.5f);
+    id_ = std::to_string(g_next_dialog_id++);
+    g_dialog_map[id_] = this;
     PreloadCursor();
     InitWindow(GetModuleHandle(NULL), wnd_class_name, icon);
 }
 
 Dialog::~Dialog() {
+    g_dialog_map.erase(id_);
+}
+
+Dialog* Dialog::findDialogById(const std::string& id)
+{
+    auto it = g_dialog_map.find(id);
+    return (it == g_dialog_map.end()) ? nullptr : it->second;
 }
 
 void Dialog::SetVisible(bool visible) {
@@ -516,7 +528,7 @@ void Dialog::Close() {
         _animation_timer_id = 0;
         _animating_nodes.clear();
     }
-    SendMessageW(_hwnd, WM_CLOSE, 0, 0);
+    PostMessageW(_hwnd, WM_CLOSE, 0, 0);
     if (_popup_shadow) {
         _popup_shadow->Close();
         _popup_shadow = nullptr;

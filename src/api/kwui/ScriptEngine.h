@@ -16,7 +16,7 @@ public:
 	ScriptValue callGlobalFunction(const char* name, int argc, ScriptValue* argv);
 	//ModuleRegister& addGlobalModule(const char* name);
 	
-	void postEvent(const std::string& event, const ScriptValue& value);
+	void postEvent(const std::string& event, const ScriptValue& value = ScriptValue());
 	void addEventListener(const std::string& event, ScriptFunction* func, void* udata);
 	bool removeEventListener(const std::string& event, ScriptFunction* func, void* udata);
 

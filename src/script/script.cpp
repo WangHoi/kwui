@@ -210,6 +210,8 @@ JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, 
 }
 
 static JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+static JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+static JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 
 static JSValue jsx_func(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
@@ -263,6 +265,10 @@ Context::Context(Runtime* rt)
 	app_ = JS_NewObject(ctx_);
 	JS_SetPropertyStr(ctx_, app_, "showDialog",
 		JS_NewCFunction(ctx_, app_show_dialog, "app_show_dialog", 1));
+	JS_SetPropertyStr(ctx_, app_, "closeDialog",
+		JS_NewCFunction(ctx_, app_close_dialog, "app_close_dialog", 1));
+	JS_SetPropertyStr(ctx_, app_, "resizeDialog",
+		JS_NewCFunction(ctx_, app_resize_dialog, "app_resize_dialog", 3));
 	//JS_SetPropertyStr(ctx_, app_, "loadResource",
 	//	JS_NewCFunction(ctx_, app_load_resource, "app_load_resource", 1));
 	EventPort::setupAppObject(ctx_, app_);
@@ -419,9 +425,45 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		dialog->GetScene()->root()->appendChild(content_root);
 	LOG(INFO) << "show dialog";
 	dialog->Show();
+	return JS_NewString(ctx, dialog->id().c_str());
+}
+JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	if (!JS_IsString(argv[0])) {
+		return JS_ThrowTypeError(ctx, "closeDialog: expect id");
+	}
+	const char* id_str = JS_ToCString(ctx, argv[0]);
+	std::string id(id_str);
+	JS_FreeCString(ctx, id_str);
+	auto dialog = windows::Dialog::findDialogById(id);
+	if (dialog) {
+		dialog->Close();
+		// TODO: delete dialog later;
+	}
 	return JS_UNDEFINED;
 }
-
+JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	if (!JS_IsString(argv[0])) {
+		return JS_ThrowTypeError(ctx, "resizeDialog: expect id");
+	}
+	if (!JS_IsNumber(argv[1])) {
+		return JS_ThrowTypeError(ctx, "resizeDialog: expect number width");
+	}
+	if (!JS_IsNumber(argv[2])) {
+		return JS_ThrowTypeError(ctx, "resizeDialog: expect number height");
+	}
+	const char* id_str = JS_ToCString(ctx, argv[0]);
+	std::string id(id_str);
+	JS_FreeCString(ctx, id_str);
+	double width, height;
+	JS_ToFloat64(ctx, &width, argv[1]);
+	JS_ToFloat64(ctx, &height, argv[2]);
+	auto dialog = windows::Dialog::findDialogById(id);
+	if (dialog)
+		dialog->Resize((float)width, (float)height);
+	return JS_UNDEFINED;
+}
 JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	int32_t id = 0;

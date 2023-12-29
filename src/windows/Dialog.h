@@ -43,6 +43,12 @@ public:
         absl::optional<CreateData> create_data);
     virtual ~Dialog();
 
+    inline std::string id() const
+    {
+        return id_;
+    }
+    static Dialog* findDialogById(const std::string& id);
+
     inline void SetParent(HWND parent) { _hwnd_parent = parent; }
     inline void SetParent(Dialog* parent) { SetParent(parent->_hwnd); }
     inline void Show() {
@@ -134,6 +140,8 @@ private:
     HIMC _himc;
     std::vector<base::object_weakptr<scene2d::Node>>  _animating_nodes;
     UINT_PTR _animation_timer_id;
+
+    std::string id_;
 };
 
 } // namespace windows
