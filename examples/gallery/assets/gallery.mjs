@@ -72,9 +72,40 @@ var test_image_button = (
 	<ImageButton onclick={onclick} src="cx_logo_2.svg"></ImageButton>
 );
 
+function makeUpdateFn(updater) {
+	return function (id, arg) {
+		// console.log("animation-event fn called");
+		updater(arg);
+	};
+}
+
+function useAnimationEvent() {
+	let [state, _] = useHook((updater) => {
+		console.log("init fn called");
+		let event_handler = makeUpdateFn(updater);
+		app.addListener("dialog:animation-event", event_handler);
+		return {
+			handler: event_handler,
+		};
+	}, (state, arg) => {
+		let start_timestamp = state.start_timestamp || arg.timestamp;
+		state.timestamp = arg.timestamp - start_timestamp;
+		state.start_timestamp = start_timestamp;
+		return [state, true];
+	}, (state) => {
+		app.removeListener("dialog:animation-event", state.handler);
+	});
+	return state.timestamp || 0;
+}
+
+function TimestampDisplay(props, kids) {
+	let ts = useAnimationEvent();
+	return <p>{"time: " + ts}</p>
+}
+
 // console.log(JSON.stringify(button));
 
 app.showDialog({
-	root: test_button,
+	root: <TimestampDisplay />,
 	stylesheet: simple_css,
 });

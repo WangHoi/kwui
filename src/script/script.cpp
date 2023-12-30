@@ -425,7 +425,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		dialog->GetScene()->root()->appendChild(content_root);
 	LOG(INFO) << "show dialog";
 	dialog->Show();
-	return JS_NewString(ctx, dialog->id().c_str());
+	return JS_NewString(ctx, dialog->eventContextId().c_str());
 }
 JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {

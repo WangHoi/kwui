@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "ScriptEngine.h"
+#include "scene2d/KmlControl.h"
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/Dialog.h"
 #include "windows/control/Control.h"
@@ -41,6 +42,7 @@ public:
         windows::graphics::GraphicDevice::instance()
             ->LoadBitmapToCache("close_button_hover.png", L"D:\\projects\\kwui\\close_button_hover.png");
 
+        scene2d::ControlRegistry::get()->registerControl<scene2d::KmlControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::LineEditControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ProgressBarControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ImageControl>();

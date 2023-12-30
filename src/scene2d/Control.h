@@ -12,6 +12,7 @@ namespace scene2d {
 
 class EventContext {
 public:
+    virtual std::string eventContextId() const = 0;
     virtual scene2d::PointF GetMousePosition() const = 0;
 
     virtual void RequestPaint() = 0;

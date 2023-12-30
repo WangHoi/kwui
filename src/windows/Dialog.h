@@ -43,10 +43,6 @@ public:
         absl::optional<CreateData> create_data);
     virtual ~Dialog();
 
-    inline std::string id() const
-    {
-        return id_;
-    }
     static Dialog* findDialogById(const std::string& id);
 
     inline void SetParent(HWND parent) { _hwnd_parent = parent; }
@@ -70,6 +66,7 @@ public:
     void Close();
 
     // implements EventContext
+    std::string eventContextId() const override { return id_; }
     scene2d::PointF GetMousePosition() const override { return _mouse_position; }
     void RequestPaint() override;
     void RequestUpdate() override;

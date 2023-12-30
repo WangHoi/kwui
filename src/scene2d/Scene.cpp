@@ -20,6 +20,7 @@ Scene::Scene(EventContext& ctx)
 	root_->retain();
 	weakptr_ = new base::WeakObjectProxy<Scene>(this);
 	weakptr_->retain();
+	requestAnimationFrame(root_);
 }
 
 Scene::~Scene()
@@ -252,6 +253,11 @@ PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 	}
 
 	return p;
+}
+
+std::string Scene::eventContextId() const
+{
+	return event_ctx_.eventContextId();
 }
 
 void Scene::setupProps(Node* node, JSValue props)

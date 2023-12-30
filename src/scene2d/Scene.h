@@ -60,6 +60,7 @@ public:
 	{
 		return *script_ctx_;
 	}
+	std::string eventContextId() const;
 
 private:
 	void setupProps(Node* node, JSValue props);
