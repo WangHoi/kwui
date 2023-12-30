@@ -13,7 +13,7 @@ static void component_state_finalizer(JSRuntime* rt, JSValue val)
 {
 	auto ptr = (ComponentState*)JS_GetOpaque(val, ComponentState::JS_CLASS_ID);
 	if (ptr) {
-		ptr->cleanup(rt);
+		ptr->finalize(rt);
 		delete ptr;
 	}
 	LOG(INFO) << "__ComponentState finalizer called";
@@ -127,37 +127,49 @@ JSValue ComponentState::newObject(JSContext* ctx, int argc, JSValueConst* argv)
 void ComponentState::setNode(JSContext* ctx, JSValue this_val, scene2d::Node* node)
 {
 	auto comp_state = (ComponentState*)JS_GetOpaque2(ctx, this_val, JS_CLASS_ID);
-	if (comp_state)
+	if (comp_state) {
+		if (!node) {
+			comp_state->unmount(ctx, this_val);
+		}
 		comp_state->node_ = node;
+	}
 }
 
-JSValue ComponentState::useHook(JSContext* ctx, JSValue this_val, JSValue initial_state, JSValue mutater)
+JSValue ComponentState::useHook(JSContext* ctx, JSValue this_val, JSValue init_fn, JSValue update_fn, JSValue cleanup_fn)
 {
-	JSValue updater = JS_NewCFunctionData(ctx, &ComponentState::useHookUpdater, 1, (int)curr_slot_, 1, &this_val);
+	JSValue user_update_fn = JS_NewCFunctionData(ctx, &ComponentState::useHookUpdater, 1, (int)curr_slot_, 1, &this_val);
 	absl::Cleanup _ = [&]() {
-		JS_FreeValue(ctx, updater);
+		JS_FreeValue(ctx, user_update_fn);
 		};
 	if (curr_slot_ < slots_.size()) {
-		JSValue argv[2] = { slots_[curr_slot_].state, updater };
+		JSValue argv[2] = { slots_[curr_slot_].state, user_update_fn };
 		return JS_NewFastArray(ctx, 2, argv);
 	} else if (curr_slot_ > slots_.size()) {
 		return JS_UNDEFINED;
 	} else {
 		++curr_slot_;
 		slots_.emplace_back(Slot{
-			JS_DupValue(ctx, initial_state),
-			JS_DupValue(ctx, mutater),
+			JS_UNDEFINED,
+			JS_DupValue(ctx, update_fn),
+			JS_DupValue(ctx, cleanup_fn),
 			});
-		JSValue argv[2] = { slots_[curr_slot_ - 1].state, updater };
+		JSValue init_state = JS_Call(ctx, init_fn, this_val, 1, &user_update_fn);
+		if (JS_IsException(init_state)) {
+			js_std_dump_error(ctx);
+		} else {
+			slots_.back().state = init_state;
+		}
+		JSValue argv[2] = { init_state, user_update_fn };
 		return JS_NewFastArray(ctx, 2, argv);
 	}
 }
 
-void ComponentState::cleanup(JSRuntime* rt)
+void ComponentState::finalize(JSRuntime* rt)
 {
 	for (auto& slot : slots_) {
 		JS_FreeValueRT(rt, slot.state);
-		JS_FreeValueRT(rt, slot.mutater);
+		JS_FreeValueRT(rt, slot.cleanupFn);
+		JS_FreeValueRT(rt, slot.updateFn);
 	}
 	slots_.clear();
 	curr_slot_ = 0;
@@ -173,9 +185,9 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 		if (scene) {
 			bool need_render = false;
 			
-			if (JS_IsFunction(ctx, me->slots_[magic].mutater)) {
+			if (JS_IsFunction(ctx, me->slots_[magic].updateFn)) {
 				JSValue mutater_args[2] = { me->slots_[magic].state, argv[0] };
-				JSValue ret = JS_Call(ctx, me->slots_[magic].mutater, func_data[0], 2, mutater_args);
+				JSValue ret = JS_Call(ctx, me->slots_[magic].updateFn, func_data[0], 2, mutater_args);
 				if (JS_IsArray(ctx, ret)) {
 					int64_t len = 0;
 					JS_GetPropertyLength(ctx, &len, ret);
@@ -205,13 +217,26 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 	return JS_UNDEFINED;
 }
 
+void ComponentState::unmount(JSContext* ctx, JSValueConst this_val)
+{
+	for (auto& slot : slots_) {
+		if (JS_IsFunction(ctx, slot.cleanupFn)) {
+			JSValue ret = JS_Call(ctx, slot.cleanupFn, this_val, 1, &slot.state);
+			if (JS_IsException(ret)) {
+				js_std_dump_error(ctx);
+			}
+			JS_FreeValue(ctx, ret);
+		}
+	}
+}
+
 void ComponentState::gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)
 {
 	auto me = (ComponentState*)JS_GetOpaque(val, ComponentState::JS_CLASS_ID);
 	if (me) {
 		for (auto& slot : me->slots_) {
 			JS_MarkValue(rt, slot.state, mark_func);
-			JS_MarkValue(rt, slot.mutater, mark_func);
+			JS_MarkValue(rt, slot.updateFn, mark_func);
 		}
 	}
 }

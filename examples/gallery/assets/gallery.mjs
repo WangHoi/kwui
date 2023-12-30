@@ -2,16 +2,25 @@
 "use math";
 //import { useHook } from 'Keact';
 
+function TestDtor(props, kids) {
+	let [n, setN] = useHook(() => props.n, (_, n) => {
+		console.log("update n to", n);
+		return [n, true];
+	}, (n) => { console.log("destructor n =", n); });
+	return <p>{"AAA" + props.n}</p>;
+}
+
 function Button(props, kids) {
-	let [n, setN] = useHook(0, (_, n) => {
-		console.log("update n to ");
+	let [n, setN] = useHook(() => 0, (_, n) => {
+		console.log("update n to", n);
 		return [n, true];
 	});
 	let onclick = () => setN(n + 1);
-	if (n == 0) {
+	if (n >= 0) {
 		return (<div class="center" style="width:100px;margin-top:100px">
 			<div><button onclick={onclick}>{kids[0]}</button></div>
 			<p>{"点击了" + n + "次"}</p>
+			<TestDtor n={n} />
 		</div>);
 	} else {
 		return <div><p>Clicked</p><line_edit style="width:100px;height:20px;" /></div>
@@ -20,7 +29,7 @@ function Button(props, kids) {
 
 function ImageButton(props, kids) {
 	return (<button style="width:80px;height:80px;" onclick={props.onclick} src={props.src}>
-	<div class="image-button" style="width:100%;height:100%;"></div>
+		<div class="image-button" style="width:100%;height:100%;"></div>
 	</button>)
 }
 
@@ -55,7 +64,7 @@ var onclick = function () {
 	console.log("button clicked");
 }
 
-var button = (
+var test_button = (
 	<Button>测试</Button>
 );
 
@@ -66,6 +75,6 @@ var test_image_button = (
 // console.log(JSON.stringify(button));
 
 app.showDialog({
-	root: test_image_button,
+	root: test_button,
 	stylesheet: simple_css,
-	});
+});

@@ -16,7 +16,8 @@ static JSValue useHook(JSContext* ctx, JSValueConst /*this_val*/, int argc, JSVa
     
     auto comp_state = (ComponentState *)JS_GetOpaque2(ctx, comp_state_var, ComponentState::JS_CLASS_ID);
     if (comp_state) {
-        return comp_state->useHook(ctx, comp_state_var, argv[0], argv[1]);
+        JSValue cleanup_fn = (argc > 2) ? argv[2] : JS_UNDEFINED;
+        return comp_state->useHook(ctx, comp_state_var, argv[0], argv[1], cleanup_fn);
     } else {
         return JS_UNDEFINED;
     }
