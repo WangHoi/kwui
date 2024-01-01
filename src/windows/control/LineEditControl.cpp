@@ -1,4 +1,5 @@
 #include "LineEditControl.h"
+#include "scene2d/Scene.h"
 #include "windows/graphics/Painter.h"
 #include "base/log.h"
 #include "windows/EncodingManager.h"
@@ -271,7 +272,24 @@ void LineEditControl::onAttach(scene2d::Node* node)
 }
 void LineEditControl::onDetach(scene2d::Node* node)
 {
+    if (onchange_func_ != JS_UNINITIALIZED) {
+        JS_FreeValue(node->scene()->scriptContext().get(), onchange_func_);
+        onchange_func_ = JS_UNINITIALIZED;
+    }
     _node = nullptr;
+}
+void LineEditControl::onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value)
+{
+    if (name == base::string_intern("value")) {
+        SetText(absl::get<std::string>(value));
+    } else if (name == base::string_intern("color")) {
+    }
+}
+void LineEditControl::onSetEventHandler(base::string_atom name, JSValue func)
+{
+    if (name == base::string_intern("onchange")) {
+        onchange_func_ = func;
+    }
 }
 bool LineEditControl::hitTest(const scene2d::PointF& pos, int flags) const
 {
@@ -727,8 +745,18 @@ void LineEditControl::SyncStateFromModel() {
     _text = state.text;
     _sel_anchor = state.sel_anchor;
     _caret_pos = state.sel_active;
-    if (changed && _text_changed_callback)
-        _text_changed_callback(_text);
+    if (changed) {
+        if (_text_changed_callback)
+            _text_changed_callback(_text);
+        
+        JSContext* jctx = _node->scene()->scriptContext().get();
+        if (JS_IsFunction(jctx, onchange_func_)) {
+            std::string u8_text = EncodingManager::WideToUTF8(_text);
+            JSValue val = JS_NewStringLen(jctx, u8_text.c_str(), u8_text.length());
+            JS_Call(jctx, onchange_func_, JS_UNDEFINED, 1, &val);
+            JS_FreeValue(jctx, val);
+        }
+    }
 }
 void LineEditControl::Undo() {
     if (_model.Undo()) {

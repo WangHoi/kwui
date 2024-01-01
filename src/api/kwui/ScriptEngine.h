@@ -12,6 +12,7 @@ public:
 	static ScriptEngine* get();
 	static void release();
 	void addGlobalFunction(const char* name, ScriptFunction* func, void* udata);
+	void removeGlobalFunction(const char* name);
 	void loadFile(const char* path);
 	ScriptValue callGlobalFunction(const char* name, int argc, ScriptValue* argv);
 	//ModuleRegister& addGlobalModule(const char* name);

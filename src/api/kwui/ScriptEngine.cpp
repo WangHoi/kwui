@@ -54,6 +54,15 @@ public:
 		JS_FreeValue(j, global);
 	}
 	
+	void removeGlobalFunction(const char* name, script::Context* ctx)
+	{
+		JSContext* j = ctx->get();
+		JSValue global = JS_GetGlobalObject(j);
+
+		JS_SetPropertyStr(j, global, name, JS_UNDEFINED);
+
+		JS_FreeValue(j, global);
+	}
 	static JSValue callScriptFunc(
 		JSContext* ctx, JSValueConst func_obj,
 		JSValueConst this_val, int argc, JSValueConst* argv,
@@ -119,6 +128,18 @@ void ScriptEngine::addGlobalFunction(const char* name, ScriptFunction* func, voi
 	d->global_funcs.emplace_back(std::make_unique<FunctionDef>(FunctionDef{ name, func, udata }));
 	script::Runtime::get()->eachContext(absl::bind_front(
 		&Private::setGlobalFunction, d, d->global_funcs.back().get()));
+}
+
+void ScriptEngine::removeGlobalFunction(const char* name)
+{
+	auto it = std::find_if(d->global_funcs.begin(), d->global_funcs.end(), [&](const auto& def) {
+		return def->name == name;
+		});
+	if (it != d->global_funcs.end()) {
+		d->global_funcs.erase(it);
+		script::Runtime::get()->eachContext(absl::bind_front(
+			&Private::removeGlobalFunction, d, name));
+	}
 }
 
 void ScriptEngine::loadFile(const char* path)

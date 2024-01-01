@@ -63,6 +63,8 @@ public:
     base::string_atom name() override;
     void onAttach(scene2d::Node* node) override;
     void onDetach(scene2d::Node* node) override;
+    void onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value) override;
+    void onSetEventHandler(base::string_atom name, JSValue func) override;
     bool hitTest(const scene2d::PointF& pos, int flags) const override;
     void onLayout(scene2d::Node* node, const scene2d::RectF& rect) override;
     void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
@@ -157,6 +159,7 @@ private:
     class CaretBlinkHelper;
     std::unique_ptr<CaretBlinkHelper> _caret_blink_helper;
     TextChangedCallback _text_changed_callback;
+    JSValue onchange_func_ = JS_UNINITIALIZED;
 };
 
 }
