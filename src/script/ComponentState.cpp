@@ -144,8 +144,10 @@ JSValue ComponentState::useHook(JSContext* ctx, JSValue this_val, JSValue init_f
 		};
 	if (curr_slot_ < slots_.size()) {
 		JSValue argv[2] = { slots_[curr_slot_].state, user_update_fn };
+		++curr_slot_;
 		return JS_NewFastArray(ctx, 2, argv);
 	} else if (curr_slot_ > slots_.size()) {
+		++curr_slot_;
 		return JS_UNDEFINED;
 	} else {
 		++curr_slot_;
@@ -178,7 +180,7 @@ void ComponentState::finalize(JSRuntime* rt)
 
 JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/, int argc, JSValueConst* argv, int magic, JSValue* func_data)
 {
-	LOG(INFO) << "useHookUpdater slot " << magic;
+	//LOG(INFO) << "useHookUpdater slot " << magic;
 	auto me = (ComponentState*)JS_GetOpaque(func_data[0], ComponentState::JS_CLASS_ID);
 	if (me && me->node_) {
 		CHECK(magic >= 0 && magic < (int)me->slots_.size());
@@ -197,6 +199,10 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 						JSValue should_render = JS_GetPropertyUint32(ctx, ret, 1);
 						JS_FreeValue(ctx, me->slots_[magic].state);
 						me->slots_[magic].state = new_state;
+						//auto nj = JS_JSONStringify(ctx, new_state, JS_UNDEFINED, JS_UNDEFINED);
+						//auto njs = Context::parse<std::string>(ctx, nj);
+						//LOG(INFO) << "after update, new state " << njs;
+						//JS_FreeValue(ctx, nj);
 						need_render = JS_ToBool(ctx, should_render);
 						JS_FreeValue(ctx, should_render);
 					}
