@@ -80,6 +80,11 @@ Node::Node(Scene* scene, NodeType type, JSValue comp_state)
 
 Node::~Node()
 {
+	for (Node* child : children_) {
+		child->release();
+	}
+	children_.clear();
+	parent_ = nullptr;
 	if (comp_state_ != JS_UNINITIALIZED) {
 		script::ComponentState::setNode(scene_->scriptContext().get(), comp_state_, nullptr);
 		JS_FreeValue(scene_->script_ctx_->get(), comp_state_);
@@ -90,13 +95,10 @@ Node::~Node()
 		control_ = nullptr;
 	}
 	if (weakptr_) {
+		weakptr_->clear();
 		weakptr_->release();
 		weakptr_ = nullptr;
 	}
-	for (Node* child : children_) {
-		child->release();
-	}
-	children_.clear();
 }
 
 void Node::appendChild(Node* child)
@@ -104,7 +106,7 @@ void Node::appendChild(Node* child)
 	if (!child)
 		return;
 	child->retain();
-	child->parent_ = this;
+	child->parent_ = weaken();
 	child->child_index = (int)children_.size();
 	children_.push_back(child);
 }
@@ -374,11 +376,11 @@ bool Node::absolutelyPositioned() const
 
 Node* Node::positionedAncestor() const
 {
-	Node* p = parent_;
+	Node* p = parent();
 	while (p) {
 		if (p->positioned())
 			return p;
-		p = p->parent_;
+		p = p->parent();
 	}
 	return nullptr;
 }

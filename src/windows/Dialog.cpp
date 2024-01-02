@@ -96,7 +96,7 @@ void Dialog::Resize(float width, float height) {
     SetWindowPos(_hwnd, NULL,
         0, 0,
         (int)pixel_size.width,
-        (int)_pixel_size.height,
+        (int)pixel_size.height,
         SWP_NOMOVE);
 }
 

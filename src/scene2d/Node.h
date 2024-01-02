@@ -88,7 +88,7 @@ public:
 
 	inline Node* parent() const
 	{
-		return parent_;
+		return parent_ ? parent_.get() : nullptr;
 	}
 	void appendChild(Node* child);
 	// keep return child's reference 
@@ -115,8 +115,8 @@ public:
 	{
 		if (!visible_)
 			return false;
-		if (parent_)
-			return parent_->visibleInHierarchy();
+		if (parent())
+			return parent()->visibleInHierarchy();
 		return true;
 	}
 
@@ -181,7 +181,7 @@ protected:
 	// Tree nodes
 	Scene* scene_ = nullptr;
 
-	Node* parent_ = nullptr;
+	base::object_weakptr<Node> parent_ = nullptr;
 	int child_index = -1;
 	std::vector<Node*> children_;
 
