@@ -104,13 +104,40 @@ function TimestampDisplay(props, kids) {
 }
 
 function FlatIconTextButton(props, kids) {
+	// 		<p class="button-icon">aaa</p>
 	return <button class="flat-icon-text-button">
-		<img src=":/expand.png" />
-		Test
+		<p class="button-icon" /><span>展开</span>
 	</button>
 }
 
+var flat_icon_css = `
+.center {
+	margin-left: auto;
+	margin-right: auto;
+}
+.button-icon {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	background-image: url("cx_logo_2.svg");
+	vertical-align: bottom;
+}
+button:hover .button-icon {
+	background-image: url("close_button.png");
+}
+button {
+	padding: 4px 8px;
+	border-color: #88e;
+	border-radius: 4px;
+	cursor: pointer;
+	margin: 8px;
+	background-color: lightgray;
+}
+`;
+
 app.showDialog({
-	root: <TimestampDisplay />,
-	stylesheet: simple_css,
+	root: <div>
+		<FlatIconTextButton></FlatIconTextButton>
+		</div>,
+	stylesheet: flat_icon_css,
 });
