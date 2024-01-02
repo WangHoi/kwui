@@ -85,8 +85,9 @@ static JSClassDef g_component_state_class = {
 	&ComponentState::gcMark,
 };
 
-static const JSCFunctionListEntry g_component_state_funcs[1] = {
+static const JSCFunctionListEntry g_component_state_funcs[2] = {
 	js_cfunc_def("render", 0, &component_state_render),
+	js_cgetset_def("dialogId", &ComponentState::dialogId),
 };
 
 void ComponentState::registerClass(JSContext* ctx)
@@ -238,6 +239,16 @@ void ComponentState::gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_f
 			JS_MarkValue(rt, slot.state, mark_func);
 			JS_MarkValue(rt, slot.updateFn, mark_func);
 		}
+	}
+}
+
+JSValue ComponentState::dialogId(JSContext* ctx, JSValueConst this_val)
+{
+	auto me = (ComponentState*)JS_GetOpaque(this_val, ComponentState::JS_CLASS_ID);
+	if (me->node_ && me->node_->scene()) {
+		return JS_NewString(ctx, me->node_->scene()->eventContextId().c_str());
+	} else {
+		return JS_UNDEFINED;
 	}
 }
 

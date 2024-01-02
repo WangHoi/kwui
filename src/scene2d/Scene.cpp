@@ -12,8 +12,8 @@
 #include "absl/time/clock.h"
 namespace scene2d {
 
-Scene::Scene(EventContext& ctx)
-	: event_ctx_(ctx)
+Scene::Scene(EventContext& event_ctx)
+	: event_ctx_(event_ctx)
 {
 	script_ctx_ = std::make_unique<script::Context>();
 	root_ = createElementNode(base::string_intern("kml"));

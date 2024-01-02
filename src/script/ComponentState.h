@@ -22,6 +22,7 @@ public:
 	void finalize(JSRuntime* rt);
 
 	static void gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func);
+	static JSValue dialogId(JSContext* ctx, JSValueConst this_val);
 private:
 	static JSValue useHookUpdater(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv, int magic, JSValue* func_data);
 	void unmount(JSContext* ctx, JSValueConst this_val);

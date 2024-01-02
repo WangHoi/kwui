@@ -103,7 +103,12 @@ function TimestampDisplay(props, kids) {
 	return <p>{"time: " + ts}</p>
 }
 
-// console.log(JSON.stringify(button));
+function FlatIconTextButton(props, kids) {
+	return <button class="flat-icon-text-button">
+		<img src=":/expand.png" />
+		Test
+	</button>
+}
 
 app.showDialog({
 	root: <TimestampDisplay />,

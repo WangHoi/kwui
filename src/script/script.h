@@ -326,6 +326,23 @@ static inline JSCFunctionListEntry js_cfunc_def(const char* name, uint8_t minarg
 	return def;
 }
 
+static inline JSCFunctionListEntry js_cgetset_def(
+	const char* name,
+	JSValue (*fgetter)(JSContext*, JSValueConst),
+	JSValue (*fsetter)(JSContext*, JSValueConst, JSValueConst) = nullptr)
+{
+	// #define JS_CGETSET_DEF(name, fgetter, fsetter) { name, JS_PROP_CONFIGURABLE, JS_DEF_CGETSET, 0,
+	//		.u = { .getset = { .get = { .getter = fgetter }, .set = { .setter = fsetter } } } }
+	JSCFunctionListEntry def = { 0 };
+	def.name = name;
+	def.prop_flags = JS_PROP_CONFIGURABLE;
+	def.def_type = JS_DEF_CGETSET;
+	def.magic = 0;
+	def.u.getset.get.getter = fgetter;
+	def.u.getset.set.setter = fsetter;
+	return def;
+}
+
 kwui::ScriptValue wrap(JSContext* ctx, JSValueConst c);
 JSValue unwrap(JSContext* ctx, const kwui::ScriptValue& c);
 
