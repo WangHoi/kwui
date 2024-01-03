@@ -5,6 +5,7 @@
 #include "windows/EncodingManager.h"
 #include "Keact.h"
 #include "absl/strings/str_format.h"
+#include "absl/cleanup/cleanup.h"
 
 namespace script {
 
@@ -359,6 +360,10 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	absl::optional<windows::PopupShadowData> popup_shadow = absl::nullopt;
 	JSValue root = JS_UNDEFINED;
 	JSValue stylesheet = JS_UNDEFINED;
+	absl::Cleanup _ = [&]() {
+		JS_FreeValue(ctx, root);
+		JS_FreeValue(ctx, stylesheet);
+		};
 	Context::eachObjectField(ctx, argv[0], [&](const char* name, JSValue value) {
 		if (!strcmp(name, "width") && JS_IsNumber(value)) {
 			double f64;
@@ -435,7 +440,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	scene2d::Node* content_root = dialog->GetScene()->createComponentNode(root);
 	if (content_root)
 		dialog->GetScene()->root()->appendChild(content_root);
-	LOG(INFO) << "show dialog";
+	//LOG(INFO) << "show dialog";
 	dialog->Show();
 	return JS_NewString(ctx, dialog->eventContextId().c_str());
 }
@@ -450,7 +455,7 @@ JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 	auto dialog = windows::Dialog::findDialogById(id);
 	if (dialog) {
 		dialog->Close();
-		// TODO: delete dialog later;
+		delete dialog;
 	}
 	return JS_UNDEFINED;
 }

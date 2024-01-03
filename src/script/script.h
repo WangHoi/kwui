@@ -107,7 +107,13 @@ public:
 	static base::string_atom parse<base::string_atom>(JSContext* ctx_, JSValue j)
 	{
 		const char* s = JS_ToCString(ctx_, j);
-		return s ? base::string_intern(s) : base::string_atom();
+		if (s) {
+			base::string_atom atom = base::string_intern(s);
+			JS_FreeCString(ctx_, s);
+			return atom;
+		} else {
+			return base::string_atom();
+		}
 	}
 
 	template<typename F>

@@ -530,11 +530,11 @@ void Dialog::Close() {
         _animation_timer_id = 0;
         _animating_nodes.clear();
     }
-    PostMessageW(_hwnd, WM_CLOSE, 0, 0);
     if (_popup_shadow) {
         _popup_shadow->Close();
         _popup_shadow = nullptr;
     }
+    SendMessageW(_hwnd, WM_CLOSE, 0, 0);
 }
 void Dialog::RequestPaint() {
     InvalidateRect(_hwnd, NULL, FALSE);
