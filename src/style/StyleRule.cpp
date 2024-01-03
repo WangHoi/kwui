@@ -98,17 +98,23 @@ IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 // Syntax: (" " | ">") S*
 IResult<SelectorDependency> combinator(absl::string_view input)
 {
+	bool starts_with_space = absl::StartsWith(input, " ");
+	absl::string_view output1;
+	std::tie(output1, std::ignore) = *opt(spaces)(input);
+
 	SelectorDependency dep;
-	if (absl::StartsWith(input, " ")) {
-		dep = SelectorDependency::Ancestor;
-	} else if (absl::StartsWith(input, ">")) {
+	if (absl::StartsWith(output1, ">")) {
+		output1 = output1.substr(1);
 		dep = SelectorDependency::DirectParent;
 	} else {
-		return absl::InvalidArgumentError("No combinator found.");
+		if (starts_with_space) {
+			dep = SelectorDependency::Ancestor;
+		} else {
+			return absl::InvalidArgumentError("No combinator found.");
+		}
 	}
 
-	absl::string_view output1;
-	std::tie(output1, std::ignore) = *opt(spaces)(input.substr(1));
+	std::tie(output1, std::ignore) = *opt(spaces)(output1);
 
 	return std::make_tuple(output1, dep);
 }

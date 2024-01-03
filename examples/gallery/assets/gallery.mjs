@@ -134,7 +134,7 @@ var flat_icon_css = `
 	color: #777;
 	font-size: 14px;
 }
-.flat-icon-text-button #wrapper {
+.flat-icon-text-button > #wrapper {
 	display:inline-block;
 	margin-top: -6px;
 	margin-right: 4px;
