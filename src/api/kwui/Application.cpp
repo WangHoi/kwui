@@ -32,16 +32,19 @@ public:
         MSG msg;
         PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
 
+        LOG(INFO) << "Init ResourceManager...";
         windows::ResourceManager::createInstance(::GetModuleHandleW(NULL));
+        LOG(INFO) << "Init GraphicDevice...";
         windows::graphics::GraphicDevice::createInstance()->Init();
 
-        windows::graphics::GraphicDevice::instance()
-            ->LoadBitmapToCache("cx_logo_2.svg", L"D:\\projects\\kwui\\chengxun80.png");
-        windows::graphics::GraphicDevice::instance()
-            ->LoadBitmapToCache("close_button.png", L"D:\\projects\\kwui\\close_button.png");
-        windows::graphics::GraphicDevice::instance()
-            ->LoadBitmapToCache("close_button_hover.png", L"D:\\projects\\kwui\\close_button_hover.png");
+        //windows::graphics::GraphicDevice::instance()
+        //    ->LoadBitmapToCache("cx_logo_2.svg", L"D:\\projects\\kwui\\chengxun80.png");
+        //windows::graphics::GraphicDevice::instance()
+        //    ->LoadBitmapToCache("close_button.png", L"D:\\projects\\kwui\\close_button.png");
+        //windows::graphics::GraphicDevice::instance()
+        //    ->LoadBitmapToCache("close_button_hover.png", L"D:\\projects\\kwui\\close_button_hover.png");
 
+        LOG(INFO) << "Register builtin ui controls...";
         scene2d::ControlRegistry::get()->registerControl<scene2d::KmlControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::LineEditControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ProgressBarControl>();

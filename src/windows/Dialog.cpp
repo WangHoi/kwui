@@ -5,9 +5,12 @@
 #include "graphics/GraphicDevice.h"
 #include "graphics/Painter.h"
 #include "theme.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/numbers.h"
 #include "absl/functional/bind_front.h"
 #include "absl/time/clock.h"
 #include "graph2d/Painter.h"
+#include "api/kwui/ScriptEngine.h"
 
 namespace windows {
 typedef LRESULT(CALLBACK* WndProc)(HWND, UINT, WPARAM, LPARAM);
@@ -29,7 +32,6 @@ static void PreloadCursor() {
     s_preloaded_cursors[CURSOR_WAIT] = LoadCursor(NULL, IDC_WAIT);
 }
 
-static uint32_t g_next_dialog_id = 1;
 static std::unordered_map<std::string, Dialog*> g_dialog_map;
 
 Dialog::Dialog(float width, float height,
@@ -48,7 +50,7 @@ Dialog::Dialog(float width, float height,
     , _himc(NULL)
     , _animation_timer_id(0) {
     _mouse_position = scene2d::PointF(_size.width * 0.5f, _size.height * 0.5f);
-    id_ = std::to_string(g_next_dialog_id++);
+    id_ = absl::StrFormat("%p", this);
     g_dialog_map[id_] = this;
     PreloadCursor();
     InitWindow(GetModuleHandle(NULL), wnd_class_name, icon);
@@ -428,7 +430,7 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         return TRUE;
     case WM_SYSCOMMAND:
         if (wParam == SC_CLOSE) {
-            OnCloseButtonClicked(*this);
+            OnCloseSysCommand(*this);
             return 0;
         }
         return DefWindowProcW(hWnd, message, wParam, lParam);
@@ -465,7 +467,7 @@ void Dialog::OnCreate() {
     _close_button->SetSize({ 40, 32 });
     _close_button->SetOrigin({ _size.x - 40, 0 });
     _root->AddChild(_close_button);
-    _close_button->SetClickedCallback(MakeCallback(this, &Dialog::OnCloseButtonClicked));
+    _close_button->SetClickedCallback(MakeCallback(this, &Dialog::OnCloseSysCommand));
     */
     if (_popup_shadow_data.has_value()) {
         float px = (float)_popup_shadow_data->padding;
@@ -820,8 +822,8 @@ void Dialog::OnDpiChanged(UINT dpi, const RECT* rect) {
     UpdateBorderAndRenderTarget();
     RequestUpdate();
 }
-void Dialog::OnCloseButtonClicked(EventContext& ctx) {
-    Close();
+void Dialog::OnCloseSysCommand(EventContext& ctx) {
+    kwui::ScriptEngine::get()->postEvent("dialog:request-close", id_);
 }
 void Dialog::UpdateMouseTracking() {
     if (!_mouse_event_tracking) {
@@ -890,6 +892,22 @@ void Dialog::OnWindowPosChanged(WINDOWPOS* wnd_pos) {
 }
 void Dialog::DiscardDeviceResources() {
     // DiscardNodeDeviceResources(_root.get());
+}
+void Dialog::OnEnterKeyDown(EventContext& ctx)
+{
+    kwui::ScriptEngine::get()->postEvent("dialog:enter-key-down", id_);
+}
+void Dialog::OnEnterKeyUp(EventContext& ctx)
+{
+    kwui::ScriptEngine::get()->postEvent("dialog:enter-key-up", id_);
+}
+void Dialog::OnEscapeKeyDown(EventContext& ctx)
+{
+    kwui::ScriptEngine::get()->postEvent("dialog:escape-key-down", id_);
+}
+void Dialog::OnEscapeKeyUp(EventContext& ctx)
+{
+    kwui::ScriptEngine::get()->postEvent("dialog:escape-key-up", id_);
 }
 void Dialog::DiscardNodeDeviceResources(scene2d::Node* node) {
     // node->DiscardDeviceResources();

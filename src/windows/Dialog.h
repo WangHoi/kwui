@@ -72,15 +72,15 @@ public:
     void RequestUpdate() override;
     void RequestAnimationFrame(scene2d::Node* node) override;
 
-    virtual void OnCloseButtonClicked(EventContext& ctx);
+    void OnCloseSysCommand(EventContext& ctx);
     virtual void OnDestroy();
     virtual void OnActivate(bool active);
     virtual void OnWindowPosChanged(WINDOWPOS* wnd_pos);
     virtual void DiscardDeviceResources();
-    virtual void OnEnterKeyDown(EventContext& ctx) {}
-    virtual void OnEnterKeyUp(EventContext& ctx) {}
-    virtual void OnEscapeKeyDown(EventContext& ctx) {}
-    virtual void OnEscapeKeyUp(EventContext& ctx) {}
+    virtual void OnEnterKeyDown(EventContext& ctx);
+    virtual void OnEnterKeyUp(EventContext& ctx);
+    virtual void OnEscapeKeyDown(EventContext& ctx);
+    virtual void OnEscapeKeyUp(EventContext& ctx);
 
 private:
     void InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON icon);

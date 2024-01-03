@@ -4,6 +4,7 @@
 #include "windows/ResourceManager.h"
 #include "windows/EncodingManager.h"
 #include "Keact.h"
+#include "absl/strings/str_format.h"
 
 namespace script {
 
@@ -212,6 +213,8 @@ JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, 
 static JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+static JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+static JSValue app_get_dialog_dpi_scale(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 
 static JSValue jsx_func(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
@@ -269,6 +272,10 @@ Context::Context(Runtime* rt)
 		JS_NewCFunction(ctx_, app_close_dialog, "app_close_dialog", 1));
 	JS_SetPropertyStr(ctx_, app_, "resizeDialog",
 		JS_NewCFunction(ctx_, app_resize_dialog, "app_resize_dialog", 3));
+	JS_SetPropertyStr(ctx_, app_, "getDialogHwnd",
+		JS_NewCFunction(ctx_, app_get_dialog_hwnd, "app_get_dialog_hwnd", 1));
+	JS_SetPropertyStr(ctx_, app_, "getDialogDpiScale",
+		JS_NewCFunction(ctx_, app_get_dialog_dpi_scale, "app_get_dialog_dpi_scale", 1));
 	//JS_SetPropertyStr(ctx_, app_, "loadResource",
 	//	JS_NewCFunction(ctx_, app_load_resource, "app_load_resource", 1));
 	EventPort::setupAppObject(ctx_, app_);
@@ -278,12 +285,17 @@ Context::Context(Runtime* rt)
 
 	rt->contexts_.push_back(this);
 	for (auto& func : rt->new_ctx_funcs_) {
-		rt->eachContext(func);
+		func(this);
 	}
 }
 
 Context::~Context()
 {
+	auto rt = Runtime::get();
+	auto it = std::find(rt->contexts_.begin(), rt->contexts_.end(), this);
+	if (it != rt->contexts_.end())
+		rt->contexts_.erase(it);
+	
 	JS_FreeContext(ctx_);
 	ctx_ = nullptr;
 }
@@ -463,6 +475,34 @@ JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSVal
 	if (dialog)
 		dialog->Resize((float)width, (float)height);
 	return JS_UNDEFINED;
+}
+JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	if (!JS_IsString(argv[0])) {
+		return JS_ThrowTypeError(ctx, "getDialogHwnd: expect id");
+	}
+	const char* id_str = JS_ToCString(ctx, argv[0]);
+	std::string id(id_str);
+	JS_FreeCString(ctx, id_str);
+	auto dialog = windows::Dialog::findDialogById(id);
+	if (dialog) {
+		return JS_NewString(ctx, absl::StrFormat("%p", dialog->GetHwnd()).c_str());
+	}
+	return JS_UNDEFINED;
+}
+JSValue app_get_dialog_dpi_scale(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	if (!JS_IsString(argv[0])) {
+		return JS_ThrowTypeError(ctx, "getDialogDpiScale: expect id");
+	}
+	const char* id_str = JS_ToCString(ctx, argv[0]);
+	std::string id(id_str);
+	JS_FreeCString(ctx, id_str);
+	auto dialog = windows::Dialog::findDialogById(id);
+	if (dialog) {
+		return JS_NewFloat64(ctx, dialog->GetDpiScale());
+	}
+	return JS_NewFloat64(ctx, 1.0);
 }
 JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
