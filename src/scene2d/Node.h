@@ -90,6 +90,7 @@ public:
 	{
 		return parent_ ? parent_.get() : nullptr;
 	}
+	Node* parentElement() const;
 	void appendChild(Node* child);
 	// keep return child's reference 
 	Node* removeChildAt(size_t idx);

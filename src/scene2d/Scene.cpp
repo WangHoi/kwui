@@ -315,15 +315,15 @@ bool Scene::match(Node* node, style::Selector* selector)
 		return true;
 
 	if (selector->dep_type == style::SelectorDependency::DirectParent)
-		return match(node->parent(), selector->dep_selector.get());
+		return match(node->parentElement(), selector->dep_selector.get());
 
 	if (selector->dep_type == style::SelectorDependency::Ancestor) {
-		Node* pnode = node->parent();
+		Node* pnode = node->parentElement();
 		style::Selector* psel = selector->dep_selector.get();
 		while (pnode) {
 			if (match(pnode, psel))
 				return true;
-			pnode = pnode->parent();
+			pnode = pnode->parentElement();
 		}
 		return false;
 	}

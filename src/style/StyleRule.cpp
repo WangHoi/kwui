@@ -36,7 +36,7 @@ static StyleSpec make_style_spec(const std::vector<Declaration>& decls)
 	return spec;
 }
 
-// Syntax: ("#" ident S* | "." ident S* | ":" ident S*)+
+// Syntax: ("#" ident | "." ident | ":" ident)+
 IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 {
 	auto [output1, _] = *opt(spaces)(input);
@@ -87,8 +87,6 @@ IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 				std::tie(input, std::ignore) = res.value_or(std::make_tuple(input, n));
 		}
 		count += n;
-		
-		std::tie(input, std::ignore) = opt(spaces)(input).value();
 	} while (n > 0);
 
 	if (count > 0)
@@ -97,20 +95,20 @@ IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 		return absl::InvalidArgumentError("parse Selector error");
 }
 
+// Syntax: (" " | ">") S*
 IResult<SelectorDependency> combinator(absl::string_view input)
 {
-	auto [output1, value1] = *opt(spaces)(input);
-
 	SelectorDependency dep;
-	if (absl::StartsWith(output1, ">")) {
-		dep = SelectorDependency::DirectParent;
-	} else if (value1) {
+	if (absl::StartsWith(input, " ")) {
 		dep = SelectorDependency::Ancestor;
+	} else if (absl::StartsWith(input, ">")) {
+		dep = SelectorDependency::DirectParent;
 	} else {
 		return absl::InvalidArgumentError("No combinator found.");
 	}
 
-	std::tie(output1, std::ignore) = *opt(spaces)(output1);
+	absl::string_view output1;
+	std::tie(output1, std::ignore) = *opt(spaces)(input.substr(1));
 
 	return std::make_tuple(output1, dep);
 }
@@ -308,9 +306,6 @@ IResult<ValueSpec> value_spec(absl::string_view input)
 // Syntax: (IDENT | mess | STRING | hexcolor) S* 
 IResult<SingleDeclaration> single_decl(base::string_atom name, absl::string_view input)
 {
-	if (name == base::string_intern("background-image")) {
-		int kk = 1;
-	}
 	auto res = value_spec(input);
 	if (!res.ok())
 		return res.status();
@@ -606,13 +601,15 @@ IResult<StyleSpec> rule_rhs(absl::string_view input)
 	return std::make_tuple(input, spec);
 }
 
-// rule <- selector_group rule_rhs
+// rule <- selector_group S* rule_rhs
 IResult<std::vector<std::unique_ptr<StyleRule>>> rule(absl::string_view input)
 {
 	auto res = selector_group(input);
 	if (!res.ok())
 		return res.status();
 	auto&& [output, sels] = *res;
+	
+	std::tie(output, std::ignore) = opt(spaces)(output).value();
 
 	auto res1 = rule_rhs(output);
 	if (!res1.ok())

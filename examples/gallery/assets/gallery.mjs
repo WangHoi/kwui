@@ -106,7 +106,7 @@ function TimestampDisplay(props, kids) {
 function FlatIconTextButton(props, kids) {
 	// 		<p class="button-icon">aaa</p>
 	return <button class="flat-icon-text-button">
-		<p class="button-icon" /><span>展开</span>
+		<p class="button-icon" /><span id="test">展开</span>
 	</button>
 }
 
@@ -117,18 +117,22 @@ var flat_icon_css = `
 }
 .button-icon {
 	display: inline-block;
-	width: 12px;
-	height: 12px;
-	background-image: url("cx_logo_2.svg");
+	width: 24px;
+	height: 24px;
+	background-image: url("expand.png");
 	vertical-align: bottom;
 }
+.flat-icon-text-button span {
+	color: #777;
+	font-size: 21px;
+}
 button:hover .button-icon {
-	background-image: url("close_button.png");
+	background-image: url("collapse.png");
 }
 button {
-	padding: 4px 8px;
+	padding: 0px 0px;
 	border-color: #88e;
-	border-radius: 4px;
+	border-radius: 0px;
 	cursor: pointer;
 	margin: 8px;
 	background-color: lightgray;

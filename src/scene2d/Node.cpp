@@ -101,6 +101,16 @@ Node::~Node()
 	}
 }
 
+Node* Node::parentElement() const
+{
+	auto p = parent();
+	if (!p)
+		return nullptr;
+	if (p->type_ == NodeType::NODE_ELEMENT)
+		return p;
+	return p->parentElement();
+}
+
 void Node::appendChild(Node* child)
 {
 	if (!child)
