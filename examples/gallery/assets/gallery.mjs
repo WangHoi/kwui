@@ -111,7 +111,10 @@ function FlatIconTextButton(props, kids) {
 	};
 	app.addListener("dialog:request-close", close_handler);
 	return <button class="flat-icon-text-button">
-		<p class="button-icon" /><span><span id="test">展开</span></span>
+		<p class="button-icon" />
+		<div id="wrapper" style="display:inline-block">
+			<span id="text">更多选项</span>
+		</div>
 	</button>
 }
 
@@ -127,9 +130,14 @@ var flat_icon_css = `
 	background-image: url("expand.png");
 	vertical-align: bottom;
 }
-.flat-icon-text-button #test {
+.flat-icon-text-button #text {
 	color: #777;
-	font-size: 21px;
+	font-size: 14px;
+}
+.flat-icon-text-button #wrapper {
+	display:inline-block;
+	margin-top: -6px;
+	margin-right: 4px;
 }
 button:hover .button-icon {
 	background-image: url("collapse.png");
@@ -140,13 +148,12 @@ button {
 	border-radius: 0px;
 	cursor: pointer;
 	margin: 8px;
-	background-color: lightgray;
 }
 `;
 
 app.showDialog({
 	root: <div>
 		<FlatIconTextButton></FlatIconTextButton>
-		</div>,
+	</div>,
 	stylesheet: flat_icon_css,
 });
