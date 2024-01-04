@@ -20,6 +20,9 @@ namespace graphics {
 class Painter;
 }
 }
+namespace script {
+class Value;
+}
 namespace style {
 class BlockWidthSolverInterface;
 class InlineBoxBuilder;
@@ -134,7 +137,7 @@ public:
 	void setClass(const style::Classes &klass);
 	void setStyle(const style::StyleSpec &style);
 	void setAttribute(base::string_atom name, const NodeAttributeValue &value);
-	void setEventHandler(base::string_atom name, JSValue func);
+	void setEventHandler(base::string_atom name, const script::Value& func);
 	
 	void resolveDefaultStyle();
 	void resolveStyle(const style::StyleSpec &style);
@@ -206,7 +209,7 @@ protected:
 
 	// Attribute and Event handlers
 	std::map<base::string_atom, NodeAttributeValue> attrs_;
-	std::map<base::string_atom, JSValue> event_handlers_;
+	std::map<base::string_atom, script::Value> event_handlers_;
 
 	// Control
 	std::unique_ptr<Control> control_;

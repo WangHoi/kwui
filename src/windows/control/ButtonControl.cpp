@@ -41,8 +41,9 @@ void ButtonControl::onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt)
 	if ((evt.cmd == scene2d::MOUSE_UP) && (evt.button & scene2d::LEFT_BUTTON) && (evt.buttons == 0)) {
 		LOG(INFO) << "button click";
 		JSContext* jctx = node->scene()->scriptContext().get();
-		if (JS_IsFunction(jctx, onclick_func_)) {
-			JS_Call(jctx, onclick_func_, JS_UNDEFINED, 0, nullptr);
+		if (JS_IsFunction(jctx, onclick_func_.jsValue())) {
+			auto func = onclick_func_;
+			JS_Call(jctx, func.jsValue(), JS_UNDEFINED, 0, nullptr);
 		}
 	}
 }
@@ -52,7 +53,7 @@ void ButtonControl::onSetAttribute(base::string_atom name, const scene2d::NodeAt
 
 }
 
-void ButtonControl::onSetEventHandler(base::string_atom name, JSValue func)
+void ButtonControl::onSetEventHandler(base::string_atom name, const script::Value& func)
 {
 	if (name == base::string_intern("onclick")) {
 		onclick_func_ = func;
@@ -61,10 +62,7 @@ void ButtonControl::onSetEventHandler(base::string_atom name, JSValue func)
 
 void ButtonControl::onDetach(scene2d::Node* node)
 {
-	if (onclick_func_ != JS_UNINITIALIZED) {
-		JS_FreeValue(node->scene()->scriptContext().get(), onclick_func_);
-		onclick_func_ = JS_UNINITIALIZED;
-	}
+	onclick_func_ = script::Value();
 }
 
 }

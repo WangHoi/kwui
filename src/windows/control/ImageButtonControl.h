@@ -17,14 +17,14 @@ public:
     void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
     void onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt) override;
     void onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value) override;
-    void onSetEventHandler(base::string_atom name, JSValue func) override;
+    void onSetEventHandler(base::string_atom name, const script::Value& func) override;
 
 private:
     std::string _src;
     std::string _hover_src;
     ComPtr<ID2D1Bitmap> _bitmap;
     ComPtr<ID2D1Bitmap> _hover_bitmap;
-    JSValue onclick_func_ = JS_UNINITIALIZED;
+    script::Value onclick_func_;
 };
 
 }

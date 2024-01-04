@@ -44,23 +44,23 @@ void ImageButtonControl::onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& 
 	node->requestPaint();
 	if ((evt.cmd == scene2d::MOUSE_UP) && (evt.button & scene2d::LEFT_BUTTON) && (evt.buttons == 0)) {
 		JSContext* jctx = node->scene()->scriptContext().get();
-		if (JS_IsFunction(jctx, onclick_func_)) {
-			JS_EvalFunction(jctx, onclick_func_);
+		if (JS_IsFunction(jctx, onclick_func_.jsValue())) {
+			JS_EvalFunction(jctx, onclick_func_.jsValue());
 		}
 	}
 }
 void ImageButtonControl::onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value)
 {
 	if (name == base::string_intern("src")) {
-		_src = absl::get<std::string>(value);
+		_src = value.toString();
 		_bitmap = nullptr;
 	} else if (name == base::string_intern("hover_src")) {
-		_hover_src = absl::get<std::string>(value);
+		_hover_src = value.toString();
 		_hover_bitmap = nullptr;
 	}
 }
 
-void ImageButtonControl::onSetEventHandler(base::string_atom name, JSValue func)
+void ImageButtonControl::onSetEventHandler(base::string_atom name, const script::Value& func)
 {
 	if (name == base::string_intern("onclick")) {
 		onclick_func_ = func;

@@ -27,7 +27,7 @@ void ProgressBarControl::onPaint(graph2d::PainterInterface& pi, const scene2d::R
 void ProgressBarControl::onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value)
 {
 	if (name == base::string_intern("value")) {
-		SetProgress(absl::get<float>(value));
+		SetProgress((float)value.toDouble());
 	}
 }
 void ProgressBarControl::SetProgress(float value) {

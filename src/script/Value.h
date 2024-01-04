@@ -19,6 +19,7 @@ public:
 	Value& operator=(const Value& o);
 	Value& operator=(Value&& o) noexcept;
 
+	bool isUndefined() const;
 	bool operator==(const Value& o);
 	bool operator==(JSValue o);
 

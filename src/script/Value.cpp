@@ -64,8 +64,8 @@ Value& Value::operator=(const Value& o)
 	if (this == &o)
 		return *this;
 
-	if (ctx_)
-		JS_FreeValue(ctx_, value_);
+	auto old_ctx = ctx_;
+	auto old_value = value_;
 
 	ctx_ = o.ctx_;
 	if (ctx_) {
@@ -73,6 +73,9 @@ Value& Value::operator=(const Value& o)
 	} else {
 		value_ = o.value_;
 	}
+
+	if (old_ctx)
+		JS_FreeValue(old_ctx, old_value);
 	return *this;
 }
 
@@ -81,14 +84,22 @@ Value& Value::operator=(Value&& o) noexcept
 	if (this == &o)
 		return *this;
 
-	if (ctx_)
-		JS_FreeValue(ctx_, value_);
+	auto old_ctx = ctx_;
+	auto old_value = value_;
 
 	ctx_ = o.ctx_;
 	value_ = o.value_;
 	o.ctx_ = nullptr;
 	o.value_ = JS_UNDEFINED;
+	
+	if (old_ctx && old_value != value_)
+		JS_FreeValue(old_ctx, old_value);
 	return *this;
+}
+
+bool Value::isUndefined() const
+{
+	return value_ == JS_UNDEFINED;
 }
 
 bool Value::operator==(const Value& o)

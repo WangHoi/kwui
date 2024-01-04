@@ -151,9 +151,42 @@ button {
 }
 `;
 
+var line_edit_css = `
+#path-edit {
+	display: inline-block;
+	width: 200px;
+	height: 32px;
+}
+`;
+function TestLineEdit(props, kids) {
+	let id = this.dialogId;
+	let close_handler = () => {
+		app.removeListener("dialog:request-close", close_handler);
+		app.closeDialog(id);
+	};
+	app.addListener("dialog:request-close", close_handler);
+	let [targetDir, text_changed] = useHook(
+		() => "abc",
+		(_, new_value) => [new_value, true]);
+	return <div>
+		<div style="text-align: center;">
+			<span>before</span>
+			<line_edit id="path-edit" value={targetDir} onchange={text_changed}></line_edit>
+			<span>after</span>
+		</div>
+	</div>;
+}
+
+app.showDialog({
+	root: <TestLineEdit></TestLineEdit>,
+	stylesheet: line_edit_css,
+});
+
+/*
 app.showDialog({
 	root: <div>
 		<FlatIconTextButton></FlatIconTextButton>
 	</div>,
 	stylesheet: flat_icon_css,
 });
+*/

@@ -35,7 +35,7 @@ public:
 	Node* createTextNode(const std::string &text);
 	Node* createElementNode(base::string_atom tag);
 	Node* createComponentNode(JSValue comp_data);
-	void updateComponentNode(Node* node, JSValue comp_state);
+	void updateComponentNodeChildren(Node* node, JSValue comp_state);
 
 	inline Node *root() const
 	{
@@ -63,11 +63,24 @@ public:
 	std::string eventContextId() const;
 
 private:
+	enum class NodeCompareResult {
+		Unpatchable,
+		PatchableTextNode,
+		PatchableElementNode,
+		PatchableFragmentElementNode,
+		PatchableComponentNode,
+	};
 	void setupProps(Node* node, JSValue props);
 	bool match(Node* node, style::Selector* selector);
 	void resolveNodeStyle(Node* node);
 	void paintNode(Node* node, graph2d::PainterInterface* painter);
 	void layoutComputed(Node* node);
+
+	void updateNodeChildren(Node* node, JSContext* ctx, JSValue comp_data);
+	NodeCompareResult compareNode(Node* node, JSContext* ctx, JSValue comp_data);
+	void updateTextNode(Node* node, JSContext* ctx, JSValue comp_data);
+	void updateElementNode(Node* node, JSContext* ctx, JSValue comp_data);
+	void updateComponentNode(Node* node, JSContext* ctx, JSValue comp_data);
 
 	EventContext& event_ctx_;
 	std::unique_ptr<script::Context> script_ctx_;

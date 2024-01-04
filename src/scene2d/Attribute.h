@@ -1,10 +1,9 @@
 #pragma once
 
-#include "absl/types/variant.h"
-#include <string>
+#include "api/kwui/ScriptValue.h"
 
 namespace scene2d {
 
-typedef absl::variant<float, std::string> NodeAttributeValue;
+typedef kwui::ScriptValue NodeAttributeValue;
 
 }

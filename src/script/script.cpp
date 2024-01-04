@@ -207,7 +207,7 @@ JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, 
 	auto scene = scene_weakptr->get();
 	if (!scene)
 		return JS_UNDEFINED;
-	scene->updateComponentNode(nullptr, argv[1]);
+	scene->updateComponentNodeChildren(nullptr, argv[1]);
 	return JS_UNDEFINED;
 }
 

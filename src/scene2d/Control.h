@@ -7,6 +7,9 @@
 namespace graph2d {
 class PainterInterface;
 }
+namespace script {
+class Value;
+}
 
 namespace scene2d {
 
@@ -37,7 +40,7 @@ public:
     virtual void onImeEvent(Node* node, ImeEvent &evt) {}
     virtual void onAnimationFrame(Node* node, absl::Time timestamp) {}
     virtual void onSetAttribute(base::string_atom name, const NodeAttributeValue &value) {}
-    virtual void onSetEventHandler(base::string_atom name, JSValue func) {}
+    virtual void onSetEventHandler(base::string_atom name, const script::Value& func) {}
 };
 
 typedef Control* (*ControlFactoryFn)();

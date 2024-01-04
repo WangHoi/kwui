@@ -272,20 +272,17 @@ void LineEditControl::onAttach(scene2d::Node* node)
 }
 void LineEditControl::onDetach(scene2d::Node* node)
 {
-    if (onchange_func_ != JS_UNINITIALIZED) {
-        JS_FreeValue(node->scene()->scriptContext().get(), onchange_func_);
-        onchange_func_ = JS_UNINITIALIZED;
-    }
+    onchange_func_ = script::Value();
     _node = nullptr;
 }
 void LineEditControl::onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value)
 {
     if (name == base::string_intern("value")) {
-        SetText(absl::get<std::string>(value));
+        SetText(value.toString());
     } else if (name == base::string_intern("color")) {
     }
 }
-void LineEditControl::onSetEventHandler(base::string_atom name, JSValue func)
+void LineEditControl::onSetEventHandler(base::string_atom name, const script::Value& func)
 {
     if (name == base::string_intern("onchange")) {
         onchange_func_ = func;
@@ -750,10 +747,11 @@ void LineEditControl::SyncStateFromModel() {
             _text_changed_callback(_text);
         
         JSContext* jctx = _node->scene()->scriptContext().get();
-        if (JS_IsFunction(jctx, onchange_func_)) {
+        if (JS_IsFunction(jctx, onchange_func_.jsValue())) {
             std::string u8_text = EncodingManager::WideToUTF8(_text);
             JSValue val = JS_NewStringLen(jctx, u8_text.c_str(), u8_text.length());
-            JS_Call(jctx, onchange_func_, JS_UNDEFINED, 1, &val);
+            script::Value func = onchange_func_;
+            JS_Call(jctx, func.jsValue(), JS_UNDEFINED, 1, &val);
             JS_FreeValue(jctx, val);
         }
     }

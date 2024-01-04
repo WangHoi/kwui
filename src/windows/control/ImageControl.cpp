@@ -30,7 +30,7 @@ void ImageControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& 
 void ImageControl::onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value)
 {
 	if (name == base::string_intern("src")) {
-		setImageSource(absl::get<std::string>(value));
+		setImageSource(value.toString());
 	}
 }
 void ImageControl::setImageSource(const std::string& src) {

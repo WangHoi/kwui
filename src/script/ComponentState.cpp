@@ -217,7 +217,7 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 					JS_FreeValue(ctx, render_func);
 					JS_FreeValue(ctx, comp_data);
 					};
-				scene->updateComponentNode(me->node_, comp_data);
+				scene->updateComponentNodeChildren(me->node_, comp_data);
 			}
 		}
 	}

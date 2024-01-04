@@ -119,20 +119,17 @@ Node* Scene::createComponentNode(JSValue comp_data)
 	return nullptr;
 }
 
-void Scene::updateComponentNode(Node* node, JSValue comp_data)
+void Scene::updateComponentNodeChildren(Node* node, JSValue comp_data)
 {
 	LOG(INFO) << "Scene::updateComponentNode";
 	CHECK(node->type_ == NodeType::NODE_COMPONENT)
 		<< "Scene::updateComponentNode(): expect component node";
 	JSContext* ctx = script_ctx_->get();
+
+	JSValue arr = JS_NewFastArray(ctx, 1, &comp_data);
+	updateNodeChildren(node, ctx, arr);
+	JS_FreeValue(ctx, arr);
 	
-	size_t child_count = node->children_.size();
-	Node* new_child = createComponentNode(comp_data);
-	node->appendChild(new_child);
-	for (size_t i = 0; i < child_count; ++i) {
-		Node* old_child = node->removeChildAt(0);
-		old_child->release();
-	}
 	requestUpdate();
 	requestPaint();
 }
@@ -262,45 +259,87 @@ std::string Scene::eventContextId() const
 
 void Scene::setupProps(Node* node, JSValue props)
 {
+	JSContext* ctx = script_ctx_->get();
+	bool new_style = false;
+	bool new_id = false;
+	bool new_class = false;
+	std::map<base::string_atom, NodeAttributeValue> new_attrs;
+	std::map<base::string_atom, script::Value> new_ehandlers;
 	script_ctx_->eachObjectField(props, [&](const char* name_str, JSValue value) {
-		JSContext* jctx = script_ctx_->get();
 		auto name = base::string_intern(name_str);
 		if (name == base::string_intern("style")) {
+			new_style = true;
 			if (JS_IsObject(value)) {
 				node->setStyle(script_ctx_->parse<style::StyleSpec>(value));
 			} else if (JS_IsString(value)) {
-				const char* s = JS_ToCString(jctx, value);
+				const char* s = JS_ToCString(ctx, value);
 				auto style_res = style::parse_inline_style(s);
-				JS_FreeCString(jctx, s);
+				JS_FreeCString(ctx, s);
 				if (style_res.ok())
 					node->setStyle(style_res.value());
 			}
 		} else if (name == base::string_intern("id")) {
+			new_id = true;
 			node->setId(script_ctx_->parse<base::string_atom>(value));
 		} else if (name == base::string_intern("class")) {
-			const char* s = JS_ToCString(jctx, value);
+			new_class = true;
+			const char* s = JS_ToCString(ctx, value);
 			if (s) {
 				node->setClass(style::Classes::parse(s));
 			}
-			JS_FreeCString(jctx, s);
-		} else if (JS_IsFunction(script_ctx_->get(), value)) {
-			node->setEventHandler(name, JS_DupValue(jctx, value));
+			JS_FreeCString(ctx, s);
+		} else if (JS_IsFunction(ctx, value)) {
+			new_ehandlers[name] = script::Value(ctx, value);
 		} else if (JS_IsNumber(value)) {
 			double f64;
-			JS_ToFloat64(jctx, &f64, value);
-			node->setAttribute(name, (float)f64);
+			JS_ToFloat64(ctx, &f64, value);
+			new_attrs[name] = (float)f64;
 		} else if (JS_IsString(value)) {
-			const char* s = JS_ToCString(jctx, value);
-			node->setAttribute(name, std::string(s));
-			JS_FreeCString(jctx, s);
+			const char* s = JS_ToCString(ctx, value);
+			new_attrs[name] = std::string(s);
+			JS_FreeCString(ctx, s);
 		} else {
-			JSValue jval = JS_ToString(jctx, value);
-			const char* s = JS_ToCString(jctx, jval);
-			node->setAttribute(name, std::string(s));
-			JS_FreeCString(jctx, s);
-			JS_FreeValue(jctx, jval);
+			JSValue jval = JS_ToString(ctx, value);
+			const char* s = JS_ToCString(ctx, jval);
+			new_attrs[name] = std::string(s);
+			JS_FreeCString(ctx, s);
+			JS_FreeValue(ctx, jval);
 		}
 		});
+	
+	// Check to clear style/id/class
+	if (!new_style)
+		node->setStyle(style::StyleSpec());
+	if (!new_id)
+		node->setId(base::string_atom());
+	if (!new_class)
+		node->setClass(style::Classes());
+
+	// Update attributes
+	std::set<base::string_atom> attrs_to_remove;
+	for (auto& p : node->attrs_) {
+		if (new_attrs.find(p.first) == new_attrs.end())
+			attrs_to_remove.insert(p.first);
+	}
+	for (auto& p : new_attrs) {
+		node->setAttribute(p.first, p.second);
+	}
+	for (auto& a : attrs_to_remove) {
+		node->setAttribute(a, NodeAttributeValue());
+	}
+
+	// Update event handlers
+	std::set<base::string_atom> ehandlers_to_remove;
+	for (auto& p : node->event_handlers_) {
+		if (new_ehandlers.find(p.first) == new_ehandlers.end())
+			ehandlers_to_remove.insert(p.first);
+	}
+	for (auto& p : new_ehandlers) {
+		node->setEventHandler(p.first, p.second);
+	}
+	for (auto& e : ehandlers_to_remove) {
+		node->setEventHandler(e, script::Value());
+	}
 }
 
 bool Scene::match(Node* node, style::Selector* selector)
@@ -362,4 +401,127 @@ void Scene::layoutComputed(Node* node)
 	Node::eachLayoutChild(node, absl::bind_front(&Scene::layoutComputed, this));
 }
 
+void Scene::updateNodeChildren(Node* node, JSContext* ctx, JSValue comp_data)
+{
+	if (!JS_IsArray(ctx, comp_data)) {
+		LOG(WARNING) << "updateNodeChildren failed, comp_data not array";
+		return;
+	}
+	
+	size_t prev_child_count = node->children_.size();
+	int64_t len = 0;
+	JS_GetPropertyLength(ctx, &len, comp_data);
+	size_t next_child_count = (size_t)std::max<int64_t>(0, len);
+	size_t patched;
+	for (patched = 0; patched < std::min(prev_child_count, next_child_count); ++patched) {
+		Node* old_child = node->children_[patched];
+		JSValue child_comp_data = JS_GetPropertyUint32(ctx, comp_data, (uint32_t)patched);
+		absl::Cleanup _ = [&]() {
+			JS_FreeValue(ctx, child_comp_data);
+			};
+		NodeCompareResult res = compareNode(old_child, ctx, child_comp_data);
+		if (res == NodeCompareResult::PatchableTextNode) {
+			updateTextNode(old_child, ctx, child_comp_data);
+		} else if (res == NodeCompareResult::PatchableElementNode) {
+			updateElementNode(old_child, ctx, child_comp_data);
+		} else if (res == NodeCompareResult::PatchableFragmentElementNode) {
+			updateNodeChildren(old_child, ctx, child_comp_data);
+		} else if (res == NodeCompareResult::PatchableComponentNode) {
+			updateComponentNode(old_child, ctx, child_comp_data);
+		} else {
+			break;
+		}
+	}
+
+	for (size_t i = patched; i < next_child_count; ++i) {
+		JSValue child_comp_data = JS_GetPropertyUint32(ctx, comp_data, (uint32_t)i);
+		Node* new_child = createComponentNode(child_comp_data);
+		JS_FreeValue(ctx, child_comp_data);
+		node->appendChild(new_child);
+	}
+
+	for (size_t i = patched; i < prev_child_count; ++i) {
+		Node* old_child = node->removeChildAt(patched);
+		old_child->release();
+	}
+}
+
+Scene::NodeCompareResult Scene::compareNode(Node* node, JSContext* ctx, JSValue comp_data)
+{
+	if (JS_IsString(comp_data)) {
+		if (node->type_ == NodeType::NODE_TEXT)
+			return NodeCompareResult::PatchableTextNode;
+	} else if (JS_IsArray(ctx, comp_data)) {
+		if (node->type_ == NodeType::NODE_ELEMENT && node->tag_ == "fragment")
+			return NodeCompareResult::PatchableFragmentElementNode;
+	} else if (JS_IsObject(comp_data)) {
+		JSValue render = JS_GetPropertyStr(ctx, comp_data, "renderFn");
+		absl::Cleanup _ = [&]() {
+			JS_FreeValue(ctx, render);
+			};
+		//{
+		//	auto j = JS_JSONStringify(ctx, comp_data, JS_UNDEFINED, JS_UNDEFINED);
+		//	auto jstr = JS_ToCString(ctx, j);
+		//	JS_FreeCString(ctx, jstr);
+		//	JS_FreeValue(ctx, j);
+		//}
+		if (JS_IsFunction(ctx, render)) {
+			if (node->type_ == NodeType::NODE_COMPONENT) {
+				JSValue node_render = JS_GetPropertyStr(ctx, node->comp_state_, "renderFn");
+				absl::Cleanup _ = [&]() {
+					JS_FreeValue(ctx, node_render);
+					};
+				if (JS_AreFunctionsOfSameOrigin(ctx, render, node_render)) {
+					return NodeCompareResult::PatchableComponentNode;
+				}
+			}
+		} else {
+			JSValue tag = JS_GetPropertyStr(ctx, comp_data, "tag");
+			JSValue atts = JS_GetPropertyStr(ctx, comp_data, "atts");
+			JSValue kids = JS_GetPropertyStr(ctx, comp_data, "kids");
+			absl::Cleanup _ = [&]() {
+				JS_FreeValue(ctx, tag);
+				JS_FreeValue(ctx, atts);
+				JS_FreeValue(ctx, kids);
+				};
+			if (JS_IsString(tag) && JS_IsObject(atts) && JS_IsArray(ctx, kids)) {
+				std::string tagName = script_ctx_->parse<std::string>(tag);
+				if (node->type_ == NodeType::NODE_ELEMENT && node->tag_ == base::string_intern(tagName)) {
+					return NodeCompareResult::PatchableElementNode;
+				}
+			}
+		}
+	}
+	return NodeCompareResult::Unpatchable;
+}
+
+void Scene::updateTextNode(Node* node, JSContext* ctx, JSValue comp_data)
+{
+	node->text_ = script::Context::parse<std::string>(ctx, comp_data);
+}
+
+void Scene::updateElementNode(Node* node, JSContext* ctx, JSValue comp_data)
+{
+	JSValue atts = JS_GetPropertyStr(ctx, comp_data, "atts");
+	JSValue kids = JS_GetPropertyStr(ctx, comp_data, "kids");
+	absl::Cleanup _ = [&]() {
+		JS_FreeValue(ctx, atts);
+		JS_FreeValue(ctx, kids);
+		};
+	setupProps(node, atts);
+	updateNodeChildren(node, ctx, kids);
+}
+
+void Scene::updateComponentNode(Node* node, JSContext* ctx, JSValue comp_data)
+{
+	JS_SetPropertyStr(ctx, node->comp_state_, "props", JS_GetPropertyStr(ctx, comp_data, "props"));
+	JS_SetPropertyStr(ctx, node->comp_state_, "children", JS_GetPropertyStr(ctx, comp_data, "children"));
+	JSValue render = JS_GetPropertyStr(ctx, node->comp_state_, "render");
+	JSValue child_comp_data = JS_Call(ctx, render, node->comp_state_, 0, nullptr);
+	updateComponentNodeChildren(node, child_comp_data);
+	JS_FreeValue(ctx, render);
+	JS_FreeValue(ctx, child_comp_data);
+}
+
 } // namespace scene2d
+

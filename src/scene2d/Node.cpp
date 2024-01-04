@@ -1,6 +1,7 @@
 #include "Node.h"
 #include "graph2d/graph2d.h"
 #include "style/style.h"
+#include "script/Value.h"
 #include "control.h"
 #include "Scene.h"
 #include "style/BoxConstraintSolver.h"
@@ -196,14 +197,22 @@ void Node::setStyle(const style::StyleSpec& style)
 
 void Node::setAttribute(base::string_atom name, const NodeAttributeValue& value)
 {
-	attrs_[name] = value;
+	if (value.isNull()) {
+		attrs_.erase(name);
+	} else {
+		attrs_[name] = value;
+	}
 	if (control_)
 		control_->onSetAttribute(name, value);
 }
 
-void Node::setEventHandler(base::string_atom name, JSValue func)
+void Node::setEventHandler(base::string_atom name, const script::Value& func)
 {
-	event_handlers_[name] = func;
+	if (func.isUndefined()) {
+		event_handlers_.erase(name);
+	} else {
+		event_handlers_[name] = func;
+	}
 	if (control_)
 		control_->onSetEventHandler(name, func);
 }
