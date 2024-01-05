@@ -1,6 +1,7 @@
 "use strict";
 "use math";
 //import { useHook } from 'Keact';
+import { VerticalAlignTest, VerticalAlignTestStyle } from "./vertical_align.mjs";
 
 function TestDtor(props, kids) {
 	let [n, setN] = useHook(() => props.n, (_, n) => {
@@ -184,9 +185,14 @@ app.showDialog({
 });
 */
 
+// app.showDialog({
+// 	root: <div>
+// 		<FlatIconTextButton></FlatIconTextButton>
+// 	</div>,
+// 	stylesheet: flat_icon_css,
+// });
+
 app.showDialog({
-	root: <div>
-		<FlatIconTextButton></FlatIconTextButton>
-	</div>,
-	stylesheet: flat_icon_css,
+	root: <VerticalAlignTest />,
+	stylesheet: VerticalAlignTestStyle
 });

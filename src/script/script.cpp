@@ -255,6 +255,7 @@ static void register_jsx_function(JSContext* ctx)
 Context::Context(Runtime* rt)
 {
 	ctx_ = JS_NewContext(rt->rt_);
+	LOG(INFO) << "JS_NewContext: " << ctx_;
 	JS_SetContextOpaque(ctx_, this);
 	js_init_module_std(ctx_, "std");
 	js_init_module_os(ctx_, "os");

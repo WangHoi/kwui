@@ -1224,9 +1224,10 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	ib.line_box->addInlineBox(&ib);
 	ib.pos.x = inline_pos_x;
 	ib.size = ibb.block_box.marginRect().size();
-	if (scroll_y == ScrollbarPolicy::Hidden) {
+	if (st.overflow_y == OverflowType::Visible) {
 		absl::optional<float> baseline = findFirstBaseline(o);
-		ib.baseline = baseline.value_or(ib.size.height);
+		ib.baseline = ibb.block_box.contentRect().top + baseline.value_or(ib.size.height);
+		//LOG(INFO) << "findFirstBaseline for " << o->node->tag_ << ": " << ib.baseline;
 	} else {
 		ib.baseline = ib.size.height;
 	}
@@ -1379,7 +1380,7 @@ absl::optional<float> LayoutObject::findFirstBaseline(LayoutObject* o, float acc
 			}
 		}
 	}
-
+	/*
 	if (o->style->display == DisplayType::InlineBlock) {
 		const auto& ibb = absl::get<InlineBlockBox>(o->box);
 		if (!ibb.inline_boxes.empty())
@@ -1393,6 +1394,7 @@ absl::optional<float> LayoutObject::findFirstBaseline(LayoutObject* o, float acc
 			return baseline;
 		child = child->next_sibling;
 	} while (child != o->first_child);
+	*/
 	return absl::nullopt;
 }
 
@@ -1456,7 +1458,7 @@ void LayoutObject::arrangePositionedChildren(LayoutObject* o, const scene2d::Dim
 				off.top = try_resolve_to_px(st.top, crect.width()).value_or(0.0f);
 				off.bottom = -off.top;
 			}
-			LayoutObject::setPos(po, scene2d::PointF(off.left, off.top));
+			LayoutObject::setPos(po, LayoutObject::pos(po) + scene2d::PointF(off.left, off.top));
 		}
 	}
 }

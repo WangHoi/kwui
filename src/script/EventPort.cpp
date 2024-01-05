@@ -9,14 +9,9 @@ struct NativeSubItem {
 	void* udata;
 };
 
-struct ScriptSubItem {
-	JSContext* ctx;
-	JSValue func;
-};
-
 struct Subscription {
 	std::vector<NativeSubItem> native_subs;
-	std::vector<ScriptSubItem> script_subs;
+	std::vector<Value> script_subs;
 };
 
 std::unordered_map<std::string, Subscription> g_subscription;
@@ -39,13 +34,18 @@ bool EventPort::removeListenerFromNative(const std::string& event, kwui::ScriptF
 	if (it == g_subscription.end())
 		return false;
 	auto& native_subs = it->second.native_subs;
+	bool removed = false;
 	for (auto& i = native_subs.begin(); i != native_subs.end(); ++i) {
 		if (i->func == func && i->udata == udata) {
 			native_subs.erase(i);
-			return true;
+			removed = true;
+			break;
 		}
 	}
-	return false;
+	if (it->second.native_subs.empty() && it->second.script_subs.empty()) {
+		g_subscription.erase(it);
+	}
+	return removed;
 }
 JSValue EventPort::postFromScript(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
@@ -69,7 +69,7 @@ JSValue EventPort::addListenerFromScript(JSContext* ctx, JSValueConst this_val, 
 
 	// TODO: check duplicate add
 
-	sub.script_subs.emplace_back<ScriptSubItem>({ ctx, JS_DupValue(ctx, argv[1]) });
+	sub.script_subs.emplace_back(ctx, argv[1]);
 	return JS_UNDEFINED;
 }
 JSValue EventPort::removeListenerFromScript(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
@@ -86,14 +86,18 @@ JSValue EventPort::removeListenerFromScript(JSContext* ctx, JSValueConst this_va
 	if (it == g_subscription.end())
 		return JS_FALSE;
 	auto& script_subs = it->second.script_subs;
+	bool removed = false;
 	for (auto& i = script_subs.begin(); i != script_subs.end(); ++i) {
-		if (i->func == argv[1]) {
-			JS_FreeValue(i->ctx, i->func);
+		if (i->jsValue() == argv[1]) {
 			script_subs.erase(i);
-			return JS_TRUE;
+			removed = true;
+			break;
 		}
 	}
-	return JS_FALSE;
+	if (it->second.native_subs.empty() && it->second.script_subs.empty()) {
+		g_subscription.erase(it);
+	}
+	return removed ? JS_TRUE : JS_FALSE;
 }
 void EventPort::setupAppObject(JSContext* ctx, JSValue app)
 {
@@ -117,14 +121,14 @@ void EventPort::doPost(const std::string& event, const kwui::ScriptValue& value)
 
 	for (auto& item : sub.script_subs) {
 		JSValue jval[2];
-		jval[0] = JS_NewString(item.ctx, event.c_str());
-		jval[1] = script::unwrap(item.ctx, value);
-		JSValue ret = JS_Call(item.ctx, item.func, JS_UNDEFINED, 2, jval);
+		jval[0] = JS_NewString(item.jsContext(), event.c_str());
+		jval[1] = script::unwrap(item.jsContext(), value);
+		JSValue ret = JS_Call(item.jsContext(), item.jsValue(), JS_UNDEFINED, 2, jval);
 		if (JS_IsException(ret)) {
-			js_std_dump_error(item.ctx);
+			js_std_dump_error(item.jsContext());
 		}
-		JS_FreeValue(item.ctx, jval[0]);
-		JS_FreeValue(item.ctx, jval[1]);
+		JS_FreeValue(item.jsContext(), jval[0]);
+		JS_FreeValue(item.jsContext(), jval[1]);
 	}
 }
 

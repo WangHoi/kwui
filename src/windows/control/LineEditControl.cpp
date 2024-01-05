@@ -295,6 +295,12 @@ void LineEditControl::onSetAttribute(base::string_atom name, const scene2d::Node
         } else {
             LOG(INFO) << "line_edit: fontSize must be number.";
         }
+    } else if (name == base::string_intern("innerHPadding")) {
+        if (value.isNumber()) {
+            SetBackgroundPadding((float)value.toDouble());
+        } else {
+            LOG(INFO) << "line_edit: innerHPadding must be number.";
+        }
     }
 }
 void LineEditControl::onSetEventHandler(base::string_atom name, const script::Value& func)
