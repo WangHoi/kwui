@@ -35,6 +35,7 @@ void ImageControl::onSetAttribute(base::string_atom name, const scene2d::NodeAtt
 }
 void ImageControl::setImageSource(const std::string& src) {
 	_image_src = src;
+	_bitmap = nullptr;
 }
 
 }

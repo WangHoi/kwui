@@ -110,8 +110,9 @@ function FlatIconTextButton(props, kids) {
 		app.closeDialog(this.dialogId);
 	};
 	app.addListener("dialog:request-close", close_handler);
+	/* <p class="button-icon" /> */
 	return <button class="flat-icon-text-button">
-		<p class="button-icon" />
+		<img class="button-icon" src="expand.png"></img>
 		<div id="wrapper" style="display:inline-block">
 			<span id="text">更多选项</span>
 		</div>
@@ -176,17 +177,16 @@ function TestLineEdit(props, kids) {
 		</div>
 	</div>;
 }
-
+/*
 app.showDialog({
 	root: <TestLineEdit></TestLineEdit>,
 	stylesheet: line_edit_css,
 });
+*/
 
-/*
 app.showDialog({
 	root: <div>
 		<FlatIconTextButton></FlatIconTextButton>
 	</div>,
 	stylesheet: flat_icon_css,
 });
-*/

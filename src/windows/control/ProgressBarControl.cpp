@@ -28,6 +28,16 @@ void ProgressBarControl::onSetAttribute(base::string_atom name, const scene2d::N
 {
 	if (name == base::string_intern("value")) {
 		SetProgress((float)value.toDouble());
+	} else if (name == base::string_intern("color")) {
+		SetColor(style::Color::fromString(value.toString()));
+	} else if (name == base::string_intern("backgroundColor")) {
+		SetBackgroundColor(style::Color::fromString(value.toString()));
+	} else if (name == base::string_intern("borderRadius")) {
+		if (value.isNumber()) {
+			SetBorderRadius((float)value.toDouble());
+		} else {
+			LOG(INFO) << "progress_bar: borderRadius must be number.";
+		}
 	}
 }
 void ProgressBarControl::SetProgress(float value) {

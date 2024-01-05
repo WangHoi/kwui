@@ -44,9 +44,9 @@ public:
         //windows::graphics::GraphicDevice::instance()
         //    ->LoadBitmapToCache("close_button_hover.png", L"D:\\projects\\kwui\\close_button_hover.png");
         windows::graphics::GraphicDevice::instance()
-            ->LoadBitmapToCache("expand.png", L"D:\\Projects\\windows-setup-new\\assets\\images\\expand.png");
+            ->LoadBitmapToCache("expand.png", L"D:\\Projects\\kwui\\expand.png");
         windows::graphics::GraphicDevice::instance()
-            ->LoadBitmapToCache("collapse.png", L"D:\\Projects\\windows-setup-new\\assets\\images\\collapse.png");
+            ->LoadBitmapToCache("collapse.png", L"D:\\Projects\\kwui\\collapse.png");
 
         LOG(INFO) << "Register builtin ui controls...";
         scene2d::ControlRegistry::get()->registerControl<scene2d::KmlControl>();

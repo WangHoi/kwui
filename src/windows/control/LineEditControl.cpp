@@ -280,6 +280,21 @@ void LineEditControl::onSetAttribute(base::string_atom name, const scene2d::Node
     if (name == base::string_intern("value")) {
         SetText(value.toString());
     } else if (name == base::string_intern("color")) {
+        SetColor(style::Color::fromString(value.toString()));
+    } else if (name == base::string_intern("backgroundColor")) {
+        SetBackgroundColor(style::Color::fromString(value.toString()));
+    } else if (name == base::string_intern("caretColor")) {
+        SetCaretColor(style::Color::fromString(value.toString()));
+    } else if (name == base::string_intern("selectionBackgroundColor")) {
+        _selection_bg_color = style::Color::fromString(value.toString());
+    } else if (name == base::string_intern("selectionColor")) {
+        _selection_text_color = style::Color::fromString(value.toString());
+    } else if (name == base::string_intern("fontSize")) {
+        if (value.isNumber()) {
+            SetFontSize((float)value.toDouble());
+        } else {
+            LOG(INFO) << "line_edit: fontSize must be number.";
+        }
     }
 }
 void LineEditControl::onSetEventHandler(base::string_atom name, const script::Value& func)
