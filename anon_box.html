@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style type="text/css">
+    </style>
+</head>
+
+<body>
+    <div>
+        <span>Block with inline children:</span>
+        <span>inline1</span>
+        <span>inline2</span>
+        <div>block1</div>
+        <span>inline3</span>
+        <span>inline4</span>
+    </div>
+    <span>
+        Inline with block children
+        <span>inline1</span>
+        <span>inline2</span>
+        <div>block1</div>
+        <span>inline3</span>
+        <span>inline4</span>
+    </span>
+    <span>inline5</span>
+    <div id="body-anon">
+        <div id="span-anon">
+            <span>
+                Inline with block children
+                <span>inline1</span>
+                <span>inline2</span>
+            </span>
+        </div>
+        <div>block1</div>
+        <div id="span-anon">
+            <span id="span-anon">
+                <span>inline3</span>
+                <span>inline4</span>
+            </span>
+            <span>inline5</span>
+        </div>
+    </div>
+</body>
+
+</html>

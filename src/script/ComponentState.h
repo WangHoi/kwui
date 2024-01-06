@@ -23,6 +23,10 @@ public:
 
 	static void gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func);
 	static JSValue dialogId(JSContext* ctx, JSValueConst this_val);
+
+	ComponentState(JSValue this_obj)
+		: this_obj_(this_obj) {}
+
 private:
 	static JSValue useHookUpdater(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv, int magic, JSValue* func_data);
 	void unmount(JSContext* ctx, JSValueConst this_val);
@@ -33,6 +37,7 @@ private:
 		JSValue cleanupFn = JS_UNINITIALIZED;
 	};
 
+	JSValue this_obj_ = JS_UNDEFINED;
 	scene2d::Node* node_ = nullptr;
 	size_t curr_slot_ = 0;
 	std::vector<Slot> slots_;

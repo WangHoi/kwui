@@ -12,6 +12,7 @@ JSClassID ComponentState::JS_CLASS_ID = 0;
 static void component_state_finalizer(JSRuntime* rt, JSValue val)
 {
 	auto ptr = (ComponentState*)JS_GetOpaque(val, ComponentState::JS_CLASS_ID);
+	LOG(INFO) << "ComponentState: finalizer opaque " << ptr;
 	if (ptr) {
 		ptr->finalize(rt);
 		delete ptr;
@@ -45,7 +46,9 @@ static JSValue component_state_ctor(JSContext* ctx,
 	JS_SetPropertyStr(ctx, obj, "renderFn", JS_DupValue(ctx, argv[0]));
 	JS_SetPropertyStr(ctx, obj, "props", JS_DupValue(ctx, argv[1]));
 	JS_SetPropertyStr(ctx, obj, "children", JS_DupValue(ctx, argv[2]));
-	JS_SetOpaque(obj, new ComponentState);
+	auto opaque = new ComponentState(obj);
+	LOG(INFO) << "ComponentState: setOpaque " << opaque;
+	JS_SetOpaque(obj, opaque);
 	return obj;
 fail:
 	JS_FreeValue(ctx, obj);
@@ -138,7 +141,11 @@ void ComponentState::setNode(JSContext* ctx, JSValue this_val, scene2d::Node* no
 
 JSValue ComponentState::useHook(JSContext* ctx, JSValue this_val, JSValue init_fn, JSValue update_fn, JSValue cleanup_fn)
 {
-	JSValue user_update_fn = JS_NewCFunctionData(ctx, &ComponentState::useHookUpdater, 1, (int)curr_slot_, 1, &this_val);
+	//JSValue user_update_fn = JS_NewCFunctionData(ctx, &ComponentState::useHookUpdater, 1, (int)curr_slot_, 1, &this_val);
+	JSValue data = JS_NewObject(ctx);
+	JS_SetOpaque(data, this);;
+	JSValue user_update_fn = JS_NewCFunctionData(ctx, &ComponentState::useHookUpdater, 1, (int)curr_slot_, 1, &data);
+	JS_FreeValue(ctx, data);
 	absl::Cleanup _ = [&]() {
 		JS_FreeValue(ctx, user_update_fn);
 		};
@@ -156,6 +163,7 @@ JSValue ComponentState::useHook(JSContext* ctx, JSValue this_val, JSValue init_f
 			JS_DupValue(ctx, update_fn),
 			JS_DupValue(ctx, cleanup_fn),
 			});
+		LOG(INFO) << "ComponentState: slots append opaque " << this;
 		JSValue init_state = JS_Call(ctx, init_fn, this_val, 1, &user_update_fn);
 		if (JS_IsException(init_state)) {
 			js_std_dump_error(ctx);
@@ -176,12 +184,14 @@ void ComponentState::finalize(JSRuntime* rt)
 	}
 	slots_.clear();
 	curr_slot_ = 0;
+	this_obj_ = JS_UNDEFINED;
 }
 
 JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/, int argc, JSValueConst* argv, int magic, JSValue* func_data)
 {
 	//LOG(INFO) << "useHookUpdater slot " << magic;
-	auto me = (ComponentState*)JS_GetOpaque(func_data[0], ComponentState::JS_CLASS_ID);
+	auto me = (ComponentState*)JS_GetOpaque(func_data[0], 1/*JS_CLASS_OBJECT*/);
+	auto this_obj = me->this_obj_;
 	if (me && me->node_) {
 		CHECK(magic >= 0 && magic < (int)me->slots_.size());
 		auto scene = me->node_->scene();
@@ -190,19 +200,22 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 			
 			if (JS_IsFunction(ctx, me->slots_[magic].updateFn)) {
 				JSValue mutater_args[2] = { me->slots_[magic].state, argv[0] };
-				JSValue ret = JS_Call(ctx, me->slots_[magic].updateFn, func_data[0], 2, mutater_args);
+				JSValue ret = JS_Call(ctx, me->slots_[magic].updateFn, this_obj, 2, mutater_args);
 				if (JS_IsArray(ctx, ret)) {
 					int64_t len = 0;
 					JS_GetPropertyLength(ctx, &len, ret);
 					if (len == 2) {
 						JSValue new_state = JS_GetPropertyUint32(ctx, ret, 0);
 						JSValue should_render = JS_GetPropertyUint32(ctx, ret, 1);
-						JS_FreeValue(ctx, me->slots_[magic].state);
+						JSValue old_state = me->slots_[magic].state;
 						me->slots_[magic].state = new_state;
-						//auto nj = JS_JSONStringify(ctx, new_state, JS_UNDEFINED, JS_UNDEFINED);
-						//auto njs = Context::parse<std::string>(ctx, nj);
-						//LOG(INFO) << "after update, new state " << njs;
-						//JS_FreeValue(ctx, nj);
+						JS_FreeValue(ctx, old_state);
+
+						auto nj = JS_JSONStringify(ctx, new_state, JS_UNDEFINED, JS_UNDEFINED);
+						auto njs = Context::parse<std::string>(ctx, nj);
+						LOG(INFO) << "after update, new state " << njs;
+						JS_FreeValue(ctx, nj);
+
 						need_render = JS_ToBool(ctx, should_render);
 						JS_FreeValue(ctx, should_render);
 					}
@@ -211,8 +224,8 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 			}
 
 			if (need_render) {
-				JSValue render_func = JS_GetPropertyStr(ctx, func_data[0], "render");
-				JSValue comp_data = JS_Call(ctx, render_func, func_data[0], 0, nullptr);
+				JSValue render_func = JS_GetPropertyStr(ctx, this_obj, "render");
+				JSValue comp_data = JS_Call(ctx, render_func, this_obj, 0, nullptr);
 				absl::Cleanup _ = [&]() {
 					JS_FreeValue(ctx, render_func);
 					JS_FreeValue(ctx, comp_data);

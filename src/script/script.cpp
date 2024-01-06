@@ -298,6 +298,7 @@ Context::~Context()
 	if (it != rt->contexts_.end())
 		rt->contexts_.erase(it);
 	
+	LOG(INFO) << "JS_FreeContext: " << ctx_;
 	JS_FreeContext(ctx_);
 	ctx_ = nullptr;
 }
