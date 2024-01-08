@@ -359,6 +359,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	float width = 640.0;
 	float height = 480.0;
 	int flags = windows::DIALOG_FLAG_MAIN;
+	absl::optional<std::string> title;
 	absl::optional<windows::PopupShadowData> popup_shadow = absl::nullopt;
 	JSValue root = JS_UNDEFINED;
 	JSValue stylesheet = JS_UNDEFINED;
@@ -367,7 +368,9 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		JS_FreeValue(ctx, stylesheet);
 		};
 	Context::eachObjectField(ctx, argv[0], [&](const char* name, JSValue value) {
-		if (!strcmp(name, "width") && JS_IsNumber(value)) {
+		if (!strcmp(name, "title") && JS_IsString(value)) {
+			title.emplace(Context::parse<std::string>(ctx, value));
+		} else if (!strcmp(name, "width") && JS_IsNumber(value)) {
 			double f64;
 			JS_ToFloat64(ctx, &f64, value);
 			width = (float)f64;
@@ -412,6 +415,9 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	auto dialog = new windows::Dialog(
 		width, height, L"dialog", NULL, flags,
 		popup_shadow, absl::nullopt);
+	if (title.has_value()) {
+		dialog->SetTitle(title.value());
+	}
 	if (JS_IsObject(stylesheet)) {
 		auto scene = dialog->GetScene();
 		Context::eachObjectField(ctx, argv[1], [ctx, scene](const char* name, JSValue value) {
