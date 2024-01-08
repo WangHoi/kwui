@@ -1,6 +1,7 @@
 ## 框架
 
 ### 布局:
+- 匿名块盒子生成，包含内联盒子Split
 - 盒子生成：inline中包含block，需要生成临时anon-block-box包裹;
 - AbsoluteBlockHeightSolver
 
@@ -12,7 +13,6 @@
 - fragment 处理有问题，没有跳过
 
 ### Control:
-- NodeAttributeValue 增加toString, toNumber
 - LineEditControl 剪贴板支持
 
 ### 测试:
@@ -21,7 +21,5 @@
 - 脚本转换 html 为 js
 
 ## 签名自查程序移植
-
-## 橙讯安装程序移植
 
 ## TodoMVC 测试程序
