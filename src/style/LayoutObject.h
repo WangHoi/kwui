@@ -69,6 +69,7 @@ struct LayoutObject {
 	LayoutObject* next_sibling = nullptr;
 	LayoutObject* prev_sibling = nullptr;
 	LayoutObject* first_child = nullptr;
+	LayoutObject* last_child = nullptr;
 
 	std::vector<LayoutObject*> positioned_children;
 

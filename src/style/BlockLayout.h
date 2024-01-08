@@ -77,19 +77,6 @@ struct BlockBox {
 			content.height);
 	}
 
-	template <typename T>
-	void eachChild(T&& f)
-	{
-		if (type == BlockBoxType::WithBlockChildren) {
-			BlockBox* first_child = std::get<BlockBox*>(payload);
-			BlockBox* child = first_child;
-			do {
-				f(child);
-				child = child->next_sibling;
-			} while (child != first_child);
-		}
-	}
-
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const BlockBox& o) {
 		absl::Format(&sink, "BlockBox { ");

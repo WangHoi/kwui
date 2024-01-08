@@ -15,7 +15,8 @@ void LayoutObject::init(const Style* st, scene2d::Node* nd)
 {
 	style = st;
 	node = nd;
-	next_sibling = prev_sibling = this;
+	next_sibling = prev_sibling = nullptr;
+	first_child = last_child = nullptr;
 }
 
 void LayoutObject::reset()
@@ -30,7 +31,8 @@ void LayoutObject::reset()
 	scroll_object = absl::nullopt;
 	parent = nullptr;
 	first_child = nullptr;
-	next_sibling = prev_sibling = this;
+	last_child = nullptr;
+	next_sibling = prev_sibling = nullptr;
 	positioned_children.clear();
 }
 
@@ -200,10 +202,10 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 	}
 
 	LayoutObject* child = o->first_child;
-	if (child) do {
+	while (child) {
 		paint(child, painter);
 		child = child->next_sibling;
-	} while (child != o->first_child);
+	}
 
 	painter->restore();
 
@@ -267,15 +269,15 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 		pos += o->scroll_object.value().scroll_offset;
 	}
 
-	LayoutObject* child = o->first_child ? o->first_child->prev_sibling : nullptr;
-	if (child) do {
+	LayoutObject* child = o->last_child ? o->last_child : nullptr;
+	while (child) {
 		LayoutObject* picked_child = pick(child, pos, flag_mask, out_local_pos);
 		if (picked_child) {
 			pick_result = picked_child;
 			break;
 		}
 		child = child->prev_sibling;
-	} while (child != o->first_child->prev_sibling);
+	}
 
 	for (auto it = o->positioned_children.rbegin(); it != o->positioned_children.rend(); ++it) {
 		auto p = (*it)->style->position == PositionType::Relative
@@ -332,7 +334,7 @@ absl::optional<scene2d::RectF> LayoutObject::getChildrenBoundingRect(LayoutObjec
 
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
 		auto child = o->first_child;
-		if (child) do {
+		while (child) {
 			auto p = LayoutObject::contentRect(o).origin() + LayoutObject::pos(child);
 			scene2d::RectF child_border_rect = LayoutObject::borderRect(child)
 				.translate(p);
@@ -356,7 +358,7 @@ absl::optional<scene2d::RectF> LayoutObject::getChildrenBoundingRect(LayoutObjec
 				}
 			}
 			child = child->next_sibling;
-		} while (child != o->first_child);
+		}
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		if (o->ifc.has_value()) {
 			rect = scene2d::RectF::fromOriginSize(scene2d::PointF(),
@@ -478,10 +480,10 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 	//LOG(INFO) << std::string(depth, '-') << " measure " << o << " " << *o;
 
 	LayoutObject* child = o->first_child;
-	if (child) do {
+	while (child) {
 		measure(child, viewport_height);
 		child = child->next_sibling;
-	} while (child != o->first_child);
+	}
 
 	const style::Style& st = *o->style;
 	float min_width = 0.0f, max_width = std::numeric_limits<float>::infinity();
@@ -508,7 +510,7 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 	if (depends_children_width) {
 		if (o->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) {
 			LayoutObject* child = o->first_child;
-			if (child) do {
+			while (child) {
 				const style::Style& cst = *child->style;
 				float margin_left = try_resolve_to_px(cst.margin_left, absl::nullopt).value_or(0);
 				float border_left = try_resolve_to_px(cst.border_left_width, absl::nullopt).value_or(0);
@@ -526,10 +528,10 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 				}
 
 				child = child->next_sibling;
-			} while (child != o->first_child);
+			}
 		} else if (o->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
 			LayoutObject* child = o->first_child;
-			if (child) do {
+			while (child) {
 				float mbp_width = 0;
 				const style::Style& cst = *child->style;
 				if (cst.display == DisplayType::Block || cst.display == DisplayType::InlineBlock) {
@@ -550,7 +552,7 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 				}
 
 				child = child->next_sibling;
-			} while (child != o->first_child);
+			}
 		}
 	}
 	o->min_width = min_width;
@@ -841,10 +843,10 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 		base::scoped_setter _4(bfc.margin_bottom_edge, 0.0f);
 		base::scoped_setter _5(bfc.border_bottom_edge, -margin);
 		LayoutObject* child = o->first_child;
-		do {
+		while (child) {
 			arrangeBlock(child, bfc, viewport_size);
 			child = child->next_sibling;
-		} while (child != o->first_child);
+		}
 
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
@@ -872,16 +874,16 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 			// base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.pos.x + box.contentRect().left);
 			base::scoped_setter _3(bfc.contg_width, box.contentRect().width());
 			LayoutObject* child = o->first_child;
-			do {
+			while (child) {
 				prepare(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
-			} while (child != o->first_child);
+			}
 			o->ifc->arrange(o->style->text_align);
 			child = o->first_child;
-			do {
+			while (child) {
 				arrange(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
-			} while (child != o->first_child);
+			}
 		}
 
 		//bfc.max_border_right_edge = std::max(bfc.max_border_right_edge,
@@ -993,10 +995,10 @@ void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc, const scen
 		arrangeInlineBlock(o, ifc, viewport_size);
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		LayoutObject* child = o->first_child;
-		if (child) do {
+		while (child) {
 			prepare(child, ifc, viewport_size);
 			child = child->next_sibling;
-		} while (child != o->first_child);
+		}
 	}
 }
 
@@ -1009,7 +1011,7 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 		if (o->flags & HAS_INLINE_CHILD_FLAG) {
 			LayoutObject* child = o->first_child;
 			std::vector<InlineBox*> inline_boxes;
-			if (child) do {
+			while (child) {
 				arrange(child, ifc, viewport_size);
 
 				if (absl::holds_alternative<TextBox>(child->box)) {
@@ -1030,7 +1032,7 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 				}
 
 				child = child->next_sibling;
-			} while (child != o->first_child);
+			}
 
 			std::vector<InlineBox> merged_boxes;
 			for (InlineBox* child : inline_boxes) {
@@ -1065,10 +1067,10 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 			/*
 			LOG(INFO) << "translate " << ib.pos;
 			LayoutObject* child = o->first_child;
-			if (child) do {
+			while (child) {
 				translate(child, ib.pos);
 				child = child->next_sibling;
-			} while (child != o->first_child);
+			}
 			*/
 		}
 	}
@@ -1100,10 +1102,10 @@ void LayoutObject::translate(LayoutObject* o, scene2d::PointF offset)
 	}
 
 	LayoutObject* child = o->first_child;
-	if (child) do {
+	while (child) {
 		translate(child, offset);
 		child = child->next_sibling;
-	} while (child != o->first_child);
+	}
 }
 
 void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size)
@@ -1303,10 +1305,10 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
 		{
 			LayoutObject* child = o->first_child;
-			do {
+			while (child) {
 				arrangeBlock(child, bfc, viewport_size);
 				child = child->next_sibling;
-			} while (child != o->first_child);
+			}
 		}
 
 		if (box.prefer_height.has_value()) {
@@ -1331,16 +1333,16 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 
 		{
 			LayoutObject* child = o->first_child;
-			do {
+			while (child) {
 				prepare(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
-			} while (child != o->first_child);
+			}
 			o->ifc->arrange(st.text_align);
 			child = o->first_child;
-			do {
+			while (child) {
 				arrange(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
-			} while (child != o->first_child);
+			}
 		}
 
 		if (box.prefer_height.has_value()) {
@@ -1388,12 +1390,12 @@ absl::optional<float> LayoutObject::findFirstBaseline(LayoutObject* o, float acc
 	}
 
 	LayoutObject* child = o->first_child;
-	if (child) do {
+	while (child) {
 		auto baseline = findFirstBaseline(child, accum_y);
 		if (baseline.has_value())
 			return baseline;
 		child = child->next_sibling;
-	} while (child != o->first_child);
+	}
 	*/
 	return absl::nullopt;
 }
@@ -1606,14 +1608,13 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 
 	o->parent = current_;
 	if (last_child_) {
-		o->next_sibling = last_child_->next_sibling;
 		o->prev_sibling = last_child_;
 		last_child_->next_sibling = o;
-		o->next_sibling->prev_sibling = o;
 	} else {
-		o->next_sibling = o->prev_sibling = o;
+		o->next_sibling = o->prev_sibling = nullptr;
 		o->parent->first_child = o;
 	}
+	o->parent->last_child = o;
 	last_child_ = o;
 	stack_.push_back(std::make_tuple(current_, last_child_, reparent_to_anon_block_pending_));
 

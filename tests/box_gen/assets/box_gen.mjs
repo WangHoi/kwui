@@ -1,8 +1,8 @@
 function BlockSibling() {
 	return <div>
-		<b1>line1</b1>
+		<b1>line1</b1><b2>line2</b2>
 		<c1>block1</c1>
-		<b2>line2</b2>
+		<b3>line3</b3>
 	</div>;
 }
 function BlockChild() {
@@ -14,7 +14,7 @@ function BlockChild() {
 
 var test_css = `
 b1, b2, b3 {
-	display: inline;
+	display: block;
 }
 c1, c2, c3 {
 	display: block;
@@ -22,11 +22,11 @@ c1, c2, c3 {
 `;
 
 app.showDialog({
-	root: <div>
+	/*<p>--- Block child test ---</p>
+	<BlockChild />*/
+	root: (<div style="margin: 16px;">
 		<p>--- Block sibing test ---</p>
 		<BlockSibling />
-		<p>--- Block child test ---</p>
-		<BlockChild />
-	</div>,
+	</div>),
 	stylesheet: test_css,
 });
