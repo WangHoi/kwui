@@ -19,3 +19,4 @@ add_subdirectory(3rdparty/fifo_map)
 add_subdirectory(src)
 
 add_subdirectory(examples)
+add_subdirectory(tests)
