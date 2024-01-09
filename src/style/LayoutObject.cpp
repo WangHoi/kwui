@@ -1505,7 +1505,6 @@ void LayoutTreeBuilder::initFlowRoot(scene2d::Node* node)
 	current_->flags |= LayoutObject::NEW_BFC_FLAG;
 	current_->bfc.emplace(node);
 	current_->box.emplace<BlockBox>();
-	last_child_ = nullptr;
 }
 
 void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
@@ -1526,46 +1525,53 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 			}
 		}
 
-		beginChild(&node->layout_);
-
-		// 'static' or 'relative' positioned
+		//////////////////////////////////////
+		//  'static' or 'relative' positioned
 		const auto& st = node->computedStyle();
 		if (st.display == style::DisplayType::Block) {
-			if (current_->parent->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
+			if (current_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
 				LOG(ERROR) << "LayoutTreeBuilder::prepareChild(): unexpected block child found, BUG!";
 				abort();
 			}
-			current_->parent->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
+			current_->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
+			
+			beginChild(&node->layout_);
 			current_->box.emplace<BlockBox>();
 		} else if (st.display == style::DisplayType::Inline) {
-			if (current_->node->type() == scene2d::NodeType::NODE_TEXT
-				&& (current_->parent->style->display == DisplayType::Block
-					|| current_->parent->style->display == DisplayType::InlineBlock)) {
-				reparent_to_anon_block_pending_ = true;
-				current_->anon_span = std::make_unique<LayoutObject>();
-				current_->anon_span->init(current_->style, current_->node);
-				current_->anon_span->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_SPAN_FLAG;
+			if (node->type() == scene2d::NodeType::NODE_TEXT
+				&& (current_->style->display == DisplayType::Block
+					|| current_->style->display == DisplayType::InlineBlock)) {
+				
+				auto anon_span = std::make_unique<LayoutObject>();
+				anon_span->init(&node->computed_style_, node);
+				anon_span->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_SPAN_FLAG;
+				
+				beginChild(anon_span.get());
+				beginChild(&node->layout_);
+				current_->anon_span = std::move(anon_span);
 			} else {
-				current_->parent->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+				current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+				beginChild(&node->layout_);
 			}
 			current_->box.emplace<std::vector<InlineBox>>();
 		} else if (st.display == style::DisplayType::InlineBlock) {
-			current_->parent->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+			current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+			beginChild(&node->layout_);
 			current_->box.emplace<InlineBlockBox>();
 		}
 
 		// establish new BFC
 		if (st.display == style::DisplayType::InlineBlock
 			|| st.overflow_x != style::OverflowType::Visible
-			|| st.overflow_y != style::OverflowType::Visible
-			|| new_bfc_pending_) {
+			|| st.overflow_y != style::OverflowType::Visible) {
 
-			new_bfc_pending_ = false;
 			current_->flags |= LayoutObject::NEW_BFC_FLAG;
 			current_->bfc.emplace(node);
 		}
 		scene2d::Node::eachLayoutChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
 		endChild();
+		if (current_ && current_->flags & LayoutObject::ANON_SPAN_FLAG)
+			endChild();
 	}
 }
 
@@ -1586,7 +1592,6 @@ void LayoutTreeBuilder::addText(scene2d::Node* node)
 		CHECK(!(current_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
 		current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 		current_->first_child = anon;
-		last_child_ = anon;
 		anon->parent = current_;
 
 		anon->first_child = &node->layout_;
@@ -1607,52 +1612,23 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 	o->reset();
 
 	o->parent = current_;
-	if (last_child_) {
-		o->prev_sibling = last_child_;
-		last_child_->next_sibling = o;
+	if (current_->last_child) {
+		o->prev_sibling = current_->last_child;
+		current_->last_child->next_sibling = o;
 	} else {
 		o->next_sibling = o->prev_sibling = nullptr;
-		o->parent->first_child = o;
+		current_->first_child = o;
 	}
-	o->parent->last_child = o;
-	last_child_ = o;
-	stack_.push_back(std::make_tuple(current_, last_child_, reparent_to_anon_block_pending_));
+	current_->last_child = o;
+	stack_.push_back(current_);
 
 	current_ = o;
-	last_child_ = nullptr;
-	reparent_to_anon_block_pending_ = false;
 }
 
 void LayoutTreeBuilder::endChild()
 {
-	std::tie(current_, last_child_, reparent_to_anon_block_pending_) = stack_.back();
+	current_ = stack_.back();
 	stack_.pop_back();
-}
-
-void LayoutTreeBuilder::parentAddBlockChild()
-{
-	if (current_->parent->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
-		LOG(ERROR) << "LayoutTreeBuilder::parentAddBlockChild(): invalid state";
-		new_bfc_pending_ = true;
-		return;
-	}
-
-	current_->parent->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
-	current_->box.emplace<BlockBox>();
-}
-
-void LayoutTreeBuilder::parentAddInlineChild()
-{
-	if (current_->node->type() == scene2d::NodeType::NODE_TEXT
-		&& (current_->parent->style->display == DisplayType::Block 
-			|| current_->parent->style->display == DisplayType::InlineBlock)) {
-		reparent_to_anon_block_pending_ = true;
-		current_->anon_span = std::make_unique<LayoutObject>();
-		current_->anon_span->init(current_->style, current_->node);
-		current_->anon_span->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_SPAN_FLAG;
-	} else {
-		current_->parent->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
-	}
 }
 
 }

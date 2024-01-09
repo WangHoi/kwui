@@ -175,19 +175,14 @@ private:
 	void addText(scene2d::Node* node);
 	void beginChild(LayoutObject* o);
 	void endChild();
-	void parentAddBlockChild();
-	void parentAddInlineChild();
 
 	scene2d::Node* root_ = nullptr;
 	std::vector<scene2d::Node*> abs_pos_nodes_;
 
 	FlowRoot* flow_root_ = nullptr;
 	LayoutObject* current_ = nullptr;
-	LayoutObject* last_child_ = nullptr;
-	// (contg, last_child, reparent_anon_block)
-	std::vector<std::tuple<LayoutObject*, LayoutObject*, bool>> stack_;
-	bool reparent_to_anon_block_pending_ = false;
-	bool new_bfc_pending_ = false;
+	// contg
+	std::vector<LayoutObject*> stack_;
 };
 
 }
