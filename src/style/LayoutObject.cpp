@@ -25,6 +25,7 @@ void LayoutObject::reset()
 	bfc = absl::nullopt;
 	ifc = absl::nullopt;
 	anon_span = nullptr;
+	anon_boxes.clear();
 	min_width = 0.0f;
 	max_width = std::numeric_limits<float>::infinity();
 	prefer_height = absl::nullopt;
@@ -1425,6 +1426,58 @@ absl::optional<scene2d::RectF> LayoutObject::containingRectForPositionedChildren
 	return absl::nullopt;
 }
 
+void LayoutObject::removeFromParent()
+{
+	if (!parent)
+		return;
+	if (prev_sibling) {
+		prev_sibling->next_sibling = next_sibling;
+	} else {
+		parent->first_child = next_sibling;
+	}
+	if (next_sibling) {
+		next_sibling->prev_sibling = prev_sibling;
+	} else {
+		parent->last_child = prev_sibling;
+	}
+	prev_sibling = next_sibling = nullptr;
+	parent = nullptr;
+}
+
+void LayoutObject::append(LayoutObject* child)
+{
+	DCHECK(!child->parent) << "LayoutObject::append child with exist parent.";
+	DCHECK(!child->prev_sibling) << "LayoutObject::append child with exist prev-sibling.";
+	DCHECK(!child->next_sibling) << "LayoutObject::append child with exist next-sibling.";
+
+	child->parent = this;
+	if (last_child) {
+		last_child->next_sibling = child;
+		child->prev_sibling = last_child;
+		last_child = child;
+	} else {
+		first_child = last_child = child;
+	}
+}
+
+void LayoutObject::insertBeforeMe(LayoutObject* o)
+{
+	DCHECK(parent) << "LayoutObject::insertBeforeMe self parent not exists.";
+	DCHECK(!o->parent) << "LayoutObject::insertBeforeMe with exist parent.";
+	DCHECK(!o->prev_sibling) << "LayoutObject::insertBeforeMe with exist prev-sibling.";
+	DCHECK(!o->next_sibling) << "LayoutObject::insertBeforeMe with exist next-sibling.";
+
+	o->parent = parent;
+	if (prev_sibling) {
+		prev_sibling->next_sibling = o;
+		o->prev_sibling = prev_sibling;
+	} else {
+		parent->first_child = o;
+	}
+	prev_sibling = o;
+	o->next_sibling = this;
+}
+
 void LayoutObject::arrangePositionedChildren(LayoutObject* o, const scene2d::DimensionF& viewport_size)
 {
 	for (LayoutObject* po : o->positioned_children) {
@@ -1530,8 +1583,8 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		const auto& st = node->computedStyle();
 		if (st.display == style::DisplayType::Block) {
 			if (current_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
-				LOG(ERROR) << "LayoutTreeBuilder::prepareChild(): unexpected block child found, BUG!";
-				abort();
+				//LOG(ERROR) << "LayoutTreeBuilder::prepareChild(): unexpected block child found, BUG!";
+				//abort();
 			}
 			current_->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
 			
@@ -1625,15 +1678,37 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 	current_ = o;
 }
 
+static LayoutObject* make_anon_block(LayoutObject* current, const std::pair<LayoutObject*, LayoutObject*>& inline_pair)
+{
+	auto anon_block = std::make_unique<LayoutObject>();
+	anon_block->anon_style = std::make_unique<Style>(*current->style);
+	// TODO: anon block style
+	anon_block->init(anon_block->anon_style.get(), current->node);
+	anon_block->flags = (LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_BLOCK_FLAG);
+	anon_block->box.emplace<BlockBox>();
+	auto nc = inline_pair.first;
+	while (nc) {
+		auto nc_next = nc->next_sibling;
+
+		nc->removeFromParent();
+		anon_block->append(nc);
+
+		if (nc == inline_pair.second)
+			break;
+		nc = nc_next;
+	}
+	current->anon_boxes.emplace_back(std::move(anon_block));
+	return current->anon_boxes.back().get();
+}
+
 void LayoutTreeBuilder::endChild()
 {
-	current_ = stack_.back();
-	stack_.pop_back();
-
 	// is block container and contains both inline and block children
 	if ((current_->style->display == style::DisplayType::Block || current_->style->display == style::DisplayType::InlineBlock)
 		&& (current_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) != 0
 		&& (current_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) != 0) {
+		
+		current_->flags &= ~LayoutObject::HAS_INLINE_CHILD_FLAG;
 		// generate anonymous block box
 		absl::optional<std::pair<LayoutObject*, LayoutObject*>> inline_pair;
 		for (auto child = current_->first_child; child; child = child->next_sibling) {
@@ -1643,28 +1718,23 @@ void LayoutTreeBuilder::endChild()
 				} else {
 					inline_pair.emplace(child, child);
 				}
-			} else {
+			} else { // is block container
 				if (inline_pair.has_value()) {
-					auto anon_block = std::make_unique<LayoutObject>();
-					anon_block->init(current_->style, current_->node);
-					anon_block->first_child = inline_pair.value().first;
-					anon_block->last_child = inline_pair.value().second;
-					while (1) {
-						auto nc = inline_pair.value().first;
-						auto nc_next = nc->next_sibling;
-
-						nc->removeFromParent();
-						anon_block->append(nc);
-
-						if (nc == inline_pair.value().second)
-							break;
-						nc = nc_next;
-					}
-					current_->anon_boxes.emplace_back(std::move(anon_block));
+					auto anon_block = make_anon_block(current_, inline_pair.value());
+					child->insertBeforeMe(anon_block);
+					inline_pair = absl::nullopt;
 				}
 			}
 		}
+		if (inline_pair.has_value()) {
+			auto anon_block = make_anon_block(current_, inline_pair.value());
+			current_->append(anon_block);
+			inline_pair = absl::nullopt;
+		}
 	}
+
+	current_ = stack_.back();
+	stack_.pop_back();
 }
 
 }

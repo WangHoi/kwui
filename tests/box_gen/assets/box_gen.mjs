@@ -1,14 +1,14 @@
 function BlockSibling() {
 	return <div>
-		<b1>line1</b1><b2>line2</b2>
-		<c1>block1</c1>
-		<b3>line3</b3>
+		<c1>line1</c1><c2>line2</c2>
+		<b1>block1</b1>
+		<c3>line3</c3>
 	</div>;
 }
 function BlockChild() {
 	return <div>
-		<b1>line1<c1>block1<b3>line3</b3></c1></b1>
-		<b2>line2</b2>
+		<c1>line1<b1>block1<c3>line3</c3></b1></c1>
+		<c2>line2</c2>
 	</div>;
 }
 
@@ -17,7 +17,7 @@ b1, b2, b3 {
 	display: block;
 }
 c1, c2, c3 {
-	display: block;
+	display: inline;
 }
 `;
 

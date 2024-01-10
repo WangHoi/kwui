@@ -44,6 +44,8 @@ struct LayoutObject {
 		HAS_INLINE_CHILD_FLAG = 2,
 		NEW_BFC_FLAG = 4,
 		ANON_SPAN_FLAG = 8,
+		ANON_BLOCK_FLAG = 16,
+		PHANTOM_SPAN_FLAG = 32,
 	};
 	absl::variant<
 		absl::monostate,
@@ -58,6 +60,7 @@ struct LayoutObject {
 	absl::optional<InlineFormatContext> ifc;
 	std::unique_ptr<LayoutObject> anon_span;
 	std::vector<std::unique_ptr<LayoutObject>> anon_boxes;
+	std::unique_ptr<Style> anon_style;
 
 	float min_width = 0.0f;
 	float max_width = std::numeric_limits<float>::infinity();
@@ -97,6 +100,10 @@ struct LayoutObject {
 	static scene2d::RectF paddingRect(LayoutObject* o);
 	// relative to o's margin box origin
 	static scene2d::RectF contentRect(LayoutObject* o);
+
+	void removeFromParent();
+	void append(LayoutObject* child);
+	void insertBeforeMe(LayoutObject* o);
 
 private:
 	enum ScrollbarPolicy {
