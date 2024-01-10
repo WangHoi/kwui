@@ -1629,6 +1629,42 @@ void LayoutTreeBuilder::endChild()
 {
 	current_ = stack_.back();
 	stack_.pop_back();
+
+	// is block container and contains both inline and block children
+	if ((current_->style->display == style::DisplayType::Block || current_->style->display == style::DisplayType::InlineBlock)
+		&& (current_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) != 0
+		&& (current_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) != 0) {
+		// generate anonymous block box
+		absl::optional<std::pair<LayoutObject*, LayoutObject*>> inline_pair;
+		for (auto child = current_->first_child; child; child = child->next_sibling) {
+			if (child->style->display == DisplayType::Inline || child->style->display == DisplayType::InlineBlock) {
+				if (inline_pair.has_value()) {
+					inline_pair.value().second = child;
+				} else {
+					inline_pair.emplace(child, child);
+				}
+			} else {
+				if (inline_pair.has_value()) {
+					auto anon_block = std::make_unique<LayoutObject>();
+					anon_block->init(current_->style, current_->node);
+					anon_block->first_child = inline_pair.value().first;
+					anon_block->last_child = inline_pair.value().second;
+					while (1) {
+						auto nc = inline_pair.value().first;
+						auto nc_next = nc->next_sibling;
+
+						nc->removeFromParent();
+						anon_block->append(nc);
+
+						if (nc == inline_pair.value().second)
+							break;
+						nc = nc_next;
+					}
+					current_->anon_boxes.emplace_back(std::move(anon_block));
+				}
+			}
+		}
+	}
 }
 
 }

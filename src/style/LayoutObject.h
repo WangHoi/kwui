@@ -57,6 +57,7 @@ struct LayoutObject {
 	absl::optional<BlockFormatContext> bfc;
 	absl::optional<InlineFormatContext> ifc;
 	std::unique_ptr<LayoutObject> anon_span;
+	std::vector<std::unique_ptr<LayoutObject>> anon_boxes;
 
 	float min_width = 0.0f;
 	float max_width = std::numeric_limits<float>::infinity();
