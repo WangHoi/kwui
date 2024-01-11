@@ -123,6 +123,10 @@ public:
 			return parent()->visibleInHierarchy();
 		return true;
 	}
+	base::string_atom elementTag() const
+	{
+		return tag_;
+	}
 
 	// pos: related to padding box
 	bool hitTest(const PointF& pos, int flags) const;

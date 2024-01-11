@@ -22,11 +22,16 @@ c1, c2, c3 {
 `;
 
 app.showDialog({
-	/*<p>--- Block child test ---</p>
-	<BlockChild />*/
-	root: (<div style="margin: 16px;">
-		<p>--- Block sibing test ---</p>
-		<BlockSibling />
-	</div>),
+	/*
+	<p>--- Block sibing test ---</p>
+	BlockSibling />
+
+	<p>--- Block child test ---</p>
+	<BlockChild />
+	*/
+	root: (<body style="margin: 16px;">
+	<p>--- Block child test ---</p>
+	<BlockChild />
+	</body>),
 	stylesheet: test_css,
 });

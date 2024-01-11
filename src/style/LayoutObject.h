@@ -59,7 +59,7 @@ struct LayoutObject {
 	absl::optional<BlockFormatContext> bfc;
 	absl::optional<InlineFormatContext> ifc;
 	std::unique_ptr<LayoutObject> anon_span;
-	std::vector<std::unique_ptr<LayoutObject>> anon_boxes;
+	std::vector<std::unique_ptr<LayoutObject>> aux_boxes;
 	std::unique_ptr<Style> anon_style;
 
 	float min_width = 0.0f;
@@ -104,6 +104,7 @@ struct LayoutObject {
 	void removeFromParent();
 	void append(LayoutObject* child);
 	void insertBeforeMe(LayoutObject* o);
+	void insertAfterMe(LayoutObject* o);
 
 private:
 	enum ScrollbarPolicy {
@@ -188,7 +189,7 @@ private:
 	std::vector<scene2d::Node*> abs_pos_nodes_;
 
 	FlowRoot* flow_root_ = nullptr;
-	LayoutObject* current_ = nullptr;
+	LayoutObject* contg_ = nullptr;
 	// contg
 	std::vector<LayoutObject*> stack_;
 };

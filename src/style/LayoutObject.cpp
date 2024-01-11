@@ -25,7 +25,7 @@ void LayoutObject::reset()
 	bfc = absl::nullopt;
 	ifc = absl::nullopt;
 	anon_span = nullptr;
-	anon_boxes.clear();
+	aux_boxes.clear();
 	min_width = 0.0f;
 	max_width = std::numeric_limits<float>::infinity();
 	prefer_height = absl::nullopt;
@@ -1478,6 +1478,24 @@ void LayoutObject::insertBeforeMe(LayoutObject* o)
 	o->next_sibling = this;
 }
 
+void LayoutObject::insertAfterMe(LayoutObject* o)
+{
+	DCHECK(parent) << "LayoutObject::insertAfterMe self parent not exists.";
+	DCHECK(!o->parent) << "LayoutObject::insertAfterMe with exist parent.";
+	DCHECK(!o->prev_sibling) << "LayoutObject::insertAfterMe with exist prev-sibling.";
+	DCHECK(!o->next_sibling) << "LayoutObject::insertAfterMe with exist next-sibling.";
+
+	o->parent = parent;
+	if (next_sibling) {
+		next_sibling->prev_sibling = o;
+		o->next_sibling = next_sibling;
+	} else {
+		parent->last_child = o;
+	}
+	next_sibling = o;
+	o->prev_sibling = this;
+}
+
 void LayoutObject::arrangePositionedChildren(LayoutObject* o, const scene2d::DimensionF& viewport_size)
 {
 	for (LayoutObject* po : o->positioned_children) {
@@ -1553,11 +1571,60 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 
 void LayoutTreeBuilder::initFlowRoot(scene2d::Node* node)
 {
-	current_ = &node->layout_;
-	current_->reset();
-	current_->flags |= LayoutObject::NEW_BFC_FLAG;
-	current_->bfc.emplace(node);
-	current_->box.emplace<BlockBox>();
+	contg_ = &node->layout_;
+	contg_->reset();
+	contg_->flags |= LayoutObject::NEW_BFC_FLAG;
+	contg_->bfc.emplace(node);
+	contg_->box.emplace<BlockBox>();
+}
+
+static LayoutObject* make_phantom_span(LayoutObject* current)
+{
+	auto phantom_span = std::make_unique<LayoutObject>();
+	phantom_span->init(current->style, current->node);
+	phantom_span->flags = LayoutObject::PHANTOM_SPAN_FLAG;
+	phantom_span->box.emplace<std::vector<InlineBox>>();
+	current->aux_boxes.emplace_back(std::move(phantom_span));
+	return current->aux_boxes.back().get();
+}
+
+static void split_up(LayoutObject* blk_contg_root, const std::deque<LayoutObject*>& inline_parent, LayoutObject* current)
+{
+	DCHECK(!inline_parent.empty()) << "LayoutObject split_up: empty inline parents.";
+
+	LOG(INFO) << "split_up: block root: <" << blk_contg_root->node->elementTag() << ">";
+	for (LayoutObject* ip : inline_parent) {
+		LOG(INFO) << "\tinline parent: <" << ip->node->elementTag() << ">";
+	}
+	LOG(INFO) << "\tcurrent: <" << current->node->elementTag() << ">";
+	
+	// bottom-up span split
+	std::deque<LayoutObject*> phantom_boxes;
+	LayoutObject* o = current;
+	LayoutObject* prev_span = nullptr;
+	for (auto it = inline_parent.rbegin(); it != inline_parent.rend(); ++it) {
+		LayoutObject* to_split = *it;
+		LayoutObject* span = make_phantom_span(to_split);
+		if (prev_span) {
+			span->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+			span->append(prev_span);
+		}
+		while (o->next_sibling) {
+			LayoutObject* next = o->next_sibling;
+			next->removeFromParent();
+			span->append(next);
+		}
+		phantom_boxes.push_front(span);
+		prev_span = span;
+		o = to_split;
+	}
+
+	// insert current block
+	current->removeFromParent();
+	inline_parent.front()->insertAfterMe(current);
+
+	// insert first phantom span
+	current->insertAfterMe(phantom_boxes.front());
 }
 
 void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
@@ -1582,18 +1649,45 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		//  'static' or 'relative' positioned
 		const auto& st = node->computedStyle();
 		if (st.display == style::DisplayType::Block) {
-			if (current_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) {
-				//LOG(ERROR) << "LayoutTreeBuilder::prepareChild(): unexpected block child found, BUG!";
-				//abort();
+			if (contg_->style->display == style::DisplayType::Block || contg_->style->display == style::DisplayType::InlineBlock) {
+				contg_->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
+
+				beginChild(&node->layout_);
+				contg_->box.emplace<BlockBox>();
+			} else if (contg_->style->display == style::DisplayType::Inline) {
+				node->layout_.reset();
+
+				// tracking [block_parent, inline_parent1, ..., inline_parent2, block_current];
+				LayoutObject* block_contg_parent = nullptr;
+				std::deque<LayoutObject*> inline_parents;
+				LayoutObject* o = contg_;
+				while (o) {
+					if (o->style->display == style::DisplayType::Block || o->style->display == style::DisplayType::InlineBlock) {
+						block_contg_parent = o;
+						break;
+					} else if (o->style->display == style::DisplayType::Inline) {
+						inline_parents.push_front(o);
+					}
+					o = o->parent;
+				}
+
+				// rewind up
+				while (contg_ != block_contg_parent) {
+					endChild();
+				}
+
+				// split up
+				split_up(block_contg_parent, inline_parents, &node->layout_);
+
+				// special beginChild()
+				contg_->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
+				stack_.push_back(contg_);
+				contg_ = &node->layout_;
 			}
-			current_->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
-			
-			beginChild(&node->layout_);
-			current_->box.emplace<BlockBox>();
 		} else if (st.display == style::DisplayType::Inline) {
 			if (node->type() == scene2d::NodeType::NODE_TEXT
-				&& (current_->style->display == DisplayType::Block
-					|| current_->style->display == DisplayType::InlineBlock)) {
+				&& (contg_->style->display == DisplayType::Block
+					|| contg_->style->display == DisplayType::InlineBlock)) {
 				
 				auto anon_span = std::make_unique<LayoutObject>();
 				anon_span->init(&node->computed_style_, node);
@@ -1601,16 +1695,16 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 				
 				beginChild(anon_span.get());
 				beginChild(&node->layout_);
-				current_->anon_span = std::move(anon_span);
+				contg_->anon_span = std::move(anon_span);
 			} else {
-				current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+				contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 				beginChild(&node->layout_);
 			}
-			current_->box.emplace<std::vector<InlineBox>>();
+			contg_->box.emplace<std::vector<InlineBox>>();
 		} else if (st.display == style::DisplayType::InlineBlock) {
-			current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+			contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 			beginChild(&node->layout_);
-			current_->box.emplace<InlineBlockBox>();
+			contg_->box.emplace<InlineBlockBox>();
 		}
 
 		// establish new BFC
@@ -1618,12 +1712,12 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 			|| st.overflow_x != style::OverflowType::Visible
 			|| st.overflow_y != style::OverflowType::Visible) {
 
-			current_->flags |= LayoutObject::NEW_BFC_FLAG;
-			current_->bfc.emplace(node);
+			contg_->flags |= LayoutObject::NEW_BFC_FLAG;
+			contg_->bfc.emplace(node);
 		}
 		scene2d::Node::eachLayoutChild(node, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
 		endChild();
-		if (current_ && current_->flags & LayoutObject::ANON_SPAN_FLAG)
+		if (contg_ && contg_->flags & LayoutObject::ANON_SPAN_FLAG)
 			endChild();
 	}
 }
@@ -1634,26 +1728,26 @@ void LayoutTreeBuilder::addText(scene2d::Node* node)
 	tb.text_flow = node->text_flow_.get();
 	node->layout_.box.emplace<TextBox>(std::move(tb));
 
-	if (current_->style->display == DisplayType::Block
-			|| current_->style->display == DisplayType::InlineBlock) {
-		current_->anon_span = std::make_unique<LayoutObject>();
-		auto anon = current_->anon_span.get();
+	if (contg_->style->display == DisplayType::Block
+			|| contg_->style->display == DisplayType::InlineBlock) {
+		contg_->anon_span = std::make_unique<LayoutObject>();
+		auto anon = contg_->anon_span.get();
 		anon->init(&node->computed_style_, node);
 		anon->flags = LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_SPAN_FLAG;
 		anon->box.emplace<std::vector<InlineBox>>();
 
-		CHECK(!(current_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
-		current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
-		current_->first_child = anon;
-		anon->parent = current_;
+		CHECK(!(contg_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
+		contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+		contg_->first_child = anon;
+		anon->parent = contg_;
 
 		anon->first_child = &node->layout_;
 		node->layout_.parent = anon;
 	} else {
-		CHECK(!(current_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
-		current_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
-		current_->first_child = &node->layout_;
-		node->layout_.parent = current_;
+		CHECK(!(contg_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
+		contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+		contg_->first_child = &node->layout_;
+		node->layout_.parent = contg_;
 	}
 }
 
@@ -1664,18 +1758,18 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 	//}
 	o->reset();
 
-	o->parent = current_;
-	if (current_->last_child) {
-		o->prev_sibling = current_->last_child;
-		current_->last_child->next_sibling = o;
+	o->parent = contg_;
+	if (contg_->last_child) {
+		o->prev_sibling = contg_->last_child;
+		contg_->last_child->next_sibling = o;
 	} else {
 		o->next_sibling = o->prev_sibling = nullptr;
-		current_->first_child = o;
+		contg_->first_child = o;
 	}
-	current_->last_child = o;
-	stack_.push_back(current_);
+	contg_->last_child = o;
+	stack_.push_back(contg_);
 
-	current_ = o;
+	contg_ = o;
 }
 
 static LayoutObject* make_anon_block(LayoutObject* current, const std::pair<LayoutObject*, LayoutObject*>& inline_pair)
@@ -1697,21 +1791,21 @@ static LayoutObject* make_anon_block(LayoutObject* current, const std::pair<Layo
 			break;
 		nc = nc_next;
 	}
-	current->anon_boxes.emplace_back(std::move(anon_block));
-	return current->anon_boxes.back().get();
+	current->aux_boxes.emplace_back(std::move(anon_block));
+	return current->aux_boxes.back().get();
 }
 
 void LayoutTreeBuilder::endChild()
 {
 	// is block container and contains both inline and block children
-	if ((current_->style->display == style::DisplayType::Block || current_->style->display == style::DisplayType::InlineBlock)
-		&& (current_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) != 0
-		&& (current_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) != 0) {
+	if ((contg_->style->display == style::DisplayType::Block || contg_->style->display == style::DisplayType::InlineBlock)
+		&& (contg_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) != 0
+		&& (contg_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) != 0) {
 		
-		current_->flags &= ~LayoutObject::HAS_INLINE_CHILD_FLAG;
+		contg_->flags &= ~LayoutObject::HAS_INLINE_CHILD_FLAG;
 		// generate anonymous block box
 		absl::optional<std::pair<LayoutObject*, LayoutObject*>> inline_pair;
-		for (auto child = current_->first_child; child; child = child->next_sibling) {
+		for (auto child = contg_->first_child; child; child = child->next_sibling) {
 			if (child->style->display == DisplayType::Inline || child->style->display == DisplayType::InlineBlock) {
 				if (inline_pair.has_value()) {
 					inline_pair.value().second = child;
@@ -1720,20 +1814,20 @@ void LayoutTreeBuilder::endChild()
 				}
 			} else { // is block container
 				if (inline_pair.has_value()) {
-					auto anon_block = make_anon_block(current_, inline_pair.value());
+					auto anon_block = make_anon_block(contg_, inline_pair.value());
 					child->insertBeforeMe(anon_block);
 					inline_pair = absl::nullopt;
 				}
 			}
 		}
 		if (inline_pair.has_value()) {
-			auto anon_block = make_anon_block(current_, inline_pair.value());
-			current_->append(anon_block);
+			auto anon_block = make_anon_block(contg_, inline_pair.value());
+			contg_->append(anon_block);
 			inline_pair = absl::nullopt;
 		}
 	}
 
-	current_ = stack_.back();
+	contg_ = stack_.back();
 	stack_.pop_back();
 }
 
