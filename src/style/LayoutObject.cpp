@@ -24,7 +24,6 @@ void LayoutObject::reset()
 	flags = 0;
 	bfc = absl::nullopt;
 	ifc = absl::nullopt;
-	anon_span = nullptr;
 	aux_boxes.clear();
 	min_width = 0.0f;
 	max_width = std::numeric_limits<float>::infinity();
@@ -1496,6 +1495,37 @@ void LayoutObject::insertAfterMe(LayoutObject* o)
 	o->prev_sibling = this;
 }
 
+void LayoutObject::dumpTree(int indent, std::ostringstream& stream)
+{
+	if (!node)
+		return;
+	std::string indent_str(indent, ' ');
+	if (node->type() == scene2d::NodeType::NODE_ELEMENT) {
+		stream << indent_str << absl::StreamFormat("<%s>\n", node->tag_.c_str());
+		for (auto child = first_child; child; child = child->next_sibling) {
+			child->dumpTree(indent + 1, stream);
+		}
+		stream << indent_str << absl::StreamFormat("</%s>\n", node->tag_.c_str());
+	} else if (node->type() == scene2d::NodeType::NODE_TEXT) {
+		if (flags & ANON_SPAN_FLAG) {
+			stream << indent_str << absl::StreamFormat("<anon>\"%s\"</anon>\n", node->text_.c_str());
+		} else {
+			stream << indent_str << absl::StreamFormat("\"%s\"\n", node->text_.c_str());
+		}
+	} else {
+		for (auto child = first_child; child; child = child->next_sibling) {
+			child->dumpTree(indent, stream);
+		}
+	}
+}
+
+void LayoutObject::dumpTree()
+{
+	std::ostringstream stream;
+	dumpTree(0, stream);
+	LOG(INFO) << "DumpTree:\n" << stream.str();
+}
+
 void LayoutObject::arrangePositionedChildren(LayoutObject* o, const scene2d::DimensionF& viewport_size)
 {
 	for (LayoutObject* po : o->positioned_children) {
@@ -1648,7 +1678,6 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		//////////////////////////////////////
 		//  'static' or 'relative' positioned
 		const auto& st = node->computedStyle();
-		bool need_block_bubble = false;
 		if (st.display == style::DisplayType::Block) {
 			if (contg_->style->display == style::DisplayType::Block || contg_->style->display == style::DisplayType::InlineBlock) {
 				contg_->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
@@ -1656,27 +1685,19 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 				beginChild(&node->layout_);
 				contg_->box.emplace<BlockBox>();
 			} else if (contg_->style->display == style::DisplayType::Inline) {
-				need_block_bubble = true;
+				// update bubble block map
+				auto p = contg_->parent;
+				while (p && p->style->display == style::DisplayType::Inline)
+					p = p->parent;
+				if (p)
+					bbmap_[p].push_back(&node->layout_);
 
 				beginChild(&node->layout_);
 				contg_->box.emplace<BlockBox>();
 			}
 		} else if (st.display == style::DisplayType::Inline) {
-			if (node->type() == scene2d::NodeType::NODE_TEXT
-				&& (contg_->style->display == DisplayType::Block
-					|| contg_->style->display == DisplayType::InlineBlock)) {
-				
-				auto anon_span = std::make_unique<LayoutObject>();
-				anon_span->init(&node->computed_style_, node);
-				anon_span->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_SPAN_FLAG;
-				
-				beginChild(anon_span.get());
-				beginChild(&node->layout_);
-				contg_->anon_span = std::move(anon_span);
-			} else {
-				contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
-				beginChild(&node->layout_);
-			}
+			contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
+			beginChild(&node->layout_);
 			contg_->box.emplace<std::vector<InlineBox>>();
 		} else if (st.display == style::DisplayType::InlineBlock) {
 			contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
@@ -1696,9 +1717,6 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		endChild();
 		if (contg_ && contg_->flags & LayoutObject::ANON_SPAN_FLAG)
 			endChild();
-
-		if (need_block_bubble)
-			bubble_blocks_.push_back(&node->layout_);
 	}
 }
 
@@ -1706,28 +1724,24 @@ void LayoutTreeBuilder::addText(scene2d::Node* node)
 {
 	TextBox tb;
 	tb.text_flow = node->text_flow_.get();
+	
+	node->layout_.reset();
 	node->layout_.box.emplace<TextBox>(std::move(tb));
 
 	if (contg_->style->display == DisplayType::Block
 			|| contg_->style->display == DisplayType::InlineBlock) {
-		contg_->anon_span = std::make_unique<LayoutObject>();
-		auto anon = contg_->anon_span.get();
+		node->layout_.aux_boxes.emplace_back(std::make_unique<LayoutObject>());
+		auto anon = node->layout_.aux_boxes.back().get();
 		anon->init(&node->computed_style_, node);
 		anon->flags = LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_SPAN_FLAG;
 		anon->box.emplace<std::vector<InlineBox>>();
 
-		CHECK(!(contg_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
 		contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
-		contg_->first_child = anon;
-		anon->parent = contg_;
-
-		anon->first_child = &node->layout_;
-		node->layout_.parent = anon;
+		contg_->append(anon);
+		anon->append(&node->layout_);
 	} else {
-		CHECK(!(contg_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG));
 		contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
-		contg_->first_child = &node->layout_;
-		node->layout_.parent = contg_;
+		contg_->append(&node->layout_);
 	}
 }
 
@@ -1738,15 +1752,7 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 	//}
 	o->reset();
 
-	o->parent = contg_;
-	if (contg_->last_child) {
-		o->prev_sibling = contg_->last_child;
-		contg_->last_child->next_sibling = o;
-	} else {
-		o->next_sibling = o->prev_sibling = nullptr;
-		contg_->first_child = o;
-	}
-	contg_->last_child = o;
+	contg_->append(o);
 	stack_.push_back(contg_);
 
 	contg_ = o;
@@ -1779,10 +1785,13 @@ void LayoutTreeBuilder::endChild()
 {
 	// is block container and contains both inline and block children
 	if (contg_->style->display == style::DisplayType::Block || contg_->style->display == style::DisplayType::InlineBlock) {
-		while (!bubble_blocks_.empty()) {
-			bubbleUp(bubble_blocks_.front());
-			bubble_blocks_.pop_front();
+		auto it = bbmap_.find(contg_);
+		if (it != bbmap_.end()) {
+			for (auto bit = it->second.rbegin(); bit != it->second.rend(); ++bit)
+				bubbleUp(*bit);
+			bbmap_.erase(it);
 		}
+		//contg_->dumpTree();
 
 		if ((contg_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) != 0
 			&& (contg_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) != 0) {

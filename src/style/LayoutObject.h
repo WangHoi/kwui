@@ -5,6 +5,7 @@
 #include "InlineBlockLayout.h"
 #include "ScrollObject.h"
 #include "absl/strings/str_format.h"
+#include <sstream>
 
 namespace scene2d {
 class Node;
@@ -58,7 +59,6 @@ struct LayoutObject {
 	uint32_t flags = 0;
 	absl::optional<BlockFormatContext> bfc;
 	absl::optional<InlineFormatContext> ifc;
-	std::unique_ptr<LayoutObject> anon_span;
 	std::vector<std::unique_ptr<LayoutObject>> aux_boxes;
 	std::unique_ptr<Style> anon_style;
 
@@ -105,6 +105,8 @@ struct LayoutObject {
 	void append(LayoutObject* child);
 	void insertBeforeMe(LayoutObject* o);
 	void insertAfterMe(LayoutObject* o);
+	void dumpTree();
+	void dumpTree(int indent, std::ostringstream& stream);
 
 private:
 	enum ScrollbarPolicy {
@@ -192,7 +194,7 @@ private:
 	FlowRoot* flow_root_ = nullptr;
 	LayoutObject* contg_ = nullptr;
 	std::vector<LayoutObject*> stack_;
-	std::deque<LayoutObject*> bubble_blocks_;
+	std::map<LayoutObject*, std::deque<LayoutObject*>> bbmap_;
 };
 
 }
