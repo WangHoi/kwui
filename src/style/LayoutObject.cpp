@@ -1648,6 +1648,7 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		//////////////////////////////////////
 		//  'static' or 'relative' positioned
 		const auto& st = node->computedStyle();
+		bool need_block_bubble = false;
 		if (st.display == style::DisplayType::Block) {
 			if (contg_->style->display == style::DisplayType::Block || contg_->style->display == style::DisplayType::InlineBlock) {
 				contg_->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
@@ -1655,34 +1656,10 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 				beginChild(&node->layout_);
 				contg_->box.emplace<BlockBox>();
 			} else if (contg_->style->display == style::DisplayType::Inline) {
-				node->layout_.reset();
+				need_block_bubble = true;
 
-				// tracking [block_parent, inline_parent1, ..., inline_parent2, block_current];
-				LayoutObject* block_contg_parent = nullptr;
-				std::deque<LayoutObject*> inline_parents;
-				LayoutObject* o = contg_;
-				while (o) {
-					if (o->style->display == style::DisplayType::Block || o->style->display == style::DisplayType::InlineBlock) {
-						block_contg_parent = o;
-						break;
-					} else if (o->style->display == style::DisplayType::Inline) {
-						inline_parents.push_front(o);
-					}
-					o = o->parent;
-				}
-
-				// rewind up
-				while (contg_ != block_contg_parent) {
-					endChild();
-				}
-
-				// split up
-				split_up(block_contg_parent, inline_parents, &node->layout_);
-
-				// special beginChild()
-				contg_->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
-				stack_.push_back(contg_);
-				contg_ = &node->layout_;
+				beginChild(&node->layout_);
+				contg_->box.emplace<BlockBox>();
 			}
 		} else if (st.display == style::DisplayType::Inline) {
 			if (node->type() == scene2d::NodeType::NODE_TEXT
@@ -1719,6 +1696,9 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		endChild();
 		if (contg_ && contg_->flags & LayoutObject::ANON_SPAN_FLAG)
 			endChild();
+
+		if (need_block_bubble)
+			bubble_blocks_.push_back(&node->layout_);
 	}
 }
 
@@ -1798,37 +1778,67 @@ static LayoutObject* make_anon_block(LayoutObject* current, const std::pair<Layo
 void LayoutTreeBuilder::endChild()
 {
 	// is block container and contains both inline and block children
-	if ((contg_->style->display == style::DisplayType::Block || contg_->style->display == style::DisplayType::InlineBlock)
-		&& (contg_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) != 0
-		&& (contg_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) != 0) {
-		
-		contg_->flags &= ~LayoutObject::HAS_INLINE_CHILD_FLAG;
-		// generate anonymous block box
-		absl::optional<std::pair<LayoutObject*, LayoutObject*>> inline_pair;
-		for (auto child = contg_->first_child; child; child = child->next_sibling) {
-			if (child->style->display == DisplayType::Inline || child->style->display == DisplayType::InlineBlock) {
-				if (inline_pair.has_value()) {
-					inline_pair.value().second = child;
-				} else {
-					inline_pair.emplace(child, child);
-				}
-			} else { // is block container
-				if (inline_pair.has_value()) {
-					auto anon_block = make_anon_block(contg_, inline_pair.value());
-					child->insertBeforeMe(anon_block);
-					inline_pair = absl::nullopt;
+	if (contg_->style->display == style::DisplayType::Block || contg_->style->display == style::DisplayType::InlineBlock) {
+		while (!bubble_blocks_.empty()) {
+			bubbleUp(bubble_blocks_.front());
+			bubble_blocks_.pop_front();
+		}
+
+		if ((contg_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) != 0
+			&& (contg_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) != 0) {
+			contg_->flags &= ~LayoutObject::HAS_INLINE_CHILD_FLAG;
+			// generate anonymous block box
+			absl::optional<std::pair<LayoutObject*, LayoutObject*>> inline_pair;
+			for (auto child = contg_->first_child; child; child = child->next_sibling) {
+				if (child->style->display == DisplayType::Inline || child->style->display == DisplayType::InlineBlock) {
+					if (inline_pair.has_value()) {
+						inline_pair.value().second = child;
+					} else {
+						inline_pair.emplace(child, child);
+					}
+				} else { // is block container
+					if (inline_pair.has_value()) {
+						auto anon_block = make_anon_block(contg_, inline_pair.value());
+						child->insertBeforeMe(anon_block);
+						inline_pair = absl::nullopt;
+					}
 				}
 			}
-		}
-		if (inline_pair.has_value()) {
-			auto anon_block = make_anon_block(contg_, inline_pair.value());
-			contg_->append(anon_block);
-			inline_pair = absl::nullopt;
+			if (inline_pair.has_value()) {
+				auto anon_block = make_anon_block(contg_, inline_pair.value());
+				contg_->append(anon_block);
+				inline_pair = absl::nullopt;
+			}
 		}
 	}
 
 	contg_ = stack_.back();
 	stack_.pop_back();
+}
+
+void LayoutTreeBuilder::bubbleUp(LayoutObject* blk)
+{
+	// tracking [block_parent, inline_parent1, ..., inline_parent2, block_current];
+	LayoutObject* block_contg_parent = nullptr;
+	std::deque<LayoutObject*> inline_parents;
+	LayoutObject* o = blk->parent;
+	while (o) {
+		if (o->style->display == style::DisplayType::Block || o->style->display == style::DisplayType::InlineBlock) {
+			block_contg_parent = o;
+			break;
+		} else if (o->style->display == style::DisplayType::Inline) {
+			inline_parents.push_front(o);
+		}
+		o = o->parent;
+	}
+
+	CHECK(block_contg_parent) << "bubbleUp: block container root not found.";
+
+	// split up
+	split_up(block_contg_parent, inline_parents, blk);
+
+	// special beginChild()
+	block_contg_parent->flags |= LayoutObject::HAS_BLOCK_CHILD_FLAG;
 }
 
 }

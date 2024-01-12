@@ -184,14 +184,15 @@ private:
 	void addText(scene2d::Node* node);
 	void beginChild(LayoutObject* o);
 	void endChild();
+	void bubbleUp(LayoutObject* blk);
 
 	scene2d::Node* root_ = nullptr;
 	std::vector<scene2d::Node*> abs_pos_nodes_;
 
 	FlowRoot* flow_root_ = nullptr;
 	LayoutObject* contg_ = nullptr;
-	// contg
 	std::vector<LayoutObject*> stack_;
+	std::deque<LayoutObject*> bubble_blocks_;
 };
 
 }
