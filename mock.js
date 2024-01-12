@@ -94,4 +94,7 @@ var hello_world3 = (
 
 console.log(JSON.stringify(hello_world_full));
 
-app.showDialog(hello_world_full, simple_css);
+app.showDialog({
+	root: hello_world_full,
+	stylesheet: simple_css
+});

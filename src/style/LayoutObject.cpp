@@ -1621,13 +1621,13 @@ static LayoutObject* make_phantom_span(LayoutObject* current)
 static void split_up(LayoutObject* blk_contg_root, const std::deque<LayoutObject*>& inline_parent, LayoutObject* current)
 {
 	DCHECK(!inline_parent.empty()) << "LayoutObject split_up: empty inline parents.";
-
+	/*
 	LOG(INFO) << "split_up: block root: <" << blk_contg_root->node->elementTag() << ">";
 	for (LayoutObject* ip : inline_parent) {
 		LOG(INFO) << "\tinline parent: <" << ip->node->elementTag() << ">";
 	}
 	LOG(INFO) << "\tcurrent: <" << current->node->elementTag() << ">";
-	
+	*/
 	// bottom-up span split
 	std::deque<LayoutObject*> phantom_boxes;
 	LayoutObject* o = current;
