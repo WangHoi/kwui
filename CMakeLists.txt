@@ -7,6 +7,8 @@ endif(POLICY CMP0091)
 
 project(kwui)
 
+include(util.cmake)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
