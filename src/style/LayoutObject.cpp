@@ -1501,11 +1501,19 @@ void LayoutObject::dumpTree(int indent, std::ostringstream& stream)
 		return;
 	std::string indent_str(indent, ' ');
 	if (node->type() == scene2d::NodeType::NODE_ELEMENT) {
-		stream << indent_str << absl::StreamFormat("<%s>\n", node->tag_.c_str());
+		if (flags & ANON_BLOCK_FLAG) {
+			stream << indent_str << absl::StreamFormat("<anon_%s flag=%02x>\n", node->tag_.c_str(), flags);
+		} else {
+			stream << indent_str << absl::StreamFormat("<%s flag=%02x>\n", node->tag_.c_str(), flags);
+		}
 		for (auto child = first_child; child; child = child->next_sibling) {
 			child->dumpTree(indent + 1, stream);
 		}
-		stream << indent_str << absl::StreamFormat("</%s>\n", node->tag_.c_str());
+		if (flags & ANON_BLOCK_FLAG) {
+			stream << indent_str << absl::StreamFormat("</anon_%s>\n", node->tag_.c_str());
+		} else {
+			stream << indent_str << absl::StreamFormat("</%s>\n", node->tag_.c_str());
+		}
 	} else if (node->type() == scene2d::NodeType::NODE_TEXT) {
 		if (flags & ANON_SPAN_FLAG) {
 			stream << indent_str << absl::StreamFormat("<anon>\"%s\"</anon>\n", node->text_.c_str());
@@ -1576,6 +1584,7 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 	initFlowRoot(root_);
 	flow_root_ = &flow_roots.back();
 	scene2d::Node::eachLayoutChild(root_, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
+	flow_root_->root->dumpTree();
 
 	while (!abs_pos_nodes_.empty()) {
 		auto nodes = std::move(abs_pos_nodes_);
@@ -1761,8 +1770,10 @@ void LayoutTreeBuilder::beginChild(LayoutObject* o)
 static LayoutObject* make_anon_block(LayoutObject* current, const std::pair<LayoutObject*, LayoutObject*>& inline_pair)
 {
 	auto anon_block = std::make_unique<LayoutObject>();
-	anon_block->anon_style = std::make_unique<Style>(*current->style);
-	// TODO: anon block style
+	anon_block->anon_style = std::make_unique<Style>();
+	anon_block->anon_style->display = DisplayType::Block;
+	anon_block->anon_style->position = PositionType::Static;
+	anon_block->anon_style->resolveDefault(current->style);
 	anon_block->init(anon_block->anon_style.get(), current->node);
 	anon_block->flags = (LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_BLOCK_FLAG);
 	anon_block->box.emplace<BlockBox>();
@@ -1791,7 +1802,6 @@ void LayoutTreeBuilder::endChild()
 				bubbleUp(*bit);
 			bbmap_.erase(it);
 		}
-		//contg_->dumpTree();
 
 		if ((contg_->flags & LayoutObject::HAS_BLOCK_CHILD_FLAG) != 0
 			&& (contg_->flags & LayoutObject::HAS_INLINE_CHILD_FLAG) != 0) {

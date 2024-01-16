@@ -99,4 +99,59 @@ void StyleSpec::set(base::string_atom prop, const ValueSpec& val)
 #undef CHECK_VALUE2
 }
 
+void Style::resolveDefault(const Style* parent)
+{
+#define RESOLVE_STYLE_DEFAULT(x, def) \
+    this->x = def
+
+	RESOLVE_STYLE_DEFAULT(margin_left, style::Value::fromPixel(0));
+	RESOLVE_STYLE_DEFAULT(margin_top, style::Value::fromPixel(0));
+	RESOLVE_STYLE_DEFAULT(margin_right, style::Value::fromPixel(0));
+	RESOLVE_STYLE_DEFAULT(margin_bottom, style::Value::fromPixel(0));
+	RESOLVE_STYLE_DEFAULT(border_left_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_top_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_right_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_bottom_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_top_left_radius, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_top_right_radius, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_bottom_right_radius, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(border_bottom_left_radius, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(padding_left, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(padding_top, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(padding_right, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(padding_bottom, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(left, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(top, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(right, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(bottom, style::Value::auto_());
+
+	RESOLVE_STYLE_DEFAULT(min_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(min_height, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(max_width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(max_height, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(width, style::Value::auto_());
+	RESOLVE_STYLE_DEFAULT(height, style::Value::auto_());
+
+	RESOLVE_STYLE_DEFAULT(border_color, style::Color());
+	RESOLVE_STYLE_DEFAULT(background_color, style::Color());
+	RESOLVE_STYLE_DEFAULT(background_image, nullptr);
+
+	RESOLVE_STYLE_DEFAULT(overflow_x, style::OverflowType::Visible);
+	RESOLVE_STYLE_DEFAULT(overflow_y, style::OverflowType::Visible);
+#undef RESOLVE_STYLE_DEFAULT
+
+#define RESOLVE_STYLE_DEFAULT_INHERIT(x, def) \
+    this->x = (parent ? parent->x : def)
+
+	RESOLVE_STYLE_DEFAULT_INHERIT(color, style::named_color::black);
+	RESOLVE_STYLE_DEFAULT_INHERIT(line_height, style::Value::fromPixel(18));
+	RESOLVE_STYLE_DEFAULT_INHERIT(font_family, style::Value::fromKeyword(base::string_intern("Microsoft YaHei")));
+	RESOLVE_STYLE_DEFAULT_INHERIT(font_size, style::Value::fromPixel(12));
+	RESOLVE_STYLE_DEFAULT_INHERIT(font_style, style::FontStyle::Normal);
+	RESOLVE_STYLE_DEFAULT_INHERIT(font_weight, style::FontWeight());
+	RESOLVE_STYLE_DEFAULT_INHERIT(text_align, style::TextAlign::Left);
+	RESOLVE_STYLE_DEFAULT_INHERIT(cursor, style::CursorType::Auto);
+#undef RESOLVE_STYLE_DEFAULT_INHERIT
+}
+
 }

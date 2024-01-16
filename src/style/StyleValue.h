@@ -251,6 +251,8 @@ struct Style {
 
 	BoxSizingType box_sizing = BoxSizingType::ContentBox;
 	CursorType cursor = CursorType::Auto;
+
+	void resolveDefault(const Style* parent = nullptr);
 };
 
 template <typename Sink>
