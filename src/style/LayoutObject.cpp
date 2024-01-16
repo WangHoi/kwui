@@ -835,13 +835,14 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 	float saved_bfc_margin_bottom = bfc.margin_bottom_edge;
 	if (o->flags & HAS_BLOCK_CHILD_FLAG) {
 		float saved_border_bottom_edge = bfc.border_bottom_edge;
+		float saved_margin_bottom_edge = bfc.margin_bottom_edge;
 
 		base::scoped_setter _1(bfc.contg_height, box.prefer_height);
 		//base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.contentRect().left);
 		base::scoped_setter _3(bfc.contg_width, box.contentRect().width());
 		float margin = bfc.margin_bottom_edge - bfc.border_bottom_edge;
-		base::scoped_setter _4(bfc.margin_bottom_edge, 0.0f);
-		base::scoped_setter _5(bfc.border_bottom_edge, -margin);
+		bfc.margin_bottom_edge = 0.0f;
+		bfc.border_bottom_edge = -margin;
 		LayoutObject* child = o->first_child;
 		while (child) {
 			arrangeBlock(child, bfc, viewport_size);
@@ -850,7 +851,7 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 
 		if (box.prefer_height.has_value()) {
 			box.content.height = *box.prefer_height;
-			bfc.border_bottom_edge = std::max(bfc.border_bottom_edge, saved_border_bottom_edge + *box.prefer_height);
+			bfc.border_bottom_edge = saved_border_bottom_edge + std::max(bfc.border_bottom_edge, *box.prefer_height);
 			bfc.margin_bottom_edge = bfc.border_bottom_edge;
 		} else {
 			// Compute 'auto' height
@@ -861,6 +862,8 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 				box.content.height = std::max(0.0f,
 					bfc.border_bottom_edge - box.pos.y - box.margin.top - borpad_top);
 			}
+			bfc.border_bottom_edge += saved_border_bottom_edge + margin;
+			bfc.margin_bottom_edge += saved_margin_bottom_edge;
 		}
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		auto content_rect = box.contentRect();
@@ -1584,7 +1587,7 @@ std::vector<FlowRoot> LayoutTreeBuilder::build()
 	initFlowRoot(root_);
 	flow_root_ = &flow_roots.back();
 	scene2d::Node::eachLayoutChild(root_, absl::bind_front(&LayoutTreeBuilder::prepareChild, this));
-	flow_root_->root->dumpTree();
+	//flow_root_->root->dumpTree();
 
 	while (!abs_pos_nodes_.empty()) {
 		auto nodes = std::move(abs_pos_nodes_);

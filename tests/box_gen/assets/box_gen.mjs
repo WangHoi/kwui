@@ -13,21 +13,21 @@ function BlockChild() {
 }
 
 var test_css = `
-b1, b2, b3 {
+b1, b2, b3, div {
 	display: block;
 }
 c1, c2, c3 {
 	display: inline;
 }
-.red {
-	background-color:red;
-}
 `;
-// 	<BlockChild />
+
 app.showDialog({
-	root: (<body style="margin: 0px;">
-		<b1><b11>line1</b11></b1>
-		<b2><b21>line2</b21></b2>
+	root: (<body style="margin: 16px;">
+	<p>--- Block sibing test ---</p>
+	<BlockSibling />
+	<p>--- Block child test ---</p>
+	<BlockChild />
+	<p>--- End ---</p>
 	</body>),
 	stylesheet: test_css,
 });
