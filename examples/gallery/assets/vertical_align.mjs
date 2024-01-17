@@ -1,11 +1,4 @@
 export function VerticalAlignTest(props, kids) {
-    let id = this.dialogId;
-    let close_handler = () => {
-        app.removeListener("dialog:request-close", close_handler);
-        app.closeDialog(id);
-    };
-    app.addListener("dialog:request-close", close_handler);
-
     let edit = <div id="path-edit">
         <line_edit
             value="abc"

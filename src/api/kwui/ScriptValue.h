@@ -8,7 +8,6 @@ namespace kwui {
 
 class ScriptValue;
 
-typedef ScriptValue (ScriptFunction)(int argc, const ScriptValue* argv, void* udata);
 //typedef ScriptValue (*ScriptPropertyGetter)(ScriptEngine* ctx, ScriptValue this_val);
 //typedef ScriptValue (*ScriptPropertySetter)(ScriptEngine* ctx, ScriptValue this_val, ScriptValue val);
 
@@ -45,6 +44,8 @@ public:
 	double toDouble() const;
 	int toInt() const;
 	std::string toString() const;
+
+	size_t length() const;
 	
 	void visitArray(std::function<void(int, const ScriptValue&)>&& f) const;
 	void visitObject(std::function<void(const std::string&, const ScriptValue&)>&& f) const;

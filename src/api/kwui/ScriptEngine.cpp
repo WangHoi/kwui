@@ -184,6 +184,11 @@ void ScriptEngine::postEvent(const std::string& event, const ScriptValue& value)
 	return script::EventPort::postFromNative(event, value);
 }
 
+ScriptValue ScriptEngine::sendEvent(const std::string& event, const ScriptValue& value)
+{
+	return script::EventPort::sendFromNative(event, value);
+}
+
 void ScriptEngine::addEventListener(const std::string& event,
 	ScriptFunction* func, void* udata)
 {

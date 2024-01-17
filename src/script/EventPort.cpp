@@ -20,6 +20,15 @@ void EventPort::postFromNative(const std::string& event, const kwui::ScriptValue
 {
 	return doPost(event, value);
 }
+kwui::ScriptValue EventPort::sendFromNative(const std::string& event, const kwui::ScriptValue& value)
+{
+	kwui::ScriptValue ret = kwui::ScriptValue::newArray();
+	size_t n = 0;
+	doPost(event, value, [&](const kwui::ScriptValue& r) {
+		ret[n++] = r;
+		});
+	return ret;
+}
 void EventPort::addListenerFromNative(const std::string& event, kwui::ScriptFunction* func, void* udata)
 {
 	Subscription& sub = g_subscription[event];
@@ -108,7 +117,8 @@ void EventPort::setupAppObject(JSContext* ctx, JSValue app)
 	JS_SetPropertyStr(ctx, app, "removeListener",
 		JS_NewCFunction(ctx, &EventPort::removeListenerFromScript, "app.removeListener", 2));
 }
-void EventPort::doPost(const std::string& event, const kwui::ScriptValue& value)
+void EventPort::doPost(const std::string& event, const kwui::ScriptValue& value,
+	absl::optional<absl::FunctionRef<void(const kwui::ScriptValue&)>> fn)
 {
 	auto it = g_subscription.find(event);
 	if (it == g_subscription.end())
@@ -116,7 +126,10 @@ void EventPort::doPost(const std::string& event, const kwui::ScriptValue& value)
 	Subscription sub = it->second;
 	kwui::ScriptValue argv[2] = { event, value };
 	for (auto& item : sub.native_subs) {
-		item.func(2, argv, item.udata);
+		kwui::ScriptValue ret = item.func(2, argv, item.udata);
+		if (fn.has_value()) {
+			fn.value()(ret);
+		}
 	}
 
 	for (auto& item : sub.script_subs) {
@@ -127,9 +140,11 @@ void EventPort::doPost(const std::string& event, const kwui::ScriptValue& value)
 		if (JS_IsException(ret)) {
 			js_std_dump_error(item.jsContext());
 		}
+		if (fn.has_value()) {
+			fn.value()(script::wrap(item.jsContext(), ret));
+		}
 		JS_FreeValue(item.jsContext(), jval[0]);
 		JS_FreeValue(item.jsContext(), jval[1]);
 	}
 }
-
 }

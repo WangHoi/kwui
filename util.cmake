@@ -112,9 +112,11 @@ function(bundle_static_library tgt_name bundled_tgt_name)
       list(APPEND static_libs_full_names $<TARGET_FILE:${tgt}>)
     endforeach()
 
+    add_custom_target(_bundle_target DEPENDS ${bundled_tgt_full_name})
     add_custom_command(
       COMMAND ${lib_tool} /NOLOGO /OUT:${bundled_tgt_full_name} ${static_libs_full_names}
       OUTPUT ${bundled_tgt_full_name}
+      DEPENDS ${static_libs_full_names}
       COMMENT "Bundling ${bundled_tgt_name}"
       VERBATIM)
   else()
@@ -123,6 +125,7 @@ function(bundle_static_library tgt_name bundled_tgt_name)
 
   add_library(${bundled_tgt_name} INTERFACE)
   target_link_libraries(${bundled_tgt_name} INTERFACE ${tgt_name})
+  add_dependencies(${bundled_tgt_name} _bundle_target)
 
   install(FILES ${bundled_tgt_full_name} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 

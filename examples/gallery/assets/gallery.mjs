@@ -106,11 +106,6 @@ function TimestampDisplay(props, kids) {
 
 function FlatIconTextButton(props, kids) {
 	// 		<p class="button-icon">aaa</p>
-	let close_handler = () => {
-		app.removeListener("dialog:request-close", close_handler);
-		app.closeDialog(this.dialogId);
-	};
-	app.addListener("dialog:request-close", close_handler);
 	/* <p class="button-icon" /> */
 	return <button class="flat-icon-text-button">
 		<img class="button-icon" src="expand.png"></img>
@@ -161,12 +156,6 @@ var line_edit_css = `
 }
 `;
 function TestLineEdit(props, kids) {
-	let id = this.dialogId;
-	let close_handler = () => {
-		app.removeListener("dialog:request-close", close_handler);
-		app.closeDialog(id);
-	};
-	app.addListener("dialog:request-close", close_handler);
 	let [targetDir, text_changed] = useHook(
 		() => "abc",
 		(_, new_value) => [new_value, true]);

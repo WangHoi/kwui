@@ -213,6 +213,7 @@ JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, 
 
 static JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+static JSValue app_closing_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_get_dialog_dpi_scale(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
@@ -272,6 +273,8 @@ Context::Context(Runtime* rt)
 		JS_NewCFunction(ctx_, app_show_dialog, "app_show_dialog", 1));
 	JS_SetPropertyStr(ctx_, app_, "closeDialog",
 		JS_NewCFunction(ctx_, app_close_dialog, "app_close_dialog", 1));
+	JS_SetPropertyStr(ctx_, app_, "closingDialog",
+		JS_NewCFunction(ctx_, app_closing_dialog, "app_closing_dialog", 1));
 	JS_SetPropertyStr(ctx_, app_, "resizeDialog",
 		JS_NewCFunction(ctx_, app_resize_dialog, "app_resize_dialog", 3));
 	JS_SetPropertyStr(ctx_, app_, "getDialogHwnd",
@@ -464,6 +467,20 @@ JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 	if (dialog) {
 		dialog->Close();
 		delete dialog;
+	}
+	return JS_UNDEFINED;
+}
+JSValue app_closing_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	if (!JS_IsString(argv[0])) {
+		return JS_ThrowTypeError(ctx, "closingDialog: expect id");
+	}
+	const char* id_str = JS_ToCString(ctx, argv[0]);
+	std::string id(id_str);
+	JS_FreeCString(ctx, id_str);
+	auto dialog = windows::Dialog::findDialogById(id);
+	if (dialog) {
+		dialog->OnCloseSysCommand(*dialog);
 	}
 	return JS_UNDEFINED;
 }

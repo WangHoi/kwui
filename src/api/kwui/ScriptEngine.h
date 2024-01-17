@@ -5,6 +5,8 @@
 
 namespace kwui {
 
+typedef ScriptValue(ScriptFunction)(int argc, const ScriptValue* argv, void* udata);
+
 class KWUI_EXPORT ScriptEngine {
 public:
 	//class ModuleRegister;
@@ -18,6 +20,7 @@ public:
 	//ModuleRegister& addGlobalModule(const char* name);
 	
 	void postEvent(const std::string& event, const ScriptValue& value = ScriptValue());
+	ScriptValue sendEvent(const std::string& event, const ScriptValue& value = ScriptValue());
 	void addEventListener(const std::string& event, ScriptFunction* func, void* udata);
 	bool removeEventListener(const std::string& event, ScriptFunction* func, void* udata);
 

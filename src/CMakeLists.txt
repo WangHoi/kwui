@@ -54,4 +54,3 @@ target_compile_definitions(c31 PUBLIC -DKWUI_STATIC_LIBRARY INTERFACE -DKWUI_STA
 target_include_directories(c31 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(c31 PUBLIC ${dep_libs})
 bundle_static_library(c31 kwui_static)
-

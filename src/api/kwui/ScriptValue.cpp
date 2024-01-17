@@ -223,6 +223,17 @@ std::string ScriptValue::toString() const
 	}
 }
 
+size_t ScriptValue::length() const
+{
+	if (absl::holds_alternative<std::vector<ScriptValue>>(d->var)) {
+		return absl::get<std::vector<ScriptValue>>(d->var).size();
+	} else if (absl::holds_alternative<fifo_map<std::string, ScriptValue>>(d->var)) {
+		return absl::get<fifo_map<std::string, ScriptValue>>(d->var).size();
+	} else {
+		return 0;
+	}
+}
+
 void ScriptValue::visitArray(std::function<void(int, const ScriptValue&)>&& f) const
 {
 	if (!isArray())

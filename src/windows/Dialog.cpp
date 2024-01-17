@@ -823,7 +823,15 @@ void Dialog::OnDpiChanged(UINT dpi, const RECT* rect) {
     RequestUpdate();
 }
 void Dialog::OnCloseSysCommand(EventContext& ctx) {
-    kwui::ScriptEngine::get()->postEvent("dialog:request-close", id_);
+    auto ret = kwui::ScriptEngine::get()->sendEvent("dialog:request-close", id_);
+    bool any_true = false;
+    ret.visitArray([&](int, const kwui::ScriptValue& v) {
+        if (v.toBool())
+            any_true = true;
+        });
+    if (any_true)
+        return;
+    Close();
 }
 void Dialog::UpdateMouseTracking() {
     if (!_mouse_event_tracking) {
