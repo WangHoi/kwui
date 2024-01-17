@@ -130,3 +130,27 @@ function(bundle_static_library tgt_name bundled_tgt_name)
   install(FILES ${bundled_tgt_full_name} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 endfunction()
+
+##################################################
+## Macros
+##################################################
+
+##################################################
+## MACRO: "unrimp_replace_cmake_cxx_flags()" for replacing content inside "CMAKE_C_FLAGS" as well as "CMAKE_CXX_FLAGS"
+#
+# Usage example: "unrimp_replace_cmake_cxx_flags(/EHsc /EHs-c-)"
+##################################################
+macro(unrimp_replace_cmake_cxx_flags from to)
+	# Basing on https://stackoverflow.com/a/14172871
+	set(CompilerFlags
+			CMAKE_CXX_FLAGS
+			CMAKE_CXX_FLAGS_DEBUG
+			CMAKE_CXX_FLAGS_RELEASE
+			CMAKE_C_FLAGS
+			CMAKE_C_FLAGS_DEBUG
+			CMAKE_C_FLAGS_RELEASE
+			)
+	foreach(CompilerFlag ${CompilerFlags})
+		string(REPLACE "${from}" "${to}" ${CompilerFlag} "${${CompilerFlag}}")
+	endforeach()
+endmacro()
