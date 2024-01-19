@@ -50,12 +50,11 @@ app.showDialog({
 
 ## 样例展示
 
+### 远程桌面控制
+![image](docs/KuDesk.png)
+
 ### 安装程序
 ![image](docs/installer.png)
-
-### 远程桌面控制
-
-TODO: place image here
 
 ## 常见问题
 
