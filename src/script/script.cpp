@@ -75,6 +75,7 @@ static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* o
 	size_t buf_len = 0;
 	uint8_t* buf = nullptr;
 	JSValue func_val = JS_UNDEFINED;
+	bool is_compiled = false;
 
 	if (module_name[0] == ':') {
 		auto u16_name = windows::EncodingManager::UTF8ToWide(module_name + 1);
@@ -90,6 +91,7 @@ static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* o
 			buf_len = builtin_module.value().length();
 			buf = (uint8_t*)js_mallocz(ctx, buf_len + 1);
 			memcpy(buf, builtin_module.value().data(), buf_len);
+			is_compiled = true;
 		} else {
 			buf = js_load_file(ctx, &buf_len, module_name);
 		}
@@ -101,18 +103,23 @@ static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* o
 		return NULL;
 	}
 
-	/* compile the module */
-	func_val = JS_Eval(ctx, (char*)buf, buf_len, module_name,
-		JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+	if (is_compiled) {
+		func_val= JS_ReadObject(ctx, buf, buf_len, JS_READ_OBJ_BYTECODE);
+	} else {
+		/* compile the module */
+		func_val = JS_Eval(ctx, (char*)buf, buf_len, module_name,
+			JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+	}
 	js_free(ctx, buf);
-	if (JS_IsException(func_val))
+	if (JS_IsException(func_val)) {
+		js_std_dump_error(ctx);
 		return NULL;
+	}
 	/* XXX: could propagate the exception */
 	js_module_set_import_meta(ctx, func_val, TRUE, FALSE);
 	/* the module is already referenced, so we must free it */
 	m = (JSModuleDef*)JS_VALUE_GET_PTR(func_val);
 	JS_FreeValue(ctx, func_val);
-
 	return m;
 }
 
