@@ -1,3 +1,35 @@
-export function add(a, b) {
-    return a + b;
+/**
+ * Use native event
+ * @param {*} value_fn 
+ * @param {String} notify_event 
+ * @returns 
+ */
+export function useNativeProp(value_fn, notify_event) {
+    let [state, _] = useHook((compUpdateFn) => {
+        let value = value_fn();
+        let handler = () => {
+            compUpdateFn(value_fn());
+        };
+        app.addListener(notify_event, handler);
+        return { value, handler };
+    }, (state, new_value) => {
+        state.value = new_value;
+        return [state, true];
+    }, (state) => {
+        app.removeListener(notify_event, state.handler);
+    });
+    return state.value;
+}
+
+/**
+ * Use state
+ * @param {*} init_fn 
+ * @returns 
+ */
+export function useState(init_fn) {
+    return useHook(() => {
+        return (typeof init_fn === "function") ? init_fn() : init_fn;
+    }, (state, new_value) => {
+        return [new_value, true];
+    });
 }

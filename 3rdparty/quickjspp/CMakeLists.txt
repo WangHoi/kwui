@@ -27,3 +27,6 @@ target_sources(quickjs PRIVATE
 "quickjs-version.h"
 )
 target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(qjsc qjsc.c)
+target_link_libraries(qjsc quickjs)

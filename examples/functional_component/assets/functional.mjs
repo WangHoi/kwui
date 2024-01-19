@@ -1,7 +1,15 @@
-import { useNativeProp } from "Keact";
+import { useState } from "Keact";
 
-console.log(`useNative: ${useNativeProp}`);
+function UseStateExample(props) {
+	let [n, setN] = useState(0);
+	return <button onclick={() => setN(n + 1)}>{`Click ${n} times`}</button>;
+}
+
 
 app.showDialog({
-	root: <p>aaa</p>
+	root: <UseStateExample />,
+	stylesheet: `
+	button { margin: 10px; padding: 4px; background-color: orange; }
+	button:hover { background-color: orangered; }
+	`
 });

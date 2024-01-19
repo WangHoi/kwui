@@ -3,18 +3,19 @@
 使用 JSX、CSS 构建简单的桌面应用。
 
 ```jsx
+import { useState } from "Keact";
 
 function HelloWorld(props, kids) {
     let [n, setN] = useState(0);
-    return <button onclick={setN}>Click {n} times!</button>;
+    return <button onclick={() => setN(n + 1)}>{`Click ${n} times`}</button>;
 }
 
 app.showDialog({
     title: "Hello World",
 	root: <HelloWorld />,
-	stylesheet: css`
-        button { color: white; background-color: orange; }
-        button:hover { background-color: orangered; }
+	stylesheet: `
+	button { margin: 10px; padding: 4px; background-color: orange; }
+	button:hover { background-color: orangered; }
     `
 });
 ```
