@@ -1,0 +1,10 @@
+#pragma once
+#include "absl/types/span.h"
+#include "absl/types/optional.h"
+#include <stdint.h>
+
+namespace jsc {
+
+absl::optional<absl::Span<const uint8_t>> get_module_binary(const char* mod_name);
+
+}

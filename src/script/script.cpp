@@ -4,6 +4,7 @@
 #include "windows/ResourceManager.h"
 #include "windows/EncodingManager.h"
 #include "Keact.h"
+#include "jsc/jsc.h"
 #include "absl/strings/str_format.h"
 #include "absl/cleanup/cleanup.h"
 
@@ -84,7 +85,14 @@ static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* o
 			memcpy(buf, res_opt->data, res_opt->size);
 		}
 	} else {
-		buf = js_load_file(ctx, &buf_len, module_name);
+		auto builtin_module = jsc::get_module_binary(module_name);
+		if (builtin_module.has_value()) {
+			buf_len = builtin_module.value().length();
+			buf = (uint8_t*)js_mallocz(ctx, buf_len + 1);
+			memcpy(buf, builtin_module.value().data(), buf_len);
+		} else {
+			buf = js_load_file(ctx, &buf_len, module_name);
+		}
 	}
 
 	if (!buf) {
