@@ -50,13 +50,13 @@ Node* Scene::createComponentNode(Node* parent, JSValue comp_data)
 	JSContext* jctx = script_ctx_->get();
 	if (JS_IsString(comp_data)) {
 		std::string text = script_ctx_->parse<std::string>(comp_data);
-		LOG(INFO) << "createTextNode: " << text;
+		//LOG(INFO) << "createTextNode: " << text;
 		auto node = createTextNode(text);
 		if (parent)
 			parent->appendChild(node);
 		return node;
 	} else if (JS_IsArray(jctx, comp_data)) {
-		LOG(INFO) << "createElementNode: " << "fragment";
+		//LOG(INFO) << "createElementNode: " << "fragment";
 		Node* node = createElementNode(base::string_intern("fragment"));
 		if (parent)
 			parent->appendChild(node);
@@ -75,7 +75,7 @@ Node* Scene::createComponentNode(Node* parent, JSValue comp_data)
 			JS_FreeValue(jctx, render);
 			};
 		if (JS_IsFunction(jctx, render)) {
-			LOG(INFO) << "createComponentNode";
+			//LOG(INFO) << "createComponentNode";
 			Node* node = new Node(this, NodeType::NODE_COMPONENT, comp_data);
 			if (parent)
 				parent->appendChild(node);
@@ -95,7 +95,7 @@ Node* Scene::createComponentNode(Node* parent, JSValue comp_data)
 				};
 			if (JS_IsString(tag) && JS_IsObject(atts) && JS_IsArray(jctx, kids)) {
 				std::string tagName = script_ctx_->parse<std::string>(tag);
-				LOG(INFO) << "createElementNode: " << tagName;
+				//LOG(INFO) << "createElementNode: " << tagName;
 				Node* node = createElementNode(base::string_intern(tagName));
 				if (parent)
 					parent->appendChild(node);
@@ -120,6 +120,8 @@ Node* Scene::createComponentNode(Node* parent, JSValue comp_data)
 				return nullptr;
 			}
 		}
+	} else if (JS_IsNull(comp_data) || JS_IsUndefined(comp_data) || JS_IsUninitialized(comp_data)) {
+		return nullptr;
 	} else if (JS_IsException(comp_data)) {
 		js_std_dump_error(jctx);
 	}

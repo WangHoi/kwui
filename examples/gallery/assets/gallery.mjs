@@ -182,6 +182,4 @@ app.showDialog({
 
 app.showDialog({
 	module: "./vertical_align.mjs",
-	root: <p>aaa</p>,
-	stylesheet: css`p { font-size: 20px; }`
 });

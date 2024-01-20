@@ -501,6 +501,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		std::string base_filename = Context::parse<std::string>(ctx, base_filename_value);
 		std::string module_path = Context::parse<std::string>(ctx, module);
 		dialog->GetScene()->setScriptModule(base_filename, module_path);
+		dialog->GetScene()->reloadScriptModule();
 	}
 	//LOG(INFO) << "show dialog";
 	dialog->Show();

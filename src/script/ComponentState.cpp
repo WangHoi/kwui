@@ -13,12 +13,12 @@ JSClassID ComponentState::JS_CLASS_ID = 0;
 static void component_state_finalizer(JSRuntime* rt, JSValue val)
 {
 	auto ptr = (ComponentState*)JS_GetOpaque(val, ComponentState::JS_CLASS_ID);
-	LOG(INFO) << "ComponentState: finalizer opaque " << ptr;
+	//LOG(INFO) << "ComponentState: finalizer opaque " << ptr;
 	if (ptr) {
 		ptr->finalize(rt);
 		delete ptr;
 	}
-	LOG(INFO) << "__ComponentState finalizer called";
+	//LOG(INFO) << "__ComponentState finalizer called";
 }
 
 // 	constructor(renderFn, props, children)
@@ -48,7 +48,7 @@ static JSValue component_state_ctor(JSContext* ctx,
 	JS_SetPropertyStr(ctx, obj, "props", JS_DupValue(ctx, argv[1]));
 	JS_SetPropertyStr(ctx, obj, "children", JS_DupValue(ctx, argv[2]));
 	auto opaque = new ComponentState(obj);
-	LOG(INFO) << "ComponentState: setOpaque " << opaque;
+	//LOG(INFO) << "ComponentState: setOpaque " << opaque;
 	JS_SetOpaque(obj, opaque);
 	return obj;
 fail:
