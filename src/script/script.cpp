@@ -463,9 +463,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		}
 		JS_FreeCString(ctx, s);
 	}
-	scene2d::Node* content_root = dialog->GetScene()->createComponentNode(root);
-	if (content_root)
-		dialog->GetScene()->root()->appendChild(content_root);
+	dialog->GetScene()->createComponentNode(dialog->GetScene()->root(), root);
 	//LOG(INFO) << "show dialog";
 	dialog->Show();
 	return JS_NewString(ctx, dialog->eventContextId().c_str());

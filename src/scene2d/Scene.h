@@ -34,7 +34,7 @@ public:
 	}
 	Node* createTextNode(const std::string &text);
 	Node* createElementNode(base::string_atom tag);
-	Node* createComponentNode(JSValue comp_data);
+	Node* createComponentNode(Node* parent, JSValue comp_data);
 	void updateComponentNodeChildren(Node* node, JSValue comp_state);
 
 	inline Node *root() const

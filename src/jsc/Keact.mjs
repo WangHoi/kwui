@@ -33,3 +33,50 @@ export function useState(init_fn) {
         return [new_value, true];
     });
 }
+
+class Context {
+    constructor() {
+        this.id = __createContextId();
+        this.listeners = [];
+        this.value = undefined;
+    }
+    get Provider() {
+        let id = this.id;
+        return ({ value }, kids) => {
+            __provideContext(id, value);
+            let l = this.listeners;
+            l.forEach((cb) => cb(value));
+            return kids;
+        };
+    }
+    addListener(cb) {
+        this.listeners.push(cb);
+    }
+    removeListener(cb) {
+        this.listeners.filter((a) => a != cb);
+    }
+}
+
+export function createContext() {
+    let ctx = new Context();
+    return [ctx, ctx.Provider];
+}
+
+export function useContext(ctx) {
+    if (!(ctx instanceof Context)) {
+        throw "useContext: param must be Context";
+    }
+    let [state, _] = useHook(
+        (updater) => {
+            ctx.addListener(updater);
+            return { value: __useContext(ctx.id), updater };
+        },
+        (state, new_value) => {
+            state.value = new_value;
+            return [state, true];
+        },
+        (state) => {
+            context.removeListener(state.updater);
+        });
+    return state.value;
+}

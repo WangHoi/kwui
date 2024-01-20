@@ -123,9 +123,13 @@ public:
 			return parent()->visibleInHierarchy();
 		return true;
 	}
-	base::string_atom elementTag() const
+	inline base::string_atom elementTag() const
 	{
 		return tag_;
+	}
+	inline JSValue componentState() const
+	{
+		return comp_state_;
 	}
 
 	// pos: related to padding box

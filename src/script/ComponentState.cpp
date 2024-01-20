@@ -1,4 +1,5 @@
 #include "ComponentState.h"
+#include "ContextId.h"
 #include "scene2d/Node.h"
 #include "scene2d/Scene.h"
 #include "absl/base/macros.h"
@@ -175,6 +176,27 @@ JSValue ComponentState::useHook(JSContext* ctx, JSValue this_val, JSValue init_f
 	}
 }
 
+JSValue ComponentState::provideContext(JSContext* ctx, JSValue this_val, JSValue id, JSValue user_ctx)
+{
+	auto cid = (ContextId*)JS_GetOpaque(id, ContextId::JS_CLASS_ID);
+	contexts_[cid->id()] = Value(ctx, user_ctx);
+	return JS_UNDEFINED;
+}
+
+JSValue ComponentState::useContext(JSContext* ctx, JSValue this_val, JSValue id)
+{
+	auto cid = (ContextId*)JS_GetOpaque(id, ContextId::JS_CLASS_ID);
+	auto p = this;
+	while (p) {
+		auto it = p->contexts_.find(cid->id());
+		if (it != p->contexts_.end()) {
+			return JS_DupValue(ctx, it->second.jsValue());
+		}
+		p = p->parent();
+	}
+	return JS_UNDEFINED;
+}
+
 void ComponentState::finalize(JSRuntime* rt)
 {
 	for (auto& slot : slots_) {
@@ -248,6 +270,21 @@ void ComponentState::unmount(JSContext* ctx, JSValueConst this_val)
 			JS_FreeValue(ctx, ret);
 		}
 	}
+}
+
+ComponentState* ComponentState::parent() const
+{
+	if (!node_)
+		return nullptr;
+	auto p = node_->parent();
+	while (p) {
+		if (p->type() == scene2d::NodeType::NODE_COMPONENT) {
+			JSValue state = p->componentState();
+			return (ComponentState*)JS_GetOpaque(state, JS_CLASS_ID);
+		}
+		p = p->parent();
+	}
+	return nullptr;
 }
 
 void ComponentState::gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)

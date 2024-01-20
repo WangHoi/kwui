@@ -45,23 +45,28 @@ Node* Scene::createElementNode(base::string_atom tag)
 	return actor;
 }
 
-Node* Scene::createComponentNode(JSValue comp_data)
+Node* Scene::createComponentNode(Node* parent, JSValue comp_data)
 {
 	JSContext* jctx = script_ctx_->get();
 	if (JS_IsString(comp_data)) {
 		std::string text = script_ctx_->parse<std::string>(comp_data);
 		LOG(INFO) << "createTextNode: " << text;
-		return createTextNode(text);
+		auto node = createTextNode(text);
+		if (parent)
+			parent->appendChild(node);
+		return node;
 	} else if (JS_IsArray(jctx, comp_data)) {
 		LOG(INFO) << "createElementNode: " << "fragment";
 		Node* node = createElementNode(base::string_intern("fragment"));
+		if (parent)
+			parent->appendChild(node);
+		
 		int64_t length = 0;
 		JS_GetPropertyLength(jctx, &length, comp_data);
 		for (uint32_t i = 0; i < (uint32_t)length; ++i) {
 			JSValue child_comp_data = JS_GetPropertyUint32(jctx, comp_data, i);
-			Node* child = createComponentNode(child_comp_data);
+			Node* child = createComponentNode(node, child_comp_data);
 			JS_FreeValue(jctx, child_comp_data);
-			node->appendChild(child);
 		}
 		return node;
 	} else if (JS_IsObject(comp_data)) {
@@ -72,9 +77,11 @@ Node* Scene::createComponentNode(JSValue comp_data)
 		if (JS_IsFunction(jctx, render)) {
 			LOG(INFO) << "createComponentNode";
 			Node* node = new Node(this, NodeType::NODE_COMPONENT, comp_data);
+			if (parent)
+				parent->appendChild(node);
 
 			JSValue child_comp_data = JS_Call(jctx, render, comp_data, 0, nullptr);
-			node->appendChild(createComponentNode(child_comp_data));
+			createComponentNode(node, child_comp_data);
 			JS_FreeValue(jctx, child_comp_data);
 			return node;
 		} else {
@@ -90,6 +97,8 @@ Node* Scene::createComponentNode(JSValue comp_data)
 				std::string tagName = script_ctx_->parse<std::string>(tag);
 				LOG(INFO) << "createElementNode: " << tagName;
 				Node* node = createElementNode(base::string_intern(tagName));
+				if (parent)
+					parent->appendChild(node);
 
 				// Setup properties
 				setupProps(node, atts);
@@ -99,9 +108,8 @@ Node* Scene::createComponentNode(JSValue comp_data)
 				JS_GetPropertyLength(jctx, &length, kids);
 				for (uint32_t i = 0; i < (uint32_t)length; ++i) {
 					JSValue child_comp_data = JS_GetPropertyUint32(jctx, kids, i);
-					Node* child = createComponentNode(child_comp_data);
+					createComponentNode(node, child_comp_data);
 					JS_FreeValue(jctx, child_comp_data);
-					node->appendChild(child);
 				}
 
 				return node;
@@ -435,9 +443,8 @@ void Scene::updateNodeChildren(Node* node, JSContext* ctx, JSValue comp_data)
 
 	for (size_t i = patched; i < next_child_count; ++i) {
 		JSValue child_comp_data = JS_GetPropertyUint32(ctx, comp_data, (uint32_t)i);
-		Node* new_child = createComponentNode(child_comp_data);
+		createComponentNode(node, child_comp_data);
 		JS_FreeValue(ctx, child_comp_data);
-		node->appendChild(new_child);
 	}
 
 	for (size_t i = patched; i < prev_child_count; ++i) {
