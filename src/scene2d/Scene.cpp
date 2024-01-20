@@ -142,6 +142,81 @@ void Scene::updateComponentNodeChildren(Node* node, JSValue comp_data)
 	requestPaint();
 }
 
+void Scene::setScriptModule(const std::string& base_filename, const std::string& module_path)
+{
+	script_module_.emplace<ModuleInfo>({ base_filename, module_path });
+}
+
+void Scene::reloadScriptModule()
+{
+	if (!script_module_.has_value()) {
+		LOG(INFO) << "reload dialog failed, not script module.";
+		return;
+	}
+
+	script_ctx_->incrementReloadVersion();
+	JSContext* ctx = script_ctx_->get();
+	JSModuleDef* mod = JS_RunModule(
+		ctx,
+		script_module_->base_filename.c_str(),
+		script_module_->module_path.c_str());
+	if (!mod) {
+		LOG(INFO) << absl::StrFormat(
+			"reload dialog failed, run module %s %s failed.",
+			script_module_->base_filename.c_str(),
+			script_module_->module_path.c_str());
+		return;
+	}
+
+	JSValue root = JS_GetModuleExportItemStr(ctx, mod, "root");
+	JSValue stylesheet = JS_GetModuleExportItemStr(ctx, mod, "stylesheet");
+	absl::Cleanup _ = [&]() {
+		JS_FreeValue(ctx, root);
+		JS_FreeValue(ctx, stylesheet);
+		};
+	
+	setStyleSheet(stylesheet);
+	if (root != JS_UNDEFINED) {
+		JSValue kids = JS_NewFastArray(ctx, 1, &root);
+		updateNodeChildren(root_, ctx, kids);
+		JS_FreeValue(ctx, kids);
+	}
+
+	LOG(INFO) << "reload dialog finished";
+}
+
+void Scene::setStyleSheet(JSValue stylesheet)
+{
+	style_rules_.clear();
+	
+	auto ctx = script_ctx_->get();
+	if (JS_IsObject(stylesheet)) {
+		script::Context::eachObjectField(ctx, stylesheet, [&](const char* name, JSValue value) {
+			auto selectors_res = style::Selector::parseGroup(name);
+			auto style_spec = script::Context::parse<style::StyleSpec>(ctx, value);
+			if (selectors_res.ok()) {
+				for (auto&& selector : *selectors_res) {
+					auto rule = std::make_unique<style::StyleRule>(std::move(selector), style_spec);
+					appendStyleRule(std::move(rule));
+				}
+			} else {
+				LOG(WARNING) << "parse selector '" << name << "' failed";
+			}
+			});
+	} else if (JS_IsString(stylesheet)) {
+		const char* s = JS_ToCString(ctx, stylesheet);
+		if (s) {
+			auto css_res = style::parse_css(s);
+			if (css_res.ok()) {
+				for (auto&& rule : css_res.value()) {
+					appendStyleRule(std::move(rule));
+				}
+			}
+		}
+		JS_FreeCString(ctx, s);
+	}
+}
+
 Node* Scene::pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos)
 {
 	for (auto it = flow_roots_.rbegin(); it != flow_roots_.rend(); ++it) {

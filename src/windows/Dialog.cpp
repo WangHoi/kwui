@@ -607,6 +607,9 @@ void Dialog::OnKeyDown(int key, int modifiers, bool prev_down) {
     if (key == VK_ESCAPE)
         return OnEscapeKeyDown(*this);
 
+    if (key == VK_F5 && modifiers == 0)
+        OnF5Down(*this);
+
     base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
     if (node) {
         scene2d::KeyEvent key_down(node.get(), scene2d::KEY_DOWN, key, modifiers);
@@ -916,6 +919,11 @@ void Dialog::OnEscapeKeyDown(EventContext& ctx)
 void Dialog::OnEscapeKeyUp(EventContext& ctx)
 {
     kwui::ScriptEngine::get()->postEvent("dialog:escape-key-up", id_);
+}
+void Dialog::OnF5Down(EventContext& ctx)
+{
+    _scene->reloadScriptModule();
+    OnPaint();
 }
 void Dialog::DiscardNodeDeviceResources(scene2d::Node* node) {
     // node->DiscardDeviceResources();

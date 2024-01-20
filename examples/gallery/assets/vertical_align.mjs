@@ -1,3 +1,5 @@
+import { P1 } from "./paragraph.mjs";
+
 export function VerticalAlignTest(props, kids) {
     let edit = <div id="path-edit">
         <line_edit
@@ -17,10 +19,12 @@ export function VerticalAlignTest(props, kids) {
         <div style="text-align: center;">
             {edit}
             {btn}
+            <P1></P1>
+            <p>miao woo</p>
         </div>);
 }
 
-export var VerticalAlignTestStyle = `
+export var VerticalAlignTestStyle = css`
 #path-edit {
     overflow: hidden;
     display: inline-block;
@@ -50,4 +54,12 @@ line_edit {
 #browse-button:hover {
     color: white;
 }
+p {
+    position: relative;
+    top: 20px;
+    color: gray;
+}
 `;
+
+export var root = <VerticalAlignTest />;
+export var stylesheet = VerticalAlignTestStyle;

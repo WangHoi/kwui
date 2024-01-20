@@ -58,6 +58,8 @@ public:
 
 	void loadFile(const std::string& fname);
 	void loadScript(const std::string& fname, const std::string& content);
+	size_t reloadVersion() const { return reload_version_; }
+	void incrementReloadVersion() { ++reload_version_; }
 
 	template<typename T>
 	T parse(JSValue j)
@@ -173,6 +175,7 @@ private:
 
 	JSContext* ctx_;
 	JSValue app_ = JS_UNINITIALIZED;
+	size_t reload_version_ = 0;
 };
 
 template<>

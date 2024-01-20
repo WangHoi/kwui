@@ -68,7 +68,23 @@ void Runtime::eachContext(absl::FunctionRef<void(Context*)> func)
 	}
 }
 
-static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* opaque)
+static std::tuple<std::string, size_t> cleanup_module_name(absl::string_view module_name)
+{
+	size_t dot_pos = module_name.rfind('.');
+	if (dot_pos != absl::string_view::npos) {
+		size_t tilde_pos = module_name.find('~', dot_pos);
+		if (tilde_pos != absl::string_view::npos) {
+			size_t version;
+			if (absl::SimpleAtoi(module_name.substr(tilde_pos + 1), &version)) {
+				std::string clean_module_name(module_name.substr(0, tilde_pos));
+				return std::make_tuple(clean_module_name, 0);
+			}
+		}
+	}
+	return std::make_tuple(std::string(module_name), 0);
+}
+
+static JSModuleDef* load_module(JSContext* ctx, const char* orig_module_name, void* opaque)
 {
 	JSModuleDef* m;
 
@@ -76,9 +92,11 @@ static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* o
 	uint8_t* buf = nullptr;
 	JSValue func_val = JS_UNDEFINED;
 	bool is_compiled = false;
+	std::string module_name;
+	std::tie(module_name, std::ignore) = cleanup_module_name(orig_module_name);
 
-	if (module_name[0] == ':') {
-		auto u16_name = windows::EncodingManager::UTF8ToWide(module_name + 1);
+	if (absl::StartsWith(module_name, ":")) {
+		auto u16_name = windows::EncodingManager::UTF8ToWide(&module_name[1]);
 		auto res_opt = windows::ResourceManager::instance()->LoadResource(u16_name.c_str());
 		if (res_opt.has_value()) {
 			buf_len = res_opt->size;
@@ -86,20 +104,20 @@ static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* o
 			memcpy(buf, res_opt->data, res_opt->size);
 		}
 	} else {
-		auto builtin_module = jsc::get_module_binary(module_name);
+		auto builtin_module = jsc::get_module_binary(module_name.c_str());
 		if (builtin_module.has_value()) {
 			buf_len = builtin_module.value().length();
 			buf = (uint8_t*)js_mallocz(ctx, buf_len + 1);
 			memcpy(buf, builtin_module.value().data(), buf_len);
 			is_compiled = true;
 		} else {
-			buf = js_load_file(ctx, &buf_len, module_name);
+			buf = js_load_file(ctx, &buf_len, module_name.c_str());
 		}
 	}
 
 	if (!buf) {
 		JS_ThrowReferenceError(ctx, "could not load module filename '%s'",
-			module_name);
+			module_name.c_str());
 		return NULL;
 	}
 
@@ -107,7 +125,7 @@ static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* o
 		func_val= JS_ReadObject(ctx, buf, buf_len, JS_READ_OBJ_BYTECODE);
 	} else {
 		/* compile the module */
-		func_val = JS_Eval(ctx, (char*)buf, buf_len, module_name,
+		func_val = JS_Eval(ctx, (char*)buf, buf_len, module_name.c_str(),
 			JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
 	}
 	js_free(ctx, buf);
@@ -125,6 +143,7 @@ static JSModuleDef* load_module(JSContext* ctx, const char* module_name, void* o
 
 static char* normalize_module(JSContext* ctx, const char* base_name, const char* name, void* opaque)
 {
+	auto script_ctx = (Context*)JS_GetContextOpaque(ctx);
 	char* filename, * p;
 	const char* r;
 	int len;
@@ -140,7 +159,7 @@ static char* normalize_module(JSContext* ctx, const char* base_name, const char*
 	else
 		len = 0;
 
-	filename = (char*)js_malloc(ctx, len + strlen(name) + 1 + 1);
+	filename = (char*)js_malloc(ctx, len + strlen(name) + 1 + 1 + 32);
 	if (!filename)
 		return NULL;
 	memcpy(filename, base_name, len);
@@ -174,7 +193,13 @@ static char* normalize_module(JSContext* ctx, const char* base_name, const char*
 	if (filename[0] != '\0')
 		strcat(filename, "/");
 	strcat(filename, r);
-	//    printf("normalize: %s %s -> %s\n", base_name, name, filename);
+	
+	size_t version = script_ctx ? script_ctx->reloadVersion() : 0;
+	if (version > 0) {
+		strcat(filename, "~");
+		strcat(filename, std::to_string(version).c_str());
+	}
+	LOG(INFO) << absl::StrFormat("normalize: %s %s -> %s", base_name, name, filename);
 	return filename;
 }
 
@@ -405,9 +430,11 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	absl::optional<windows::PopupShadowData> popup_shadow = absl::nullopt;
 	JSValue root = JS_UNDEFINED;
 	JSValue stylesheet = JS_UNDEFINED;
+	JSValue module = JS_UNDEFINED;
 	absl::Cleanup _ = [&]() {
 		JS_FreeValue(ctx, root);
 		JS_FreeValue(ctx, stylesheet);
+		JS_FreeValue(ctx, module);
 		};
 	Context::eachObjectField(ctx, argv[0], [&](const char* name, JSValue value) {
 		if (!strcmp(name, "title") && JS_IsString(value)) {
@@ -451,6 +478,8 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			root = JS_DupValue(ctx, value);
 		} else if (!strcmp(name, "stylesheet")) {
 			stylesheet = JS_DupValue(ctx, value);
+		} else if (!strcmp(name, "module")) {
+			module = JS_DupValue(ctx, value);
 		}
 		});
 
@@ -460,34 +489,19 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	if (title.has_value()) {
 		dialog->SetTitle(title.value());
 	}
-	if (JS_IsObject(stylesheet)) {
-		auto scene = dialog->GetScene();
-		Context::eachObjectField(ctx, argv[1], [ctx, scene](const char* name, JSValue value) {
-			auto selectors_res = style::Selector::parseGroup(name);
-			auto style_spec = Context::parse<style::StyleSpec>(ctx, value);
-			if (selectors_res.ok()) {
-				for (auto&& selector : *selectors_res) {
-					auto rule = std::make_unique<style::StyleRule>(std::move(selector), style_spec);
-					scene->appendStyleRule(std::move(rule));
-				}
-			} else {
-				LOG(WARNING) << "parse selector '" << name << "' failed";
-			}
-			});
-	} else if (JS_IsString(stylesheet)) {
-		auto scene = dialog->GetScene();
-		const char* s = JS_ToCString(ctx, argv[1]);
-		if (s) {
-			auto css_res = style::parse_css(s);
-			if (css_res.ok()) {
-				for (auto&& rule : css_res.value()) {
-					scene->appendStyleRule(std::move(rule));
-				}
-			}
-		}
-		JS_FreeCString(ctx, s);
-	}
+	dialog->GetScene()->setStyleSheet(stylesheet);
 	dialog->GetScene()->createComponentNode(dialog->GetScene()->root(), root);
+	if (JS_IsString(module)) {
+		JSAtom base_filename_atom = JS_GetScriptOrModuleName(ctx, 1);
+		JSValue base_filename_value = JS_AtomToString(ctx, base_filename_atom);
+		absl::Cleanup _ = [&]() {
+			JS_FreeAtom(ctx, base_filename_atom);
+			JS_FreeValue(ctx, base_filename_value);
+			};
+		std::string base_filename = Context::parse<std::string>(ctx, base_filename_value);
+		std::string module_path = Context::parse<std::string>(ctx, module);
+		dialog->GetScene()->setScriptModule(base_filename, module_path);
+	}
 	//LOG(INFO) << "show dialog";
 	dialog->Show();
 	return JS_NewString(ctx, dialog->eventContextId().c_str());

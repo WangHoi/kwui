@@ -7,6 +7,7 @@
 #include "geom_types.h"
 #include "style/StyleRule.h"
 #include "style/StylePaint.h"
+#include "script/Value.h"
 #include "Control.h"
 #include "absl/functional/function_ref.h"
 
@@ -36,6 +37,10 @@ public:
 	Node* createElementNode(base::string_atom tag);
 	Node* createComponentNode(Node* parent, JSValue comp_data);
 	void updateComponentNodeChildren(Node* node, JSValue comp_state);
+
+	void setScriptModule(const std::string& base_filename, const std::string& module_path);
+	void reloadScriptModule();
+	void setStyleSheet(JSValue stylesheet);
 
 	inline Node *root() const
 	{
@@ -84,6 +89,11 @@ private:
 
 	EventContext& event_ctx_;
 	std::unique_ptr<script::Context> script_ctx_;
+	struct ModuleInfo {
+		std::string base_filename;
+		std::string module_path;
+	};
+	absl::optional<ModuleInfo> script_module_;
 	Node* root_;
 	base::WeakObjectProxy<Scene> *weakptr_;
 	std::vector<std::unique_ptr<style::StyleRule>> style_rules_;
