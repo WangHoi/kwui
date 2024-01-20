@@ -77,6 +77,8 @@ JSValue component_state_render(JSContext* ctx, JSValueConst this_val, int argc, 
 		JS_FreeValue(ctx, args[1]);
 		};
 	JSValue ret = JS_Call(ctx, render_fn, this_val, 2, args);
+
+	me->slots_.resize(me->curr_slot_);
 	
 	JS_SetPropertyStr(ctx, global, "__comp_state", JS_UNDEFINED);
 	JS_FreeValue(ctx, global);

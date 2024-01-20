@@ -81,7 +81,9 @@ public:
     virtual void OnEnterKeyUp(EventContext& ctx);
     virtual void OnEscapeKeyDown(EventContext& ctx);
     virtual void OnEscapeKeyUp(EventContext& ctx);
+#ifndef NDEBUG
     virtual void OnF5Down(EventContext& ctx);
+#endif
 
 private:
     void InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON icon);
