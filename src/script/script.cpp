@@ -234,6 +234,30 @@ static JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int ar
 static JSValue app_get_dialog_dpi_scale(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 
+static JSValue css_func(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	int64_t len = 0;
+	JS_GetPropertyLength(ctx, &len, argv[0]);
+
+	DCHECK(argc == len) << "css: mismatch args";
+
+	JSValue val = JS_GetPropertyUint32(ctx, argv[0], 0);
+	std::string text = Context::parse<std::string>(ctx, val);
+	JS_FreeValue(ctx, val);
+
+	for (int i = 1; i < (int)len; ++i) {
+		JSValue v = JS_ToString(ctx, argv[i]);
+		text += Context::parse<std::string>(ctx, v);
+		JS_FreeValue(ctx, v);
+
+		v = JS_GetPropertyUint32(ctx, argv[0], i);
+		text += Context::parse<std::string>(ctx, v);
+		JS_FreeValue(ctx, v);
+	}
+
+	return JS_NewStringLen(ctx, text.c_str(), text.length());
+}
+
 static JSValue jsx_func(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	/*
@@ -262,9 +286,9 @@ static JSValue jsx_func(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 
 static void register_jsx_function(JSContext* ctx)
 {
-	JSValue jsx = JS_NewCFunction(ctx, &jsx_func, "JSX", 3);
 	JSValue global = JS_GetGlobalObject(ctx);
-	JS_SetPropertyStr(ctx, global, "JSX", jsx);
+	JS_SetPropertyStr(ctx, global, "JSX", JS_NewCFunction(ctx, &jsx_func, "JSX", 3));
+	JS_SetPropertyStr(ctx, global, "css", JS_NewCFunction(ctx, &css_func, "css", 1));
 	JS_FreeValue(ctx, global);
 }
 

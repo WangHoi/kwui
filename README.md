@@ -2,7 +2,7 @@
 
 使用 JSX、CSS 构建简单的桌面应用。
 
-```jsx
+```javascript
 import { useState } from "Keact";
 
 function HelloWorld(props, kids) {
@@ -13,7 +13,7 @@ function HelloWorld(props, kids) {
 app.showDialog({
     title: "Hello World",
 	root: <HelloWorld />,
-	stylesheet: `
+	stylesheet: css`
 	button { margin: 10px; padding: 4px; background-color: orange; }
 	button:hover { background-color: orangered; }
     `

@@ -26,7 +26,7 @@ function ThemeExample() {
 
 app.showDialog({
 	root: <ThemeExample />,
-	stylesheet: `
+	stylesheet: css`
 	button { margin: 10px; padding: 4px; background-color: orange; }
 	button.dark { background-color: black; color: white; }
 	button:hover { background-color: orangered; }
