@@ -297,6 +297,9 @@ void ComponentState::gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_f
 			JS_MarkValue(rt, slot.state, mark_func);
 			JS_MarkValue(rt, slot.updateFn, mark_func);
 		}
+		for (auto& p : me->contexts_) {
+			JS_MarkValue(rt, p.second.jsValue(), mark_func);
+		}
 	}
 }
 
