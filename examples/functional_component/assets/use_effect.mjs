@@ -4,9 +4,6 @@ export function UseEffectExample(props) {
 	let [n, setN] = useState(0);
 	useEffect(() => {
 		console.log("n changed:", n);
-		return () => {
-			console.log("use Effect dtor");
-		}
 	}, [n]);
 	return <button onclick={() => setN(n + 1)}>{`Click ${n} times`}</button>;
 }
