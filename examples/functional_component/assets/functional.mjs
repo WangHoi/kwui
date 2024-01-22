@@ -1,3 +1,3 @@
 app.showDialog({
-	module: './use_state.mjs'
+	module: './use_effect.mjs'
 });

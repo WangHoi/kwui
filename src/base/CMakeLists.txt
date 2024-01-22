@@ -10,6 +10,8 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/PEG.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ResourceArchive.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ResourceArchive.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TaskQueue.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TaskQueue.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/algorithm/lzf.h
   ${CMAKE_CURRENT_SOURCE_DIR}/algorithm/lzf.cpp
   )

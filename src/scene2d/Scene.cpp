@@ -342,6 +342,21 @@ std::string Scene::eventContextId() const
 	return event_ctx_.eventContextId();
 }
 
+base::TaskQueue::TaskId Scene::addPostRenderTask(std::function<void()>&& fn)
+{
+	return post_render_task_queue_.add(std::move(fn));
+}
+
+bool Scene::removePostRenderTask(base::TaskQueue::TaskId id)
+{
+	return post_render_task_queue_.remove(id);
+}
+
+void Scene::runPostRenderTasks()
+{
+	post_render_task_queue_.run();
+}
+
 void Scene::setupProps(Node* node, JSValue props)
 {
 	JSContext* ctx = script_ctx_->get();

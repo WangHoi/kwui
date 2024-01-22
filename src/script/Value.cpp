@@ -105,7 +105,12 @@ Value& Value::operator=(Value&& o) noexcept
 
 bool Value::isUndefined() const
 {
-	return value_ == JS_UNDEFINED;
+	return JS_IsUndefined(value_);
+}
+
+bool Value::isFunction() const
+{
+	return ctx_ && JS_IsFunction(ctx_, value_);
 }
 
 bool Value::operator==(const Value& o)

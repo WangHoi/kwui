@@ -62,6 +62,7 @@ JSValue component_state_render(JSContext* ctx, JSValueConst this_val, int argc, 
 	auto me = (ComponentState*)JS_GetOpaque(this_val, ComponentState::JS_CLASS_ID);
 	if (me) {
 		me->curr_slot_ = 0;
+		me->curr_effect_ = 0;
 	}
 
 	JSValue global = JS_GetGlobalObject(ctx);
@@ -166,7 +167,7 @@ JSValue ComponentState::useHook(JSContext* ctx, JSValue this_val, JSValue init_f
 			JS_DupValue(ctx, update_fn),
 			JS_DupValue(ctx, cleanup_fn),
 			});
-		LOG(INFO) << "ComponentState: slots append opaque " << this;
+		// LOG(INFO) << "ComponentState: slots append opaque " << this;
 		JSValue init_state = JS_Call(ctx, init_fn, this_val, 1, &user_update_fn);
 		if (JS_IsException(init_state)) {
 			js_std_dump_error(ctx);
@@ -199,16 +200,96 @@ JSValue ComponentState::useContext(JSContext* ctx, JSValue this_val, JSValue id)
 	return JS_UNDEFINED;
 }
 
+JSValue ComponentState::useEffect(JSContext* ctx, JSValue this_val, JSValue effect_fn, JSValue deps, JSValue compare_fn)
+{
+	if (!node_) {
+		LOG(ERROR) << "__useEffect: no Node.";
+		return JS_UNDEFINED;
+	}
+	if (!node_->scene()) {
+		LOG(ERROR) << "__useEffect: no Scene.";
+		return JS_UNDEFINED;
+	}
+	DCHECK(JS_IsFunction(ctx, compare_fn)) << "__useEffect: compareFn must be function.";
+	if (curr_effect_ >= effects_.size()) {
+		++curr_effect_;
+		effects_.emplace_back(Effect{
+			Effect::STATE_INIT,
+			0,
+			Value(ctx, deps),
+			Value(ctx, effect_fn),
+			Value(),
+			});
+		effects_.back().tid = node_->scene()->addPostRenderTask(makeUseEffectTask(ctx, effects_.size()));
+		effects_.back().state = Effect::STATE_SCHEDULED;
+	} else {
+		++curr_effect_;
+		auto& eff = effects_[curr_effect_ - 1];
+		bool changed = true;
+		if (JS_IsArray(ctx, deps)) {
+			JSValue args[2] = { deps, eff.deps.jsValue() };
+			JSValue ret = JS_Call(ctx, compare_fn, JS_UNDEFINED, ABSL_ARRAYSIZE(args), args);
+			if (JS_IsException(ret)) {
+				LOG(ERROR) << "__useEffect: compareFn() failed:";
+				js_std_dump_error(ctx);
+				changed = false;
+			} else {
+				changed = (JS_ToBool(ctx, ret) != 0);
+			}
+			JS_FreeValue(ctx, ret);
+		}
+		if (changed) {
+			if (eff.state == Effect::STATE_SCHEDULED) {
+				// Cancel scheduled task
+				node_->scene()->removePostRenderTask(eff.tid);
+				eff.tid = 0;
+			} else if (eff.state == Effect::STATE_EXECUTED) {
+				if (eff.cleanup_fn.isFunction()) {
+					JSValue ret = JS_Call(ctx, eff.cleanup_fn.jsValue(), this_val, 0, nullptr);
+					if (JS_IsException(ret)) {
+						LOG(ERROR) << "__useEffect: run cleanupFn() failed.";
+						js_std_dump_error(ctx);
+					}
+					JS_FreeValue(ctx, ret);
+				}
+			}
+			eff.state = Effect::STATE_INIT;
+			eff.deps = Value(ctx, deps);
+			eff.effect_fn = Value(ctx, effect_fn);
+			eff.cleanup_fn = Value();
+
+			eff.tid = node_->scene()->addPostRenderTask(makeUseEffectTask(ctx, curr_effect_ - 1));
+			eff.state = Effect::STATE_SCHEDULED;
+		}
+	}
+	return JS_UNDEFINED;
+}
+
 void ComponentState::finalize(JSRuntime* rt)
 {
 	for (auto& slot : slots_) {
 		JS_FreeValueRT(rt, slot.state);
-		JS_FreeValueRT(rt, slot.cleanupFn);
-		JS_FreeValueRT(rt, slot.updateFn);
+		JS_FreeValueRT(rt, slot.cleanup_fn);
+		JS_FreeValueRT(rt, slot.update_fn);
 	}
 	slots_.clear();
+	effects_.clear();
 	curr_slot_ = 0;
+	curr_effect_ = 0;
 	this_obj_ = JS_UNDEFINED;
+}
+
+ComponentState::ComponentState(JSValue this_obj)
+	: this_obj_(this_obj)
+{
+	weak_proxy_ = new base::WeakObjectProxy<ComponentState>(this);
+	weak_proxy_->retain();
+}
+
+ComponentState::~ComponentState()
+{
+	weak_proxy_->clear();
+	weak_proxy_->release();
 }
 
 JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/, int argc, JSValueConst* argv, int magic, JSValue* func_data)
@@ -222,9 +303,9 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 		if (scene) {
 			bool need_render = false;
 			
-			if (JS_IsFunction(ctx, me->slots_[magic].updateFn)) {
+			if (JS_IsFunction(ctx, me->slots_[magic].update_fn)) {
 				JSValue mutater_args[2] = { me->slots_[magic].state, argv[0] };
-				JSValue ret = JS_Call(ctx, me->slots_[magic].updateFn, this_obj, 2, mutater_args);
+				JSValue ret = JS_Call(ctx, me->slots_[magic].update_fn, this_obj, 2, mutater_args);
 				if (JS_IsArray(ctx, ret)) {
 					int64_t len = 0;
 					JS_GetPropertyLength(ctx, &len, ret);
@@ -264,13 +345,32 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 void ComponentState::unmount(JSContext* ctx, JSValueConst this_val)
 {
 	for (auto& slot : slots_) {
-		if (JS_IsFunction(ctx, slot.cleanupFn)) {
-			JSValue ret = JS_Call(ctx, slot.cleanupFn, this_val, 1, &slot.state);
+		if (JS_IsFunction(ctx, slot.cleanup_fn)) {
+			JSValue ret = JS_Call(ctx, slot.cleanup_fn, this_val, 1, &slot.state);
 			if (JS_IsException(ret)) {
 				js_std_dump_error(ctx);
 			}
 			JS_FreeValue(ctx, ret);
 		}
+	}
+	for (auto& eff : effects_) {
+		if (eff.state == Effect::STATE_SCHEDULED) {
+			node_->scene()->removePostRenderTask(eff.tid);
+			eff.tid = 0;
+		} else if (eff.state == Effect::STATE_EXECUTED) {
+			if (eff.cleanup_fn.isFunction()) {
+				JSValue ret = JS_Call(ctx, eff.cleanup_fn.jsValue(), this_val, 0, nullptr);
+				if (JS_IsException(ret)) {
+					js_std_dump_error(ctx);
+				}
+				JS_FreeValue(ctx, ret);
+			}
+		}
+		eff.state = Effect::STATE_INIT;
+		eff.tid = 0;
+		eff.deps = Value();
+		eff.effect_fn = Value();
+		eff.cleanup_fn = Value();
 	}
 }
 
@@ -289,16 +389,48 @@ ComponentState* ComponentState::parent() const
 	return nullptr;
 }
 
+std::function<void()> ComponentState::makeUseEffectTask(JSContext* ctx, size_t index) const
+{
+	auto link = weaken();
+	return [link, ctx, index]() -> void {
+		auto me = link.get();
+		if (!me || !me->node_)
+			return;
+		me->runEffect(ctx, index);
+		};
+}
+
+void ComponentState::runEffect(JSContext* ctx, size_t index)
+{
+	if (index >= effects_.size())
+		return;
+	JSValue ret = JS_Call(ctx, effects_[index].effect_fn.jsValue(), this_obj_, 0, nullptr);
+	if (JS_IsException(ret))
+		js_std_dump_error(ctx);
+	if (JS_IsFunction(ctx, ret)) {
+		effects_[index].state = Effect::STATE_EXECUTED;
+		effects_[index].tid = 0;
+		effects_[index].cleanup_fn = Value(ctx, ret);
+	} else {
+		JS_FreeValue(ctx, ret);
+	}
+}
+
 void ComponentState::gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)
 {
 	auto me = (ComponentState*)JS_GetOpaque(val, ComponentState::JS_CLASS_ID);
 	if (me) {
 		for (auto& slot : me->slots_) {
 			JS_MarkValue(rt, slot.state, mark_func);
-			JS_MarkValue(rt, slot.updateFn, mark_func);
+			JS_MarkValue(rt, slot.update_fn, mark_func);
 		}
 		for (auto& p : me->contexts_) {
 			JS_MarkValue(rt, p.second.jsValue(), mark_func);
+		}
+		for (auto& e : me->effects_) {
+			JS_MarkValue(rt, e.deps.jsValue(), mark_func);
+			JS_MarkValue(rt, e.effect_fn.jsValue(), mark_func);
+			JS_MarkValue(rt, e.cleanup_fn.jsValue(), mark_func);
 		}
 	}
 }

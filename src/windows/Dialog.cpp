@@ -518,6 +518,8 @@ void Dialog::OnPaint() {
         EndPaint(_hwnd, &ps);
         break;
     }
+
+    _scene->runPostRenderTasks();
 }
 void Dialog::OnResize() {
     LOG(INFO) << "OnResize " << _pixel_size.width << "x" << _pixel_size.height << "px";

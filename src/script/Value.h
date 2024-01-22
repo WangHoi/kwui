@@ -20,6 +20,7 @@ public:
 	Value& operator=(Value&& o) noexcept;
 
 	bool isUndefined() const;
+	bool isFunction() const;
 	bool operator==(const Value& o);
 	bool operator==(JSValue o);
 

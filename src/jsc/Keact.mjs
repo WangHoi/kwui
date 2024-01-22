@@ -57,11 +57,19 @@ class Context {
     }
 }
 
+/**
+ * Create context
+ * @returns [context value, context provider]
+ */
 export function createContext() {
     let ctx = new Context();
     return [ctx, ctx.Provider];
 }
-
+/**
+ * Use context
+ * @param {*} ctx 
+ * @returns context value
+ */
 export function useContext(ctx) {
     if (!(ctx instanceof Context)) {
         throw "useContext: param must be Context";
@@ -79,4 +87,14 @@ export function useContext(ctx) {
             context.removeListener(state.updater);
         });
     return state.value;
+}
+
+/**
+ * Use effect
+ * @param {*} effect_fn
+ * @param {Array} dpes
+ * @returns 
+ */
+export function useEffect(effect_fn, deps) {
+    return __useEffect(effect_fn, deps, Object.is);
 }

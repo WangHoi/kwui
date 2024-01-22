@@ -7,3 +7,4 @@
 #include "scoped_setter.h"
 #include "ResourceArchive.h"
 #include "PEG.h"
+#include "TaskQueue.h"

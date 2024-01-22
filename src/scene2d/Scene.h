@@ -67,6 +67,10 @@ public:
 	}
 	std::string eventContextId() const;
 
+	base::TaskQueue::TaskId addPostRenderTask(std::function<void()>&& fn);
+	bool removePostRenderTask(base::TaskQueue::TaskId id);
+	void runPostRenderTasks();
+
 private:
 	enum class NodeCompareResult {
 		Unpatchable,
@@ -94,6 +98,7 @@ private:
 		std::string module_path;
 	};
 	absl::optional<ModuleInfo> script_module_;
+	base::TaskQueue post_render_task_queue_;
 	Node* root_;
 	base::WeakObjectProxy<Scene> *weakptr_;
 	std::vector<std::unique_ptr<style::StyleRule>> style_rules_;
