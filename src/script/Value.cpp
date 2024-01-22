@@ -91,15 +91,21 @@ Value& Value::operator=(Value&& o) noexcept
 	auto old_ctx = ctx_;
 	auto old_value = value_;
 
-	ctx_ = o.ctx_;
-	value_ = o.value_;
+	if (o.ctx_) {
+		ctx_ = o.ctx_;
+		value_ = JS_DupValue(ctx_, o.value_);
+		JS_FreeValue(ctx_, o.value_);
+	} else {
+		ctx_ = o.ctx_;
+		value_ = o.value_;
+	}
 	o.ctx_ = nullptr;
 	o.value_ = JS_UNDEFINED;
 	
-	if (old_ctx && old_value != value_)
+	if (old_ctx) {
 		JS_FreeValue(old_ctx, old_value);
-	if (old_ctx && old_ctx != ctx_)
 		JS_FreeContext(old_ctx);
+	}
 	return *this;
 }
 

@@ -31,6 +31,7 @@ bool TaskQueue::contains(TaskId id) const
 void TaskQueue::run()
 {
 	auto tsks = std::move(tasks_);
+	tasks_.clear();
 	for (auto& p : tsks) {
 		p.second();
 	}

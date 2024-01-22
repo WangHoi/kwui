@@ -89,6 +89,19 @@ export function useContext(ctx) {
     return state.value;
 }
 
+function sameArray(a, b) {
+    if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length != b.length)
+            return false;
+        for (var i = 0; i < a.length; ++i) {
+            if (!Object.is(a[i], b[i]))
+                return false;
+        }
+        return true;
+    } else {
+        return Object.is(a, b);
+    }
+}
 /**
  * Use effect
  * @param {*} effect_fn
@@ -96,5 +109,5 @@ export function useContext(ctx) {
  * @returns 
  */
 export function useEffect(effect_fn, deps) {
-    return __useEffect(effect_fn, deps, Object.is);
+    return __useEffect(effect_fn, deps, sameArray);
 }

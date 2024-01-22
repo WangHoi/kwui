@@ -189,6 +189,9 @@ JSValue ComponentState::provideContext(JSContext* ctx, JSValue this_val, JSValue
 JSValue ComponentState::useContext(JSContext* ctx, JSValue this_val, JSValue id)
 {
 	auto cid = (ContextId*)JS_GetOpaque(id, ContextId::JS_CLASS_ID);
+	if (!cid) {
+		return JS_UNDEFINED;
+	}
 	auto p = this;
 	while (p) {
 		auto it = p->contexts_.find(cid->id());
@@ -234,7 +237,7 @@ JSValue ComponentState::useEffect(JSContext* ctx, JSValue this_val, JSValue effe
 				js_std_dump_error(ctx);
 				changed = false;
 			} else {
-				changed = (JS_ToBool(ctx, ret) != 0);
+				changed = (JS_ToBool(ctx, ret) == 0);
 			}
 			JS_FreeValue(ctx, ret);
 		}
@@ -318,7 +321,7 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 
 						auto nj = JS_JSONStringify(ctx, new_state, JS_UNDEFINED, JS_UNDEFINED);
 						auto njs = Context::parse<std::string>(ctx, nj);
-						LOG(INFO) << "after update, new state " << njs;
+						//LOG(INFO) << "after update, new state " << njs;
 						JS_FreeValue(ctx, nj);
 
 						need_render = JS_ToBool(ctx, should_render);
@@ -391,6 +394,7 @@ ComponentState* ComponentState::parent() const
 
 std::function<void()> ComponentState::makeUseEffectTask(JSContext* ctx, size_t index) const
 {
+	return []() {};
 	auto link = weaken();
 	return [link, ctx, index]() -> void {
 		auto me = link.get();

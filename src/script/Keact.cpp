@@ -88,7 +88,7 @@ static int initModule(JSContext* ctx, JSModuleDef* m)
     JS_SetPropertyStr(ctx, global, "__createContextId", JS_NewCFunction(ctx, createContextId, "__createContextId", 0));
     JS_SetPropertyStr(ctx, global, "__provideContext", JS_NewCFunction(ctx, provideContext, "__provideContext", 2));
     JS_SetPropertyStr(ctx, global, "__useContext", JS_NewCFunction(ctx, useContext, "__useContext", 1));
-    JS_SetPropertyStr(ctx, global, "__useEffect", JS_NewCFunction(ctx, useContext, "__useContext", 3));
+    JS_SetPropertyStr(ctx, global, "__useEffect", JS_NewCFunction(ctx, useEffect, "__useEffect", 3));
     
     JS_FreeValue(ctx, global);
     return 0;
@@ -103,6 +103,7 @@ JSModuleDef* initModule(JSContext* ctx)
     JS_SetPropertyStr(ctx, global, "__createContextId", JS_NewCFunction(ctx, createContextId, "__createContextId", 0));
     JS_SetPropertyStr(ctx, global, "__provideContext", JS_NewCFunction(ctx, provideContext, "__provideContext", 2));
     JS_SetPropertyStr(ctx, global, "__useContext", JS_NewCFunction(ctx, useContext, "__useContext", 1));
+    JS_SetPropertyStr(ctx, global, "__useEffect", JS_NewCFunction(ctx, useEffect, "__useEffect", 3));
     JS_FreeValue(ctx, global);
     return nullptr;
     /*
