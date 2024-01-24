@@ -21,21 +21,21 @@ namespace style {
 struct LayoutObject;
 
 struct InlineBlockBox {
-	std::vector<InlineBox> inline_boxes;
+	std::unique_ptr<InlineBox> inline_box;
 	BlockBox block_box;
 
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const InlineBlockBox& o) {
 		absl::Format(&sink, "InlineBlockBox { ");
-		absl::Format(&sink, "inlines=[ ");
-		for (auto& ib : o.inline_boxes) {
-			absl::Format(&sink, "%v, ", ib);
-		}
-		absl::Format(&sink, "], block=%v ", o.block_box);
+		absl::Format(&sink, "inline=%v, ", *o.inline_box);
+		absl::Format(&sink, "block=%v ", o.block_box);
 		absl::Format(&sink, "}");
 	}
 
-	InlineBlockBox() = default;
+	InlineBlockBox()
+	{
+		inline_box = std::make_unique<InlineBox>();
+	}
 	InlineBlockBox(const InlineBlockBox&) = delete;
 	InlineBlockBox& operator=(const InlineBlockBox&) = delete;
 };

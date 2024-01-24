@@ -94,7 +94,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			st.background_color,
 			st.border_color,
 			st.background_image.get());
-	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
+	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
 		/*
 		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
 		if (!ibs.empty()) {
@@ -109,24 +109,22 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		*/
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
-		if (!ibb.inline_boxes.empty()) {
-			const InlineBox& ib = ibb.inline_boxes.front();
-			const BlockBox& b = ibb.block_box;
-			content_rect.emplace(b.contentRect().translated(b.pos));
-			CornerRadiusF border_radius;
-			border_radius.top_left = st.border_top_left_radius.pixelOrZero();
-			border_radius.top_right = st.border_top_right_radius.pixelOrZero();
-			border_radius.bottom_right = st.border_bottom_right_radius.pixelOrZero();
-			border_radius.bottom_left = st.border_bottom_left_radius.pixelOrZero();
-			//LOG(INFO) << "paint box: " << render_rect;
-			painter->drawBox(
-				b.paddingRect().translated(b.pos),
-				b.border,
-				border_radius,
-				st.background_color,
-				st.border_color,
-				st.background_image.get());
-		}
+		const InlineBox& ib = *ibb.inline_box;
+		const BlockBox& b = ibb.block_box;
+		content_rect.emplace(b.contentRect().translated(b.pos));
+		CornerRadiusF border_radius;
+		border_radius.top_left = st.border_top_left_radius.pixelOrZero();
+		border_radius.top_right = st.border_top_right_radius.pixelOrZero();
+		border_radius.bottom_right = st.border_bottom_right_radius.pixelOrZero();
+		border_radius.bottom_left = st.border_bottom_left_radius.pixelOrZero();
+		//LOG(INFO) << "paint box: " << render_rect;
+		painter->drawBox(
+			b.paddingRect().translated(b.pos),
+			b.border,
+			border_radius,
+			st.background_color,
+			st.border_color,
+			st.background_image.get());
 	} else if (absl::holds_alternative<TextBox>(o->box)) {
 		const TextBox& tb = absl::get<TextBox>(o->box);
 		size_t n = tb.glyph_run_boxes.glyph_runs.size();
@@ -241,11 +239,12 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 			pick_result = o;
 		}
 		pos = local_pos;
-	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
-		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
 		for (auto it = ibs.rbegin(); it != ibs.rend(); ++it) {
-			const scene2d::RectF local_rect = scene2d::RectF::fromOriginSize(scene2d::PointF(), it->size);
-			scene2d::PointF local_pos = pos - it->pos;
+			const auto& ib = *it;
+			const scene2d::RectF local_rect = scene2d::RectF::fromOriginSize(scene2d::PointF(), ib->size);
+			scene2d::PointF local_pos = pos - ib->pos;
 			if (local_rect.contains(local_pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 				if (out_local_pos)
 					*out_local_pos = local_pos;
@@ -298,11 +297,11 @@ scene2d::PointF LayoutObject::getOffset(LayoutObject* o)
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const auto& rect = absl::get<BlockBox>(o->box).paddingRect();
 		return rect.origin();
-	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
-		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
 		if (!ibs.empty()) {
-			const InlineBox& first = ibs.front();
-			const InlineBox& last = ibs.back();
+			const InlineBox& first = *ibs.front();
+			const InlineBox& last = *ibs.back();
 			return first.pos;
 		}
 	}
@@ -402,13 +401,14 @@ scene2d::RectF LayoutObject::borderRect(LayoutObject* o)
 {
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		return absl::get<BlockBox>(o->box).borderRect();
-	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
-		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
 		if (ibs.empty())
 			return scene2d::RectF();
 		absl::optional<scene2d::RectF> rect;
 		for (auto it = ibs.begin(); it != ibs.end(); ++it) {
-			scene2d::RectF ib_rect = scene2d::RectF::fromOriginSize(it->pos, it->size);
+			const auto& ib = *it;
+			scene2d::RectF ib_rect = scene2d::RectF::fromOriginSize(ib->pos, ib->size);
 			if (!rect.has_value()) {
 				rect.emplace(ib_rect);
 			} else {
@@ -427,13 +427,14 @@ scene2d::RectF LayoutObject::paddingRect(LayoutObject* o)
 {
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		return absl::get<BlockBox>(o->box).paddingRect();
-	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
-		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
 		if (ibs.empty())
 			return scene2d::RectF();
 		absl::optional<scene2d::RectF> rect;
 		for (auto it = ibs.begin(); it != ibs.end(); ++it) {
-			scene2d::RectF ib_rect = scene2d::RectF::fromOriginSize(it->pos, it->size);
+			const auto& ib = *it;
+			scene2d::RectF ib_rect = scene2d::RectF::fromOriginSize(ib->pos, ib->size);
 			if (!rect.has_value()) {
 				rect.emplace(ib_rect);
 			} else {
@@ -452,13 +453,14 @@ scene2d::RectF LayoutObject::contentRect(LayoutObject* o)
 {
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		return absl::get<BlockBox>(o->box).contentRect();
-	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
-		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
 		if (ibs.empty())
 			return scene2d::RectF();
 		absl::optional<scene2d::RectF> rect;
 		for (auto it = ibs.begin(); it != ibs.end(); ++it) {
-			scene2d::RectF ib_rect = scene2d::RectF::fromOriginSize(it->pos, it->size);
+			const auto& ib = *it;
+			scene2d::RectF ib_rect = scene2d::RectF::fromOriginSize(ib->pos, ib->size);
 			if (!rect.has_value()) {
 				rect.emplace(ib_rect);
 			} else {
@@ -1022,60 +1024,55 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 					for (auto& ib : child_inline_boxes) {
 						inline_boxes.push_back(ib.get());
 					}
-				} else if (absl::holds_alternative<std::vector<InlineBox>>(child->box)) {
-					auto& child_inline_boxes = absl::get<std::vector<InlineBox>>(child->box);
+				} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(child->box)) {
+					auto& child_inline_boxes = absl::get<std::vector<std::unique_ptr<InlineBox>>>(child->box);
 					for (auto& ib : child_inline_boxes) {
-						inline_boxes.push_back(&ib);
+						inline_boxes.push_back(ib.get());
 					}
 				} else if (absl::holds_alternative<InlineBlockBox>(child->box)) {
-					auto& child_inline_boxes = absl::get<InlineBlockBox>(child->box).inline_boxes;
-					for (auto& ib : child_inline_boxes) {
-						inline_boxes.push_back(&ib);
-					}
+					auto& child_inline_box = absl::get<InlineBlockBox>(child->box).inline_box;
+					inline_boxes.push_back(child_inline_box.get());
 				}
 
 				child = child->next_sibling;
 			}
 
-			std::vector<InlineBox> merged_boxes;
+			std::vector<std::unique_ptr<InlineBox>> merged_boxes;
 			for (InlineBox* child : inline_boxes) {
-				if (merged_boxes.empty() || merged_boxes.back().line_box != child->line_box) {
+				if (merged_boxes.empty() || merged_boxes.back()->line_box != child->line_box) {
 					auto fm = graph2d::getFontMetrics(st.font_family.keyword_val.c_str(),
 						st.font_size.pixelOrZero());
 					float line_height = st.line_height.pixelOrZero();
-					InlineBox ib;
-					ib.pos = child->pos;
-					ib.baseline = fm.baseline;
-					ib.size.width = child->size.width;
-					ib.size.height = fm.line_height;
-					ib.line_box = child->line_box;
-					ib.line_box->line_height = std::max(ib.line_box->line_height, line_height);
-					merged_boxes.push_back(ib);
+					std::unique_ptr<InlineBox> ib = std::make_unique<InlineBox>();
+					ib->pos = child->pos;
+					ib->baseline = fm.baseline;
+					ib->size.width = child->size.width;
+					ib->size.height = fm.line_height;
+					ib->line_box = child->line_box;
+					ib->line_box->line_height = std::max(ib->line_box->line_height, line_height);
+					merged_boxes.push_back(std::move(ib));
 				} else {
-					InlineBox& ib = merged_boxes.back();
-					ib.size.width = std::max(child->pos.x + child->size.width,
-						ib.pos.x + ib.size.width) - ib.pos.x;
+					std::unique_ptr<InlineBox>& ib = merged_boxes.back();
+					ib->size.width = std::max(child->pos.x + child->size.width,
+						ib->pos.x + ib->size.width) - ib->pos.x;
 				}
 			}
 
-			o->box.emplace<std::vector<InlineBox>>(std::move(merged_boxes));
+			o->box.emplace<std::vector<std::unique_ptr<InlineBox>>>(std::move(merged_boxes));
 
 			LayoutObject::arrangePositionedChildren(o, viewport_size);
 		}
 	} else if (st.display == DisplayType::InlineBlock) {
 		InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
-		if (!ibb.inline_boxes.empty()) {
-			const InlineBox& ib = ibb.inline_boxes.front();
-			ibb.block_box.pos = ib.pos;
-			/*
-			LOG(INFO) << "translate " << ib.pos;
-			LayoutObject* child = o->first_child;
-			while (child) {
-				translate(child, ib.pos);
-				child = child->next_sibling;
-			}
-			*/
+		ibb.block_box.pos = ibb.inline_box->pos;
+		/*
+		LOG(INFO) << "translate " << ib.pos;
+		LayoutObject* child = o->first_child;
+		while (child) {
+			translate(child, ib.pos);
+			child = child->next_sibling;
 		}
+		*/
 	}
 }
 
@@ -1086,21 +1083,17 @@ void LayoutObject::translate(LayoutObject* o, scene2d::PointF offset)
 		for (auto& ib : tb.glyph_run_boxes.inline_boxes) {
 			ib->pos += offset;
 		}
-	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
-		auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
+		auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
 		for (auto& ib : ibs) {
-			ib.pos += offset;
+			ib->pos += offset;
 		}
 	} else if (absl::holds_alternative<BlockBox>(o->box)) {
 		auto& b = absl::get<BlockBox>(o->box);
 		b.pos += offset;
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		auto& ibb = absl::get<InlineBlockBox>(o->box);
-		CHECK(!ibb.inline_boxes.empty());
-		if (!ibb.inline_boxes.empty()) {
-			auto& ib = ibb.inline_boxes.front();
-			ib.pos += offset;
-		}
+		ibb.inline_box->pos += offset;
 		ibb.block_box.pos += offset;
 	}
 
@@ -1223,8 +1216,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	*/
 
 	InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
-	ibb.inline_boxes.resize(1);
-	InlineBox& ib = ibb.inline_boxes.front();
+	InlineBox& ib = *ibb.inline_box;
 	ib.line_box = line;
 	ib.line_box->addInlineBox(&ib);
 	ib.pos.x = inline_pos_x;
@@ -1407,11 +1399,11 @@ absl::optional<scene2d::RectF> LayoutObject::containingRectForPositionedChildren
 {
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		return absl::get<BlockBox>(o->box).clientRect();
-	} else if (absl::holds_alternative<std::vector<InlineBox>>(o->box)) {
-		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
+	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
+		const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
 		if (!ibs.empty()) {
-			const InlineBox& first = ibs.front();
-			const InlineBox& last = ibs.back();
+			const InlineBox& first = *ibs.front();
+			const InlineBox& last = *ibs.back();
 			return scene2d::RectF::fromLTRB(
 				std::min(first.pos.x, last.pos.x),
 				std::min(first.pos.y, last.pos.y),
@@ -1420,10 +1412,7 @@ absl::optional<scene2d::RectF> LayoutObject::containingRectForPositionedChildren
 		}
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		const auto& ibb = absl::get<InlineBlockBox>(o->box);
-		if (ibb.inline_boxes.size() == 1) {
-			const auto& ib = ibb.inline_boxes.front();
-			return scene2d::RectF::fromOriginSize(ib.pos, ib.size);
-		}
+		return scene2d::RectF::fromOriginSize(ibb.inline_box->pos, ibb.inline_box->size);
 	}
 	return absl::nullopt;
 }
@@ -1625,7 +1614,7 @@ static LayoutObject* make_phantom_span(LayoutObject* current)
 	auto phantom_span = std::make_unique<LayoutObject>();
 	phantom_span->init(current->style, current->node);
 	phantom_span->flags = LayoutObject::PHANTOM_SPAN_FLAG;
-	phantom_span->box.emplace<std::vector<InlineBox>>();
+	phantom_span->box.emplace<std::vector<std::unique_ptr<InlineBox>>>();
 	current->aux_boxes.emplace_back(std::move(phantom_span));
 	return current->aux_boxes.back().get();
 }
@@ -1710,7 +1699,7 @@ void LayoutTreeBuilder::prepareChild(scene2d::Node* node)
 		} else if (st.display == style::DisplayType::Inline) {
 			contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 			beginChild(&node->layout_);
-			contg_->box.emplace<std::vector<InlineBox>>();
+			contg_->box.emplace<std::vector<std::unique_ptr<InlineBox>>>();
 		} else if (st.display == style::DisplayType::InlineBlock) {
 			contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 			beginChild(&node->layout_);
@@ -1746,7 +1735,7 @@ void LayoutTreeBuilder::addText(scene2d::Node* node)
 		auto anon = node->layout_.aux_boxes.back().get();
 		anon->init(&node->computed_style_, node);
 		anon->flags = LayoutObject::HAS_INLINE_CHILD_FLAG | LayoutObject::ANON_SPAN_FLAG;
-		anon->box.emplace<std::vector<InlineBox>>();
+		anon->box.emplace<std::vector<std::unique_ptr<InlineBox>>>();
 
 		contg_->flags |= LayoutObject::HAS_INLINE_CHILD_FLAG;
 		contg_->append(anon);

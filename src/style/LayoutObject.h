@@ -51,7 +51,7 @@ struct LayoutObject {
 	absl::variant<
 		absl::monostate,
 		BlockBox,
-		std::vector<InlineBox>,
+		std::vector<std::unique_ptr<InlineBox>>,
 		InlineBlockBox,
 		TextBox
 	> box;
