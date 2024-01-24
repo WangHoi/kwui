@@ -2,6 +2,7 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/style.h
 )
 list(APPEND kwui_priv_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/StyleFont.h
   ${CMAKE_CURRENT_SOURCE_DIR}/StyleValue.h
   ${CMAKE_CURRENT_SOURCE_DIR}/StyleValue.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/StyleClass.h

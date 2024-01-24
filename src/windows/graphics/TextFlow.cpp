@@ -1,7 +1,9 @@
 #include "TextFlow.h"
 #include "TextAnalysis.h"
+#include "graph2d/graph2d.h"
 #include "base/log.h"
 #include "windows/EncodingManager.h"
+#include "windows/graphics/GraphicDevice.h"
 #include <numeric>
 
 namespace windows {
@@ -44,7 +46,7 @@ GlyphRun::GlyphRun(const TextFlow* flow,
 scene2d::RectF GlyphRun::boundingRect()
 {
 	scene2d::RectF rect;
-	rect.bottom = flow_->flow_metrics_.line_height;
+	rect.bottom = flow_->font_metrics_.lineHeight();
 	rect.right = std::accumulate(raw_.glyphAdvances, raw_.glyphAdvances + raw_.glyphCount, 0.0f);
 	return rect;
 }
@@ -122,8 +124,12 @@ HRESULT TextFlow::setTextFormat(ComPtr<IDWriteTextFormat> textFormat)
 	}
 	DWRITE_FONT_METRICS fm;
 	fontFace_->GetMetrics(&fm);
-	flow_metrics_.line_height = (fm.ascent + fm.descent + fm.lineGap) * fontEmSize_ / fm.designUnitsPerEm;
-	flow_metrics_.baseline = (0.5f * fm.lineGap + fm.ascent) * fontEmSize_ / fm.designUnitsPerEm;
+	const float factor = fontEmSize_ / fm.designUnitsPerEm;
+	font_metrics_.ascent = fm.ascent * factor;
+	font_metrics_.descent = fm.descent * factor;
+	font_metrics_.line_gap = fm.lineGap * factor;
+	font_metrics_.cap_height = fm.capHeight * factor;
+	font_metrics_.x_height = fm.xHeight * factor;
 
 	return S_OK;
 }
@@ -382,9 +388,9 @@ HRESULT TextFlow::ShapeGlyphRun(
 	return hr;
 }
 
-graph2d::FlowMetrics TextFlow::flowMetrics()
+style::FontMetrics TextFlow::fontMetrics()
 {
-	return flow_metrics_;
+	return font_metrics_;
 }
 
 std::tuple<float, float> TextFlow::measureWidth()

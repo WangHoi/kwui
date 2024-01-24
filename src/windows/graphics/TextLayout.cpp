@@ -20,7 +20,6 @@ DEFINE_FONT_WEIGHT(HEAVY);
 #undef DEFINE_FONT_WEIGHT
 
 const float DEFAULT_FONT_SIZE = 14;
-static const char* DEFAULT_FONT_FAMILY = "Microsoft YaHei";
 
 FontWeight::FontWeight() : _raw(DWRITE_FONT_WEIGHT_NORMAL) {}
 
@@ -34,7 +33,7 @@ TextLayoutBuilder::TextLayoutBuilder(const std::wstring& text) {
 void TextLayoutBuilder::Init(const std::wstring& text) {
     _text = text;
     _max_width = std::numeric_limits<float>::max();
-    _font_family = DEFAULT_FONT_FAMILY;
+    _font_family = GraphicDevice::instance()->GetDefaultFontFamily();
     _font_size = DEFAULT_FONT_SIZE;
     _font_style = FontStyle::REGULAR;
     _align = TEXT_ALIGN_TOP_LEFT;

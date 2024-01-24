@@ -86,7 +86,7 @@ public:
 		UINT32 textLength
 	);
 
-	graph2d::FlowMetrics flowMetrics() override;
+	style::FontMetrics fontMetrics() override;
 	std::tuple<float, float> measureWidth() override;
 
 	// Reflow the text analysis into 
@@ -164,7 +164,7 @@ protected:
 	std::wstring text_;
 	absl::optional<float> line_height_;
 	wchar_t localeName_[LOCALE_NAME_MAX_LENGTH];
-	graph2d::FlowMetrics flow_metrics_;
+	style::FontMetrics font_metrics_;
 	DWRITE_READING_DIRECTION readingDirection_;
 	ComPtr<IDWriteFontFace> fontFace_;
 	ComPtr<IDWriteNumberSubstitution> numberSubstitution_;

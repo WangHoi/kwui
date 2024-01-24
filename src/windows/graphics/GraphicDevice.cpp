@@ -11,6 +11,8 @@ namespace windows {
 namespace graphics {
 
 static const wchar_t* DEFAULT_LOCALE = L"zh-CN";
+static const char* DEFAULT_FONT_FAMILY = "Microsoft YaHei";
+
 static GraphicDevice *gdev = nullptr;
 
 GraphicDevice* GraphicDevice::createInstance()
@@ -176,6 +178,11 @@ std::unique_ptr<TextFlow> GraphicDevice::CreateTextFlow(
 	flow->setTextFormat(format);
 	flow->AnalyzeText(text.c_str(), text.length());
 	return flow;
+}
+
+std::string GraphicDevice::GetDefaultFontFamily() const
+{
+	return DEFAULT_FONT_FAMILY;
 }
 
 bool GraphicDevice::GetFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics) {

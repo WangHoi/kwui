@@ -966,8 +966,8 @@ public:
 	void addGlyphRun(style::LineBox* line, const scene2d::PointF& pos, std::unique_ptr<graph2d::GlyphRunInterface> glyph_run) override
 	{
 		std::unique_ptr<InlineBox> inline_box = std::make_unique<InlineBox>();
-		auto fm = text_box_.text_flow->flowMetrics();
-		inline_box->baseline = fm.baseline;
+		auto fm = text_box_.text_flow->fontMetrics();
+		inline_box->baseline = fm.baseline();
 		inline_box->size = glyph_run->boundingRect().size();
 
 		inline_box->line_box = line;
@@ -975,7 +975,7 @@ public:
 		inline_box->line_box_offset_x = inline_box->line_box->offset_x;
 		inline_box->line_box->offset_x += inline_box->size.width;
 
-		line->line_height = std::max(line->line_height, fm.line_height);
+		line->line_height = std::max(line->line_height, fm.lineHeight());
 
 		text_box_.glyph_run_boxes.inline_boxes.push_back(std::move(inline_box));
 		text_box_.glyph_run_boxes.glyph_runs.push_back(std::move(glyph_run));
@@ -1045,9 +1045,9 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 					float line_height = st.line_height.pixelOrZero();
 					std::unique_ptr<InlineBox> ib = std::make_unique<InlineBox>();
 					ib->pos = child->pos;
-					ib->baseline = fm.baseline;
+					ib->baseline = fm.baseline();
 					ib->size.width = child->size.width;
-					ib->size.height = fm.line_height;
+					ib->size.height = fm.lineHeight();
 					ib->line_box = child->line_box;
 					ib->line_box->line_height = std::max(ib->line_box->line_height, line_height);
 					merged_boxes.push_back(std::move(ib));
@@ -1843,7 +1843,10 @@ void LayoutTreeBuilder::bubbleUp(LayoutObject* blk)
 		o = o->parent;
 	}
 
-	CHECK(block_contg_parent) << "bubbleUp: block container root not found.";
+	if (!block_contg_parent) {
+		LOG(ERROR) << "LayoutTreeBuilder::bubbleUp: block container root not found.";
+		return;
+	}
 
 	// split up
 	split_up(block_contg_parent, inline_parents, blk);

@@ -22,19 +22,22 @@ std::unique_ptr<TextFlowInterface> createTextFlow(
         ->CreateTextFlow(u16_text, line_height, font_family, font_size, win_font_weight, win_font_style);
 }
 
-FlowMetrics getFontMetrics(const char* font_family, float font_size)
+style::FontMetrics getFontMetrics(const char* font_family, float font_size)
 {
-    FlowMetrics fm;
+    style::FontMetrics fm;
     DWRITE_FONT_METRICS dwrite_fm;
-    if (windows::graphics::GraphicDevice::instance()->GetFontMetrics(font_family, dwrite_fm)) {
-        fm.line_height = (dwrite_fm.ascent + dwrite_fm.descent + dwrite_fm.lineGap) * font_size / dwrite_fm.designUnitsPerEm;
-        fm.baseline = dwrite_fm.ascent * font_size / dwrite_fm.designUnitsPerEm;
-    } else {
-        LOG(ERROR) << "graph2d::getFontMetrics failed, \"" << font_family << "\" not found.";
-        fm.line_height = font_size;
-        fm.baseline = fm.line_height * 0.8f;
+    auto GD = windows::graphics::GraphicDevice::instance();
+    bool ok = GD->GetFontMetrics(font_family, dwrite_fm);
+    if (!ok) {
+        std::string default_font = GD->GetDefaultFontFamily();
+        GD->GetFontMetrics(default_font, dwrite_fm);
     }
-
+    const float factor = font_size / dwrite_fm.designUnitsPerEm;
+    fm.ascent = dwrite_fm.ascent * factor;
+    fm.descent = dwrite_fm.descent * factor;
+    fm.line_gap = dwrite_fm.lineGap * factor;
+    fm.cap_height = dwrite_fm.capHeight * factor;
+    fm.x_height = dwrite_fm.xHeight * factor;
     return fm;
 }
 

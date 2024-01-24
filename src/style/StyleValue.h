@@ -198,6 +198,20 @@ enum class TextAlign {
 	Right,
 };
 
+enum class VerticalAlignType {
+	Baseline,
+	Top,
+	Bottom,
+	Middle,
+	TextTop,
+	TextBottom,
+	Value,
+};
+struct VerticalAlign {
+	VerticalAlignType type = VerticalAlignType::Baseline;
+	absl::optional<Value> value;
+};
+
 struct Style {
 	DisplayType display = DisplayType::Block;
 	PositionType position = PositionType::Static;

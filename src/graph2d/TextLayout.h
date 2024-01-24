@@ -1,6 +1,7 @@
 #pragma once
 #include "scene2d/geom_types.h"
 #include "absl/types/optional.h"
+#include "style/StyleFont.h"
 
 namespace style {
 struct LineBox;
@@ -28,14 +29,9 @@ public:
         std::unique_ptr<GlyphRunInterface> glyph_run) = 0;
 };
 
-struct FlowMetrics {
-    float line_height;
-    float baseline;
-};
-
 class TextFlowInterface {
 public:
-    virtual FlowMetrics flowMetrics() = 0;
+    virtual style::FontMetrics fontMetrics() = 0;
     virtual std::tuple<float, float> measureWidth() = 0;
     virtual void flowText(TextFlowSourceInterface *source, TextFlowSinkInterface *sink) = 0;
 };

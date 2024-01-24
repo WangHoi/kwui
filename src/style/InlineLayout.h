@@ -2,6 +2,7 @@
 #include "Layout.h"
 #include "TextLayout.h"
 #include "StyleValue.h"
+#include "StyleFont.h"
 #include "scene2d/geom_types.h"
 #include "base/log.h"
 #include "absl/types/optional.h"
@@ -44,6 +45,14 @@ struct InlineBox {
 		absl::Format(&sink, "baseline=%.0f, ", o.baseline);
 		absl::Format(&sink, "}");
 	}
+};
+
+struct InlineFragment {
+	float line_height = 0;
+	FontMetrics font_metrics;
+	VerticalAlign align;
+	LayoutObject* layout_object = nullptr;
+	InlineBox* box = nullptr;
 };
 
 struct LineBox {
