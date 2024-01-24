@@ -31,11 +31,6 @@ void InlineFormatContext::setupBox(InlineBox* box)
     lb->offset_x += box->size.width;
 }
 
-void InlineFormatContext::addBox(InlineBox* box)
-{
-    box->line_box->addInlineBox(box);
-}
-
 float InlineFormatContext::getLayoutWidth() const
 {
     float w = 0.0f;
@@ -58,7 +53,7 @@ LineBox* InlineFormatContext::getLineBox(float pref_min_width)
     if (line_boxes_.empty())
         return newLineBox();
     LineBox* lb = line_boxes_.back().get();
-    if (lb->inline_boxes.empty() || lb->offset_x + pref_min_width <= lb->avail_width)
+    if (lb->inline_frags.empty() || lb->offset_x + pref_min_width <= lb->avail_width)
         return lb;
     return newLineBox();
 }
@@ -91,10 +86,13 @@ LineBox::LineBox(float left_, float avail_w)
 {
 }
 
-int LineBox::addInlineBox(InlineBox* box)
+int LineBox::addInlineBox(LayoutObject* o, InlineBox* box)
 {
-    int idx = (int)inline_boxes.size();
-    inline_boxes.push_back(box);
+    int idx = (int)inline_frags.size();
+    InlineFragment frag;
+    frag.layout_object = o;
+    frag.box = box;
+    inline_frags.push_back(frag);
     return idx;
 }
 
@@ -102,10 +100,10 @@ void LineBox::arrange(float pos_y, style::TextAlign text_align)
 {
     used_size.width = 0;
     float line_ascent = 0, line_descent = 0;
-    for (InlineBox* b : inline_boxes) {
-        used_size.width += b->size.width;
-        line_ascent = std::max(line_ascent, b->baseline);
-        line_descent = std::max(line_descent, b->size.height - b->baseline);
+    for (auto& frag : inline_frags) {
+        used_size.width += frag.box->size.width;
+        line_ascent = std::max(line_ascent, frag.box->baseline);
+        line_descent = std::max(line_descent, frag.box->size.height - frag.box->baseline);
     }
 
     used_size.height = line_ascent + line_descent;
@@ -113,10 +111,10 @@ void LineBox::arrange(float pos_y, style::TextAlign text_align)
 
     float line_leading = 0.5f * (line_height - (line_ascent + line_descent));
     float x = left;
-    for (style::InlineBox* b : inline_boxes) {
-        b->pos.x = x;
-        b->pos.y = pos_y + line_leading + line_ascent - b->baseline;
-        x += b->size.width;
+    for (auto& frag : inline_frags) {
+        frag.box->pos.x = x;
+        frag.box->pos.y = pos_y + line_leading + line_ascent - frag.box->baseline;
+        x += frag.box->size.width;
     }
 
     float align_offset_x = 0.0f;
@@ -126,8 +124,8 @@ void LineBox::arrange(float pos_y, style::TextAlign text_align)
         align_offset_x = avail_width - (x - left);
     }
     if (align_offset_x > 0.0f) {
-        for (style::InlineBox* b : inline_boxes) {
-            b->pos.x += align_offset_x;
+        for (auto& frag : inline_frags) {
+            frag.box->pos.x += align_offset_x;
         }
     }
 }

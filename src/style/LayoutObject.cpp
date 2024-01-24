@@ -934,8 +934,8 @@ void LayoutObject::arrangeBfcBottom(LayoutObject* o, BlockFormatContext& bfc, Bl
 
 class TextBoxFlow : public graph2d::TextFlowSourceInterface, public graph2d::TextFlowSinkInterface {
 public:
-	TextBoxFlow(TextBox& tb, InlineFormatContext& ifc)
-		: text_box_(tb), ifc_(ifc)
+	TextBoxFlow(LayoutObject* o, TextBox& tb, InlineFormatContext& ifc)
+		: layout_object_(o), text_box_(tb), ifc_(ifc)
 	{}
 
 	// 通过 TextFlowSourceInterface 继承
@@ -971,7 +971,7 @@ public:
 		inline_box->size = glyph_run->boundingRect().size();
 
 		inline_box->line_box = line;
-		inline_box->line_box->addInlineBox(inline_box.get());
+		inline_box->line_box->addInlineBox(layout_object_, inline_box.get());
 		inline_box->line_box_offset_x = inline_box->line_box->offset_x;
 		inline_box->line_box->offset_x += inline_box->size.width;
 
@@ -982,6 +982,7 @@ public:
 	}
 
 private:
+	LayoutObject* layout_object_ = nullptr;
 	TextBox& text_box_;
 	InlineFormatContext& ifc_;
 };
@@ -992,7 +993,7 @@ void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc, const scen
 
 	if (absl::holds_alternative<TextBox>(o->box)) {
 		TextBox& tb = absl::get<TextBox>(o->box);
-		TextBoxFlow tbf(tb, ifc);
+		TextBoxFlow tbf(o, tb, ifc);
 		tb.glyph_run_boxes.reset();
 		tb.text_flow->flowText(&tbf, &tbf);
 	} else if (st.display == DisplayType::InlineBlock) {
@@ -1218,7 +1219,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 	InlineBox& ib = *ibb.inline_box;
 	ib.line_box = line;
-	ib.line_box->addInlineBox(&ib);
+	ib.line_box->addInlineBox(o, &ib);
 	ib.pos.x = inline_pos_x;
 	ib.size = ibb.block_box.marginRect().size();
 	if (st.overflow_y == OverflowType::Visible) {
@@ -1372,8 +1373,8 @@ absl::optional<float> LayoutObject::findFirstBaseline(LayoutObject* o, float acc
 {
 	if (o->ifc.has_value()) {
 		for (const std::unique_ptr<LineBox>& line : o->ifc->lineBoxes()) {
-			for (const InlineBox* ib : line->inline_boxes) {
-				return ib->baseline + accum_y;
+			for (const InlineFragment& frag : line->inline_frags) {
+				return frag.box->baseline + accum_y;
 			}
 		}
 	}

@@ -66,11 +66,11 @@ struct LineBox {
 	scene2d::DimensionF used_size;
 	float used_baseline; // offset from used_size's top
 
-	std::vector<InlineBox*> inline_boxes;
+	std::vector<InlineFragment> inline_frags;
 
 	LineBox(float left_, float avail_w);
 	~LineBox() = default;
-	int addInlineBox(InlineBox* box);
+	int addInlineBox(LayoutObject* o, InlineBox* box);
 	void arrange(float offset_y, style::TextAlign text_align);
 };
 
@@ -84,9 +84,6 @@ public:
 	void setupBox(InlineBox* box);
 	LineBox* getLineBox(float pref_min_width);
 	LineBox* newLineBox();
-
-	// Add inline box to LineBox
-	void addBox(InlineBox* box);
 
 	void arrange(style::TextAlign text_align);
 	inline float getLayoutHeight() const
