@@ -72,7 +72,17 @@ void InlineFormatContext::arrange(style::TextAlign text_align)
 {
     float y = 0.0f;
     for (auto& line_box : line_boxes_) {
-        line_box->arrange(y, text_align);
+        line_box->arrangeX(text_align);
+        y += line_box->line_height;
+    }
+    height_ = y;
+}
+
+void InlineFormatContext::arrangeX(style::TextAlign text_align)
+{
+    float y = 0.0f;
+    for (auto& line_box : line_boxes_) {
+        line_box->arrangeX(text_align);
         y += line_box->line_height;
     }
     height_ = y;
@@ -90,6 +100,7 @@ int LineBox::addInlineBox(LayoutObject* o, InlineBox* box)
 {
     int idx = (int)inline_frags.size();
     InlineFragment frag;
+    frag.line_height = o->style->lineHeightInPixels();
     frag.layout_object = o;
     frag.box = box;
     inline_frags.push_back(frag);
@@ -114,6 +125,39 @@ void LineBox::arrange(float pos_y, style::TextAlign text_align)
     for (auto& frag : inline_frags) {
         frag.box->pos.x = x;
         frag.box->pos.y = pos_y + line_leading + line_ascent - frag.box->baseline;
+        x += frag.box->size.width;
+    }
+
+    float align_offset_x = 0.0f;
+    if (text_align == style::TextAlign::Center) {
+        align_offset_x = 0.5f * (avail_width - (x - left));
+    } else if (text_align == style::TextAlign::Right) {
+        align_offset_x = avail_width - (x - left);
+    }
+    if (align_offset_x > 0.0f) {
+        for (auto& frag : inline_frags) {
+            frag.box->pos.x += align_offset_x;
+        }
+    }
+}
+
+void LineBox::arrangeX(style::TextAlign text_align)
+{
+    used_size.width = 0;
+    float line_ascent = 0, line_descent = 0;
+    for (auto& frag : inline_frags) {
+        used_size.width += frag.box->size.width;
+        line_ascent = std::max(line_ascent, frag.box->baseline);
+        line_descent = std::max(line_descent, frag.box->size.height - frag.box->baseline);
+    }
+
+    used_size.height = line_ascent + line_descent;
+    used_baseline = line_descent;
+
+    float line_leading = 0.5f * (line_height - (line_ascent + line_descent));
+    float x = left;
+    for (auto& frag : inline_frags) {
+        frag.box->pos.x = x;
         x += frag.box->size.width;
     }
 

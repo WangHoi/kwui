@@ -1,4 +1,5 @@
 #include "StyleValue.h"
+#include "graph2d/graph2d.h"
 
 namespace style {
 Value Value::auto_()
@@ -144,7 +145,7 @@ void Style::resolveDefault(const Style* parent)
     this->x = (parent ? parent->x : def)
 
 	RESOLVE_STYLE_DEFAULT_INHERIT(color, style::named_color::black);
-	RESOLVE_STYLE_DEFAULT_INHERIT(line_height, style::Value::fromPixel(18));
+	RESOLVE_STYLE_DEFAULT_INHERIT(line_height, style::Value::fromKeyword(base::string_intern("normal")));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_family, style::Value::fromKeyword(base::string_intern("Microsoft YaHei")));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_size, style::Value::fromPixel(12));
 	RESOLVE_STYLE_DEFAULT_INHERIT(font_style, style::FontStyle::Normal);
@@ -152,6 +153,33 @@ void Style::resolveDefault(const Style* parent)
 	RESOLVE_STYLE_DEFAULT_INHERIT(text_align, style::TextAlign::Left);
 	RESOLVE_STYLE_DEFAULT_INHERIT(cursor, style::CursorType::Auto);
 #undef RESOLVE_STYLE_DEFAULT_INHERIT
+}
+
+float Style::fontSizeInPixels() const
+{
+	return font_size.pixelOrZero();
+}
+
+float Style::lineHeightInPixels() const
+{
+	if (line_height.isRaw()) {
+		return fontSizeInPixels() * line_height.f32_val;
+	} else if (line_height.isPercent()) {
+		return fontSizeInPixels() * line_height.f32_val / 100.0f;
+	} else if (line_height.isPixel()) {
+		return line_height.f32_val;
+	} else {
+		auto metric = graph2d::getFontMetrics(fontFamily().c_str(), fontSizeInPixels());
+		return metric.lineHeight();
+	}
+}
+
+std::string Style::fontFamily() const
+{
+	if (font_family.unit == ValueUnit::Keyword) {
+		return font_family.isAuto() ? std::string() : font_family.keyword_val.c_str();
+	}
+	return std::string();
 }
 
 }

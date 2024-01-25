@@ -48,6 +48,10 @@ struct Value {
 	{
 		return unit == ValueUnit::Pixel;
 	}
+	inline bool isPercent() const
+	{
+		return unit == ValueUnit::Percent;
+	}
 	inline bool isRaw() const
 	{
 		return unit == ValueUnit::Raw;
@@ -267,6 +271,9 @@ struct Style {
 	CursorType cursor = CursorType::Auto;
 
 	void resolveDefault(const Style* parent = nullptr);
+	float fontSizeInPixels() const;
+	float lineHeightInPixels() const;
+	std::string fontFamily() const;
 };
 
 template <typename Sink>
