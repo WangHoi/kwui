@@ -7,8 +7,8 @@
 
 namespace style {
 
-InlineFormatContext::InlineFormatContext(BlockFormatContext& bfc, float avail_width)
-    : bfc_(bfc), avail_width_(avail_width), height_(0)
+InlineFormatContext::InlineFormatContext(LayoutObject* owner, BlockFormatContext& bfc, float avail_width)
+    : owner_(owner), bfc_(bfc), avail_width_(avail_width), height_(0)
 {
     // LOG(INFO) << "ifc ctor width " << avail_width;
 }
@@ -80,9 +80,16 @@ void InlineFormatContext::arrange(style::TextAlign text_align)
 
 void InlineFormatContext::arrangeX(style::TextAlign text_align)
 {
-    float y = 0.0f;
     for (auto& line_box : line_boxes_) {
         line_box->arrangeX(text_align);
+    }
+}
+
+void InlineFormatContext::arrangeY()
+{
+    float y = 0.0f;
+    for (auto& line_box : line_boxes_) {
+        line_box->arrangeY(owner_, y);
         y += line_box->line_height;
     }
     height_ = y;
@@ -100,11 +107,36 @@ int LineBox::addInlineBox(LayoutObject* o, InlineBox* box)
 {
     int idx = (int)inline_frags.size();
     InlineFragment frag;
-    frag.line_height = o->style->lineHeightInPixels();
-    frag.layout_object = o;
-    frag.box = box;
+    frag.initFrom(o, box);
     inline_frags.push_back(frag);
     return idx;
+}
+
+void LineBox::mergeInlineBox(LayoutObject* o, InlineBox* box,
+    InlineBox* first_child, InlineBox* last_child)
+{
+    InlineFragment frag;
+    frag.initFrom(o, box);
+    size_t i, j;
+    for (i = 0; i < inline_frags.size(); ++i) {
+        if (inline_frags[i].box == first_child) {
+            for (j = i; j < inline_frags.size(); ++j) {
+                if (inline_frags[j].box == last_child) {
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    if (i < inline_frags.size() && j < inline_frags.size()) {
+        for (size_t k = i; k <= j; ++k) {
+            frag.children.push_back(inline_frags[k]);
+        }
+        inline_frags.erase(inline_frags.begin() + i, inline_frags.begin() + j);
+        inline_frags.insert(inline_frags.begin() + i, frag);
+    } else {
+        LOG(ERROR) << "LineBox::mergeInlineBox failed, BUG!";
+    }
 }
 
 void LineBox::arrange(float pos_y, style::TextAlign text_align)
@@ -172,6 +204,33 @@ void LineBox::arrangeX(style::TextAlign text_align)
             frag.box->pos.x += align_offset_x;
         }
     }
+}
+
+void LineBox::arrangeY(LayoutObject* owner, float pos_y)
+{
+    InlineFragment strut;
+    strut.initFrom(owner);
+
+    arrangeY(strut, absl::MakeSpan(inline_frags));
+}
+
+void LineBox::arrangeY(const InlineFragment& strut, absl::Span<InlineFragment> slice)
+{
+    float a, d;
+    TODO!!!
+    for (auto& frag : slice) {
+        frag.font_metrics.ascent + 0.5f * frag.font_metrics.line_gap;
+    }
+}
+
+void InlineFragment::initFrom(LayoutObject* o, InlineBox* ib)
+{
+    line_height = o->style->lineHeightInPixels();
+    font_metrics = graph2d::getFontMetrics(
+        o->style->fontFamily().c_str(),
+        o->style->fontSizeInPixels());
+    layout_object = o;
+    box = ib;
 }
 
 }

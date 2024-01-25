@@ -54,6 +54,8 @@ struct InlineFragment {
 	LayoutObject* layout_object = nullptr;
 	InlineBox* box = nullptr;
 	std::vector<InlineFragment> children;
+
+	void initFrom(LayoutObject* o, InlineBox* box = nullptr);
 };
 
 struct LineBox {
@@ -61,7 +63,6 @@ struct LineBox {
 
 	float left; // BFC coord: left
 	float avail_width;
-	// float line_gap;  // leading
 	float line_height = 0.0f;
 
 	scene2d::DimensionF used_size;
@@ -72,13 +73,19 @@ struct LineBox {
 	LineBox(float left_, float avail_w);
 	~LineBox() = default;
 	int addInlineBox(LayoutObject* o, InlineBox* box);
+	void mergeInlineBox(LayoutObject* o, InlineBox* box,
+		InlineBox* first_child, InlineBox* last_child);
 	void arrange(float offset_y, style::TextAlign text_align);
 	void arrangeX(style::TextAlign text_align);
+	void arrangeY(LayoutObject* owner, float offset_y);
+
+private:
+	void arrangeY(const InlineFragment& strut, absl::Span<InlineFragment> slice);
 };
 
 class InlineFormatContext : public LineBoxInterface {
 public:
-	InlineFormatContext(BlockFormatContext& bfc, float avail_width);
+	InlineFormatContext(LayoutObject* owner, BlockFormatContext& bfc, float avail_width);
 	~InlineFormatContext();
 
 	inline BlockFormatContext& bfc() const { return bfc_; }
@@ -89,6 +96,7 @@ public:
 
 	void arrange(style::TextAlign text_align);
 	void arrangeX(style::TextAlign text_align);
+	void arrangeY();
 	inline float getLayoutHeight() const
 	{
 		return height_;
@@ -103,6 +111,7 @@ public:
 	LineBox* getNextLine() override;
 
 private:
+	LayoutObject* owner_;
 	BlockFormatContext& bfc_;
 	float avail_width_;
 	std::vector<std::unique_ptr<LineBox>> line_boxes_;

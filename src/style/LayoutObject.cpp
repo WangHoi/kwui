@@ -873,7 +873,7 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 		if (o->style->position == PositionType::Static || o->style->position == PositionType::Relative) {
 			pos = box.pos;
 		}
-		o->ifc.emplace(bfc, content_rect.width());
+		o->ifc.emplace(o, bfc, content_rect.width());
 		{
 			base::scoped_setter _1(bfc.contg_height, box.prefer_height);
 			// base::scoped_setter _2(bfc.contg_left_edge, bfc.contg_left_edge + box.pos.x + box.contentRect().left);
@@ -1038,6 +1038,7 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 				child = child->next_sibling;
 			}
 
+			std::vector<std::tuple<LineBox*, InlineBox*, InlineBox*>> merged_tuple;
 			std::vector<std::unique_ptr<InlineBox>> merged_boxes;
 			for (InlineBox* child : inline_boxes) {
 				if (merged_boxes.empty() || merged_boxes.back()->line_box != child->line_box) {
@@ -1051,15 +1052,23 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 					ib->size.height = fm.lineHeight();
 					ib->line_box = child->line_box;
 					ib->line_box->line_height = std::max(ib->line_box->line_height, line_height);
+					merged_tuple.emplace_back(child->line_box, ib.get(), ib.get());
 					merged_boxes.push_back(std::move(ib));
 				} else {
 					std::unique_ptr<InlineBox>& ib = merged_boxes.back();
 					ib->size.width = std::max(child->pos.x + child->size.width,
 						ib->pos.x + ib->size.width) - ib->pos.x;
+					auto& tuple = merged_tuple.back();
+					absl::get<2>(tuple) = ib.get();
 				}
 			}
 
 			o->box.emplace<std::vector<std::unique_ptr<InlineBox>>>(std::move(merged_boxes));
+			for (size_t i = 0; i < merged_boxes.size(); ++i) {
+				auto ib = merged_boxes[i].get();
+				auto [line, first_ib, last_ib] = merged_tuple[i];
+				line->mergeInlineBox(o, ib, first_ib, last_ib);
+			}
 
 			LayoutObject::arrangePositionedChildren(o, viewport_size);
 		}
@@ -1322,7 +1331,7 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 			}
 		}
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
-		o->ifc.emplace(bfc, box.contentRect().width());
+		o->ifc.emplace(o, bfc, box.contentRect().width());
 		LOG(INFO)
 			<< "begin IFC contg_width=" << bfc.contg_width
 			<< ", bfc_bottom: border=" << bfc.border_bottom_edge << ", margin=" << bfc.margin_bottom_edge;
@@ -1333,12 +1342,13 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 				prepare(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
 			}
-			o->ifc->arrange(st.text_align);
+			o->ifc->arrangeX(st.text_align);
 			child = o->first_child;
 			while (child) {
 				arrange(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
 			}
+			o->ifc->arrangeY();
 		}
 
 		if (box.prefer_height.has_value()) {
