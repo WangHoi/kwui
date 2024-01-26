@@ -168,7 +168,7 @@ void LineBox::arrangeY(LayoutObject* owner, float pos_y)
 
     PlaceResult pr = placeY(strut, absl::MakeSpan(inline_frags));
     line_height = strut.line_height = pr.max_va + pr.max_vd;
-    finalPlaceY(pos_y + strut.virtualAscent(), absl::MakeSpan(inline_frags));
+    finalPlaceY(pos_y + pr.max_va, absl::MakeSpan(inline_frags));
 }
 
 LineBox::PlaceResult LineBox::placeY(const InlineFragment& strut, absl::Span<InlineFragment> slice)
