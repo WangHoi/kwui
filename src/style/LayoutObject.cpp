@@ -883,12 +883,13 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 				prepare(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
 			}
-			o->ifc->arrange(o->style->text_align);
+			o->ifc->arrangeX(o->style->text_align);
 			child = o->first_child;
 			while (child) {
 				arrange(child, *o->ifc, viewport_size);
 				child = child->next_sibling;
 			}
+			o->ifc->arrangeY();
 		}
 
 		//bfc.max_border_right_edge = std::max(bfc.max_border_right_edge,
@@ -975,8 +976,6 @@ public:
 		inline_box->line_box_offset_x = inline_box->line_box->offset_x;
 		inline_box->line_box->offset_x += inline_box->size.width;
 
-		line->line_height = std::max(line->line_height, fm.lineHeight());
-
 		text_box_.glyph_run_boxes.inline_boxes.push_back(std::move(inline_box));
 		text_box_.glyph_run_boxes.glyph_runs.push_back(std::move(glyph_run));
 	}
@@ -1044,14 +1043,12 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 				if (merged_boxes.empty() || merged_boxes.back()->line_box != child->line_box) {
 					auto fm = graph2d::getFontMetrics(st.font_family.keyword_val.c_str(),
 						st.font_size.pixelOrZero());
-					float line_height = st.line_height.pixelOrZero();
 					std::unique_ptr<InlineBox> ib = std::make_unique<InlineBox>();
 					ib->pos = child->pos;
 					ib->baseline = fm.baseline();
 					ib->size.width = child->size.width;
 					ib->size.height = fm.lineHeight();
 					ib->line_box = child->line_box;
-					ib->line_box->line_height = std::max(ib->line_box->line_height, line_height);
 					merged_tuple.emplace_back(child->line_box, ib.get(), ib.get());
 					merged_boxes.push_back(std::move(ib));
 				} else {
@@ -1238,7 +1235,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	} else {
 		ib.baseline = ib.size.height;
 	}
-	line->line_height = std::max(line->line_height, ib.size.height);
+	//line->line_height = std::max(line->line_height, ib.size.height);
 
 	LayoutObject::arrangePositionedChildren(o, viewport_size);
 }

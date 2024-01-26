@@ -68,16 +68,6 @@ LineBox* InlineFormatContext::getNextLine()
     return newLineBox();
 }
 
-void InlineFormatContext::arrange(style::TextAlign text_align)
-{
-    float y = 0.0f;
-    for (auto& line_box : line_boxes_) {
-        line_box->arrangeX(text_align);
-        y += line_box->line_height;
-    }
-    height_ = y;
-}
-
 void InlineFormatContext::arrangeX(style::TextAlign text_align)
 {
     for (auto& line_box : line_boxes_) {
@@ -138,41 +128,6 @@ void LineBox::mergeInlineBox(LayoutObject* o, InlineBox* box,
         LOG(ERROR) << "LineBox::mergeInlineBox failed, BUG!";
     }
 }
-
-void LineBox::arrange(float pos_y, style::TextAlign text_align)
-{
-    used_size.width = 0;
-    float line_ascent = 0, line_descent = 0;
-    for (auto& frag : inline_frags) {
-        used_size.width += frag.box->size.width;
-        line_ascent = std::max(line_ascent, frag.box->baseline);
-        line_descent = std::max(line_descent, frag.box->size.height - frag.box->baseline);
-    }
-
-    used_size.height = line_ascent + line_descent;
-    used_baseline = line_descent;
-
-    float line_leading = 0.5f * (line_height - (line_ascent + line_descent));
-    float x = left;
-    for (auto& frag : inline_frags) {
-        frag.box->pos.x = x;
-        frag.box->pos.y = pos_y + line_leading + line_ascent - frag.box->baseline;
-        x += frag.box->size.width;
-    }
-
-    float align_offset_x = 0.0f;
-    if (text_align == style::TextAlign::Center) {
-        align_offset_x = 0.5f * (avail_width - (x - left));
-    } else if (text_align == style::TextAlign::Right) {
-        align_offset_x = avail_width - (x - left);
-    }
-    if (align_offset_x > 0.0f) {
-        for (auto& frag : inline_frags) {
-            frag.box->pos.x += align_offset_x;
-        }
-    }
-}
-
 void LineBox::arrangeX(style::TextAlign text_align)
 {
     used_size.width = 0;
@@ -212,8 +167,8 @@ void LineBox::arrangeY(LayoutObject* owner, float pos_y)
     strut.initFrom(owner);
 
     PlaceResult pr = placeY(strut, absl::MakeSpan(inline_frags));
-    line_height = pr.max_va + pr.max_vd;
-    finalPlaceY(strut.virtualAscent(), absl::MakeSpan(inline_frags));
+    line_height = strut.line_height = pr.max_va + pr.max_vd;
+    finalPlaceY(pos_y + strut.virtualAscent(), absl::MakeSpan(inline_frags));
 }
 
 LineBox::PlaceResult LineBox::placeY(const InlineFragment& strut, absl::Span<InlineFragment> slice)
@@ -222,8 +177,20 @@ LineBox::PlaceResult LineBox::placeY(const InlineFragment& strut, absl::Span<Inl
     float max_virtual_ascent = std::max(strut.contentAscent(), strut.virtualAscent());
     float max_virtual_descent = std::max(strut.contentDescent(), strut.virtualDescent());
     for (auto& frag : slice) {
-        // TODO: handle vertical-align
-        frag.baseline_offset = boff;
+        bool defer_update = false;
+        auto vtype = frag.vertical_align.type;
+        if (vtype == VerticalAlignType::Top || vtype == VerticalAlignType::TextTop
+            || vtype == VerticalAlignType::Bottom || vtype == VerticalAlignType::TextBottom) {
+            defer_update = true;
+        } else if (vtype == VerticalAlignType::Middle) {
+
+        } else if (vtype == VerticalAlignType::Value) {
+
+        } else {
+            frag.baseline_offset = boff;
+        }
+        if (frag.line_height == 32)
+            int kk = 1;
         
         max_virtual_ascent = std::max(max_virtual_ascent,
             frag.baseline_offset + std::max(frag.contentAscent(), frag.virtualAscent()));
@@ -289,19 +256,17 @@ float InlineFragment::contentHeight() const
 
 float InlineFragment::virtualAscent() const
 {
-    // TODO: virtual_align related
     return 0.5f * (line_height - contentHeight()) + contentAscent();
 }
 
 float InlineFragment::virtualDescent() const
 {
-    // TODO: virtual_align related
-    return 0.0f;
+    return 0.5f * (line_height - contentHeight()) + contentDescent();
 }
 
 float InlineFragment::virtualHeight() const
 {
-    return 0.0f;
+    return line_height;
 }
 
 }

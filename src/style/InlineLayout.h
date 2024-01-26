@@ -50,7 +50,7 @@ struct InlineBox {
 struct InlineFragment {
 	float line_height = 0;
 	FontMetrics font_metrics;
-	VerticalAlign align;
+	VerticalAlign vertical_align;
 	LayoutObject* layout_object = nullptr;
 	InlineBox* box = nullptr;
 	std::vector<InlineFragment> children;
@@ -82,7 +82,7 @@ struct LineBox {
 	int addInlineBox(LayoutObject* o, InlineBox* box);
 	void mergeInlineBox(LayoutObject* o, InlineBox* box,
 		InlineBox* first_child, InlineBox* last_child);
-	void arrange(float offset_y, style::TextAlign text_align);
+	//void arrange(float offset_y, style::TextAlign text_align);
 	void arrangeX(style::TextAlign text_align);
 	void arrangeY(LayoutObject* owner, float offset_y);
 
@@ -107,7 +107,6 @@ public:
 	LineBox* getLineBox(float pref_min_width);
 	LineBox* newLineBox();
 
-	void arrange(style::TextAlign text_align);
 	void arrangeX(style::TextAlign text_align);
 	void arrangeY();
 	inline float getLayoutHeight() const
