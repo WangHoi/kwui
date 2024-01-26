@@ -211,15 +211,51 @@ void LineBox::arrangeY(LayoutObject* owner, float pos_y)
     InlineFragment strut;
     strut.initFrom(owner);
 
-    arrangeY(strut, absl::MakeSpan(inline_frags));
+    PlaceResult pr = placeY(strut, absl::MakeSpan(inline_frags));
+    line_height = pr.max_va + pr.max_vd;
+    finalPlaceY(strut.virtualAscent(), absl::MakeSpan(inline_frags));
 }
 
-void LineBox::arrangeY(const InlineFragment& strut, absl::Span<InlineFragment> slice)
+LineBox::PlaceResult LineBox::placeY(const InlineFragment& strut, absl::Span<InlineFragment> slice)
 {
-    float a, d;
-    TODO!!!
+    float boff = strut.baseline_offset;
+    float max_virtual_ascent = std::max(strut.contentAscent(), strut.virtualAscent());
+    float max_virtual_descent = std::max(strut.contentDescent(), strut.virtualDescent());
     for (auto& frag : slice) {
-        frag.font_metrics.ascent + 0.5f * frag.font_metrics.line_gap;
+        // TODO: handle vertical-align
+        frag.baseline_offset = boff;
+        
+        max_virtual_ascent = std::max(max_virtual_ascent,
+            frag.baseline_offset + std::max(frag.contentAscent(), frag.virtualAscent()));
+        max_virtual_descent = std::max(max_virtual_descent,
+            frag.baseline_offset + std::max(frag.contentDescent(), frag.virtualDescent()));
+
+        if (!frag.children.empty()) {
+            PlaceResult cpr = placeY(frag, absl::MakeSpan(frag.children));
+            max_virtual_ascent = std::max(max_virtual_ascent, cpr.max_va);
+            max_virtual_descent = std::max(max_virtual_descent, cpr.max_vd);
+        }
+    }
+    return { max_virtual_ascent, max_virtual_descent };
+}
+
+void LineBox::finalPlaceY(float baseline, absl::Span<InlineFragment> slice)
+{
+    for (auto& frag : slice) {
+        if (!frag.box) {
+            LOG(ERROR) << "LineBox::finalPlaceY: no box pointer, bug!";
+            continue;
+        }
+
+        frag.box->size.height = frag.virtualHeight();
+        frag.box->baseline = frag.virtualAscent();
+
+        // TODO: handle vertical-align
+        frag.box->pos.y = baseline - frag.box->baseline;
+
+        if (!frag.children.empty()) {
+            finalPlaceY(frag.box->pos.y + frag.box->baseline, absl::MakeSpan(frag.children));
+        }
     }
 }
 
@@ -231,6 +267,41 @@ void InlineFragment::initFrom(LayoutObject* o, InlineBox* ib)
         o->style->fontSizeInPixels());
     layout_object = o;
     box = ib;
+}
+
+float InlineFragment::contentAscent() const
+{
+    // TODO: handle <img> or inline-block without baseline
+    return font_metrics.ascent + 0.5f * font_metrics.line_gap;
+}
+
+float InlineFragment::contentDescent() const
+{
+    // TODO: handle <img> or inline-block without baseline
+    return font_metrics.descent + 0.5f * font_metrics.line_gap;
+}
+
+float InlineFragment::contentHeight() const
+{
+    // TODO: handle <img> or inline-block without baseline
+    return font_metrics.lineHeight();
+}
+
+float InlineFragment::virtualAscent() const
+{
+    // TODO: virtual_align related
+    return 0.5f * (line_height - contentHeight()) + contentAscent();
+}
+
+float InlineFragment::virtualDescent() const
+{
+    // TODO: virtual_align related
+    return 0.0f;
+}
+
+float InlineFragment::virtualHeight() const
+{
+    return 0.0f;
 }
 
 }

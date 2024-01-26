@@ -54,8 +54,15 @@ struct InlineFragment {
 	LayoutObject* layout_object = nullptr;
 	InlineBox* box = nullptr;
 	std::vector<InlineFragment> children;
+	float baseline_offset = 0; // related to line box
 
 	void initFrom(LayoutObject* o, InlineBox* box = nullptr);
+	float contentAscent() const;
+	float contentDescent() const;
+	float contentHeight() const;
+	float virtualAscent() const;
+	float virtualDescent() const;
+	float virtualHeight() const;
 };
 
 struct LineBox {
@@ -80,7 +87,13 @@ struct LineBox {
 	void arrangeY(LayoutObject* owner, float offset_y);
 
 private:
-	void arrangeY(const InlineFragment& strut, absl::Span<InlineFragment> slice);
+	struct PlaceResult {
+		float max_va;
+		float max_vd;
+	};
+	PlaceResult placeY(const InlineFragment& strut, absl::Span<InlineFragment> slice);
+	// baseline: from top
+	void finalPlaceY(float baseline, absl::Span<InlineFragment> slice);
 };
 
 class InlineFormatContext : public LineBoxInterface {
