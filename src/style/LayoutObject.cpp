@@ -1049,23 +1049,23 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 					ib->size.width = child->size.width;
 					ib->size.height = fm.lineHeight();
 					ib->line_box = child->line_box;
-					merged_tuple.emplace_back(child->line_box, ib.get(), ib.get());
+					merged_tuple.emplace_back(child->line_box, child, child);
 					merged_boxes.push_back(std::move(ib));
 				} else {
 					std::unique_ptr<InlineBox>& ib = merged_boxes.back();
 					ib->size.width = std::max(child->pos.x + child->size.width,
 						ib->pos.x + ib->size.width) - ib->pos.x;
 					auto& tuple = merged_tuple.back();
-					absl::get<2>(tuple) = ib.get();
+					absl::get<2>(tuple) = child;
 				}
 			}
 
-			o->box.emplace<std::vector<std::unique_ptr<InlineBox>>>(std::move(merged_boxes));
 			for (size_t i = 0; i < merged_boxes.size(); ++i) {
 				auto ib = merged_boxes[i].get();
 				auto [line, first_ib, last_ib] = merged_tuple[i];
 				line->mergeInlineBox(o, ib, first_ib, last_ib);
 			}
+			o->box.emplace<std::vector<std::unique_ptr<InlineBox>>>(std::move(merged_boxes));
 
 			LayoutObject::arrangePositionedChildren(o, viewport_size);
 		}
