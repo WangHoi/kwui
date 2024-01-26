@@ -97,7 +97,7 @@ int LineBox::addInlineBox(LayoutObject* o, InlineBox* box)
 {
     int idx = (int)inline_frags.size();
     InlineFragment frag;
-    frag.initFrom(o, box);
+    frag.initFrom(o, box, true);
     inline_frags.push_back(frag);
     return idx;
 }
@@ -106,7 +106,7 @@ void LineBox::mergeInlineBox(LayoutObject* o, InlineBox* box,
     InlineBox* first_child, InlineBox* last_child)
 {
     InlineFragment frag;
-    frag.initFrom(o, box);
+    frag.initFrom(o, box, false);
     size_t i, j;
     for (i = 0; i < inline_frags.size(); ++i) {
         if (inline_frags[i].box == first_child) {
@@ -164,7 +164,7 @@ void LineBox::arrangeX(style::TextAlign text_align)
 void LineBox::arrangeY(LayoutObject* owner, float pos_y)
 {
     InlineFragment strut;
-    strut.initFrom(owner);
+    strut.initFrom(owner, nullptr, false);
 
     PlaceResult pr = placeY(strut, absl::MakeSpan(inline_frags));
     line_height = strut.line_height = pr.max_va + pr.max_vd;
@@ -226,47 +226,66 @@ void LineBox::finalPlaceY(float baseline, absl::Span<InlineFragment> slice)
     }
 }
 
-void InlineFragment::initFrom(LayoutObject* o, InlineBox* ib)
+void InlineFragment::initFrom(LayoutObject* o, InlineBox* ib, bool is_atomic)
 {
-    line_height = o->style->lineHeightInPixels();
-    font_metrics = graph2d::getFontMetrics(
-        o->style->fontFamily().c_str(),
-        o->style->fontSizeInPixels());
+    if (!is_atomic) {
+        line_height = o->style->lineHeightInPixels();
+        font_metrics = graph2d::getFontMetrics(
+            o->style->fontFamily().c_str(),
+            o->style->fontSizeInPixels());
+    }
     layout_object = o;
     box = ib;
 }
 
 float InlineFragment::contentAscent() const
 {
-    // TODO: handle <img> or inline-block without baseline
-    return font_metrics.ascent + 0.5f * font_metrics.line_gap;
+    if (font_metrics.has_value()) {
+        auto& fm = font_metrics.value();
+        return fm.ascent + 0.5f * fm.line_gap;
+    } else {
+        return box ? box->baseline : 0.0f;
+    }
 }
 
 float InlineFragment::contentDescent() const
 {
-    // TODO: handle <img> or inline-block without baseline
-    return font_metrics.descent + 0.5f * font_metrics.line_gap;
+    if (font_metrics.has_value()) {
+        auto& fm = font_metrics.value();
+        return fm.descent + 0.5f * fm.line_gap;
+    } else {
+        return box ? (box->size.height - box->baseline) : 0.0f;
+    }
 }
 
 float InlineFragment::contentHeight() const
 {
-    // TODO: handle <img> or inline-block without baseline
-    return font_metrics.lineHeight();
+    if (font_metrics.has_value()) {
+        return font_metrics.value().lineHeight();
+    } else {
+        return box ? box->size.height : 0.0f;
+    }
 }
 
 float InlineFragment::virtualAscent() const
 {
-    return 0.5f * (line_height - contentHeight()) + contentAscent();
+    return font_metrics.has_value()
+        ? (0.5f * (line_height - contentHeight()) + contentAscent())
+        : contentAscent();
 }
 
 float InlineFragment::virtualDescent() const
 {
-    return 0.5f * (line_height - contentHeight()) + contentDescent();
+    return font_metrics.has_value()
+        ? (0.5f * (line_height - contentHeight()) + contentDescent())
+        : contentDescent();
 }
 
 float InlineFragment::virtualHeight() const
 {
-    return line_height;
+    return font_metrics.has_value()
+        ? line_height
+        : contentHeight();
 }
 
 }

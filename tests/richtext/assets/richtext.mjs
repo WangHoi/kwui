@@ -1,9 +1,9 @@
 function RichText() {
-	return <p class="fs-16">This is <span class="bold fs-32 lh-48">bold</span> rendering.</p>;
+	return <p class="fs-16">This is <span class="bold fs-12 lh-32">bold</span> rendering.</p>;
 }
 
 export var root = <RichText />;
-export var stylesheet = `
+export var stylesheet = css`
 p {
 	margin: 16px;
 	font-size: 14px;

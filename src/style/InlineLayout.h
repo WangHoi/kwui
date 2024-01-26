@@ -49,14 +49,14 @@ struct InlineBox {
 
 struct InlineFragment {
 	float line_height = 0;
-	FontMetrics font_metrics;
+	absl::optional<FontMetrics> font_metrics;
 	VerticalAlign vertical_align;
 	LayoutObject* layout_object = nullptr;
 	InlineBox* box = nullptr;
 	std::vector<InlineFragment> children;
 	float baseline_offset = 0; // related to line box
 
-	void initFrom(LayoutObject* o, InlineBox* box = nullptr);
+	void initFrom(LayoutObject* o, InlineBox* box, bool is_atomic);
 	float contentAscent() const;
 	float contentDescent() const;
 	float contentHeight() const;
