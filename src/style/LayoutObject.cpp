@@ -858,11 +858,9 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 		} else {
 			// Compute 'auto' height
 			if (borpad_bottom > 0) {
-				box.content.height = std::max(0.0f,
-					bfc.margin_bottom_edge - box.pos.y - box.margin.top - borpad_top);
+				box.content.height = std::max(0.0f, bfc.margin_bottom_edge);
 			} else {
-				box.content.height = std::max(0.0f,
-					bfc.border_bottom_edge - box.pos.y - box.margin.top - borpad_top);
+				box.content.height = std::max(0.0f, bfc.border_bottom_edge);
 			}
 			bfc.border_bottom_edge += saved_border_bottom_edge + margin;
 			bfc.margin_bottom_edge += saved_margin_bottom_edge;
