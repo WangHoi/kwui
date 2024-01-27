@@ -89,6 +89,7 @@ void StyleSpec::set(base::string_atom prop, const ValueSpec& val)
 	CHECK_VALUE2(font_style, "font-style");
 	CHECK_VALUE2(font_weight, "font-weight");
 	CHECK_VALUE2(text_align, "text-align");
+	CHECK_VALUE2(vertical_align, "vertical-align");
 
 	CHECK_VALUE2(overflow_x, "overflow-x");
 	CHECK_VALUE2(overflow_y, "overflow-y");

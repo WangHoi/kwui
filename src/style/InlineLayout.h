@@ -54,7 +54,9 @@ struct InlineFragment {
 	LayoutObject* layout_object = nullptr;
 	InlineBox* box = nullptr;
 	std::vector<InlineFragment> children;
-	float baseline_offset = 0; // related to line box
+	float baseline_offset = 0; // related to parent
+	float subtree_ascent = 0;
+	float subtree_descent = 0;
 
 	void initFrom(LayoutObject* o, InlineBox* box, bool is_atomic);
 	float contentAscent() const;
@@ -70,7 +72,6 @@ struct LineBox {
 
 	float left; // BFC coord: left
 	float avail_width;
-	float line_height = 0.0f;
 
 	scene2d::DimensionF used_size;
 	float used_baseline; // offset from used_size's top
@@ -79,7 +80,7 @@ struct LineBox {
 
 	LineBox(float left_, float avail_w);
 	~LineBox() = default;
-	int addInlineBox(LayoutObject* o, InlineBox* box);
+	int addInlineBox(LayoutObject* o, InlineBox* box, bool is_atomic);
 	void mergeInlineBox(LayoutObject* o, InlineBox* box,
 		InlineBox* first_child, InlineBox* last_child);
 	//void arrange(float offset_y, style::TextAlign text_align);
@@ -88,12 +89,14 @@ struct LineBox {
 
 private:
 	struct PlaceResult {
-		float max_va;
-		float max_vd;
+		float max_va = 0;
+		float max_vd = 0;
+		float line_height = 0;
 	};
-	PlaceResult placeY(const InlineFragment& strut, absl::Span<InlineFragment> slice);
+	PlaceResult placeY(InlineFragment& strut, absl::Span<InlineFragment> slice);
+	void doPlaceY(PlaceResult& pr, const InlineFragment& strut, absl::Span<InlineFragment> slice);
 	// baseline: from top
-	void finalPlaceY(float baseline, absl::Span<InlineFragment> slice);
+	void finalPlaceY(float top, float bottom, float baseline, absl::Span<InlineFragment> slice);
 };
 
 class InlineFormatContext : public LineBoxInterface {

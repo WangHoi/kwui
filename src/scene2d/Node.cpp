@@ -35,6 +35,8 @@ static void resolve_style(style::FontWeight& style, const style::FontWeight* par
 	const style::ValueSpec& spec);
 static void resolve_style(style::TextAlign& style, const style::TextAlign* parent,
 	const style::ValueSpec& spec);
+static void resolve_style(style::VerticalAlign& style, const style::VerticalAlign* parent,
+	const style::ValueSpec& spec);
 static void resolve_style(style::OverflowType& style, const style::OverflowType* parent,
 	const style::ValueSpec& spec);
 static void resolve_style(style::BoxSizingType& style, const style::BoxSizingType* parent,
@@ -289,6 +291,7 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 	RESOLVE_STYLE(font_style);
 	RESOLVE_STYLE(font_weight);
 	RESOLVE_STYLE(text_align);
+	RESOLVE_STYLE(vertical_align);
 	RESOLVE_STYLE(overflow_x);
 	RESOLVE_STYLE(overflow_y);
 	RESOLVE_STYLE(box_sizing);
@@ -645,6 +648,34 @@ void resolve_style(style::TextAlign& style, const style::TextAlign* parent,
 				style = style::TextAlign::Center;
 			else if (spec.value->keyword_val == base::string_intern("right"))
 				style = style::TextAlign::Right;
+		}
+	}
+}
+
+void resolve_style(style::VerticalAlign& style, const style::VerticalAlign* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Keyword) {
+			if (spec.value->keyword_val == base::string_intern("baseline"))
+				style = { style::VerticalAlignType::Baseline };
+			else if (spec.value->keyword_val == base::string_intern("top"))
+				style = { style::VerticalAlignType::Top };
+			else if (spec.value->keyword_val == base::string_intern("bottom"))
+				style = { style::VerticalAlignType::Bottom };
+			else if (spec.value->keyword_val == base::string_intern("middle"))
+				style = { style::VerticalAlignType::Middle };
+			else if (spec.value->keyword_val == base::string_intern("text-top"))
+				style = { style::VerticalAlignType::TextTop };
+			else if (spec.value->keyword_val == base::string_intern("text-bottom"))
+				style = { style::VerticalAlignType::TextBottom };
+			else
+				style = { style::VerticalAlignType::Baseline };
+		} else if (spec.value->unit == style::ValueUnit::Percent || spec.value->unit == style::ValueUnit::Pixel) {
+			style = { style::VerticalAlignType::Value, spec.value };
 		}
 	}
 }

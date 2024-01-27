@@ -972,7 +972,7 @@ public:
 		inline_box->size = glyph_run->boundingRect().size();
 
 		inline_box->line_box = line;
-		inline_box->line_box->addInlineBox(layout_object_, inline_box.get());
+		inline_box->line_box->addInlineBox(layout_object_, inline_box.get(), false);
 		inline_box->line_box_offset_x = inline_box->line_box->offset_x;
 		inline_box->line_box->offset_x += inline_box->size.width;
 
@@ -1225,7 +1225,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 	InlineBox& ib = *ibb.inline_box;
 	ib.line_box = line;
-	ib.line_box->addInlineBox(o, &ib);
+	ib.line_box->addInlineBox(o, &ib, true);
 	ib.pos.x = inline_pos_x;
 	ib.size = ibb.block_box.marginRect().size();
 	if (st.overflow_y == OverflowType::Visible) {

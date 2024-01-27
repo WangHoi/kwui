@@ -128,6 +128,7 @@ struct StyleSpec {
 	ValueSpec font_style;
 	ValueSpec font_weight;
 	ValueSpec text_align;
+	ValueSpec vertical_align;
 
 	ValueSpec overflow_x;
 	ValueSpec overflow_y;
@@ -263,6 +264,7 @@ struct Style {
 	FontStyle font_style;
 	FontWeight font_weight;
 	TextAlign text_align;
+	VerticalAlign vertical_align;
 
 	OverflowType overflow_x = OverflowType::Visible;
 	OverflowType overflow_y = OverflowType::Visible;
