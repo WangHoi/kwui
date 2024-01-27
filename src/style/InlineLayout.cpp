@@ -182,11 +182,18 @@ void LineBox::doPlaceY(LineBox::PlaceResult& pr, const InlineFragment& parent, a
     for (auto& frag : slice) {
         bool skip_ascent_descent = false;
         auto& va = frag.vertical_align;
-        if (va.type == VerticalAlignType::Top || va.type == VerticalAlignType::TextTop
-            || va.type == VerticalAlignType::Bottom || va.type == VerticalAlignType::TextBottom) {
+        if (va.type == VerticalAlignType::Top || va.type == VerticalAlignType::Bottom) {
             skip_ascent_descent = true;
             frag.baseline_offset = 0;
             //pr.line_height = std::max(pr.line_height, std::max(frag.virtualHeight(), frag.contentHeight()));
+        } else if (va.type == VerticalAlignType::TextTop) {
+            float p1 = parent.contentAscent();
+            float y1 = frag.virtualAscent();
+            frag.baseline_offset = p1 - y1;
+        } else if (va.type == VerticalAlignType::TextBottom) {
+            float p1 = -parent.contentDescent();
+            float y1 = -frag.virtualDescent();
+            frag.baseline_offset = p1 - y1;
         } else if (va.type == VerticalAlignType::Middle) {
             float p1 = (parent.font_metrics.has_value()
                 ? parent.font_metrics.value().x_height * 0.5f
@@ -242,9 +249,9 @@ void LineBox::finalPlaceY(float line_top, float line_bottom, float parent_baseli
         frag.box->baseline = frag.virtualAscent();
 
         auto& va = frag.vertical_align;
-        if (va.type == VerticalAlignType::Top || va.type == VerticalAlignType::TextTop) {
+        if (va.type == VerticalAlignType::Top) {
             frag.box->pos.y = line_top + frag.subtree_ascent - frag.box->baseline;
-        } else if (va.type == VerticalAlignType::Bottom || va.type == VerticalAlignType::TextBottom) {
+        } else if (va.type == VerticalAlignType::Bottom) {
             frag.box->pos.y = line_bottom - frag.subtree_descent - frag.box->baseline;
         } else {
             frag.box->pos.y = parent_baseline - frag.baseline_offset - frag.box->baseline;

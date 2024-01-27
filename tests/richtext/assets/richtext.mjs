@@ -5,6 +5,8 @@ function RichTextExample() {
 		<Styled />
 		<AlignTop />
 		<AlignBottom />
+		<AlignTextTop />
+		<AlignTextBottom />
 		<AlignMiddle />
 		<AlignOffset />
 		<AlignSubtree />
@@ -15,10 +17,16 @@ function Styled() {
 	return <p>This is <span class="bold">bold</span>, <span class="italic">italic</span> and <span class="bold italic">bold-italic</span> text.</p>;
 }
 function AlignTop() {
-	return <p>Align <span class="fs-16 va-top">top</span> example.</p>;
+	return <p>Align <span class="fs-16 va-top">top</span><span class="fs-32"> example.</span></p>;
 }
 function AlignBottom() {
-	return <p>Align <span class="fs-16 va-bottom">bottom</span> example.</p>;
+	return <p>Align <span class="fs-16 va-bottom">bottom</span><span class="fs-32"> example.</span></p>;
+}
+function AlignTextTop() {
+	return <p>Align <span class="fs-16 va-text-top">text-top</span><span class="fs-32"> example.</span></p>;
+}
+function AlignTextBottom() {
+	return <p>Align <span class="fs-16 va-text-bottom">text-bottom</span><span class="fs-32"> example.</span></p>;
 }
 function AlignMiddle() {
 	return <p>Align <span class="fs-32 va-middle">middle</span> example.</p>;
@@ -40,7 +48,7 @@ div {
 }
 p {
 	margin-top: 8px;
-	font-size: 24px;
+	font-size: 20px;
 	background-color: lightcyan;
 }
 .italic { font-style: italic; }
@@ -59,6 +67,8 @@ p {
 .lh-48 { line-height: 48px; }
 .va-top { vertical-align: top; }
 .va-bottom { vertical-align: bottom; }
+.va-text-top { vertical-align: text-top; }
+.va-text-bottom { vertical-align: text-bottom; }
 .va-middle { vertical-align: middle; }
 .va-up-8 { vertical-align: 8px; }
 .va-up-16 { vertical-align: 16px; }
