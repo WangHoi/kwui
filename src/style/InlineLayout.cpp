@@ -194,6 +194,19 @@ void LineBox::doPlaceY(LineBox::PlaceResult& pr, const InlineFragment& parent, a
             float p1 = -parent.contentDescent();
             float y1 = -frag.virtualDescent();
             frag.baseline_offset = p1 - y1;
+        } else if (va.type == VerticalAlignType::Super) {
+            float p1 = (parent.font_metrics.has_value()
+                ? parent.font_metrics.value().x_height
+                : parent.contentAscent() * 0.75);
+            float y1 = (frag.font_metrics.has_value()
+                ? frag.font_metrics.value().x_height * 0.5f
+                : frag.contentAscent() * 0.5f);
+            frag.baseline_offset = p1 - y1;
+        } else if (va.type == VerticalAlignType::Sub) {
+            float y1 = (frag.font_metrics.has_value()
+                ? frag.font_metrics.value().x_height * 0.5f
+                : frag.contentAscent() * 0.5f);
+            frag.baseline_offset = -y1;
         } else if (va.type == VerticalAlignType::Middle) {
             float p1 = (parent.font_metrics.has_value()
                 ? parent.font_metrics.value().x_height * 0.5f

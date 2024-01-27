@@ -1,10 +1,10 @@
 function RichTextExample() {
-	/*
-*/
 	return <div>
 		<Styled />
 		<AlignTop />
 		<AlignBottom />
+		<AlignSuper />
+		<AlignSub />
 		<AlignTextTop />
 		<AlignTextBottom />
 		<AlignMiddle />
@@ -21,6 +21,12 @@ function AlignTop() {
 }
 function AlignBottom() {
 	return <p>Align <span class="fs-16 va-bottom">bottom</span><span class="fs-32"> example.</span></p>;
+}
+function AlignSuper() {
+	return <p>Align x<span class="fs-12 va-super">2 superscript</span><span class="fs-32"> example.</span></p>;
+}
+function AlignSub() {
+	return <p>Align H<span class="fs-12 va-sub">2 subscript</span><span class="fs-32"> example.</span></p>;
 }
 function AlignTextTop() {
 	return <p>Align <span class="fs-16 va-text-top">text-top</span><span class="fs-32"> example.</span></p>;
@@ -44,11 +50,15 @@ function AlignSubtree() {
 export var root = <RichTextExample />;
 export var stylesheet = css`
 div {
-	margin: 8px;
+	margin: 0px 0px;
+	border-radius: 3px;
+	border-width: 1px;
+	border-color: black;
+	padding: 0px 8px;
 }
 p {
 	margin-top: 8px;
-	font-size: 20px;
+	font-size: 18px;
 	background-color: lightcyan;
 }
 .italic { font-style: italic; }
@@ -67,6 +77,8 @@ p {
 .lh-48 { line-height: 48px; }
 .va-top { vertical-align: top; }
 .va-bottom { vertical-align: bottom; }
+.va-super { vertical-align: super; }
+.va-sub { vertical-align: sub; }
 .va-text-top { vertical-align: text-top; }
 .va-text-bottom { vertical-align: text-bottom; }
 .va-middle { vertical-align: middle; }

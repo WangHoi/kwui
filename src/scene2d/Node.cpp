@@ -672,6 +672,10 @@ void resolve_style(style::VerticalAlign& style, const style::VerticalAlign* pare
 				style = { style::VerticalAlignType::TextTop };
 			else if (spec.value->keyword_val == base::string_intern("text-bottom"))
 				style = { style::VerticalAlignType::TextBottom };
+			else if (spec.value->keyword_val == base::string_intern("super"))
+				style = { style::VerticalAlignType::Super };
+			else if (spec.value->keyword_val == base::string_intern("sub"))
+				style = { style::VerticalAlignType::Sub };
 			else
 				style = { style::VerticalAlignType::Baseline };
 		} else if (spec.value->unit == style::ValueUnit::Percent || spec.value->unit == style::ValueUnit::Pixel) {

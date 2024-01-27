@@ -210,6 +210,8 @@ enum class VerticalAlignType {
 	Middle,
 	TextTop,
 	TextBottom,
+	Super,
+	Sub,
 	Value,
 };
 struct VerticalAlign {
