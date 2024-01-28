@@ -95,18 +95,14 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			st.border_color,
 			st.background_image.get());
 	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
-		/*
-		const auto& ibs = absl::get<std::vector<InlineBox>>(o->box);
-		if (!ibs.empty()) {
-			const auto& first = ibs.front();
-			const auto& last = ibs.back();
-			content_rect.emplace(scene2d::RectF::fromLTRB(
-				std::min(first.pos.x, last.pos.x),
-				std::min(first.pos.y, last.pos.y),
-				std::max(first.pos.x + first.size.width, last.pos.x + last.size.width),
-				std::max(first.pos.y + first.size.height, last.pos.y + last.size.height)));
+		const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
+		for (auto& ib : ibs) {
+			auto rect = scene2d::RectF::fromOriginSize(ib->pos, ib->size);
+			painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), st.background_color, st.border_color, nullptr);
+			if (st.text_decoration_line != TextDecorationLineType::None) {
+				paintTextDecoration(o, painter, ib.get());
+			}
 		}
-		*/
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 		const InlineBox& ib = *ibb.inline_box;
@@ -1569,6 +1565,34 @@ void LayoutObject::arrangePositionedChildren(LayoutObject* o, const scene2d::Dim
 			}
 			LayoutObject::setPos(po, LayoutObject::pos(po) + scene2d::PointF(off.left, off.top));
 		}
+	}
+}
+
+void LayoutObject::paintTextDecoration(LayoutObject* o, graph2d::PainterInterface* painter, const InlineBox* ib)
+{
+	const Style& st = *o->style;
+	auto fm = graph2d::getFontMetrics(st.fontFamily().c_str(), st.fontSizeInPixels());
+	if (st.text_decoration_line == TextDecorationLineType::Underline) {
+		auto rect = scene2d::RectF::fromXYWH(
+			ib->pos.x,
+			ib->pos.y + ib->baseline - fm.underline_offset - 0.5f * fm.underline_thickness,
+			ib->size.width,
+			fm.underline_thickness);
+		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), st.color, Color(), nullptr);
+	} else if (st.text_decoration_line == TextDecorationLineType::Overline) {
+		auto rect = scene2d::RectF::fromXYWH(
+			ib->pos.x,
+			ib->pos.y + ib->baseline - fm.ascent,
+			ib->size.width,
+			fm.underline_thickness);
+		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), st.color, Color(), nullptr);
+	} else if (st.text_decoration_line == TextDecorationLineType::LineThrough) {
+		auto rect = scene2d::RectF::fromXYWH(
+			ib->pos.x,
+			ib->pos.y + ib->baseline - fm.line_through_offset - 0.5f * fm.line_through_thickness,
+			ib->size.width,
+			fm.line_through_thickness);
+		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), st.color, Color(), nullptr);
 	}
 }
 

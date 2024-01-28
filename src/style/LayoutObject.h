@@ -155,6 +155,7 @@ private:
 	 * used by reflow() and getChildrenBoundingRect() */
 	static absl::optional<scene2d::RectF> containingRectForPositionedChildren(LayoutObject* o);
 	static void arrangePositionedChildren(LayoutObject* o, const scene2d::DimensionF& viewport_size);
+	static void paintTextDecoration(LayoutObject* o, graph2d::PainterInterface* painter, const InlineBox* ib);
 
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const LayoutObject& o) {

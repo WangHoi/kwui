@@ -450,6 +450,50 @@ IResult<ShorthandDeclaration> border_shorthand_decl(base::string_atom name, absl
 /* Syntax: value_spec S*
 	| value_spec S+ value_spec S*
 	| value_spec S+ value_spec S+ value_spec S*
+ * Shorthand for: text-decoration-line || text-decoration-style || text-decoration-color
+ */
+IResult<ShorthandDeclaration> text_decoration_shorthand_decl(base::string_atom name, absl::string_view input)
+{
+	auto res = separated_list1(spaces, value_spec)(input);
+	if (!res.ok())
+		return res.status();
+	auto&& [output, list] = res.value();
+	ShorthandDeclaration sd;
+	sd.name = name;
+
+	absl::optional<ValueSpec> color;
+	absl::optional<ValueSpec> line;
+	for (const ValueSpec& spec : list) {
+		if (spec.type != ValueSpecType::Specified)
+			continue;
+		const Value& val = spec.value.value();
+		if (val.unit == ValueUnit::Keyword) {
+			if (style::named_color::fromString(val.keyword_val.c_str()).has_value()) {
+				color.emplace(spec);
+			} else {
+				if (val.keyword_val == base::string_intern("none")
+					|| val.keyword_val == base::string_intern("underline")
+					|| val.keyword_val == base::string_intern("overline")
+					|| val.keyword_val == base::string_intern("line-through")) {
+					line.emplace(spec);
+				}
+			}
+		} else if (val.unit == ValueUnit::HexColor) {
+			color.emplace(spec);
+		}
+	}
+	if (color.has_value()) {
+		sd.decls.push_back(SingleDeclaration{ base::string_intern("text-decoration-color"), color.value() });
+	}
+	if (line.has_value()) {
+		sd.decls.push_back(SingleDeclaration{ base::string_intern("text-decoration-line"), line.value() });
+	}
+	return std::make_tuple(output, sd);
+}
+
+/* Syntax: value_spec S*
+	| value_spec S+ value_spec S*
+	| value_spec S+ value_spec S+ value_spec S*
 	| value_spec S+ value_spec S+ value_spec S+ value_spec S*
  * Shorthand for: all
  *  | top-left-and-bottom-right top-right-and-bottom-left
@@ -563,6 +607,8 @@ IResult<Declaration> declaration(absl::string_view input)
 			input1);
 	} else if (prop_name == base::string_intern("border")) {
 		decl = border_shorthand_decl(prop_name, input1);
+	} else if (prop_name == base::string_intern("text-decoration")) {
+		decl = text_decoration_shorthand_decl(prop_name, input1);
 	} else {
 		decl = single_decl(prop_name, input1);
 	}

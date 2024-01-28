@@ -37,6 +37,8 @@ static void resolve_style(style::TextAlign& style, const style::TextAlign* paren
 	const style::ValueSpec& spec);
 static void resolve_style(style::VerticalAlign& style, const style::VerticalAlign* parent,
 	const style::ValueSpec& spec);
+static void resolve_style(style::TextDecorationLineType& style, const style::TextDecorationLineType* parent,
+	const style::ValueSpec& spec);
 static void resolve_style(style::OverflowType& style, const style::OverflowType* parent,
 	const style::ValueSpec& spec);
 static void resolve_style(style::BoxSizingType& style, const style::BoxSizingType* parent,
@@ -292,6 +294,7 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 	RESOLVE_STYLE(font_weight);
 	RESOLVE_STYLE(text_align);
 	RESOLVE_STYLE(vertical_align);
+	RESOLVE_STYLE(text_decoration_line);
 	RESOLVE_STYLE(overflow_x);
 	RESOLVE_STYLE(overflow_y);
 	RESOLVE_STYLE(box_sizing);
@@ -680,6 +683,28 @@ void resolve_style(style::VerticalAlign& style, const style::VerticalAlign* pare
 				style = { style::VerticalAlignType::Baseline };
 		} else if (spec.value->unit == style::ValueUnit::Percent || spec.value->unit == style::ValueUnit::Pixel) {
 			style = { style::VerticalAlignType::Value, spec.value };
+		}
+	}
+}
+
+void resolve_style(style::TextDecorationLineType& style, const style::TextDecorationLineType* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::Keyword) {
+			if (spec.value->keyword_val == base::string_intern("none"))
+				style = style::TextDecorationLineType::None;
+			else if (spec.value->keyword_val == base::string_intern("underline"))
+				style = style::TextDecorationLineType::Underline;
+			else if (spec.value->keyword_val == base::string_intern("overline"))
+				style = style::TextDecorationLineType::Overline;
+			else if (spec.value->keyword_val == base::string_intern("line-through"))
+				style = style::TextDecorationLineType::LineThrough;
+			else
+				style = style::TextDecorationLineType::None;
 		}
 	}
 }

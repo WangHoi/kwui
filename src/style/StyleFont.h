@@ -8,6 +8,10 @@ struct FontMetrics {
 	float line_gap = 0;
 	float cap_height = 0;
 	float x_height = 0;
+	float underline_offset = 0; // positive to above baseline
+	float underline_thickness = 0;
+	float line_through_offset = 0; // positive to above baseline
+	float line_through_thickness = 0;
 
 	inline float lineHeight() const
 	{

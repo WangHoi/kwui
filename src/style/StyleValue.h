@@ -129,6 +129,7 @@ struct StyleSpec {
 	ValueSpec font_weight;
 	ValueSpec text_align;
 	ValueSpec vertical_align;
+	ValueSpec text_decoration_line;
 
 	ValueSpec overflow_x;
 	ValueSpec overflow_y;
@@ -219,6 +220,13 @@ struct VerticalAlign {
 	absl::optional<Value> value;
 };
 
+enum class TextDecorationLineType {
+	None,
+	Underline,
+	Overline,
+	LineThrough,
+};
+
 struct Style {
 	DisplayType display = DisplayType::Block;
 	PositionType position = PositionType::Static;
@@ -267,6 +275,7 @@ struct Style {
 	FontWeight font_weight;
 	TextAlign text_align;
 	VerticalAlign vertical_align;
+	TextDecorationLineType text_decoration_line;
 
 	OverflowType overflow_x = OverflowType::Visible;
 	OverflowType overflow_y = OverflowType::Visible;

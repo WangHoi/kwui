@@ -38,6 +38,10 @@ style::FontMetrics getFontMetrics(const char* font_family, float font_size)
     fm.line_gap = dwrite_fm.lineGap * factor;
     fm.cap_height = dwrite_fm.capHeight * factor;
     fm.x_height = dwrite_fm.xHeight * factor;
+    fm.underline_offset = dwrite_fm.underlinePosition * factor;
+    fm.underline_thickness = dwrite_fm.underlineThickness * factor;
+    fm.line_through_offset = dwrite_fm.strikethroughPosition * factor;
+    fm.line_through_thickness = dwrite_fm.strikethroughThickness * factor;
     return fm;
 }
 
