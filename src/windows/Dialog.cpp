@@ -441,14 +441,15 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 }
 LRESULT CALLBACK Dialog::WndProcMain(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     Dialog* me;
-    if (message == WM_CREATE) {
+    if (message == WM_NCCREATE) {
         me = reinterpret_cast<Dialog*>(((LPCREATESTRUCTW)lParam)->lpCreateParams);
         me->_hwnd = hWnd;
         SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG)me);
     } else {
         me = reinterpret_cast<Dialog*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
     }
-    return me->WindowProc(hWnd, message, wParam, lParam);
+    if (me)
+        return me->WindowProc(hWnd, message, wParam, lParam);
 }
 void Dialog::OnCreate() {
     _scene = std::make_unique<scene2d::Scene>(*this);
