@@ -4,12 +4,11 @@ import { StyledTextExample } from "./styled-text.mjs";
 function RichTextExample() {
 	return [
 		<StyledTextExample />,
-		// <VerticalAlignExample />,
+		<VerticalAlignExample />,
 	];
 }
 
-export var root = <RichTextExample />;
-export var stylesheet = css`
+var stylesheet = css`
 kml {
 	overflow-y: auto;
 	height: 100%;
@@ -60,3 +59,10 @@ p {
 .td-overline { text-decoration: overline; }
 .td-line-through { text-decoration: line-through; }
 `;
+
+export function builder() {
+	return {
+		root: <RichTextExample />,
+		stylesheet,
+	}
+}

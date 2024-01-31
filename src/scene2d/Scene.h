@@ -38,7 +38,9 @@ public:
 	Node* createComponentNode(Node* parent, JSValue comp_data);
 	void updateComponentNodeChildren(Node* node, JSValue comp_state);
 
-	void setScriptModule(const std::string& base_filename, const std::string& module_path);
+	void setScriptModule(const std::string& base_filename,
+		const std::string& module_path,
+		const script::Value& module_params);
 	void reloadScriptModule();
 	void setStyleSheet(JSValue stylesheet);
 
@@ -96,6 +98,7 @@ private:
 	struct ModuleInfo {
 		std::string base_filename;
 		std::string module_path;
+		script::Value module_params;
 	};
 	absl::optional<ModuleInfo> script_module_;
 	base::TaskQueue post_render_task_queue_;

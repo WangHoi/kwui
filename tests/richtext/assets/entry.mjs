@@ -1,3 +1,3 @@
 app.showDialog({
-	module: "./richtext.mjs",
+	modulePath: "./richtext.mjs",
 });

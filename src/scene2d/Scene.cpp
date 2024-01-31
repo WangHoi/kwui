@@ -144,9 +144,11 @@ void Scene::updateComponentNodeChildren(Node* node, JSValue comp_data)
 	requestPaint();
 }
 
-void Scene::setScriptModule(const std::string& base_filename, const std::string& module_path)
+void Scene::setScriptModule(const std::string& base_filename,
+	const std::string& module_path,
+	const script::Value& module_params)
 {
-	script_module_.emplace<ModuleInfo>({ base_filename, module_path });
+	script_module_.emplace<ModuleInfo>({ base_filename, module_path, module_params });
 }
 
 void Scene::reloadScriptModule()
@@ -170,21 +172,42 @@ void Scene::reloadScriptModule()
 		return;
 	}
 
-	JSValue root = JS_GetModuleExportItemStr(ctx, mod, "root");
-	JSValue stylesheet = JS_GetModuleExportItemStr(ctx, mod, "stylesheet");
+	JSValue builder = JS_GetModuleExportItemStr(ctx, mod, "builder");
 	absl::Cleanup _ = [&]() {
-		JS_FreeValue(ctx, root);
-		JS_FreeValue(ctx, stylesheet);
+		JS_FreeValue(ctx, builder);
 		};
-	
-	setStyleSheet(stylesheet);
-	if (root != JS_UNDEFINED) {
-		JSValue kids = JS_NewFastArray(ctx, 1, &root);
-		updateNodeChildren(root_, ctx, kids);
-		JS_FreeValue(ctx, kids);
-	}
+	if (JS_IsFunction(ctx, builder)) {
+		JSValue ret = JS_Call(ctx, builder, JS_UNDEFINED, 1, &script_module_->module_params.jsValue());
+		absl::Cleanup _ = [&]() {
+			JS_FreeValue(ctx, ret);
+			};
+		if (JS_IsObjectPlain(ctx, ret)) {
+			JSValue root = JS_GetPropertyStr(ctx, ret, "root");
+			JSValue stylesheet = JS_GetPropertyStr(ctx, ret, "stylesheet");
+			absl::Cleanup _ = [&]() {
+				JS_FreeValue(ctx, root);
+				JS_FreeValue(ctx, stylesheet);
+				};
 
-	LOG(INFO) << "reload dialog finished";
+			setStyleSheet(stylesheet);
+			if (root != JS_UNDEFINED) {
+				JSValue kids = JS_NewFastArray(ctx, 1, &root);
+				updateNodeChildren(root_, ctx, kids);
+				JS_FreeValue(ctx, kids);
+			}
+			LOG(INFO) << "reload dialog finished";
+		} else {
+			LOG(INFO) << absl::StrFormat(
+				"reload dialog failed, module.builder return value not { root, stylesheet }: ",
+				script_module_->base_filename.c_str(),
+				script_module_->module_path.c_str());
+		}
+	} else {
+		LOG(INFO) << absl::StrFormat(
+			"reload dialog failed, module.builder not function: ",
+			script_module_->base_filename.c_str(),
+			script_module_->module_path.c_str());
+	}
 }
 
 void Scene::setStyleSheet(JSValue stylesheet)

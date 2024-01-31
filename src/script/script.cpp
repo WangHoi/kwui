@@ -431,10 +431,12 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	JSValue root = JS_UNDEFINED;
 	JSValue stylesheet = JS_UNDEFINED;
 	JSValue module = JS_UNDEFINED;
+	JSValue module_params = JS_UNDEFINED;
 	absl::Cleanup _ = [&]() {
 		JS_FreeValue(ctx, root);
 		JS_FreeValue(ctx, stylesheet);
 		JS_FreeValue(ctx, module);
+		JS_FreeValue(ctx, module_params);
 		};
 	Context::eachObjectField(ctx, argv[0], [&](const char* name, JSValue value) {
 		if (!strcmp(name, "title") && JS_IsString(value)) {
@@ -478,8 +480,10 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			root = JS_DupValue(ctx, value);
 		} else if (!strcmp(name, "stylesheet")) {
 			stylesheet = JS_DupValue(ctx, value);
-		} else if (!strcmp(name, "module")) {
+		} else if (!strcmp(name, "modulePath")) {
 			module = JS_DupValue(ctx, value);
+		} else if (!strcmp(name, "moduleParams")) {
+			module_params = JS_DupValue(ctx, value);
 		}
 		});
 
@@ -500,7 +504,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			};
 		std::string base_filename = Context::parse<std::string>(ctx, base_filename_value);
 		std::string module_path = Context::parse<std::string>(ctx, module);
-		dialog->GetScene()->setScriptModule(base_filename, module_path);
+		dialog->GetScene()->setScriptModule(base_filename, module_path, Value(ctx, module_params));
 		dialog->GetScene()->reloadScriptModule();
 	}
 	//LOG(INFO) << "show dialog";
