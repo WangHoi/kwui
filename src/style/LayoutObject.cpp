@@ -764,7 +764,7 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 			b.scrollbar_gutter.left = SCROLLBAR_GUTTER_WIDTH;
 			b.scrollbar_gutter.right = SCROLLBAR_GUTTER_WIDTH;
 		}
-		b.content.width = std::max(0.0f, b.content.width - b.scrollbar_gutter.left - b.scrollbar_gutter.right);
+		//b.content.width = std::max(0.0f, b.content.width - b.scrollbar_gutter.left - b.scrollbar_gutter.right);
 
 		// Compute height, top and bottom margins
 		b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);

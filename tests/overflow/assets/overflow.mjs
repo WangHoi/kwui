@@ -41,7 +41,7 @@ function Div(props, kids) {
 	</div>;
 }
 
-var simple_stylesheet = `
+var simple_stylesheet = css`
 .outer {
 	display: block;
 	overflow: auto;
@@ -83,6 +83,7 @@ var complex_overflow = (<div class="outer">
 </div>);
 
 var text_overflow = (<div class="outer">
+	<p><span style="text-decoration: underline; font-weight:bold;font-size:20px;">border-radius</span></p>
 	{span1}
 </div>);
 
@@ -92,4 +93,9 @@ var box_overflow = (<div class="outer">
 	<div class="inner" />
 </div>);
 
-app.showDialog(complex_overflow, simple_stylesheet);
+export function builder() {
+	return {
+		root: text_overflow,
+		stylesheet: simple_stylesheet,
+	}
+}
