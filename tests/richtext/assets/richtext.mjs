@@ -3,7 +3,7 @@ import { StyledTextExample } from "./styled-text.mjs";
 
 function RichTextExample() {
 	return [
-		<StyledTextExample />,
+		// <StyledTextExample />,
 		<VerticalAlignExample />,
 	];
 }
@@ -21,8 +21,8 @@ div {
 }
 p {
 	margin: 8px;
-	padding: 4px;
-	font-size: 18px;
+	padding: 0px;
+	font-size: 24px;
 	background-color: lightcyan;
 }
 .italic { font-style: italic; }
@@ -46,9 +46,11 @@ p {
 .va-text-top { vertical-align: text-top; }
 .va-text-bottom { vertical-align: text-bottom; }
 .va-middle { vertical-align: middle; }
+.va-up-4 { vertical-align: 4px; }
 .va-up-8 { vertical-align: 8px; }
 .va-up-16 { vertical-align: 16px; }
 .va-up-32 { vertical-align: 32px; }
+.va-down-4 { vertical-align: -4px; }
 .va-down-8 { vertical-align: -8px; }
 .va-down-16 { vertical-align: -16px; }
 .va-down-32 { vertical-align: -32px; }
@@ -58,6 +60,7 @@ p {
 .td-underline { text-decoration: underline; }
 .td-overline { text-decoration: overline; }
 .td-line-through { text-decoration: line-through; }
+img { display: inline-block; width: 16px; height: 16px; }
 `;
 
 export function builder() {

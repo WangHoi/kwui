@@ -170,8 +170,8 @@ LineBox::PlaceResult LineBox::placeY(InlineFragment& parent, absl::Span<InlineFr
     doPlaceY(pr, parent, slice);
     pr.line_height = std::max(pr.line_height, pr.max_va + pr.max_vd);
     float leading = pr.line_height - pr.max_va - pr.max_vd;
-    parent.subtree_ascent = pr.max_va + 0.5f * leading;
-    parent.subtree_descent = pr.max_vd + 0.5f * leading;
+    parent.subtree_ascent = std::max(parent.subtree_ascent, pr.max_va + 0.5f * leading);
+    parent.subtree_descent = std::max(parent.subtree_descent, pr.max_vd + 0.5f * leading);
     return pr;
 }
 
@@ -185,7 +185,6 @@ void LineBox::doPlaceY(LineBox::PlaceResult& pr, const InlineFragment& parent, a
         if (va.type == VerticalAlignType::Top || va.type == VerticalAlignType::Bottom) {
             skip_ascent_descent = true;
             frag.baseline_offset = 0;
-            //pr.line_height = std::max(pr.line_height, std::max(frag.virtualHeight(), frag.contentHeight()));
         } else if (va.type == VerticalAlignType::TextTop) {
             float p1 = parent.contentAscent();
             float y1 = frag.virtualAscent();
@@ -246,6 +245,13 @@ void LineBox::doPlaceY(LineBox::PlaceResult& pr, const InlineFragment& parent, a
             } else {
                 pr.line_height = std::max(pr.line_height, cpr.line_height);
             }
+        } else {
+            float va = frag.virtualAscent();
+            float vd = frag.virtualDescent();
+            float ca = frag.contentAscent();
+            float cd = frag.contentDescent();
+            frag.subtree_ascent = std::max(va, ca);
+            frag.subtree_descent = std::max(vd, cd);
         }
     }
 }

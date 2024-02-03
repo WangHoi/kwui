@@ -107,7 +107,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 		const InlineBox& ib = *ibb.inline_box;
 		const BlockBox& b = ibb.block_box;
-		content_rect.emplace(b.contentRect().translated(b.pos));
+		content_rect.emplace(b.contentRect().translated(ib.pos));
 		CornerRadiusF border_radius;
 		border_radius.top_left = st.border_top_left_radius.pixelOrZero();
 		border_radius.top_right = st.border_top_right_radius.pixelOrZero();
@@ -161,7 +161,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 			const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 			scene2d::RectF ipad_rect = ibb.block_box.clientRect();
-			ipad_origin = ibb.block_box.pos + ipad_rect.origin();
+			ipad_origin = ibb.inline_box->pos + ipad_rect.origin();
 			if (ibb.block_box.scrollbar_gutter.right > 0) {
 				v_scrollbar_rect.emplace(scene2d::RectF::fromXYWH(
 					ipad_origin.x + so.viewport_size.width,
@@ -309,7 +309,7 @@ scene2d::PointF LayoutObject::pos(LayoutObject* o)
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		return absl::get<BlockBox>(o->box).pos;
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
-		return absl::get<InlineBlockBox>(o->box).block_box.pos;
+		return absl::get<InlineBlockBox>(o->box).inline_box->pos;
 	}
 	return scene2d::PointF();
 }
@@ -319,7 +319,7 @@ void LayoutObject::setPos(LayoutObject* o, const scene2d::PointF& pos)
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		absl::get<BlockBox>(o->box).pos = pos;
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
-		absl::get<InlineBlockBox>(o->box).block_box.pos = pos;
+		absl::get<InlineBlockBox>(o->box).inline_box->pos = pos;
 	}
 }
 
@@ -1065,7 +1065,6 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 		}
 	} else if (st.display == DisplayType::InlineBlock) {
 		InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
-		ibb.block_box.pos = ibb.inline_box->pos;
 		/*
 		LOG(INFO) << "translate " << ib.pos;
 		LayoutObject* child = o->first_child;
@@ -1095,7 +1094,6 @@ void LayoutObject::translate(LayoutObject* o, scene2d::PointF offset)
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		auto& ibb = absl::get<InlineBlockBox>(o->box);
 		ibb.inline_box->pos += offset;
-		ibb.block_box.pos += offset;
 	}
 
 	LayoutObject* child = o->first_child;
