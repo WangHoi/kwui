@@ -49,6 +49,11 @@ Dialog::Dialog(float width, float height,
     , _dpi_scale(1.0f)
     , _himc(NULL)
     , _animation_timer_id(0) {
+
+    if (create_data.has_value()) {
+        _dpi_scale = create_data.value().dpi_scale;
+    }
+
     _mouse_position = scene2d::PointF(_size.width * 0.5f, _size.height * 0.5f);
     id_ = absl::StrFormat("%p", this);
     g_dialog_map[id_] = this;
@@ -113,9 +118,15 @@ void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON 
     RegisterWindowClass(hInstance, wnd_class_name, icon, &Dialog::WndProcMain);
     DWORD style, ex_style;
     if (_flags & DIALOG_FLAG_MAIN) {
-        style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-        ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
-            | WS_EX_STATICEDGE | WS_EX_APPWINDOW;
+        if (_popup_shadow_data.has_value()) {
+            style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+            ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
+                | WS_EX_STATICEDGE | WS_EX_APPWINDOW;
+
+        } else {
+            style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+            ex_style = WS_EX_OVERLAPPEDWINDOW;
+        }
     } else {
         style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
         ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
@@ -246,9 +257,12 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         return 0;
     case WM_SIZE:
         _pixel_size = scene2d::DimensionF((float)LOWORD(lParam), (float)HIWORD(lParam));
+        _size = scene2d::DimensionF(_pixel_size.width / _dpi_scale, _pixel_size.height / _dpi_scale);
         OnResize();
         break;
     case WM_NCCALCSIZE: {
+        if (!_popup_shadow_data.has_value())
+            return DefWindowProcW(hWnd, message, wParam, lParam);
         WINDOWPLACEMENT placement = {};
         if (GetWindowPlacement(hWnd, &placement)) {
             if (placement.showCmd == SW_SHOWMINIMIZED) {
@@ -263,6 +277,8 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         return 0;
     }
     case WM_NCHITTEST: {
+        if (!_popup_shadow_data.has_value())
+            return DefWindowProcW(hWnd, message, wParam, lParam);
         RECT rect;
         GetWindowRect(hWnd, &rect);
         float x = (float)(GET_X_LPARAM(lParam) - rect.left) / _dpi_scale;
@@ -273,10 +289,10 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             return HTCAPTION;
         }
     }
-                     //case WM_NCACTIVATE:
-                         //c2_log("Dialog HWND %p NCACTIVE wParam %d\n", hWnd, wParam);
-                         //OnActivate(wParam);
-                         //return FALSE;
+    //case WM_NCACTIVATE:
+        //c2_log("Dialog HWND %p NCACTIVE wParam %d\n", hWnd, wParam);
+        //OnActivate(wParam);
+        //return FALSE;
     case WM_DISPLAYCHANGE:
         //c2_log("recv WM_DISPLAYCHANGE\n");
         DiscardDeviceResources();
@@ -338,6 +354,8 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         OnMouseMove(MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_NCMOUSEMOVE:
+        if (!_popup_shadow_data.has_value())
+            return DefWindowProcW(hWnd, message, wParam, lParam);
         _mouse_position = scene2d::PointF((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam))
             / _dpi_scale;
         OnMouseMove(MakeButtonMask(wParam), GetModifiersState());
@@ -425,7 +443,7 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             else if (cursor == style::CursorType::Wait) SetCursor(s_preloaded_cursors[CURSOR_WAIT]);
             else SetCursor(s_preloaded_cursors[CURSOR_ARROW]);
         } else {
-            SetCursor(s_preloaded_cursors[CURSOR_ARROW]);
+            return DefWindowProcW(hWnd, message, wParam, lParam);
         }
         return TRUE;
     case WM_SYSCOMMAND:
@@ -450,6 +468,8 @@ LRESULT CALLBACK Dialog::WndProcMain(HWND hWnd, UINT message, WPARAM wParam, LPA
     }
     if (me)
         return me->WindowProc(hWnd, message, wParam, lParam);
+    else
+        return DefWindowProcW(hWnd, message, wParam, lParam);
 }
 void Dialog::OnCreate() {
     _scene = std::make_unique<scene2d::Scene>(*this);
@@ -938,12 +958,14 @@ void Dialog::DiscardNodeDeviceResources(scene2d::Node* node) {
 }
 
 void Dialog::UpdateBorderAndRenderTarget() {
-    float border_radius = roundf(theme::DIALOG_BORDER_RADIUS * _dpi_scale);
-    HRGN rgn = CreateRoundRectRgn(
-        0, 0,
-        (int)_pixel_size.width + 1, (int)_pixel_size.height + 1,
-        (int)border_radius, (int)border_radius);
-    SetWindowRgn(_hwnd, rgn, FALSE);
+    if (_popup_shadow_data.has_value()) {
+        float border_radius = roundf(theme::DIALOG_BORDER_RADIUS * _dpi_scale);
+        HRGN rgn = CreateRoundRectRgn(
+            0, 0,
+            (int)_pixel_size.width + 1, (int)_pixel_size.height + 1,
+            (int)border_radius, (int)border_radius);
+        SetWindowRgn(_hwnd, rgn, FALSE);
+    }
 
     if (!_rt) {
         RecreateRenderTarget();

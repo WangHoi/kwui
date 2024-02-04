@@ -3,7 +3,7 @@ import { StyledTextExample } from "./styled-text.mjs";
 
 function RichTextExample() {
 	return [
-		// <StyledTextExample />,
+		<StyledTextExample />,
 		<VerticalAlignExample />,
 	];
 }

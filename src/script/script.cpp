@@ -453,7 +453,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			int32_t i32;
 			JS_ToInt32(ctx, &i32, value);
 			flags = i32;
-		} else if (!strcmp(name, "popup_shadow") && JS_IsObjectPlain(ctx, value)) {
+		} else if (!strcmp(name, "customFrame") && JS_IsObjectPlain(ctx, value)) {
 			std::string image;
 			int padding = 0;
 			JSValue val;
@@ -490,9 +490,13 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	auto dialog = new windows::Dialog(
 		width, height, L"dialog", NULL, flags,
 		popup_shadow, absl::nullopt);
+#ifdef NDEBUG
 	if (title.has_value()) {
 		dialog->SetTitle(title.value());
 	}
+#else
+	dialog->SetTitle(title.value_or(std::string("Untitled")) + " - (F5 to reload)");
+#endif
 	dialog->GetScene()->setStyleSheet(stylesheet);
 	dialog->GetScene()->createComponentNode(dialog->GetScene()->root(), root);
 	if (JS_IsString(module)) {
