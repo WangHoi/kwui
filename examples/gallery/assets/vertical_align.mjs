@@ -61,5 +61,9 @@ p {
 }
 `;
 
-export var root = <VerticalAlignTest />;
-export var stylesheet = VerticalAlignTestStyle;
+export function builder() {
+    return {
+        root: <VerticalAlignTest />,
+        stylesheet: VerticalAlignTestStyle,
+    }
+}

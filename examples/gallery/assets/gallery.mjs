@@ -181,5 +181,5 @@ app.showDialog({
 // });
 
 app.showDialog({
-	module: "./vertical_align.mjs",
+	modulePath: "./vertical_align.mjs",
 });

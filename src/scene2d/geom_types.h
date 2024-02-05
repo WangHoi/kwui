@@ -212,6 +212,18 @@ struct RectF {
     {
         return moveTo(p.x, p.y);
     }
+    RectF& adjust(float dl, float dt, float dr, float db)
+    {
+        left += dl;
+        right += dr;
+        top += dt;
+        bottom += db;
+        return *this;
+    }
+    RectF adjusted(float dl, float dt, float dr, float db) const
+    {
+        return RectF(left + dl, top + dt, right + dr, bottom + db);
+    }
 
     float left;
     float top;

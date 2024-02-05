@@ -9,7 +9,7 @@
 
 namespace style {
 
-static const float SCROLLBAR_GUTTER_WIDTH = 8.0f;
+static const float SCROLLBAR_GUTTER_WIDTH = 16.0f;
 
 void LayoutObject::init(const Style* st, scene2d::Node* nd)
 {

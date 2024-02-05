@@ -108,7 +108,15 @@ public:
     scene2d::DimensionF size() override
     {
         if (!bitmap_) {
-            return scene2d::DimensionF();
+            BitmapSubItem item = GraphicDevice::instance()
+                ->GetBitmap(url_, 1.0f);
+            if (item) {
+                UINT w, h;
+                item.frame->GetSize(&w, &h);
+                return scene2d::DimensionF((float)w, (float)h);
+            } else {
+                return scene2d::DimensionF();
+            }
         }
         D2D1_SIZE_U ps = bitmap_->GetPixelSize();
         return scene2d::DimensionF(ps.width, ps.height);

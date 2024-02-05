@@ -402,10 +402,25 @@ void Node::layoutComputed()
 		
 		// sync: ScrollData --> ScrollObject
 		layout_.scroll_object->scroll_offset = scroll_data_.offset;
-		layout_.scroll_object->v_scrollbar_active = scroll_data_.v_scrollbar_active_pos.has_value();
-		layout_.scroll_object->v_scrollbar_hover = scroll_data_.v_scrollbar_hover;
-		layout_.scroll_object->h_scrollbar_active = scroll_data_.h_scrollbar_active_pos.has_value();
-		layout_.scroll_object->h_scrollbar_hover = scroll_data_.h_scrollbar_hover;
+		if (scroll_data_.v_scrollbar_active_pos.has_value() || scroll_data_.v_scrollbar_hover) {
+			layout_.scroll_object->v_scrollbar_flags = style::ScrollObject::SubControl_Thumb;
+			if (scroll_data_.v_scrollbar_active_pos.has_value())
+				layout_.scroll_object->v_scrollbar_flags |= style::ScrollObject::State_Active;
+			if (scroll_data_.v_scrollbar_hover)
+				layout_.scroll_object->v_scrollbar_flags |= style::ScrollObject::State_MouseOver;
+		} else {
+			layout_.scroll_object->v_scrollbar_flags = 0;
+		}
+
+		if (scroll_data_.h_scrollbar_active_pos.has_value() || scroll_data_.h_scrollbar_hover) {
+			layout_.scroll_object->h_scrollbar_flags = style::ScrollObject::SubControl_Thumb;
+			if (scroll_data_.h_scrollbar_active_pos.has_value())
+				layout_.scroll_object->h_scrollbar_flags |= style::ScrollObject::State_Active;
+			if (scroll_data_.h_scrollbar_hover)
+				layout_.scroll_object->h_scrollbar_flags |= style::ScrollObject::State_MouseOver;
+		} else {
+			layout_.scroll_object->h_scrollbar_flags = 0;
+		}
 	} else {
 		scroll_data_.offset = PointF();
 	}
