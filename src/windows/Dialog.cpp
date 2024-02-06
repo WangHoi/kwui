@@ -363,6 +363,9 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
     case WM_MOUSEWHEEL:
         OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam), MakeButtonMask(LOWORD(wParam)), GetModifiersState());
         break;
+    case WM_MOUSEHWHEEL:
+        OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam), MakeButtonMask(LOWORD(wParam)), GetModifiersState(), true);
+        break;
     case WM_MOUSELEAVE:
         //c2_log("mouse leave\n");
         _mouse_event_tracking = false;
@@ -763,15 +766,16 @@ void Dialog::OnMouseMove(int buttons, int modifiers) {
         RequestPaint();
     }
 }
-void Dialog::OnMouseWheel(int delta, int buttons, int modifiers)
+void Dialog::OnMouseWheel(int delta, int buttons, int modifiers, bool hwheel)
 {
     scene2d::Node* node;
     scene2d::PointF local_pos;
     node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_SCROLLABLE, &local_pos);
     if (node) {
         float wheel_delta = float(delta) / WHEEL_DELTA;
-        //LOG(INFO) << "mouse wheel " << local_pos << ", delta=" << wheel_delta;
-        scene2d::MouseEvent mouse_wheel(node, scene2d::MOUSE_WHEEL, _mouse_position, local_pos, wheel_delta, buttons, modifiers);
+        //LOG(INFO) << "mouse wheel " << local_pos << ", delta=" << wheel_delta << ", hwheel=" << hwheel;
+        scene2d::MouseCommand cmd = hwheel ? scene2d::MOUSE_HWHEEL : scene2d::MOUSE_WHEEL;
+        scene2d::MouseEvent mouse_wheel(node, cmd, _mouse_position, local_pos, wheel_delta, buttons, modifiers);
         node->onEvent(mouse_wheel);
     }
 }

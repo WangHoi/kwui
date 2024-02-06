@@ -104,7 +104,7 @@ private:
     void OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers);
     void OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers);
     void OnMouseMove(int buttons, int modifiers);
-    void OnMouseWheel(int wheel_delta, int buttons, int modifiers);
+    void OnMouseWheel(int wheel_delta, int buttons, int modifiers, bool hwheel = false);
     void UpdateHoveredNode();
     void UpdateFocusedNode();
     void UpdateMouseTracking();

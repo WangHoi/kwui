@@ -37,12 +37,12 @@ absl::optional<ScrollObject::SubControl> ScrollObject::subControlHitTest(const S
 			return SubControl::VStartButton;
 		} else {
 			float bottom_btn_top = (sd->viewport_size.width < sd->content_size.width) // has h-scrollbar
-				? sd->viewport_size.height
+				? (sd->viewport_size.height - 2.0f * SCROLLBAR_GUTTER_WIDTH)
 				: (sd->viewport_size.height - SCROLLBAR_GUTTER_WIDTH);
 			if (pos.y >= bottom_btn_top) {
 				return SubControl::VEndButton;
 			} else {
-				float factor = (sd->viewport_size.height - 2.0f * SCROLLBAR_GUTTER_WIDTH) / sd->content_size.height;
+				float factor = (bottom_btn_top - SCROLLBAR_GUTTER_WIDTH) / sd->content_size.height;
 				float y1 = sd->scroll_offset.y * factor;
 				float y2 = (sd->scroll_offset.y + sd->viewport_size.height) * factor;
 				if ((pos.y - SCROLLBAR_GUTTER_WIDTH) < y1) {
@@ -57,15 +57,28 @@ absl::optional<ScrollObject::SubControl> ScrollObject::subControlHitTest(const S
 			}
 		}
 	} else if (pos.y >= sd->viewport_size.height) {
-		float factor = sd->viewport_size.width / sd->content_size.width;
-		float x1 = sd->scroll_offset.x * factor;
-		float x2 = (sd->scroll_offset.x + sd->viewport_size.width) * factor;
-		if (pos.x < x1) {
-			return SubControl::HTrackStartPiece;
-		} else if (x1 <= pos.x && pos.x < x2) {
-			return SubControl::HThumb;
+		if (pos.x < SCROLLBAR_GUTTER_WIDTH) {
+			return SubControl::HStartButton;
 		} else {
-			return SubControl::HTrackEndPiece;
+			float right_btn_left = (sd->viewport_size.height < sd->content_size.height) // has v-scrollbar
+				? (sd->viewport_size.width - 2.0f * SCROLLBAR_GUTTER_WIDTH)
+				: (sd->viewport_size.width - SCROLLBAR_GUTTER_WIDTH);
+			if (pos.x >= right_btn_left) {
+				return SubControl::HEndButton;
+			} else {
+				float factor = (right_btn_left - SCROLLBAR_GUTTER_WIDTH) / sd->content_size.width;
+				float x1 = sd->scroll_offset.x * factor;
+				float x2 = (sd->scroll_offset.x + sd->viewport_size.width) * factor;
+				if ((pos.x - SCROLLBAR_GUTTER_WIDTH) < x1) {
+					return SubControl::HTrackStartPiece;
+				} else if (x1 <= (pos.x - SCROLLBAR_GUTTER_WIDTH) && (pos.x - SCROLLBAR_GUTTER_WIDTH) < x2) {
+					//LOG(INFO) << "viewport_size=" << sd->viewport_size << ", content_size=" << sd->content_size;
+					//LOG(INFO) << "VScrollbarThumb y1=" << y1 << ", pos.y=" << pos.y << ", y2=" << y2;
+					return SubControl::HThumb;
+				} else {
+					return SubControl::HTrackEndPiece;
+				}
+			}
 		}
 	}
 	return absl::nullopt;
@@ -80,22 +93,21 @@ void ScrollObject::paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* 
 
 	paintScrollbarBackground(sd, painter, rect);
 	paintVScrollbarThumb(sd, painter, rect);
-	paintVScrollbarTopButton(sd, painter, rect);
-	paintVScrollbarBottomButton(sd, painter, rect);
+	paintVScrollbarStartButton(sd, painter, rect);
+	paintVScrollbarEndButton(sd, painter, rect);
 }
 
 void ScrollObject::paintHScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
-	const auto color = Color::fromString("#ccc");
 	if (sd->viewport_size.width >= sd->content_size.width) {
-		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), color, color);
+		paintScrollbarBackground(sd, painter, rect);
 		return;
 	}
-	float factor = rect.width() / sd->content_size.width;
-	float x1 = sd->scroll_offset.x * factor;
-	float x2 = (sd->scroll_offset.x + sd->viewport_size.width) * factor;
-	painter->drawBox(scene2d::RectF::fromLTRB(rect.left + x1, rect.top, rect.left + x2, rect.bottom),
-		EdgeOffsetF(), CornerRadiusF(), color, color);
+
+	paintScrollbarBackground(sd, painter, rect);
+	paintHScrollbarThumb(sd, painter, rect);
+	paintHScrollbarStartButton(sd, painter, rect);
+	paintHScrollbarEndButton(sd, painter, rect);
 }
 
 void ScrollObject::paintScrollbarBackground(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
@@ -104,7 +116,7 @@ void ScrollObject::paintScrollbarBackground(ScrollObject* sd, graph2d::PainterIn
 	painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), color, color);
 }
 
-void ScrollObject::paintVScrollbarTopButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintVScrollbarStartButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
 	if (!sd->vtop_button_bitmap_) {
 		sd->vtop_button_bitmap_ = graph2d::createBitmap(VSCROLL_TOP_BUTTON_PNG);
@@ -114,7 +126,7 @@ void ScrollObject::paintVScrollbarTopButton(ScrollObject* sd, graph2d::PainterIn
 	painter->drawBox(brect, EdgeOffsetF(), CornerRadiusF(), color, color, sd->vtop_button_bitmap_.get());
 }
 
-void ScrollObject::paintVScrollbarBottomButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintVScrollbarEndButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
 	if (!sd->vbottom_button_bitmap_) {
 		sd->vbottom_button_bitmap_ = graph2d::createBitmap(VSCROLL_BOTTOM_BUTTON_PNG);
@@ -131,6 +143,36 @@ void ScrollObject::paintVScrollbarThumb(ScrollObject* sd, graph2d::PainterInterf
 	float y1 = SCROLLBAR_GUTTER_WIDTH + sd->scroll_offset.y * factor;
 	float y2 = SCROLLBAR_GUTTER_WIDTH + (sd->scroll_offset.y + sd->viewport_size.height) * factor;
 	painter->drawBox(scene2d::RectF::fromLTRB(rect.left + 1, rect.top + y1, rect.right - 1, rect.top + y2),
+		EdgeOffsetF(), CornerRadiusF(), color, color);
+}
+
+void ScrollObject::paintHScrollbarStartButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+{
+	if (!sd->hleft_button_bitmap_) {
+		sd->hleft_button_bitmap_ = graph2d::createBitmap(VSCROLL_TOP_BUTTON_PNG);
+	}
+	const auto& color = subControlColorForFlags(SubControl::HStartButton, sd->scrollbar_flags);
+	auto brect = scene2d::RectF::fromLTRB(rect.left, rect.top, rect.left + rect.height(), rect.bottom);
+	painter->drawBox(brect, EdgeOffsetF(), CornerRadiusF(), color, color, sd->hleft_button_bitmap_.get());
+}
+
+void ScrollObject::paintHScrollbarEndButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+{
+	if (!sd->hright_button_bitmap_) {
+		sd->hright_button_bitmap_ = graph2d::createBitmap(VSCROLL_BOTTOM_BUTTON_PNG);
+	}
+	const auto& color = subControlColorForFlags(SubControl::HEndButton, sd->scrollbar_flags);
+	auto brect = scene2d::RectF::fromLTRB(rect.right - rect.height(), rect.top, rect.right, rect.bottom);
+	painter->drawBox(brect, EdgeOffsetF(), CornerRadiusF(), color, color, sd->hright_button_bitmap_.get());
+}
+
+void ScrollObject::paintHScrollbarThumb(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+{
+	const auto& color = subControlColorForFlags(SubControl::HThumb, sd->scrollbar_flags);
+	float factor = (rect.width() - 2.0f * SCROLLBAR_GUTTER_WIDTH) / sd->content_size.width;
+	float x1 = SCROLLBAR_GUTTER_WIDTH + sd->scroll_offset.x * factor;
+	float x2 = SCROLLBAR_GUTTER_WIDTH + (sd->scroll_offset.x + sd->viewport_size.width) * factor;
+	painter->drawBox(scene2d::RectF::fromLTRB(rect.left + x1, rect.top + 1, rect.left + x2, rect.bottom - 1),
 		EdgeOffsetF(), CornerRadiusF(), color, color);
 }
 

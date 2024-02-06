@@ -471,6 +471,16 @@ scene2d::RectF LayoutObject::contentRect(LayoutObject* o)
 	}
 }
 
+EdgeOffsetF LayoutObject::padding(const LayoutObject* o)
+{
+	if (absl::holds_alternative<BlockBox>(o->box)) {
+		return absl::get<BlockBox>(o->box).padding;
+	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		return absl::get<InlineBlockBox>(o->box).block_box.padding;
+	}
+	return EdgeOffsetF();
+}
+
 void LayoutObject::measure(LayoutObject* o, float viewport_height)
 {
 	//static int depth = 0;
@@ -614,7 +624,7 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 		sd.viewport_size = inner_rect.size();
 		//LOG(INFO)
 		//	<< "scrollData contentSize " << o->scroll_object->content_size
-		//	<< ", viewportRect " << o->scroll_object->viewport_rect;
+		//	<< ", viewportSize " << o->scroll_object->viewport_size;
 	} else {
 		o->scroll_object = absl::nullopt;
 	}
@@ -690,6 +700,7 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 		- try_resolve_to_px(st.padding_left, contg_width).value_or(0)
 		- try_resolve_to_px(st.padding_right, contg_width).value_or(0)
 		- try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
+	/*
 	if (scroll_y == ScrollbarPolicy::Stable) {
 		clean_contg_width = std::max(0.0f, clean_contg_width - SCROLLBAR_GUTTER_WIDTH);
 	} else if (scroll_y == ScrollbarPolicy::StableBothEdges) {
@@ -697,6 +708,7 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 	} else {
 		clean_contg_width = std::max(0.0f, clean_contg_width);
 	}
+	*/
 
 	if (st.position == PositionType::Absolute) {
 		style::AbsoluteBlockWidthSolver solver(
@@ -729,6 +741,14 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 		b.padding.right = try_resolve_to_px(st.padding_right, contg_width).value_or(0);
 		b.border.right = try_resolve_to_px(st.border_right_width, contg_width).value_or(0);
 		b.margin.right = solver.marginRight();
+
+		if (scroll_y == ScrollbarPolicy::Stable) {
+			b.scrollbar_gutter.right = SCROLLBAR_GUTTER_WIDTH;
+		} else if (scroll_y == ScrollbarPolicy::StableBothEdges) {
+			b.scrollbar_gutter.left = SCROLLBAR_GUTTER_WIDTH;
+			b.scrollbar_gutter.right = SCROLLBAR_GUTTER_WIDTH;
+		}
+		b.content.width = std::max(0.0f, b.content.width - b.scrollbar_gutter.left - b.scrollbar_gutter.right);
 
 		// Compute top and bottom margins
 		b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);
@@ -764,7 +784,7 @@ void LayoutObject::arrangeBlockX(LayoutObject* o,
 			b.scrollbar_gutter.left = SCROLLBAR_GUTTER_WIDTH;
 			b.scrollbar_gutter.right = SCROLLBAR_GUTTER_WIDTH;
 		}
-		//b.content.width = std::max(0.0f, b.content.width - b.scrollbar_gutter.left - b.scrollbar_gutter.right);
+		b.content.width = std::max(0.0f, b.content.width - b.scrollbar_gutter.left - b.scrollbar_gutter.right);
 
 		// Compute height, top and bottom margins
 		b.margin.top = try_resolve_to_px(st.margin_top, contg_width).value_or(0);

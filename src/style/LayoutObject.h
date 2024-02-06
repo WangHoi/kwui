@@ -100,6 +100,7 @@ struct LayoutObject {
 	static scene2d::RectF paddingRect(LayoutObject* o);
 	// relative to o's margin box origin
 	static scene2d::RectF contentRect(LayoutObject* o);
+	static EdgeOffsetF padding(const LayoutObject* o);
 
 	void removeFromParent();
 	void append(LayoutObject* child);

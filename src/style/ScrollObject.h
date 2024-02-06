@@ -53,18 +53,19 @@ struct ScrollObject {
 
 private:
 	static void paintScrollbarBackground(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
-	static void paintVScrollbarTopButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
-	static void paintVScrollbarBottomButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
+	static void paintVScrollbarStartButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
+	static void paintVScrollbarEndButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
 	static void paintVScrollbarThumb(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
+	static void paintHScrollbarStartButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
+	static void paintHScrollbarEndButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
+	static void paintHScrollbarThumb(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
 	static uint32_t subControlFlags(SubControl sc, uint32_t flags);
 	static const Color& subControlColorForFlags(SubControl sc, uint32_t flags);
 
 	std::shared_ptr<graph2d::BitmapInterface> vtop_button_bitmap_;
-	std::shared_ptr<graph2d::BitmapInterface> vtop_button_hover_bitmap_;
-	std::shared_ptr<graph2d::BitmapInterface> vtop_button_active_bitmap_;
 	std::shared_ptr<graph2d::BitmapInterface> vbottom_button_bitmap_;
-	std::shared_ptr<graph2d::BitmapInterface> vbottom_button_hover_bitmap_;
-	std::shared_ptr<graph2d::BitmapInterface> vbottom_button_active_bitmap_;
+	std::shared_ptr<graph2d::BitmapInterface> hleft_button_bitmap_;
+	std::shared_ptr<graph2d::BitmapInterface> hright_button_bitmap_;
 };
 
 }

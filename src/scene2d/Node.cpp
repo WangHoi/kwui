@@ -141,7 +141,9 @@ Node* Node::removeChildAt(size_t idx)
 bool Node::hitTest(const PointF &pos, int flags) const
 {
 	if (layout_.scroll_object.has_value()) {
-		if (style::ScrollObject::hitTest(layout_.scroll_object.operator->(), pos, flags))
+		auto padding = style::LayoutObject::padding(&layout_);
+		PointF p = pos + PointF(padding.left, padding.top);
+		if (style::ScrollObject::hitTest(&layout_.scroll_object.value(), p, flags))
 			return true;
 	}
 	if (control_)
@@ -152,6 +154,9 @@ bool Node::hitTest(const PointF &pos, int flags) const
 void Node::onEvent(MouseEvent& event)
 {
 	if (layout_.scroll_object.has_value()) {
+		auto padding = style::LayoutObject::padding(&layout_);
+		PointF pos = event.pos + PointF(padding.left, padding.top);
+		base::scoped_setter<PointF> _(event.pos, pos);
 		handleScrollEvent(event);
 	}
 	if (control_)
@@ -467,6 +472,15 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 				requestPaint();
 			}
 		}
+	} else if (event.cmd == scene2d::MOUSE_HWHEEL) {
+		float d = event.wheel_delta * SCROLLBAR_WHEEL_FACTOR;
+		float w = so.viewport_size.width;
+		float x = std::clamp(so.scroll_offset.x + d, 0.0f, so.content_size.width - w);
+		if (so.scroll_offset.x != x) {
+			so.scroll_offset.x = x;
+			scroll_data_.offset = so.scroll_offset;
+			requestPaint();
+		}
 	} else if (event.cmd == scene2d::MOUSE_DOWN) {
 		if (event.button & scene2d::LEFT_BUTTON) {
 			scroll_data_.active_sub_control = style::ScrollObject::subControlHitTest(&so, event.pos);
@@ -500,6 +514,32 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 						= scroll_data_.offset.y
 						= std::min(so.content_size.height - so.viewport_size.height,
 							scroll_data_.offset.y + delta);
+				} else if (sc == style::ScrollObject::SubControl::HTrackStartPiece) {
+					// Scroll one page left
+					so.scroll_offset.x
+						= scroll_data_.offset.x
+						= std::max(0.0f,
+							scroll_data_.offset.x - so.viewport_size.width);
+				} else if (sc == style::ScrollObject::SubControl::HTrackEndPiece) {
+					// Scroll one page right
+					so.scroll_offset.x
+						= scroll_data_.offset.x
+						= std::min(so.content_size.width - so.viewport_size.width,
+							scroll_data_.offset.x + so.viewport_size.width);
+				} else if (sc == style::ScrollObject::SubControl::HStartButton) {
+					// Scroll left
+					auto delta = std::max(computed_style_.lineHeightInPixels(), 8.0f) * 3.0f;
+					so.scroll_offset.x
+						= scroll_data_.offset.x
+						= std::max(0.0f,
+							scroll_data_.offset.x - delta);
+				} else if (sc == style::ScrollObject::SubControl::HEndButton) {
+					// Scroll right
+					auto delta = std::max(computed_style_.lineHeightInPixels(), 8.0f) * 3.0f;
+					so.scroll_offset.x
+						= scroll_data_.offset.x
+						= std::min(so.content_size.width - so.viewport_size.width,
+							scroll_data_.offset.x + delta);
 				}
 				requestPaint();
 			} else {
@@ -524,8 +564,21 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 				so.scroll_offset.y
 					= scroll_data_.offset.y
 					= std::max(0.0f, std::min(so.content_size.height - so.viewport_size.height, y));
-				//LOG(INFO) << absl::StrFormat("event_pos old=%.0f new=%.0f", scroll_data_.active_pos.value().first.y, event.pos.y);
+				//LOG(INFO) << absl::StrFormat("event_pos.y old=%.0f new=%.0f", scroll_data_.active_pos.value().first.y, event.pos.y);
 				//LOG(INFO) << absl::StrFormat("scroll_offset y=%.0f so.y=%.0f", y, so.scroll_offset.y);
+				requestPaint();
+			} else if (scroll_data_.active_sub_control == style::ScrollObject::SubControl::HThumb) {
+				// Drag horizontal scrollbar thumb
+				float factor = so.content_size.width / (so.viewport_size.width - 2.0f * style::ScrollObject::SCROLLBAR_GUTTER_WIDTH);
+				float x = scroll_data_.active_pos.value().second.x
+					+ (event.pos.x - scroll_data_.active_pos.value().first.x) * factor;
+
+				auto old = so.scroll_offset.x;
+				so.scroll_offset.x
+					= scroll_data_.offset.x
+					= std::max(0.0f, std::min(so.content_size.width - so.viewport_size.width, x));
+				//LOG(INFO) << absl::StrFormat("event_pos.x old=%.0f new=%.0f", scroll_data_.active_pos.value().first.x, event.pos.x);
+				//LOG(INFO) << absl::StrFormat("scroll_offset x=%.0f so.x=%.0f", x, so.scroll_offset.x);
 				requestPaint();
 			}
 		}
