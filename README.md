@@ -54,7 +54,7 @@ app.showDialog({
 ![image](docs/VoIPTool.png)
 
 ### 远程桌面控制
-![image](docs/KuDesk.png)
+![image](docs/KuDesk.jpg)
 
 ### 安装程序
 ![image](docs/installer.png)
