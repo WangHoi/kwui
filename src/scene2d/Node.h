@@ -229,10 +229,9 @@ protected:
 	bool visible_ = true;
 	struct ScrollData {
 		PointF offset;
-		absl::optional<PointF> v_scrollbar_active_pos;
-		bool v_scrollbar_hover = false;
-		absl::optional<PointF> h_scrollbar_active_pos;
-		bool h_scrollbar_hover = false;
+		absl::optional<style::ScrollObject::SubControl> hover_sub_control;
+		absl::optional<style::ScrollObject::SubControl> active_sub_control;
+		absl::optional<std::pair<PointF, PointF>> active_pos; // [event_pos, scroll_offset]
 	} scroll_data_;
 
 	friend class Scene;

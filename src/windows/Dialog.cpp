@@ -543,7 +543,7 @@ void Dialog::OnPaint() {
     _scene->runPostRenderTasks();
 }
 void Dialog::OnResize() {
-    LOG(INFO) << "OnResize " << _pixel_size.width << "x" << _pixel_size.height << "px";
+    //LOG(INFO) << "OnResize " << _pixel_size.width << "x" << _pixel_size.height << "px";
     UpdateBorderAndRenderTarget();
     RequestPaint();
 }
@@ -972,7 +972,7 @@ void Dialog::UpdateBorderAndRenderTarget() {
     } else {
         HRESULT hr = _rt->Resize(
             D2D1::SizeU((UINT32)_pixel_size.width, (UINT32)_pixel_size.height));
-        LOG(INFO) << "RT resize " << (UINT32)_pixel_size.width << "x" << (UINT32)_pixel_size.height << "px";
+        //LOG(INFO) << "RT resize " << (UINT32)_pixel_size.width << "x" << (UINT32)_pixel_size.height << "px";
         _rt->SetDpi(_dpi_scale * USER_DEFAULT_SCREEN_DPI,
             _dpi_scale * USER_DEFAULT_SCREEN_DPI);
         if (hr == D2DERR_RECREATE_TARGET)

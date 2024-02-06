@@ -12,8 +12,6 @@
 
 namespace scene2d {
 
-static const float SCROLLBAR_WIDTH = 16.0f;
-
 static inline void resolve_style(style::Value& style,
 	const style::Value* parent,
 	const style::ValueSpec& spec)
@@ -402,24 +400,15 @@ void Node::layoutComputed()
 		
 		// sync: ScrollData --> ScrollObject
 		layout_.scroll_object->scroll_offset = scroll_data_.offset;
-		if (scroll_data_.v_scrollbar_active_pos.has_value() || scroll_data_.v_scrollbar_hover) {
-			layout_.scroll_object->v_scrollbar_flags = style::ScrollObject::SubControl_Thumb;
-			if (scroll_data_.v_scrollbar_active_pos.has_value())
-				layout_.scroll_object->v_scrollbar_flags |= style::ScrollObject::State_Active;
-			if (scroll_data_.v_scrollbar_hover)
-				layout_.scroll_object->v_scrollbar_flags |= style::ScrollObject::State_MouseOver;
-		} else {
-			layout_.scroll_object->v_scrollbar_flags = 0;
-		}
-
-		if (scroll_data_.h_scrollbar_active_pos.has_value() || scroll_data_.h_scrollbar_hover) {
-			layout_.scroll_object->h_scrollbar_flags = style::ScrollObject::SubControl_Thumb;
-			if (scroll_data_.h_scrollbar_active_pos.has_value())
-				layout_.scroll_object->h_scrollbar_flags |= style::ScrollObject::State_Active;
-			if (scroll_data_.h_scrollbar_hover)
-				layout_.scroll_object->h_scrollbar_flags |= style::ScrollObject::State_MouseOver;
-		} else {
-			layout_.scroll_object->h_scrollbar_flags = 0;
+		layout_.scroll_object->scrollbar_flags = style::ScrollObject::State_None;
+		if (scroll_data_.active_sub_control.has_value()) {
+			uint32_t shift = style::ScrollObject::State_SubControl_ShiftBits + (uint32_t)scroll_data_.active_sub_control.value();
+			layout_.scroll_object->scrollbar_flags |= (1 << shift);
+			layout_.scroll_object->scrollbar_flags |= style::ScrollObject::State_Active;
+		} else if (scroll_data_.hover_sub_control.has_value()) {
+			uint32_t shift = style::ScrollObject::State_SubControl_ShiftBits + (uint32_t)scroll_data_.hover_sub_control.value();
+			layout_.scroll_object->scrollbar_flags |= (1 << shift);
+			layout_.scroll_object->scrollbar_flags |= style::ScrollObject::State_MouseOver;
 		}
 	} else {
 		scroll_data_.offset = PointF();
@@ -480,86 +469,71 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 		}
 	} else if (event.cmd == scene2d::MOUSE_DOWN) {
 		if (event.button & scene2d::LEFT_BUTTON) {
-			style::ScrollObject::HitTestResult part = style::ScrollObject::hitTestPart(&so, event.pos);
-			if (part == style::ScrollObject::HitTestResult::HScrollbarThumb
-				&& !scroll_data_.h_scrollbar_active_pos.has_value()) {
-				scroll_data_.h_scrollbar_active_pos.emplace(event.pos);
+			scroll_data_.active_sub_control = style::ScrollObject::subControlHitTest(&so, event.pos);
+			if (scroll_data_.active_sub_control.has_value()) {
+				scroll_data_.active_pos.emplace(std::make_pair(event.pos, scroll_data_.offset));
+
+				auto sc = scroll_data_.active_sub_control.value();
+				if (sc == style::ScrollObject::SubControl::VTrackStartPiece) {
+					// Scroll one page up
+					so.scroll_offset.y
+						= scroll_data_.offset.y
+						= std::max(0.0f,
+							scroll_data_.offset.y - so.viewport_size.height);
+				} else if (sc == style::ScrollObject::SubControl::VTrackEndPiece) {
+					// Scroll one page down
+					so.scroll_offset.y
+						= scroll_data_.offset.y
+						= std::min(so.content_size.height - so.viewport_size.height,
+							scroll_data_.offset.y + so.viewport_size.height);
+				} else if (sc == style::ScrollObject::SubControl::VStartButton) {
+					// Scroll up
+					auto delta = std::max(computed_style_.lineHeightInPixels(), 8.0f) * 3.0f;
+					so.scroll_offset.y
+						= scroll_data_.offset.y
+						= std::max(0.0f,
+							scroll_data_.offset.y - delta);
+				} else if (sc == style::ScrollObject::SubControl::VEndButton) {
+					// Scroll down
+					auto delta = std::max(computed_style_.lineHeightInPixels(), 8.0f) * 3.0f;
+					so.scroll_offset.y
+						= scroll_data_.offset.y
+						= std::min(so.content_size.height - so.viewport_size.height,
+							scroll_data_.offset.y + delta);
+				}
 				requestPaint();
-			} else if (part == style::ScrollObject::HitTestResult::VScrollbarThumb
-				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
-				scroll_data_.v_scrollbar_active_pos.emplace(event.pos);
-				requestPaint();
-			} else if (part == style::ScrollObject::HitTestResult::VScrollbarTrackStartPiece
-				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
-				
-				style::ScrollObject& so = layout_.scroll_object.value();
-				float factor = so.viewport_size.height / so.content_size.height;
-				float y1 = so.scroll_offset.y * factor;
-				float y2 = (so.scroll_offset.y + so.viewport_size.height) * factor;
-
-				scroll_data_.offset.y = std::max(0.0f, scroll_data_.offset.y - (y2 - y1));
-				so.scroll_offset = scroll_data_.offset;
-
-				requestPaint();
-			} else if (part == style::ScrollObject::HitTestResult::VScrollbarTrackEndPiece
-				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
-
-				style::ScrollObject& so = layout_.scroll_object.value();
-				float factor = so.viewport_size.height / so.content_size.height;
-				float y1 = so.scroll_offset.y * factor;
-				float y2 = (so.scroll_offset.y + so.viewport_size.height) * factor;
-
-				scroll_data_.offset.y = std::min(so.content_size.height - so.viewport_size.height,
-					scroll_data_.offset.y + (y2 - y1));
-				so.scroll_offset = scroll_data_.offset;
-
-				requestPaint();
-			} else if (part == style::ScrollObject::HitTestResult::HScrollbarTrackStartPiece
-				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
-
-				style::ScrollObject& so = layout_.scroll_object.value();
-				float factor = so.viewport_size.width / so.content_size.width;
-				float x1 = so.scroll_offset.x * factor;
-				float x2 = (so.scroll_offset.x + so.viewport_size.width) * factor;
-
-				scroll_data_.offset.x = std::max(0.0f, scroll_data_.offset.x - (x2 - x1));
-				so.scroll_offset = scroll_data_.offset;
-
-				requestPaint();
-			} else if (part == style::ScrollObject::HitTestResult::HScrollbarTrackEndPiece
-				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
-
-				style::ScrollObject& so = layout_.scroll_object.value();
-				float factor = so.viewport_size.width / so.content_size.width;
-				float x1 = so.scroll_offset.x * factor;
-				float x2 = (so.scroll_offset.x + so.viewport_size.width) * factor;
-
-				scroll_data_.offset.x = std::min(so.content_size.width - so.viewport_size.width,
-					scroll_data_.offset.x + (x2 - x1));
-				so.scroll_offset = scroll_data_.offset;
-
-				requestPaint();
+			} else {
+				scroll_data_.active_pos = absl::nullopt;
 			}
 		}
 	} else if (event.cmd == scene2d::MOUSE_MOVE || event.cmd == scene2d::MOUSE_OVER || event.cmd == scene2d::MOUSE_OUT) {
-		scroll_data_.h_scrollbar_hover = false;
-		scroll_data_.v_scrollbar_hover = false;
-		if (!event.buttons) {
-			style::ScrollObject::HitTestResult part = style::ScrollObject::hitTestPart(&so, event.pos);
-			if (part == style::ScrollObject::HitTestResult::HScrollbarThumb
-				&& !scroll_data_.h_scrollbar_active_pos.has_value()) {
-				scroll_data_.h_scrollbar_hover = true;
-				requestPaint();
-			} else if (part == style::ScrollObject::HitTestResult::VScrollbarThumb
-				&& !scroll_data_.v_scrollbar_active_pos.has_value()) {
-				scroll_data_.v_scrollbar_hover = true;
+		auto old_hover = scroll_data_.hover_sub_control;
+		scroll_data_.hover_sub_control = style::ScrollObject::subControlHitTest(&so, event.pos);
+		if (old_hover != scroll_data_.hover_sub_control) {
+			requestPaint();
+		}
+
+		if (event.cmd == scene2d::MOUSE_MOVE && scroll_data_.active_pos.has_value()) {
+			if (scroll_data_.active_sub_control == style::ScrollObject::SubControl::VThumb) {
+				// Drag vertical scrollbar thumb
+				float factor = so.content_size.height / (so.viewport_size.height - 2.0f * style::ScrollObject::SCROLLBAR_GUTTER_WIDTH);
+				float y = scroll_data_.active_pos.value().second.y
+					+ (event.pos.y - scroll_data_.active_pos.value().first.y) * factor;
+				
+				auto old = so.scroll_offset.y;
+				so.scroll_offset.y
+					= scroll_data_.offset.y
+					= std::max(0.0f, std::min(so.content_size.height - so.viewport_size.height, y));
+				//LOG(INFO) << absl::StrFormat("event_pos old=%.0f new=%.0f", scroll_data_.active_pos.value().first.y, event.pos.y);
+				//LOG(INFO) << absl::StrFormat("scroll_offset y=%.0f so.y=%.0f", y, so.scroll_offset.y);
 				requestPaint();
 			}
 		}
 	} else if (event.cmd == scene2d::MOUSE_UP) {
-		if (event.button & scene2d::LEFT_BUTTON) {
-			scroll_data_.h_scrollbar_active_pos = absl::nullopt;
-			scroll_data_.v_scrollbar_active_pos = absl::nullopt;
+		if (event.button == scene2d::LEFT_BUTTON) {
+			scroll_data_.active_sub_control = absl::nullopt;
+			scroll_data_.active_pos = absl::nullopt;
+			//LOG(INFO) << "cleanup active_pos";
 			requestPaint();
 		}
 	}
