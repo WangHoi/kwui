@@ -399,7 +399,7 @@ void Node::layoutComputed()
 		int kk = 1;
 	}
 	if (layout_.scroll_object.has_value()) {
-		LOG(INFO) << &scroll_data_.hover_sub_control << " layoutComputed, hover_sub_control " << scroll_data_.hover_sub_control.has_value();
+		//LOG(INFO) << &scroll_data_.hover_sub_control << " layoutComputed, hover_sub_control " << scroll_data_.hover_sub_control.has_value();
 		// update: ScrollData <-- ScrollObject
 		DimensionF viewport_size = layout_.scroll_object->viewport_size;
 		float max_x = std::max(layout_.scroll_object->content_size.width - viewport_size.width, 0.0f);
@@ -554,10 +554,6 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 		auto old_hover = scroll_data_.hover_sub_control;
 		scroll_data_.hover_sub_control = style::ScrollObject::subControlHitTest(&so, event.pos);
 		if (old_hover != scroll_data_.hover_sub_control) {
-			if (!old_hover.has_value() && scroll_data_.hover_sub_control.has_value()) {
-				int kk = 1;
-				LOG(INFO) << &scroll_data_.hover_sub_control << " hover_sub_control changed, now " << scroll_data_.hover_sub_control.has_value();
-			}
 			requestPaint();
 		}
 
@@ -592,7 +588,7 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 		}
 	} else if (event.cmd == scene2d::MOUSE_OUT) {
 		scroll_data_.hover_sub_control = absl::nullopt;
-		LOG(INFO) << this << " hover_sub_control MOUSE_OUT changed, now " << scroll_data_.hover_sub_control.has_value();
+		//LOG(INFO) << this << " hover_sub_control MOUSE_OUT changed, now " << scroll_data_.hover_sub_control.has_value();
 		requestPaint();
 	} else if (event.cmd == scene2d::MOUSE_UP) {
 		if (event.button == scene2d::LEFT_BUTTON) {

@@ -7,12 +7,14 @@ namespace style {
 const float ScrollObject::SCROLLBAR_GUTTER_WIDTH = 16.0f;
 static const char* VSCROLL_TOP_BUTTON_PNG = "D:/projects/kwui/vscroll_top_button.png";
 static const char* VSCROLL_BOTTOM_BUTTON_PNG = "D:/projects/kwui/vscroll_bottom_button.png";
+static const char* HSCROLL_LEFT_BUTTON_PNG = "D:/projects/kwui/hscroll_left_button.png";
+static const char* HSCROLL_RIGHT_BUTTON_PNG = "D:/projects/kwui/hscroll_right_button.png";
 static const Color SCROLLBAR_THUMB_NORMAL_COLOR(0xcc, 0xcc, 0xcc); // "#ccc"
 static const Color SCROLLBAR_THUMB_HOVER_COLOR(0xbb, 0xbb, 0xbb); // "#bbb"
 static const Color SCROLLBAR_THUMB_ACTIVE_COLOR(0xaa, 0xaa, 0xaa); // "#aaa"
 static const Color SCROLLBAR_BUTTON_NORMAL_COLOR;
-static const Color SCROLLBAR_BUTTON_HOVER_COLOR(0xbb, 0xbb, 0xbb, 0x60);
-static const Color SCROLLBAR_BUTTON_ACTIVE_COLOR(0xaa, 0xaa, 0xaa, 0x80);
+static const Color SCROLLBAR_BUTTON_HOVER_COLOR(0xbb, 0xbb, 0xbb, 0x20);
+static const Color SCROLLBAR_BUTTON_ACTIVE_COLOR(0xaa, 0xaa, 0xaa, 0x40);
 
 bool ScrollObject::hitTest(const ScrollObject* sd, const scene2d::PointF& pos, int flags)
 {
@@ -149,7 +151,7 @@ void ScrollObject::paintVScrollbarThumb(ScrollObject* sd, graph2d::PainterInterf
 void ScrollObject::paintHScrollbarStartButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
 	if (!sd->hleft_button_bitmap_) {
-		sd->hleft_button_bitmap_ = graph2d::createBitmap(VSCROLL_TOP_BUTTON_PNG);
+		sd->hleft_button_bitmap_ = graph2d::createBitmap(HSCROLL_LEFT_BUTTON_PNG);
 	}
 	const auto& color = subControlColorForFlags(SubControl::HStartButton, sd->scrollbar_flags);
 	auto brect = scene2d::RectF::fromLTRB(rect.left, rect.top, rect.left + rect.height(), rect.bottom);
@@ -159,7 +161,7 @@ void ScrollObject::paintHScrollbarStartButton(ScrollObject* sd, graph2d::Painter
 void ScrollObject::paintHScrollbarEndButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
 {
 	if (!sd->hright_button_bitmap_) {
-		sd->hright_button_bitmap_ = graph2d::createBitmap(VSCROLL_BOTTOM_BUTTON_PNG);
+		sd->hright_button_bitmap_ = graph2d::createBitmap(HSCROLL_RIGHT_BUTTON_PNG);
 	}
 	const auto& color = subControlColorForFlags(SubControl::HEndButton, sd->scrollbar_flags);
 	auto brect = scene2d::RectF::fromLTRB(rect.right - rect.height(), rect.top, rect.right, rect.bottom);

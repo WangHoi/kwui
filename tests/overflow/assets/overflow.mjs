@@ -43,6 +43,9 @@ button {
 button:hover {
 	background-color: lightblue;
 }
+button:active {
+	background-color: lightcyan;
+}
 `;
 
 var span1 = <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius.</span>;
@@ -68,18 +71,19 @@ function TwoDirectionOverflow() {
 		{"Two direction overflow"}
 		<div class="inner" />
 		{span1}
+		<button>Test</button>
 		<div class="inner" />
 	</div>;
 }
 function OverflowExample() {
 	return <div style="margin: 16px;">
 		{[
-			<button>Test</button>,
+			// <button>Test</button>,
 			<div class="inline-block"><VerticalOverflow /></div>,
-			// <div class="inline-block" style="width: 8px;"></div>,
-			// <div class="inline-block"><HorizontalOverflow /></div>,
-			// <div class="inline-block" style="width: 8px;"></div>,
-			// <div class="inline-block"><TwoDirectionOverflow /></div>,
+			<div class="inline-block" style="width: 8px;"></div>,
+			<div class="inline-block"><HorizontalOverflow /></div>,
+			<div class="inline-block" style="width: 8px;"></div>,
+			<div class="inline-block"><TwoDirectionOverflow /></div>,
 		]}
 	</div>;
 }
