@@ -780,18 +780,19 @@ void Dialog::OnMouseWheel(int delta, int buttons, int modifiers, bool hwheel)
     }
 }
 void Dialog::UpdateHoveredNode() {
-    scene2d::Node* node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_HOVERABLE);
+    scene2d::PointF local_pos;
+    scene2d::Node* node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_HOVERABLE, &local_pos);
     base::object_refptr<scene2d::Node> old_hovered = _hovered_node.upgrade();
     if (node != old_hovered.get()) {
         if (old_hovered) {
             old_hovered->state_ &= ~scene2d::NODE_STATE_HOVER;
-            scene2d::MouseEvent hover_leave(old_hovered.get(), scene2d::MOUSE_OUT);
+            scene2d::MouseEvent hover_leave(old_hovered.get(), scene2d::MOUSE_OUT, _mouse_position, scene2d::PointF());
             old_hovered->onEvent(hover_leave);
         }
         _hovered_node = node ? node->weaken() : base::object_weakptr<scene2d::Node>();
         if (node) {
             node->state_ |= scene2d::NODE_STATE_HOVER;
-            scene2d::MouseEvent hover_enter(node, scene2d::MOUSE_OVER);
+            scene2d::MouseEvent hover_enter(node, scene2d::MOUSE_OVER, _mouse_position, local_pos);
             node->onEvent(hover_enter);
         }
         RequestPaint();

@@ -115,7 +115,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		border_radius.bottom_left = st.border_bottom_left_radius.pixelOrZero();
 		//LOG(INFO) << "paint box: " << render_rect;
 		painter->drawBox(
-			b.paddingRect().translated(b.pos),
+			b.paddingRect().translated(ibb.inline_box->pos),
 			b.border,
 			border_radius,
 			st.background_color,
@@ -248,9 +248,10 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 			}
 		}
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
+		const InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
 		const BlockBox& b = absl::get<InlineBlockBox>(o->box).block_box;
-		scene2d::RectF border_rect = b.borderRect().translated(b.pos);
-		scene2d::PointF local_pos = pos - b.pos - b.contentRect().origin();
+		scene2d::RectF border_rect = b.borderRect().translated(ibb.inline_box->pos);
+		scene2d::PointF local_pos = pos - ibb.inline_box->pos - b.contentRect().origin();
 		if (border_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
 			if (out_local_pos)
 				*out_local_pos = local_pos;
@@ -413,7 +414,8 @@ scene2d::RectF LayoutObject::borderRect(LayoutObject* o)
 		}
 		return rect.has_value() ? rect.value() : scene2d::RectF();
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
-		return absl::get<InlineBlockBox>(o->box).block_box.borderRect();
+		const auto& ibb = absl::get<InlineBlockBox>(o->box);
+		return ibb.block_box.borderRect().translated(ibb.inline_box->pos);
 	} else {
 		return scene2d::RectF();
 	}
@@ -439,7 +441,8 @@ scene2d::RectF LayoutObject::paddingRect(LayoutObject* o)
 		}
 		return rect.has_value() ? rect.value() : scene2d::RectF();
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
-		return absl::get<InlineBlockBox>(o->box).block_box.paddingRect();
+		const auto& ibb = absl::get<InlineBlockBox>(o->box);
+		return ibb.block_box.paddingRect().translated(ibb.inline_box->pos);
 	} else {
 		return scene2d::RectF();
 	}
@@ -465,7 +468,8 @@ scene2d::RectF LayoutObject::contentRect(LayoutObject* o)
 		}
 		return rect.has_value() ? rect.value() : scene2d::RectF();
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
-		return absl::get<InlineBlockBox>(o->box).block_box.contentRect();
+		const auto& ibb = absl::get<InlineBlockBox>(o->box);
+		return ibb.block_box.contentRect().translated(ibb.inline_box->pos);
 	} else {
 		return scene2d::RectF();
 	}

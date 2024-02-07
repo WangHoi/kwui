@@ -1,46 +1,3 @@
-"use strict";
-"use math";
-
-class __ComponentState__ extends Object {
-	renderFn;
-	props;
-	children;
-
-	constructor(builder, props, children) {
-		super();
-		this.renderFn = builder;
-		this.props = props;
-		this.children = children;
-	}
-	update() {
-		// this.scene.updateComponent(this);
-	}
-	render() {
-		return this.renderFn(this.props, this.children);
-	}
-};
-
-
-function JSX(tag, atts, kids) {
-	if (typeof tag == 'function') {
-		return new __ComponentState__(tag, atts, kids);
-	} else {
-		return {
-			tag,
-			atts,
-			kids,
-		};
-	}
-}
-
-function Div(props, kids) {
-	return <div>
-		<p>{props.a}</p>
-		{kids}
-		<p>next</p>
-	</div>;
-}
-
 var simple_stylesheet = css`
 .outer {
 	display: block;
@@ -76,21 +33,26 @@ line_edit {
 .inline-block {
 	display: inline-block;
 }
+button {
+	display: inline-block;
+	border: 1px solid black;
+	padding: 0px 4px;
+	height: 24px;
+	line-height: 24px;
+}
+button:hover {
+	background-color: lightblue;
+}
 `;
 
 var span1 = <span>This property is a shorthand for the following CSS properties: border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius.</span>;
-var span2 = <span>a b c d e f g h i j k l m o p q r s t u v w x y z</span>;
-//	<p>{span2}</p>
-var complex_overflow = (<div class="outer">
-	<qqq style="background-color: #0aa; height:120; overflow-y: scroll">{span1}</qqq>
-	<div class="inner"><line_edit /><div class="inner" /></div>
-</div>);
 
 function VerticalOverflow() {
 	return <div class="outer">
 		{"Vertical overflow"}
 		<p><span style="text-decoration: underline; font-weight:bold;font-size:20px;">border-radius</span></p>
 		<p>{span1}</p>
+		<button>Test</button>
 		<p>{span1}</p>
 	</div>;
 }
@@ -98,6 +60,7 @@ function HorizontalOverflow() {
 	return <div class="outer">
 		{"Horizontal overflow"}
 		<div class="inner" />
+		<button>Test</button>
 	</div>;
 }
 function TwoDirectionOverflow() {
@@ -109,12 +72,14 @@ function TwoDirectionOverflow() {
 	</div>;
 }
 function OverflowExample() {
-	return <div style="">
+	return <div style="margin: 16px;">
 		{[
-			// <div class="inline-block"><VerticalOverflow /></div>,
+			<button>Test</button>,
+			<div class="inline-block"><VerticalOverflow /></div>,
 			// <div class="inline-block" style="width: 8px;"></div>,
 			// <div class="inline-block"><HorizontalOverflow /></div>,
-			<div class="inline-block"><TwoDirectionOverflow /></div>,
+			// <div class="inline-block" style="width: 8px;"></div>,
+			// <div class="inline-block"><TwoDirectionOverflow /></div>,
 		]}
 	</div>;
 }

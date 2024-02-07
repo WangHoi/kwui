@@ -69,6 +69,10 @@ struct MouseEvent : public Event {
 
     MouseEvent(Node* t, int c)
         : Event(t, c) {}
+    MouseEvent(Node* t, int c, const PointF& vpos, const PointF& lpos)
+        : Event(t, c)
+        , view_pos(vpos)
+        , pos(lpos) {}
     MouseEvent(Node* t, int c, const PointF& vpos, const PointF& lpos, ButtonState btn, int btns, int modi)
         : Event(t, c)
         , view_pos(vpos)
