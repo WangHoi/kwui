@@ -204,10 +204,20 @@ void Node::setStyle(const style::StyleSpec& style)
 
 void Node::setAttribute(base::string_atom name, const NodeAttributeValue& value)
 {
-	if (value.isNull()) {
+	if (value.isNull() || (value.isBool() && !value.toBool())) {
 		attrs_.erase(name);
+		if (name == base::string_intern("checked")) {
+			state_ &= ~NODE_STATE_CHECKED;
+		} else if (name == base::string_intern("disabled")) {
+			state_ &= ~NODE_STATE_DISABLED;
+		}
 	} else {
 		attrs_[name] = value;
+		if (name == base::string_intern("checked")) {
+			state_ |= NODE_STATE_CHECKED;
+		} else if (name == base::string_intern("disabled")) {
+			state_ |= NODE_STATE_DISABLED;
+		}
 	}
 	if (control_)
 		control_->onSetAttribute(name, value);
@@ -440,6 +450,15 @@ bool Node::matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const
 				return false;
 		} else if (klass == base::string_intern("focus")) {
 			if (!(state_ & NODE_STATE_FOCUSED))
+				return false;
+		} else if (klass == base::string_intern("checked")) {
+			if (!(state_ & NODE_STATE_CHECKED))
+				return false;
+		} else if (klass == base::string_intern("disabled")) {
+			if (!(state_ & NODE_STATE_DISABLED))
+				return false;
+		} else if (klass == base::string_intern("enabled")) {
+			if ((state_ & NODE_STATE_DISABLED))
 				return false;
 		} else {
 			return false;

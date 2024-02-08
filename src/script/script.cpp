@@ -608,7 +608,7 @@ JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSVal
 kwui::ScriptValue wrap(JSContext* ctx, JSValueConst c)
 {
 	if (JS_IsBool(c)) {
-		return JS_ToBool(ctx, c);
+		return !!JS_ToBool(ctx, c);
 	} else if (JS_IsNumber(c)) {
 		double f64 = 0.0;
 		JS_ToFloat64(ctx, &f64, c);

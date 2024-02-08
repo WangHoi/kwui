@@ -42,6 +42,8 @@ enum NodeState {
 	NODE_STATE_HOVER = 1,
 	NODE_STATE_ACTIVE = 2,
 	NODE_STATE_FOCUSED = 4,
+	NODE_STATE_CHECKED = 8,
+	NODE_STATE_DISABLED = 16,
 };
 
 template <typename Sink>

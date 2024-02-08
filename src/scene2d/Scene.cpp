@@ -413,6 +413,10 @@ void Scene::setupProps(Node* node, JSValue props)
 			JS_FreeCString(ctx, s);
 		} else if (JS_IsFunction(ctx, value)) {
 			new_ehandlers[name] = script::Value(ctx, value);
+		} else {
+			new_attrs[name] = script::wrap(ctx, value);
+		}
+#if 0
 		} else if (JS_IsNumber(value)) {
 			double f64;
 			JS_ToFloat64(ctx, &f64, value);
@@ -428,6 +432,7 @@ void Scene::setupProps(Node* node, JSValue props)
 			JS_FreeCString(ctx, s);
 			JS_FreeValue(ctx, jval);
 		}
+#endif
 		});
 	
 	// Check to clear style/id/class
