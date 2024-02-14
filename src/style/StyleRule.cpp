@@ -16,7 +16,6 @@ struct ShorthandDeclaration {
 	base::string_atom name;
 	std::vector<SingleDeclaration> decls;
 };
-
 using Declaration = absl::variant<SingleDeclaration, ShorthandDeclaration>;
 
 static StyleSpec make_style_spec(const std::vector<Declaration>& decls)
@@ -36,10 +35,47 @@ static StyleSpec make_style_spec(const std::vector<Declaration>& decls)
 	return spec;
 }
 
+static void decl_set_important(Declaration& decl, bool important)
+{
+	if (!important)
+		return;
+	if (absl::holds_alternative<SingleDeclaration>(decl)) {
+		auto& d = absl::get<SingleDeclaration>(decl);
+		d.value.important = true;
+	} else if (absl::holds_alternative<ShorthandDeclaration>(decl)) {
+		auto& d = absl::get<ShorthandDeclaration>(decl);
+		for (auto& sd : d.decls) {
+			sd.value.important = true;
+		}
+	}
+}
+
+// Syntax: (SPACE_CHAR | comment)+
+inline IResult<std::string_view> ws(absl::string_view input)
+{
+	int i = 0;
+	while (i < input.length() && i < INT_MAX) {
+		if (absl::StartsWith(input.substr(i), "/*")) {
+			size_t pos = input.find_first_of("*/", i + 2);
+			if (pos != std::string_view::npos) {
+				i = pos + 2;
+			}
+		}
+		if (!std::isspace(input[i]))
+			break;
+		++i;
+	}
+	if (i < 1) {
+		return absl::InvalidArgumentError(input);
+	} else {
+		return std::make_tuple(input.substr(i), input.substr(0, i));
+	}
+}
+
 // Syntax: ("#" ident | "." ident | ":" ident)+
 IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 {
-	auto [output1, _] = *opt(spaces)(input);
+	auto [output1, _] = *opt(ws)(input);
 
 	Selector sel;
 	auto id = seq(tag("#"), ident);
@@ -100,7 +136,7 @@ IResult<SelectorDependency> combinator(absl::string_view input)
 {
 	bool starts_with_space = absl::StartsWith(input, " ");
 	absl::string_view output1;
-	std::tie(output1, std::ignore) = *opt(spaces)(input);
+	std::tie(output1, std::ignore) = *opt(ws)(input);
 
 	SelectorDependency dep;
 	if (absl::StartsWith(output1, ">")) {
@@ -114,7 +150,7 @@ IResult<SelectorDependency> combinator(absl::string_view input)
 		}
 	}
 
-	std::tie(output1, std::ignore) = *opt(spaces)(output1);
+	std::tie(output1, std::ignore) = *opt(ws)(output1);
 
 	return std::make_tuple(output1, dep);
 }
@@ -153,7 +189,7 @@ IResult<std::vector<std::unique_ptr<Selector>>> selector_group(absl::string_view
 	sels.emplace_back(std::move(sel1));
 
 	while (true) {
-		auto res2 = seq(tag(","), opt(spaces), selector)(output1);
+		auto res2 = seq(tag(","), opt(ws), selector)(output1);
 		if (!res2.ok())
 			break;
 
@@ -169,7 +205,7 @@ IResult<std::vector<std::unique_ptr<Selector>>> selector_group(absl::string_view
 // Syntax: prop_name <- IDENT S*
 IResult<absl::string_view> prop_name(absl::string_view input)
 {
-	return map(seq(ident, opt(spaces)), [](auto&& t) {
+	return map(seq(ident, opt(ws)), [](auto&& t) {
 		return absl::get<0>(t);
 		})(input);
 }
@@ -316,7 +352,7 @@ IResult<SingleDeclaration> single_decl(base::string_atom name, absl::string_view
 	if (!res.ok())
 		return res.status();
 	auto&& [output, spec] = res.value();
-	std::tie(output, std::ignore) = opt(spaces)(output).value();
+	std::tie(output, std::ignore) = opt(ws)(output).value();
 
 	SingleDeclaration decl;
 	decl.name = name;
@@ -548,6 +584,16 @@ IResult<ShorthandDeclaration> border_radius_shorthand_decl(base::string_atom nam
 	return std::make_tuple(output, sd);
 }
 
+// prio <- "!" opt(ws) "important"
+IResult<std::string_view> prio(absl::string_view input)
+{
+	auto res1 = seq(tag("!"), opt(ws), tag("important"))(input);
+	if (!res1.ok())
+		return res1.status();
+
+	auto [output, _] = res1.value();
+	return std::make_tuple(output, input.substr(0, output.data() - input.data()));
+}
 
 // Syntax: prop_name ":" S* prop_value prio? 
 IResult<Declaration> declaration(absl::string_view input)
@@ -557,7 +603,7 @@ IResult<Declaration> declaration(absl::string_view input)
 		return prop_name_res.status();
 	
 	auto&& [input1, prop_name_str] = prop_name_res.value();
-	auto res1 = seq(tag(":"), opt(spaces))(input1);
+	auto res1 = seq(tag(":"), opt(ws))(input1);
 	if (!res1.ok())
 		return res1.status();
 
@@ -616,19 +662,21 @@ IResult<Declaration> declaration(absl::string_view input)
 	if (!decl.ok())
 		return decl.status();
 
-	// TODO: parse "prio?"
+	auto [input2, decl_value] = decl.value();
+	auto [input3, prio_value] = opt(prio)(input2).value();
+	decl_set_important(decl_value, prio_value.has_value());
 
-	return decl.value();
+	return std::make_tuple(input3, decl_value);
 }
 
 // Syntax: S* declaration (";" S* declaration)*
 IResult<std::vector<Declaration>> decls(absl::string_view input)
 {
-	auto decl = map(seq(opt(spaces), declaration), [](auto&& t) { return absl::get<1>(t); });
+	auto decl = map(seq(opt(ws), declaration), [](auto&& t) { return absl::get<1>(t); });
 	return separated_list1(tag(";"), decl)(input);
 }
 
-// rule_rhs <-"{" decls ";"? S* "}" S*
+// rule_rhs <-"{" decls? ";"? S* "}" S*
 IResult<StyleSpec> rule_rhs(absl::string_view input)
 {
 	auto res1 = tag("{")(input);
@@ -637,19 +685,17 @@ IResult<StyleSpec> rule_rhs(absl::string_view input)
 	std::tie(input, std::ignore) = res1.value();
 
 	auto decls_res = decls(input);
-	if (!decls_res.ok())
-		return decls_res.status();
+	std::vector<Declaration> decl_list;
+	if (decls_res.ok())
+		std::tie(input, decl_list) = decls_res.value();
 
-	std::vector<Declaration> decls;
-	std::tie(input, decls) = decls_res.value();
-
-	auto res2 = seq(opt(tag(";")), opt(spaces), tag("}"), opt(spaces))(input);
+	auto res2 = seq(opt(tag(";")), opt(ws), tag("}"), opt(ws))(input);
 	if (!res2.ok())
 		return res2.status();
 
 	std::tie(input, std::ignore) = res2.value();
 
-	StyleSpec spec = make_style_spec(decls);
+	StyleSpec spec = make_style_spec(decl_list);
 	return std::make_tuple(input, spec);
 }
 
@@ -661,7 +707,7 @@ IResult<std::vector<std::unique_ptr<StyleRule>>> rule(absl::string_view input)
 		return res.status();
 	auto&& [output, sels] = *res;
 	
-	std::tie(output, std::ignore) = opt(spaces)(output).value();
+	std::tie(output, std::ignore) = opt(ws)(output).value();
 
 	auto res1 = rule_rhs(output);
 	if (!res1.ok())
@@ -713,7 +759,7 @@ int Selector::specificity() const
 // S* rule*
 absl::StatusOr<std::vector<std::unique_ptr<StyleRule>>> parse_css(absl::string_view input)
 {
-	std::tie(input, std::ignore) = opt(spaces)(input).value();
+	std::tie(input, std::ignore) = opt(ws)(input).value();
 
 	std::vector<std::unique_ptr<StyleRule>> rules;
 	auto res = rule(input);
@@ -736,7 +782,7 @@ absl::StatusOr<StyleSpec> parse_inline_style(absl::string_view input)
 	if (!res.ok())
 		return res.status();
 	auto&& [input1, decls] = res.value();
-	auto&& [output, _] = seq(opt(spaces), opt(tag(";")), opt(spaces))(input1).value();
+	auto&& [output, _] = seq(opt(ws), opt(tag(";")), opt(ws))(input1).value();
 	if (output.length() > 0) {
 		return absl::InvalidArgumentError(output);
 	}

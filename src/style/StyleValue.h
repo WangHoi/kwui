@@ -81,6 +81,7 @@ enum class ValueSpecType {
 struct ValueSpec {
 	ValueSpecType type = ValueSpecType::Unset;
 	std::optional<Value> value;
+	bool important = false;
 };
 
 struct StyleSpec {

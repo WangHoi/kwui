@@ -259,13 +259,15 @@ void Node::resolveDefaultStyle()
 	computed_style_.resolveDefault(parent_ ? &parent_->computed_style_ : nullptr);
 }
 
-void Node::resolveStyle(const style::StyleSpec& spec)
+void Node::resolveStyle(StyleResolveContext& ctx, const style::StyleSpec& spec)
 {
 	CHECK(type_ == NodeType::NODE_ELEMENT);
 #define RESOLVE_STYLE(x) \
-    resolve_style(computed_style_.x, \
-        parent_ ? &parent_->computed_style_.x : nullptr, \
-        spec.x)
+	if (ctx.testAndUpdate(#x, spec.x.important)) { \
+		resolve_style(computed_style_.x, \
+			parent_ ? &parent_->computed_style_.x : nullptr, \
+			spec.x); \
+	}
 	RESOLVE_STYLE(display);
 	RESOLVE_STYLE(position);
 	RESOLVE_STYLE(margin_left);
@@ -315,9 +317,9 @@ void Node::resolveStyle(const style::StyleSpec& spec)
 #undef RESOLVE_STYLE
 }
 
-void Node::resolveInlineStyle()
+void Node::resolveInlineStyle(StyleResolveContext& ctx)
 {
-	resolveStyle(specStyle_);
+	resolveStyle(ctx, specStyle_);
 	if (type_ == NodeType::NODE_ELEMENT && absolutelyPositioned()
 		&& computed_style_.display != style::DisplayType::Block) {
 		computed_style_.display = style::DisplayType::Block;

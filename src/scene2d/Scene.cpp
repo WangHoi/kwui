@@ -233,9 +233,16 @@ void Scene::setStyleSheet(JSValue stylesheet)
 		if (s) {
 			auto css_res = style::parse_css(s);
 			if (css_res.ok()) {
-				for (auto&& rule : css_res.value()) {
+				auto& stylesheet = css_res.value();
+				std::stable_sort(stylesheet.begin(), stylesheet.end(),
+					[](const std::unique_ptr<style::StyleRule>& a, const std::unique_ptr<style::StyleRule>& b) -> bool {
+						return a->specificity() < b->specificity();
+					});
+				for (auto&& rule : stylesheet) {
 					appendStyleRule(std::move(rule));
 				}
+			} else {
+				LOG(ERROR) << "parse stylesheet [" << s << "] failed";
 			}
 		}
 		JS_FreeCString(ctx, s);
@@ -398,8 +405,11 @@ void Scene::setupProps(Node* node, JSValue props)
 				const char* s = JS_ToCString(ctx, value);
 				auto style_res = style::parse_inline_style(s);
 				JS_FreeCString(ctx, s);
-				if (style_res.ok())
+				if (style_res.ok()) {
 					node->setStyle(style_res.value());
+				} else {
+					LOG(ERROR) << "parse inline style [" << s << "] failed.";
+				}
 			}
 		} else if (name == base::string_intern("id")) {
 			new_id = true;
@@ -505,12 +515,13 @@ void Scene::resolveNodeStyle(Node* node)
 		node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		node->resolveDefaultStyle();
+		StyleResolveContext ctx;
 		for (auto& rule : style_rules_) {
 			if (match(node, rule->selector.get())) {
-				node->resolveStyle(rule->spec);
+				node->resolveStyle(ctx, rule->spec);
 			}
 		}
-		node->resolveInlineStyle();
+		node->resolveInlineStyle(ctx);
 		node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
 	} else if (node->type() == NodeType::NODE_TEXT) {
 		node->resolveDefaultStyle();

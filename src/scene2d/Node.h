@@ -73,6 +73,20 @@ enum NodeFlag {
 class Control;
 class Scene;
 class BlockWidthSolverInterface;
+struct StyleResolveContext {
+	std::unordered_set<std::string> key_set;
+	inline bool testAndUpdate(const std::string& key, bool important) {
+		bool found = (key_set.find(key) != key_set.end());
+		if (!important) {
+			return !found;
+		} else {
+			if (!found) {
+				key_set.insert(key);
+			}
+			return true;
+		}
+	}
+};
 class Node : public base::Object {
 public:
 	Node(Scene* scene, NodeType type);
@@ -150,8 +164,8 @@ public:
 	void setEventHandler(base::string_atom name, const script::Value& func);
 	
 	void resolveDefaultStyle();
-	void resolveStyle(const style::StyleSpec &style);
-	void resolveInlineStyle();
+	void resolveStyle(StyleResolveContext& ctx, const style::StyleSpec &style);
+	void resolveInlineStyle(StyleResolveContext& ctx);
 	
 	inline const style::Style& computedStyle() const
 	{
