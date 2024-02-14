@@ -570,10 +570,8 @@ void Dialog::RequestUpdate() {
     _scene->computeLayout(_size);
 
     POINT point;
-    RECT wnd_rect;
-    if (GetCursorPos(&point) && GetWindowRect(_hwnd, &wnd_rect)) {
-        _mouse_position = scene2d::PointF((float)(point.x - wnd_rect.left),
-            (float)point.y - wnd_rect.top);
+    if (GetCursorPos(&point) && ScreenToClient(_hwnd, &point)) {
+        _mouse_position = scene2d::PointF((float)point.x, (float)point.y);
         _mouse_position /= _dpi_scale;
     } else {
         _mouse_position = scene2d::PointF::fromAll(-1);

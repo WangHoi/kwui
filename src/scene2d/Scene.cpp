@@ -131,7 +131,7 @@ Node* Scene::createComponentNode(Node* parent, JSValue comp_data)
 
 void Scene::updateComponentNodeChildren(Node* node, JSValue comp_data)
 {
-	LOG(INFO) << "Scene::updateComponentNode";
+	//LOG(INFO) << "Scene::updateComponentNode";
 	CHECK(node->type_ == NodeType::NODE_COMPONENT)
 		<< "Scene::updateComponentNode(): expect component node";
 	JSContext* ctx = script_ctx_->get();
