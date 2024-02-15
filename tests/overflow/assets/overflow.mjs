@@ -75,15 +75,31 @@ function TwoDirectionOverflow() {
 		<div class="inner" />
 	</div>;
 }
+function NestedOverflow() {
+	return <div class="outer" style="width:600px;height:320px;">
+		{"Nested overflow"}
+		<div class="inner" />
+		{span1}
+		<button>Test</button>
+		<div class="outer">
+			{"Inner overflow"}
+			<div class="inner" />
+			{span1}
+			<button>Test</button>
+		</div>
+		<div class="inner" />
+	</div>;
+}
 function OverflowExample() {
 	return <div style="margin: 16px;">
 		{[
 			// <button>Test</button>,
-			<div class="inline-block"><VerticalOverflow /></div>,
-			<div class="inline-block" style="width: 8px;"></div>,
-			<div class="inline-block"><HorizontalOverflow /></div>,
-			<div class="inline-block" style="width: 8px;"></div>,
-			<div class="inline-block"><TwoDirectionOverflow /></div>,
+			// <div class="inline-block"><VerticalOverflow /></div>,
+			// <div class="inline-block" style="width: 8px;"></div>,
+			// <div class="inline-block"><HorizontalOverflow /></div>,
+			// <div class="inline-block" style="width: 8px;"></div>,
+			// <div class="inline-block"><TwoDirectionOverflow /></div>,
+			<NestedOverflow />
 		]}
 	</div>;
 }
