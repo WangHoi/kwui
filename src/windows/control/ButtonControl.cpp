@@ -37,6 +37,9 @@ void ButtonControl::onPaint(graph2d::PainterInterface& p, const scene2d::RectF& 
 
 void ButtonControl::onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt)
 {
+	if (evt.isHandled())
+		return;
+	evt.setHandled();
 	node->requestPaint();
 	if ((evt.cmd == scene2d::MOUSE_UP) && (evt.button & scene2d::LEFT_BUTTON) && (evt.buttons == 0)) {
 		//LOG(INFO) << "button click";

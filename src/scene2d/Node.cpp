@@ -151,34 +151,20 @@ bool Node::hitTest(const PointF &pos, int flags) const
 	return false;
 }
 
-void Node::onEvent(MouseEvent& event)
+void Node::onEvent(Event& event)
 {
-	if (layout_.scroll_object.has_value()) {
-		auto padding = style::LayoutObject::padding(&layout_);
-		PointF pos = event.pos + PointF(padding.left, padding.top);
-		base::scoped_setter<PointF> _(event.pos, pos);
-		handleScrollEvent(event);
+	switch (event.group()) {
+	case MouseEvent::EVENT_GROUP:
+		return onMouseEvent((MouseEvent&)event);
+	case KeyEvent::EVENT_GROUP:
+		return onKeyEvent((KeyEvent&)event);
+	case FocusEvent::EVENT_GROUP:
+		return onFocusEvent((FocusEvent&)event);
+	case ImeEvent::EVENT_GROUP:
+		return onImeEvent((ImeEvent&)event);
+	default:
+		LOG(ERROR) << absl::StrFormat("event: group=%d cmd=%d not handled", event.group(), event.cmd);
 	}
-	if (control_)
-		control_->onMouseEvent(this, event);
-}
-
-void Node::onEvent(KeyEvent& event)
-{
-	if (control_)
-		control_->onKeyEvent(this, event);
-}
-
-void Node::onEvent(FocusEvent& event)
-{
-	if (control_)
-		control_->onFocusEvent(this, event);
-}
-
-void Node::onEvent(ImeEvent& event)
-{
-	if (control_)
-		control_->onImeEvent(this, event);
 }
 
 void Node::onAnimationFrame(absl::Time timestamp)
@@ -475,6 +461,8 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 
 	if (!layout_.scroll_object.has_value())
 		return;
+	if (event.isHandled())
+		return;
 
 	style::ScrollObject& so = layout_.scroll_object.value();
 
@@ -484,6 +472,7 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 			float w = so.viewport_size.width;
 			float x = std::clamp(so.scroll_offset.x + d, 0.0f, so.content_size.width - w);
 			if (so.scroll_offset.x != x) {
+				event.setHandled();
 				so.scroll_offset.x = x;
 				scroll_data_.offset = so.scroll_offset;
 				requestPaint();
@@ -492,6 +481,7 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 			float h = so.viewport_size.height;
 			float y = std::clamp(so.scroll_offset.y + d, 0.0f, so.content_size.height - h);
 			if (so.scroll_offset.y != y) {
+				event.setHandled();
 				so.scroll_offset.y = y;
 				scroll_data_.offset = so.scroll_offset;
 				requestPaint();
@@ -502,11 +492,13 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 		float w = so.viewport_size.width;
 		float x = std::clamp(so.scroll_offset.x + d, 0.0f, so.content_size.width - w);
 		if (so.scroll_offset.x != x) {
+			event.setHandled();
 			so.scroll_offset.x = x;
 			scroll_data_.offset = so.scroll_offset;
 			requestPaint();
 		}
 	} else if (event.cmd == scene2d::MOUSE_DOWN) {
+		event.setHandled();
 		if (event.button & scene2d::LEFT_BUTTON) {
 			scroll_data_.active_sub_control = style::ScrollObject::subControlHitTest(&so, event.pos);
 			if (scroll_data_.active_sub_control.has_value()) {
@@ -572,6 +564,7 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 			}
 		}
 	} else if (event.cmd == scene2d::MOUSE_MOVE || event.cmd == scene2d::MOUSE_OVER) {
+		event.setHandled();
 		auto old_hover = scroll_data_.hover_sub_control;
 		scroll_data_.hover_sub_control = style::ScrollObject::subControlHitTest(&so, event.pos);
 		if (old_hover != scroll_data_.hover_sub_control) {
@@ -608,10 +601,12 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 			}
 		}
 	} else if (event.cmd == scene2d::MOUSE_OUT) {
+		event.setHandled();
 		scroll_data_.hover_sub_control = absl::nullopt;
 		//LOG(INFO) << this << " hover_sub_control MOUSE_OUT changed, now " << scroll_data_.hover_sub_control.has_value();
 		requestPaint();
 	} else if (event.cmd == scene2d::MOUSE_UP) {
+		event.setHandled();
 		if (event.button == scene2d::LEFT_BUTTON) {
 			scroll_data_.active_sub_control = absl::nullopt;
 			scroll_data_.active_pos = absl::nullopt;
@@ -619,6 +614,36 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 			requestPaint();
 		}
 	}
+}
+
+void Node::onMouseEvent(MouseEvent& event)
+{
+	if (layout_.scroll_object.has_value()) {
+		auto padding = style::LayoutObject::padding(&layout_);
+		PointF pos = event.pos + PointF(padding.left, padding.top);
+		base::scoped_setter<PointF> _(event.pos, pos);
+		handleScrollEvent(event);
+	}
+	if (control_)
+		control_->onMouseEvent(this, event);
+}
+
+void Node::onKeyEvent(KeyEvent& event)
+{
+	if (control_)
+		control_->onKeyEvent(this, event);
+}
+
+void Node::onFocusEvent(FocusEvent& event)
+{
+	if (control_)
+		control_->onFocusEvent(this, event);
+}
+
+void Node::onImeEvent(ImeEvent& event)
+{
+	if (control_)
+		control_->onImeEvent(this, event);
 }
 
 void resolve_style(style::DisplayType& style, const style::DisplayType* parent,

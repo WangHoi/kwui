@@ -13,17 +13,30 @@ enum EventGroups {
     HANDLE_FOCUS = 4,
     HANDLE_IME = 8,
 };
+enum EventFlag {
+    EVENT_FLAG_HANDLED = 1,
+    EVENT_FLAG_SINKING = 2,
+};
 
 class Node;
 struct Event {
     Node* target;
     int cmd;
+    int flags;
 
     Event(Node* t, int c)
-        : target(t), cmd(c) {}
+        : target(t), cmd(c), flags(0) {}
     virtual EventGroups group() const
     {
         return NO_GROUP;
+    }
+    inline bool isHandled() const
+    {
+        return (flags & EVENT_FLAG_HANDLED) != 0;
+    }
+    inline void setHandled()
+    {
+        flags |= EVENT_FLAG_HANDLED;
     }
 };
 

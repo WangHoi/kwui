@@ -151,10 +151,7 @@ public:
 	// pos: related to padding box
 	bool hitTest(const PointF& pos, int flags) const;
 
-	void onEvent(MouseEvent &event);
-	void onEvent(KeyEvent &event);
-	void onEvent(FocusEvent &event);
-	void onEvent(ImeEvent &event);
+	void onEvent(Event& event);
 	void onAnimationFrame(absl::Time timestamp);
 
 	void setId(base::string_atom id);
@@ -205,6 +202,10 @@ public:
 protected:
 	bool matchPseudoClasses(const style::PseudoClasses& pseudo_classes) const;
 	void handleScrollEvent(scene2d::MouseEvent& event);
+	void onMouseEvent(MouseEvent& event);
+	void onKeyEvent(KeyEvent& event);
+	void onFocusEvent(FocusEvent& event);
+	void onImeEvent(ImeEvent& event);
 
 	// Tree nodes
 	Scene* scene_ = nullptr;

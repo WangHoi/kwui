@@ -73,6 +73,8 @@ public:
 	bool removePostRenderTask(base::TaskQueue::TaskId id);
 	void runPostRenderTasks();
 
+	void dispatchEvent(Node* node, Event& event, bool bubble);
+
 private:
 	enum class NodeCompareResult {
 		Unpatchable,

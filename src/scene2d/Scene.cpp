@@ -387,6 +387,18 @@ void Scene::runPostRenderTasks()
 	post_render_task_queue_.run();
 }
 
+void Scene::dispatchEvent(Node* node, Event& event, bool bubble)
+{
+	node->onEvent(event);
+	if (bubble) {
+		auto p = node->parent();
+		while (p) {
+			p->onEvent(event);
+			p = p->parent();
+		}
+	}
+}
+
 void Scene::setupProps(Node* node, JSValue props)
 {
 	JSContext* ctx = script_ctx_->get();

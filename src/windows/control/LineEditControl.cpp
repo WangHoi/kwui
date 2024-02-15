@@ -371,6 +371,9 @@ void LineEditControl::onPaint(graph2d::PainterInterface &pi, const scene2d::Rect
 }
 void LineEditControl::onFocusEvent(scene2d::Node* node, scene2d::FocusEvent& evt)
 {
+    if (evt.isHandled())
+        return;
+    evt.setHandled();
     if (evt.cmd == scene2d::FOCUS_IN)
         OnFocusIn(node, evt);
     else if (evt.cmd == scene2d::FOCUS_OUT)
@@ -378,11 +381,17 @@ void LineEditControl::onFocusEvent(scene2d::Node* node, scene2d::FocusEvent& evt
 }
 void LineEditControl::onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt)
 {
+    if (evt.isHandled())
+        return;
+    evt.setHandled();
     if (evt.cmd == scene2d::MOUSE_DOWN)
         OnMouseDown(node, evt.pos);
 }
 void LineEditControl::onKeyEvent(scene2d::Node* node, scene2d::KeyEvent& evt)
 {
+    if (evt.isHandled())
+        return;
+    evt.setHandled();
     if (evt.cmd == scene2d::KEY_DOWN)
         OnKeyDown(node, evt.key, evt.modifiers);
     else if (evt.cmd == scene2d::KEY_UP)
@@ -390,6 +399,9 @@ void LineEditControl::onKeyEvent(scene2d::Node* node, scene2d::KeyEvent& evt)
 }
 void LineEditControl::onImeEvent(scene2d::Node* node, scene2d::ImeEvent& evt)
 {
+    if (evt.isHandled())
+        return;
+    evt.setHandled();
     if (evt.cmd == scene2d::CHARS)
         OnCharacter(evt.wtext_);
     else if (evt.cmd == scene2d::START_COMPOSE)

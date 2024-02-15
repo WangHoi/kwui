@@ -424,14 +424,14 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         if (auto node = _focused_node.upgrade()) {
             node->state_ |= scene2d::NODE_STATE_FOCUSED;
             scene2d::FocusEvent focus_in(node.get(), scene2d::FOCUS_IN);
-            node->onEvent(focus_in);
+            _scene->dispatchEvent(node.get(), focus_in, true);
         }
         return 0;
     case WM_KILLFOCUS:
         if (auto node = _focused_node.upgrade()) {
             node->state_ &= ~scene2d::NODE_STATE_FOCUSED;
             scene2d::FocusEvent focus_out(node.get(), scene2d::FOCUS_OUT);
-            node->onEvent(focus_out);
+            _scene->dispatchEvent(node.get(), focus_out, true);
         }
         return 0;
     case WM_SETCURSOR:
@@ -638,7 +638,7 @@ void Dialog::OnKeyDown(int key, int modifiers, bool prev_down) {
     base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
     if (node) {
         scene2d::KeyEvent key_down(node.get(), scene2d::KEY_DOWN, key, modifiers);
-        node->onEvent(key_down);
+        _scene->dispatchEvent(node.get(), key_down, true);
     }
 }
 void Dialog::OnKeyUp(int key, int modifiers) {
@@ -650,28 +650,28 @@ void Dialog::OnKeyUp(int key, int modifiers) {
     base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
     if (node) {
         scene2d::KeyEvent key_up(node.get(), scene2d::KEY_UP, key, modifiers);
-        node->onEvent(key_up);
+        _scene->dispatchEvent(node.get(), key_up, true);
     }
 }
 void Dialog::OnCharacter(wchar_t ch) {
     base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
     if (node) {
         scene2d::ImeEvent chars(node.get(), scene2d::CHARS, std::wstring(1, ch));
-        node->onEvent(chars);
+        _scene->dispatchEvent(node.get(), chars, true);
     }
 }
 void Dialog::OnImeComposition(const std::wstring& text, absl::optional<int> caret_pos) {
     base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
     if (node) {
         scene2d::ImeEvent composing(node.get(), scene2d::COMPOSING, text, caret_pos);
-        node->onEvent(composing);
+        _scene->dispatchEvent(node.get(), composing, true);
     }
 }
 void Dialog::OnImeCommit(const std::wstring& text) {
     base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
     if (node) {
         scene2d::ImeEvent commit(node.get(), scene2d::COMMIT, text);
-        node->onEvent(commit);
+        _scene->dispatchEvent(node.get(), commit, true);
     }
 }
 void Dialog::OnImeStartComposition() {
@@ -685,7 +685,7 @@ void Dialog::OnImeStartComposition() {
     base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
     if (node) {
         scene2d::ImeEvent start_compose(node.get(), scene2d::START_COMPOSE);
-        node->onEvent(start_compose);
+        _scene->dispatchEvent(node.get(), start_compose, true);
         if (start_compose.caret_rect_) {
             UpdateCaretRect(_scene->mapPointToScene(node.get(), start_compose.caret_rect_->origin()),
                 start_compose.caret_rect_->size());
@@ -696,7 +696,7 @@ void Dialog::OnImeEndComposition() {
     base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
     if (node) {
         scene2d::ImeEvent end_compose(node.get(), scene2d::END_COMPOSE);
-        node->onEvent(end_compose);
+        _scene->dispatchEvent(node.get(), end_compose, true);
     }
 }
 void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers) {
@@ -715,7 +715,7 @@ void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers
         _active_node = node->weaken();
         node->state_ |= scene2d::NODE_STATE_ACTIVE;
         scene2d::MouseEvent mouse_down(node, scene2d::MOUSE_DOWN, _mouse_position, local_pos, button, buttons, modifiers);
-        node->onEvent(mouse_down);
+        _scene->dispatchEvent(node, mouse_down, true);
     }
 
     node = _scene->pickNode(_mouse_position, scene2d::NODE_FLAG_FOCUSABLE);
@@ -725,13 +725,13 @@ void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers
             if (old_focused) {
                 old_focused->state_ &= ~scene2d::NODE_STATE_FOCUSED;
                 scene2d::FocusEvent focus_out(old_focused.get(), scene2d::FOCUS_OUT);
-                old_focused->onEvent(focus_out);
+                _scene->dispatchEvent(old_focused.get(), focus_out, true);
             }
         }
         _focused_node = node->weaken();
         node->state_ |= scene2d::NODE_STATE_FOCUSED;
         scene2d::FocusEvent focus_in(node, scene2d::FOCUS_IN);
-        node->onEvent(focus_in);
+        _scene->dispatchEvent(_focused_node.get(), focus_in, true);
     }
 }
 void Dialog::OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers) {
@@ -749,7 +749,7 @@ void Dialog::OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers) 
         node->state_ &= ~scene2d::NODE_STATE_ACTIVE;
         scene2d::PointF local_pos = _mouse_position - _scene->mapPointToScene(node.get(), scene2d::PointF());
         scene2d::MouseEvent mouse_up(node.get(), scene2d::MOUSE_UP, _mouse_position, local_pos, button, buttons, modifiers);
-        node->onEvent(mouse_up);
+        _scene->dispatchEvent(node.get(), mouse_up, true);
     }
 }
 void Dialog::OnMouseMove(int buttons, int modifiers) {
@@ -760,7 +760,7 @@ void Dialog::OnMouseMove(int buttons, int modifiers) {
     if (node) {
         scene2d::PointF local_pos = _mouse_position - _scene->mapPointToScene(node.get(), scene2d::PointF());
         scene2d::MouseEvent mouse_move(node.get(), scene2d::MOUSE_MOVE, _mouse_position, local_pos, scene2d::NO_BUTTON, buttons, modifiers);
-        node->onEvent(mouse_move);
+        _scene->dispatchEvent(node.get(), mouse_move, true);
         RequestPaint();
     }
 }
@@ -774,7 +774,7 @@ void Dialog::OnMouseWheel(int delta, int buttons, int modifiers, bool hwheel)
         //LOG(INFO) << "mouse wheel " << local_pos << ", delta=" << wheel_delta << ", hwheel=" << hwheel;
         scene2d::MouseCommand cmd = hwheel ? scene2d::MOUSE_HWHEEL : scene2d::MOUSE_WHEEL;
         scene2d::MouseEvent mouse_wheel(node, cmd, _mouse_position, local_pos, wheel_delta, buttons, modifiers);
-        node->onEvent(mouse_wheel);
+        _scene->dispatchEvent(node, mouse_wheel, true);
     }
 }
 void Dialog::UpdateHoveredNode() {
@@ -785,13 +785,13 @@ void Dialog::UpdateHoveredNode() {
         if (old_hovered) {
             old_hovered->state_ &= ~scene2d::NODE_STATE_HOVER;
             scene2d::MouseEvent hover_leave(old_hovered.get(), scene2d::MOUSE_OUT, _mouse_position, scene2d::PointF());
-            old_hovered->onEvent(hover_leave);
+            _scene->dispatchEvent(old_hovered.get(), hover_leave, true);
         }
         _hovered_node = node ? node->weaken() : base::object_weakptr<scene2d::Node>();
         if (node) {
             node->state_ |= scene2d::NODE_STATE_HOVER;
             scene2d::MouseEvent hover_enter(node, scene2d::MOUSE_OVER, _mouse_position, local_pos);
-            node->onEvent(hover_enter);
+            _scene->dispatchEvent(node, hover_enter, true);
         }
         RequestPaint();
     }
@@ -802,7 +802,7 @@ void Dialog::UpdateFocusedNode() {
         if (!node->visibleInHierarchy()) {
             node->state_ &= ~scene2d::NODE_STATE_FOCUSED;
             scene2d::FocusEvent focus_out(node.get(), scene2d::FOCUS_OUT);
-            node->onEvent(focus_out);
+            _scene->dispatchEvent(node.get(), focus_out, true);
             _focused_node = nullptr;
         }
     }
