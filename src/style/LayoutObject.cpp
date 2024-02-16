@@ -224,15 +224,19 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 	LayoutObject* pick_result = nullptr;
 
 	auto saved_pos = pos;
+	bool inside_client_rect = false;
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
 		scene2d::RectF border_rect = b.borderRect().translated(b.pos);
 		scene2d::PointF local_pos = pos - b.pos - b.contentRect().origin();
-		if (border_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
-			// LOG(INFO) << "hit " << o->node->tag_ << ", pos " << pos << ", border_rect " << border_rect << ", content_rect " << b.contentRect();
-			if (out_local_pos)
-				*out_local_pos = local_pos;
-			pick_result = o;
+		if (border_rect.contains(pos)) {
+			inside_client_rect = b.clientRect().contains(pos - b.pos);
+			if (o->node && o->node->hitTest(local_pos, flag_mask)) {
+				// LOG(INFO) << "hit " << o->node->tag_ << ", pos " << pos << ", border_rect " << border_rect << ", content_rect " << b.contentRect();
+				if (out_local_pos)
+					*out_local_pos = local_pos;
+				pick_result = o;
+			}
 		}
 		pos = local_pos;
 	} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
@@ -241,10 +245,13 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 			const auto& ib = *it;
 			const scene2d::RectF local_rect = scene2d::RectF::fromOriginSize(scene2d::PointF(), ib->size);
 			scene2d::PointF local_pos = pos - ib->pos;
-			if (local_rect.contains(local_pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
-				if (out_local_pos)
-					*out_local_pos = local_pos;
-				pick_result = o;
+			if (local_rect.contains(local_pos)) {
+				inside_client_rect = true;
+				if (o->node && o->node->hitTest(local_pos, flag_mask)) {
+					if (out_local_pos)
+						*out_local_pos = local_pos;
+					pick_result = o;
+				}
 			}
 		}
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
@@ -252,16 +259,21 @@ LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_
 		const BlockBox& b = absl::get<InlineBlockBox>(o->box).block_box;
 		scene2d::RectF border_rect = b.borderRect().translated(ibb.inline_box->pos);
 		scene2d::PointF local_pos = pos - ibb.inline_box->pos - b.contentRect().origin();
-		if (border_rect.contains(pos) && o->node && o->node->hitTest(local_pos, flag_mask)) {
-			if (out_local_pos)
-				*out_local_pos = local_pos;
-			pick_result = o;
+		if (border_rect.contains(pos)) {
+			inside_client_rect = b.clientRect().contains(pos - ibb.inline_box->pos);
+			if (o->node && o->node->hitTest(local_pos, flag_mask)) {
+				if (out_local_pos)
+					*out_local_pos = local_pos;
+				pick_result = o;
+			}
 		}
 		pos = local_pos;
 	} else if (absl::holds_alternative<TextBox>(o->box)) {
 	}
 
 	if (o->scroll_object.has_value()) {
+		if (!inside_client_rect)
+			return pick_result;
 		pos += o->scroll_object.value().scroll_offset;
 	}
 
@@ -415,7 +427,7 @@ scene2d::RectF LayoutObject::borderRect(LayoutObject* o)
 		return rect.has_value() ? rect.value() : scene2d::RectF();
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		const auto& ibb = absl::get<InlineBlockBox>(o->box);
-		return ibb.block_box.borderRect().translated(ibb.inline_box->pos);
+		return ibb.block_box.borderRect();
 	} else {
 		return scene2d::RectF();
 	}
@@ -442,7 +454,7 @@ scene2d::RectF LayoutObject::paddingRect(LayoutObject* o)
 		return rect.has_value() ? rect.value() : scene2d::RectF();
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		const auto& ibb = absl::get<InlineBlockBox>(o->box);
-		return ibb.block_box.paddingRect().translated(ibb.inline_box->pos);
+		return ibb.block_box.paddingRect();
 	} else {
 		return scene2d::RectF();
 	}
@@ -469,7 +481,7 @@ scene2d::RectF LayoutObject::contentRect(LayoutObject* o)
 		return rect.has_value() ? rect.value() : scene2d::RectF();
 	} else if (absl::holds_alternative<InlineBlockBox>(o->box)) {
 		const auto& ibb = absl::get<InlineBlockBox>(o->box);
-		return ibb.block_box.contentRect().translated(ibb.inline_box->pos);
+		return ibb.block_box.contentRect();
 	} else {
 		return scene2d::RectF();
 	}
@@ -602,7 +614,7 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 	}
 	if (st.overflow_x == OverflowType::Auto
 		&& children_bounding_rect.has_value()
-		&& children_bounding_rect.value().right > padding_rect.bottom) {
+		&& children_bounding_rect.value().right > padding_rect.right) {
 		scroll_x = ScrollbarPolicy::Stable;
 	}
 	if (scroll_x == ScrollbarPolicy::Stable) {
@@ -1193,7 +1205,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	if (st.overflow_x == OverflowType::Scroll) {
 		scroll_x = ScrollbarPolicy::Stable;
 	}
-	if (st.overflow_x == OverflowType::Auto && bfc.max_border_right_edge > b.pos.x + b.paddingRect().bottom) {
+	if (st.overflow_x == OverflowType::Auto && bfc.max_border_right_edge > b.pos.x + b.paddingRect().right) {
 		scroll_x = ScrollbarPolicy::Stable;
 	}
 	if (scroll_x == ScrollbarPolicy::Stable) {

@@ -335,7 +335,7 @@ PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 	scene2d::PointF p = pos;
 	while (o->parent) {
 		p += style::LayoutObject::contentRect(o).origin();
-		//p += style::LayoutObject::pos(o);
+		p += style::LayoutObject::pos(o);
 		o = o->parent;
 		if (o->scroll_object.has_value()) {
 			p -= o->scroll_object.value().scroll_offset;

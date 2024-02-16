@@ -1,4 +1,8 @@
 var simple_stylesheet = css`
+kml {
+	height: 100%;
+	overflow: auto;
+}
 .outer {
 	display: block;
 	overflow: auto;
@@ -94,11 +98,11 @@ function OverflowExample() {
 	return <div style="margin: 16px;">
 		{[
 			// <button>Test</button>,
-			// <div class="inline-block"><VerticalOverflow /></div>,
-			// <div class="inline-block" style="width: 8px;"></div>,
-			// <div class="inline-block"><HorizontalOverflow /></div>,
-			// <div class="inline-block" style="width: 8px;"></div>,
-			// <div class="inline-block"><TwoDirectionOverflow /></div>,
+			<div class="inline-block"><VerticalOverflow /></div>,
+			<div class="inline-block" style="width: 8px;"></div>,
+			<div class="inline-block"><HorizontalOverflow /></div>,
+			<div class="inline-block" style="width: 8px;"></div>,
+			<div class="inline-block"><TwoDirectionOverflow /></div>,
 			<NestedOverflow />
 		]}
 	</div>;

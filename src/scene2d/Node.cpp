@@ -393,9 +393,6 @@ void Node::updateTextLayout()
 
 void Node::layoutComputed()
 {
-	if (scroll_data_.hover_sub_control.has_value()) {
-		int kk = 1;
-	}
 	if (layout_.scroll_object.has_value()) {
 		//LOG(INFO) << &scroll_data_.hover_sub_control << " layoutComputed, hover_sub_control " << scroll_data_.hover_sub_control.has_value();
 		// update: ScrollData <-- ScrollObject

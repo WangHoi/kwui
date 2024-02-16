@@ -1,4 +1,4 @@
 app.showDialog({
-	width: 668,
+	width: 680,
 	modulePath: "./overflow.mjs",
 });
