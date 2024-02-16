@@ -53,6 +53,7 @@ scene2d::RectF GlyphRun::boundingRect()
 
 HRESULT TextFlow::setTextFormat(ComPtr<IDWriteTextFormat> textFormat)
 {
+	text_format_ = textFormat;
 	// Initializes properties using a text format, like font family, font size,
 	// and reading direction. For simplicity, this custom layout supports
 	// minimal formatting. No mixed formatting or alignment modes are supported.
@@ -432,7 +433,6 @@ std::tuple<float, float> TextFlow::measureWidth()
 	// LOG(INFO) << "measure " << min_text_width << "/" << max_text_width;
 	return std::make_tuple(min_text_width, max_text_width);
 }
-
 void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::TextFlowSinkInterface* flowSink)
 {
 	// Reflow all the text, from source to sink.

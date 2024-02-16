@@ -55,6 +55,14 @@ public:
 		float font_size,
 		FontWeight font_weight = FontWeight(),
 		FontStyle font_style = FontStyle());
+	void UpdateTextFlow(
+		TextFlow* text_flow,
+		const std::wstring& text,
+		float line_height,
+		const std::string& font_family,
+		float font_size,
+		FontWeight font_weight = FontWeight(),
+		FontStyle font_style = FontStyle());
 	std::string GetDefaultFontFamily() const;
 	bool GetFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics);
 	void LoadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1);

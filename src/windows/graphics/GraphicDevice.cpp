@@ -180,6 +180,47 @@ std::unique_ptr<TextFlow> GraphicDevice::CreateTextFlow(
 	return flow;
 }
 
+void GraphicDevice::UpdateTextFlow(TextFlow* text_flow,
+	const std::wstring& text,
+	float line_height,
+	const std::string& font_family,
+	float font_size,
+	FontWeight font_weight,
+	FontStyle font_style)
+{
+	std::wstring utf16_font_family = EncodingManager::UTF8ToWide(font_family);
+	DWRITE_FONT_STYLE dwrite_font_style = DWRITE_FONT_STYLE_NORMAL;
+	if (font_style == FontStyle::ITALIC)
+		dwrite_font_style = DWRITE_FONT_STYLE_ITALIC;
+	ComPtr<IDWriteTextFormat> old_format = text_flow->textFormat();
+	WCHAR old_family[256] = {};
+	old_format->GetFontFamilyName(old_family, ABSL_ARRAYSIZE(old_family) - 1);
+	FLOAT old_font_size = old_format->GetFontSize();
+	DWRITE_FONT_WEIGHT old_font_weight = old_format->GetFontWeight();
+	DWRITE_FONT_STYLE old_font_style = old_format->GetFontStyle();
+	if (utf16_font_family != old_family
+		|| font_size != old_font_size
+		|| font_weight.GetRaw() != old_font_weight
+		|| dwrite_font_style != old_font_style) {
+		ComPtr<IDWriteTextFormat> format;
+		HRESULT hr;
+		hr = _dwrite->CreateTextFormat(utf16_font_family.c_str(),
+			NULL,
+			(DWRITE_FONT_WEIGHT)font_weight.GetRaw(),
+			dwrite_font_style,
+			DWRITE_FONT_STRETCH_NORMAL,
+			font_size,
+			DEFAULT_LOCALE,
+			format.GetAddressOf());
+		text_flow->setTextFormat(format);
+	}
+	if (!text_flow)
+		return;
+	if (text_flow->text() != text) {
+		text_flow->AnalyzeText(text.c_str(), text.length());
+	}
+}
+
 std::string GraphicDevice::GetDefaultFontFamily() const
 {
 	return DEFAULT_FONT_FAMILY;

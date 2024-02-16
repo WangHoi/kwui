@@ -24,6 +24,7 @@ struct GlyphRunBoxes
 
 class LineBoxInterface {
 public:
+	virtual ~LineBoxInterface() = default;
 	virtual LineBox* getCurrentLine() = 0;
 	virtual LineBox* getNextLine() = 0;
 };
@@ -42,6 +43,7 @@ private:
 
 class GlyphRunSinkInterface {
 public:
+	virtual ~GlyphRunSinkInterface() = default;
 	virtual void prepare(size_t glyph_count) = 0;
 	virtual void addGlyphRun(style::LineBox* line,
 		const scene2d::PointF& pos,

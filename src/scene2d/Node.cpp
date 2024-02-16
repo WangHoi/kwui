@@ -382,13 +382,24 @@ void Node::requestAnimationFrame(scene2d::Node* node)
 
 void Node::updateTextLayout()
 {
-	text_flow_ = graph2d::createTextFlow(
-		text_,
-		computed_style_.line_height.pixelOrZero(),
-		computed_style_.font_family.keyword_val.c_str(),
-		computed_style_.font_style,
-		computed_style_.font_weight,
-		computed_style_.font_size.pixelOrZero());
+	if (!text_flow_) {
+		text_flow_ = graph2d::createTextFlow(
+			text_,
+			computed_style_.line_height.pixelOrZero(),
+			computed_style_.font_family.keyword_val.c_str(),
+			computed_style_.font_style,
+			computed_style_.font_weight,
+			computed_style_.font_size.pixelOrZero());
+	} else {
+		graph2d::updateTextFlow(
+			text_flow_,
+			text_,
+			computed_style_.line_height.pixelOrZero(),
+			computed_style_.font_family.keyword_val.c_str(),
+			computed_style_.font_style,
+			computed_style_.font_weight,
+			computed_style_.font_size.pixelOrZero());
+	}
 }
 
 void Node::layoutComputed()

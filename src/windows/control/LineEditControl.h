@@ -29,7 +29,7 @@ public:
     };
     class Command {
     public:
-        virtual ~Command() {}
+        virtual ~Command() = default;
         virtual void Apply(State& state) = 0;
         virtual void Rollback(State& state) = 0;
         virtual bool Merge(const Command& cmd) { return false; }

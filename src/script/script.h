@@ -34,6 +34,7 @@ public:
 	static void releaseInstance();
 	static Runtime* get();
 	void gc();
+	JSMemoryUsage computeMemoryUsage();
 	void addContextSetupFunc(std::function<void(Context*)>&& new_ctx_func);
 	void eachContext(absl::FunctionRef<void(Context*)> func);
 

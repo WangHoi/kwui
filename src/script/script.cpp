@@ -56,6 +56,13 @@ void Runtime::gc()
 	JS_RunGC(rt_);
 }
 
+JSMemoryUsage Runtime::computeMemoryUsage()
+{
+	JSMemoryUsage s = {};
+	JS_ComputeMemoryUsage(rt_, &s);
+	return s;
+}
+
 void Runtime::addContextSetupFunc(std::function<void(Context*)>&& new_ctx_func)
 {
 	new_ctx_funcs_.emplace_back(std::move(new_ctx_func));

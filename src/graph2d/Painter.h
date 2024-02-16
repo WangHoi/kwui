@@ -18,6 +18,7 @@ class BitmapInterface;
 
 class PainterInterface {
 public:
+	virtual ~PainterInterface() = default;
 	virtual void save() = 0;
 	virtual void restore() = 0;
 	virtual void setTranslation(const scene2d::PointF& offset, bool combine) = 0;

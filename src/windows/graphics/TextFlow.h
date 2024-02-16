@@ -76,6 +76,14 @@ public:
 	{
 	}
 
+	inline ComPtr<IDWriteTextFormat> textFormat() const
+	{
+		return text_format_;
+	}
+	inline const std::wstring& text() const
+	{
+		return text_;
+	}
 	HRESULT setTextFormat(ComPtr<IDWriteTextFormat> textFormat);
 
 	HRESULT SetNumberSubstitution(ComPtr<IDWriteNumberSubstitution> numberSubstitution);
@@ -161,6 +169,7 @@ protected:
 	ComPtr<IDWriteFactory> dwriteFactory_;
 
 	// Input information.
+	ComPtr<IDWriteTextFormat> text_format_;
 	std::wstring text_;
 	absl::optional<float> line_height_;
 	wchar_t localeName_[LOCALE_NAME_MAX_LENGTH];
