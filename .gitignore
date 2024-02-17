@@ -35,3 +35,8 @@
 /.vs
 /out
 /*.pdb
+
+
+# Added by cargo
+
+/target
