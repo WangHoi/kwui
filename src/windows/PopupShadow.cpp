@@ -179,7 +179,7 @@ LRESULT CALLBACK PopupShadow::WndProcMain(HWND hWnd, UINT message, WPARAM wParam
 	if (message == WM_CREATE) {
 		me = reinterpret_cast<PopupShadow*>(((LPCREATESTRUCTW)lParam)->lpCreateParams);
 		me->_hwnd = hWnd;
-		SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG)me);
+		SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG_PTR)me);
 	} else {
 		me = reinterpret_cast<PopupShadow*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
 	}

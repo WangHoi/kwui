@@ -2,11 +2,20 @@ use cmake::{self, Config};
 use bindgen;
 
 fn main() {
-    // Builds the project in the directory located in `libfoo`, installing it
-    // into $OUT_DIR
-    let dst = Config::new("..").build();
+    let cmake_project_dir = "../.."; 
+    let dst = Config::new(cmake_project_dir)
+        .profile("Release")
+        .define("CMAKE_CONFIGURATION_TYPES", "Release")
+        .generator("Ninja")
+        .build();
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
-    println!("cargo:rustc-link-lib=static=kwui_static");
+    println!("cargo:rustc-link-lib=kwui_static");
+    println!("cargo:rustc-link-lib=User32");
+    println!("cargo:rustc-link-lib=Gdi32");
+    println!("cargo:rustc-link-lib=Imm32");
+    println!("cargo:rustc-link-lib=d2d1");
+    println!("cargo:rustc-link-lib=dwrite");
+    println!("cargo:rustc-link-lib=Windowscodecs");
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
@@ -14,12 +23,10 @@ fn main() {
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate
         // bindings for.
-        .header(format!("{}/include/kwui.h", dst.display()))
-        .enable_cxx_namespaces()
-        .allowlist_type("kwui::.+")
+        .header(format!("{}/include/kwui_capi.h", dst.display()))
+        .allowlist_function("kwui_.*")
+        .layout_tests(false)
         .clang_args([
-            "-xc++",
-            "-std=c++17",
             "-DKWUI_STATIC_LIBRARY=1",
             ])
         // Tell cargo to invalidate the built crate whenever any of the

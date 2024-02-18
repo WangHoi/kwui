@@ -465,7 +465,7 @@ LRESULT CALLBACK Dialog::WndProcMain(HWND hWnd, UINT message, WPARAM wParam, LPA
     if (message == WM_NCCREATE) {
         me = reinterpret_cast<Dialog*>(((LPCREATESTRUCTW)lParam)->lpCreateParams);
         me->_hwnd = hWnd;
-        SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG)me);
+        SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG_PTR)me);
     } else {
         me = reinterpret_cast<Dialog*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
     }

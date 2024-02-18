@@ -42379,6 +42379,7 @@ static JSValue js_math_random(JSContext *ctx, JSValueConst this_val,
 static double js_math_floor(double x) { return floor(x); }
 static double js_math_ceil(double x) { return ceil(x); }
 
+#pragma function (floor,ceil,log2)
 static const JSCFunctionListEntry js_math_funcs[] = {
     JS_CFUNC_MAGIC_DEF("min", 2, js_math_min_max, 0 ),
     JS_CFUNC_MAGIC_DEF("max", 2, js_math_min_max, 1 ),

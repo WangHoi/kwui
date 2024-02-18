@@ -38,14 +38,14 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/api/
 install(TARGETS quickjs)
 
 # Build shared library
-#[[
-add_library(kwui SHARED "")
-target_sources(kwui PUBLIC ${kwui_pub_srcs} PRIVATE ${kwui_priv_srcs})
-target_compile_options(kwui PUBLIC /utf-8)
-target_compile_definitions(kwui PRIVATE -DKWUI_SHARED_LIBRARY)
-target_include_directories(kwui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(kwui PUBLIC ${dep_libs})
-]]
+if(BUILD_SHARED_LIBS)
+    add_library(kwui SHARED "")
+    target_sources(kwui PUBLIC ${kwui_pub_srcs} PRIVATE ${kwui_priv_srcs})
+    target_compile_options(kwui PUBLIC /utf-8)
+    target_compile_definitions(kwui PRIVATE -DKWUI_SHARED_LIBRARY)
+    target_include_directories(kwui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(kwui PUBLIC ${dep_libs})
+endif()
 
 # Build static library
 add_library(c31 STATIC "")

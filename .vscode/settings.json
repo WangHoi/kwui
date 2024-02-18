@@ -93,5 +93,6 @@
         "*.inc": "cpp",
         "coroutine": "cpp",
         "*.rh": "cpp"
-    }
+    },
+    "rust-analyzer.checkOnSave": false
 }

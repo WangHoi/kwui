@@ -1,0 +1,17 @@
+[package]
+name = "kwui"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "kwui"
+path = "src/lib.rs"
+
+[dependencies.kwui-sys]
+path = "kwui-sys"
+
+[[example]]
+name = "tour"
+
+[dev-dependencies]
+windows_dpi = "0.3.0"

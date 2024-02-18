@@ -7,6 +7,11 @@ endif(POLICY CMP0091)
 
 project(kwui)
 
+option(CRT_STATIC "static MSVC runtime" OFF)
+option(BUILD_SHARED_LIBS "build shared kwui library" OFF)
+option(BUILD_TESTS "build kwui tests" ON)
+option(BUILD_EXAMPLES "build kwui examples" ON)
+
 include(util.cmake)
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -41,7 +46,7 @@ else()
 	# - "Enable Large Addresses"			= "Yes (/LARGEADDRESSAWARE)"
 	# - "Enable COMDAT Folding"				= "Yes (/OPT:ICF)"
 	# - "References"						= "Yes (/OPT:REF)"
-	set(CompilerFlags "-Oi -Ot -Oy -GF -GS- -Gy -fp:fast -fp:except- -GL /Gw")
+	set(CompilerFlags "-Oi -Ot -Oy -GF -GS- -Gy -fp:fast -fp:except- -GL /Gw /EHsc")
 	if(${CMAKE_GENERATOR} MATCHES "Ninja")	# Ninja is used for "CMake support in Visual" - https://blogs.msdn.microsoft.com/vcblog/2016/10/05/cmake-support-in-visual-studio/
 		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${CompilerFlags}")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CompilerFlags}")
@@ -58,7 +63,12 @@ else()
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+if(CRT_STATIC)
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
 
 set(ABSL_PROPAGATE_CXX_STD ON)
 set(ABSL_ENABLE_INSTALL ON)
@@ -68,5 +78,10 @@ add_subdirectory(3rdparty/fifo_map)
 
 add_subdirectory(src)
 
+if(BUILD_EXAMPLES)
 add_subdirectory(examples)
+endif()
+
+if(BUILD_TESTS)
 add_subdirectory(tests)
+endif()
