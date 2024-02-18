@@ -59,7 +59,7 @@ private:
 		} state = STATE_INIT;
 		base::TaskQueue::TaskId tid = 0;
 		Value deps;
-		Value effect_fn;
+		Value setup_fn;
 		Value cleanup_fn;
 	};
 

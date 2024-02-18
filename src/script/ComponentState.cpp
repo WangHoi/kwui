@@ -203,7 +203,7 @@ JSValue ComponentState::useContext(JSContext* ctx, JSValue this_val, JSValue id)
 	return JS_UNDEFINED;
 }
 
-JSValue ComponentState::useEffect(JSContext* ctx, JSValue this_val, JSValue effect_fn, JSValue deps, JSValue compare_fn)
+JSValue ComponentState::useEffect(JSContext* ctx, JSValue this_val, JSValue setup_fn, JSValue deps, JSValue compare_fn)
 {
 	if (!node_) {
 		LOG(ERROR) << "__useEffect: no Node.";
@@ -220,10 +220,10 @@ JSValue ComponentState::useEffect(JSContext* ctx, JSValue this_val, JSValue effe
 			Effect::STATE_INIT,
 			0,
 			Value(ctx, deps),
-			Value(ctx, effect_fn),
+			Value(ctx, setup_fn),
 			Value(),
 			});
-		effects_.back().tid = node_->scene()->addPostRenderTask(makeUseEffectTask(ctx, effects_.size()));
+		effects_.back().tid = node_->scene()->addPostRenderTask(makeUseEffectTask(ctx, curr_effect_ - 1));
 		effects_.back().state = Effect::STATE_SCHEDULED;
 	} else {
 		++curr_effect_;
@@ -246,20 +246,10 @@ JSValue ComponentState::useEffect(JSContext* ctx, JSValue this_val, JSValue effe
 				// Cancel scheduled task
 				node_->scene()->removePostRenderTask(eff.tid);
 				eff.tid = 0;
-			} else if (eff.state == Effect::STATE_EXECUTED) {
-				if (eff.cleanup_fn.isFunction()) {
-					JSValue ret = JS_Call(ctx, eff.cleanup_fn.jsValue(), this_val, 0, nullptr);
-					if (JS_IsException(ret)) {
-						LOG(ERROR) << "__useEffect: run cleanupFn() failed.";
-						js_std_dump_error(ctx);
-					}
-					JS_FreeValue(ctx, ret);
-				}
 			}
 			eff.state = Effect::STATE_INIT;
 			eff.deps = Value(ctx, deps);
-			eff.effect_fn = Value(ctx, effect_fn);
-			eff.cleanup_fn = Value();
+			eff.setup_fn = Value(ctx, setup_fn);
 
 			eff.tid = node_->scene()->addPostRenderTask(makeUseEffectTask(ctx, curr_effect_ - 1));
 			eff.state = Effect::STATE_SCHEDULED;
@@ -360,19 +350,20 @@ void ComponentState::unmount(JSContext* ctx, JSValueConst this_val)
 		if (eff.state == Effect::STATE_SCHEDULED) {
 			node_->scene()->removePostRenderTask(eff.tid);
 			eff.tid = 0;
-		} else if (eff.state == Effect::STATE_EXECUTED) {
-			if (eff.cleanup_fn.isFunction()) {
-				JSValue ret = JS_Call(ctx, eff.cleanup_fn.jsValue(), this_val, 0, nullptr);
-				if (JS_IsException(ret)) {
-					js_std_dump_error(ctx);
-				}
-				JS_FreeValue(ctx, ret);
-			}
 		}
+
+		if (eff.cleanup_fn.isFunction()) {
+			JSValue ret = JS_Call(ctx, eff.cleanup_fn.jsValue(), this_val, 0, nullptr);
+			if (JS_IsException(ret)) {
+				js_std_dump_error(ctx);
+			}
+			JS_FreeValue(ctx, ret);
+		}
+
 		eff.state = Effect::STATE_INIT;
 		eff.tid = 0;
 		eff.deps = Value();
-		eff.effect_fn = Value();
+		eff.setup_fn = Value();
 		eff.cleanup_fn = Value();
 	}
 }
@@ -394,7 +385,6 @@ ComponentState* ComponentState::parent() const
 
 std::function<void()> ComponentState::makeUseEffectTask(JSContext* ctx, size_t index) const
 {
-	return []() {};
 	auto link = weaken();
 	return [link, ctx, index]() -> void {
 		auto me = link.get();
@@ -408,16 +398,26 @@ void ComponentState::runEffect(JSContext* ctx, size_t index)
 {
 	if (index >= effects_.size())
 		return;
-	JSValue ret = JS_Call(ctx, effects_[index].effect_fn.jsValue(), this_obj_, 0, nullptr);
-	if (JS_IsException(ret))
-		js_std_dump_error(ctx);
-	if (JS_IsFunction(ctx, ret)) {
-		effects_[index].state = Effect::STATE_EXECUTED;
-		effects_[index].tid = 0;
-		effects_[index].cleanup_fn = Value(ctx, ret);
-	} else {
+	auto& eff = effects_[index];
+
+	if (eff.cleanup_fn.isFunction()) {
+		JSValue ret = JS_Call(ctx, eff.cleanup_fn.jsValue(), this_obj_, 0, nullptr);
+		if (JS_IsException(ret)) {
+			LOG(ERROR) << "__useEffect: run cleanupFn() failed.";
+			js_std_dump_error(ctx);
+		}
 		JS_FreeValue(ctx, ret);
 	}
+
+	JSValue ret = JS_Call(ctx, eff.setup_fn.jsValue(), this_obj_, 0, nullptr);
+	if (JS_IsException(ret))
+		js_std_dump_error(ctx);
+	eff.state = Effect::STATE_EXECUTED;
+	eff.tid = 0;
+	if (JS_IsFunction(ctx, ret)) {
+		eff.cleanup_fn = Value(ctx, ret);
+	}
+	JS_FreeValue(ctx, ret);
 }
 
 void ComponentState::gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)
@@ -433,7 +433,7 @@ void ComponentState::gcMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_f
 		}
 		for (auto& e : me->effects_) {
 			JS_MarkValue(rt, e.deps.jsValue(), mark_func);
-			JS_MarkValue(rt, e.effect_fn.jsValue(), mark_func);
+			JS_MarkValue(rt, e.setup_fn.jsValue(), mark_func);
 			JS_MarkValue(rt, e.cleanup_fn.jsValue(), mark_func);
 		}
 	}

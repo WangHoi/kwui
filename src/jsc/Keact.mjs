@@ -34,6 +34,42 @@ export function useState(init_fn) {
     });
 }
 
+/**
+ * Use effect
+ * @param {*} setup_fn
+ * @param {*} deps
+ * @returns 
+ */
+/*
+export function useEffect(setup_fn, deps) {
+    let [state, _] = useHook(() => {
+        let cleanup = setup_fn();
+        return {
+            setup: setup_fn,
+            deps,
+            cleanup,
+        };
+    }, (state, new_value) => {
+        return [new_value, true];
+    }, (state) => {
+        if (typeof state.cleanup === 'function') {
+            state.cleanup();
+        }        
+    });
+    if (deps === undefined || !Object.is(deps, state.deps)) {
+        if (typeof state.cleanup === 'function') {
+            state.cleanup();
+        }
+        let cleanup = setup_fn();
+        state = {
+            setup: setup_fn,
+            deps,
+            cleanup,
+        };
+    }
+}
+*/
+
 class Context {
     constructor() {
         this.id = __createContextId();
@@ -105,7 +141,7 @@ function sameArray(a, b) {
 /**
  * Use effect
  * @param {*} effect_fn
- * @param {Array} dpes
+ * @param {Array?} deps
  * @returns 
  */
 export function useEffect(effect_fn, deps) {

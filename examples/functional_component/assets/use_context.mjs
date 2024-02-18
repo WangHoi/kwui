@@ -19,4 +19,6 @@ function ThemeExample() {
 	</ThemeProvider>
 }
 
-export var root = <ThemeExample />;
+export function builder() {
+	return { root: <ThemeExample /> };
+}
