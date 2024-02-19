@@ -11,6 +11,8 @@ public:
 	Application(int argc, wchar_t* argv[]);
 	~Application();
 	static void setLogCallback(LogCallback callback);
+	static bool scriptReloadEnabled();
+	static void enableScriptReload(bool enable);
 	bool preloadResourceArchive(int id);
 	int exec();
 

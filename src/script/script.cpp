@@ -409,9 +409,12 @@ void Context::loadFile(const std::string& fname)
 
 void Context::loadScript(const std::string& fname, const std::string& content)
 {
+	/*
 	int eval_type = absl::EndsWithIgnoreCase(fname, ".mjs")
 		? JS_EVAL_TYPE_MODULE
 		: (JS_DetectModule(content.data(), content.size()) ? JS_EVAL_TYPE_MODULE : JS_EVAL_TYPE_GLOBAL);
+	*/
+	const int eval_type = JS_EVAL_TYPE_MODULE;
 	JSValue ret = JS_Eval(ctx_, content.c_str(), content.length(), fname.c_str(), eval_type);
 	if (JS_IsException(ret)) {
 		js_std_dump_error(ctx_);
@@ -497,13 +500,11 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	auto dialog = new windows::Dialog(
 		width, height, L"dialog", NULL, flags,
 		popup_shadow, absl::nullopt);
-#ifdef NDEBUG
-	if (title.has_value()) {
-		dialog->SetTitle(title.value());
+	if (kwui::Application::scriptReloadEnabled()) {
+		dialog->SetTitle(title.value_or(std::string("Untitled")) + " - (F5 to reload)");
+	} else {
+		dialog->SetTitle(title.value_or(std::string("Untitled")));
 	}
-#else
-	dialog->SetTitle(title.value_or(std::string("Untitled")) + " - (F5 to reload)");
-#endif
 	dialog->GetScene()->setStyleSheet(stylesheet);
 	dialog->GetScene()->createComponentNode(dialog->GetScene()->root(), root);
 	if (JS_IsString(module)) {

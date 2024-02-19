@@ -16,7 +16,14 @@ impl Application {
             .map(|s| s.as_ptr() as *mut i8)
             .collect::<Vec<_>>();
         let argc = args.len() as _;
-        let inner = unsafe { kwui_Application_new(argc, args.as_mut_ptr()) };
+        let inner = unsafe { 
+            #[cfg(debug_assertions)]
+            kwui_Application_enableScriptReload(true);
+            
+            kwui_Application_new(argc, args.as_mut_ptr())
+        };
+        
+
         Self { inner }
     }
     pub fn exec(&self) -> i32 {

@@ -15,6 +15,11 @@
 namespace kwui {
 
 static LogCallback g_log_callback = nullptr;
+#ifdef NDEBUG
+static bool g_script_reload_enabled = false;
+#else
+static bool g_script_reload_enabled = true;
+#endif
 
 class Application::Private {
 public:
@@ -86,6 +91,16 @@ Application::~Application()
 void Application::setLogCallback(LogCallback callback)
 {
     g_log_callback = callback;
+}
+
+bool Application::scriptReloadEnabled()
+{
+    return g_script_reload_enabled;
+}
+
+void Application::enableScriptReload(bool enable)
+{
+    g_script_reload_enabled = enable;
 }
 
 bool Application::preloadResourceArchive(int id)

@@ -11,6 +11,7 @@
 #include "absl/time/clock.h"
 #include "graph2d/Painter.h"
 #include "api/kwui/ScriptEngine.h"
+#include "api/kwui/Application.h"
 
 namespace windows {
 typedef LRESULT(CALLBACK* WndProc)(HWND, UINT, WPARAM, LPARAM);
@@ -630,10 +631,10 @@ void Dialog::OnKeyDown(int key, int modifiers, bool prev_down) {
         return OnEnterKeyDown(*this);
     if (key == VK_ESCAPE)
         return OnEscapeKeyDown(*this);
-#ifndef NDEBUG
-    if (key == VK_F5 && modifiers == 0)
-        OnF5Down(*this);
-#endif
+    if (kwui::Application::scriptReloadEnabled()) {
+        if (key == VK_F5 && modifiers == 0)
+            OnF5Down(*this);
+    }
 
     base::object_refptr<scene2d::Node> node = _focused_node.upgrade();
     if (node) {
@@ -947,13 +948,13 @@ void Dialog::OnEscapeKeyUp(EventContext& ctx)
 {
     kwui::ScriptEngine::get()->postEvent("dialog:escape-key-up", id_);
 }
-#ifndef NDEBUG
 void Dialog::OnF5Down(EventContext& ctx)
 {
-    _scene->reloadScriptModule();
-    OnPaint();
+    if (kwui::Application::scriptReloadEnabled()) {
+        _scene->reloadScriptModule();
+        OnPaint();
+    }
 }
-#endif
 void Dialog::DiscardNodeDeviceResources(scene2d::Node* node) {
     // node->DiscardDeviceResources();
     // for (auto& child : node->GetChildren())

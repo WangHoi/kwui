@@ -16,6 +16,16 @@ void kwui_Application_setLogCallback(kwui_LogCallback callback)
 	kwui::Application::setLogCallback(callback);
 }
 
+bool KWUI_EXPORT kwui_Application_scriptReloadEnabled()
+{
+	return kwui::Application::scriptReloadEnabled();
+}
+
+void KWUI_EXPORT kwui_Application_enableScriptReload(bool enable)
+{
+	kwui::Application::enableScriptReload(enable);
+}
+
 //bool kwui_application_preload_resource_archive(kwui_Application* app, int id);
 int kwui_Application_exec(kwui_Application* app)
 {
