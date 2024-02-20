@@ -433,6 +433,7 @@ JSValue Context::wrapScene(scene2d::Scene* scene)
 
 JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+	std::string parentDialogId;
 	float width = 640.0;
 	float height = 480.0;
 	int flags = windows::DIALOG_FLAG_MAIN;
@@ -494,6 +495,8 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			module = JS_DupValue(ctx, value);
 		} else if (!strcmp(name, "moduleParams")) {
 			module_params = JS_DupValue(ctx, value);
+		} else if (!strcmp(name, "parent")) {
+			parentDialogId = Context::parse<std::string>(ctx, value);
 		}
 		});
 
@@ -520,6 +523,11 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		dialog->GetScene()->reloadScriptModule();
 	}
 	//LOG(INFO) << "show dialog";
+	if (flags & windows::DIALOG_FLAG_POPUP) {
+		dialog->SetPopupAnchor(windows::Dialog::findDialogById(parentDialogId));
+	} else {
+		dialog->SetParent(windows::Dialog::findDialogById(parentDialogId));
+	}
 	dialog->Show();
 	return JS_NewString(ctx, dialog->eventContextId().c_str());
 }

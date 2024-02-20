@@ -24,7 +24,7 @@
 #define NOSERVICE
 #define NOSOUND
 #define NOTEXTMETRIC
-#define NOWH
+//#define NOWH
 //#define NOWINOFFSETS
 #define NOCOMM
 #define NOKANJI

@@ -40,7 +40,7 @@ Dialog::Dialog(float width, float height,
     HICON icon, int flags,
     absl::optional<PopupShadowData> popup_shadow,
     absl::optional<CreateData> create_data)
-    : _hwnd_parent(NULL), _hwnd(NULL)
+    : _hwnd_parent(NULL), _hwnd_anchor(NULL), _hwnd(NULL)
     , _flags(flags), _create_data(create_data)
     , _visible(false), _first_show_window(true)
     , _size((float)width, (float)height)
@@ -72,6 +72,11 @@ Dialog* Dialog::findDialogById(const std::string& id)
     return (it == g_dialog_map.end()) ? nullptr : it->second;
 }
 
+void Dialog::SetPopupAnchor(Dialog* anchor)
+{
+    _hwnd_anchor = anchor ? anchor->_hwnd : NULL;
+}
+
 void Dialog::SetVisible(bool visible) {
     if (_visible != visible) {
         _visible = visible;
@@ -79,7 +84,15 @@ void Dialog::SetVisible(bool visible) {
     if (_popup_shadow) {
         _popup_shadow->SetVisible(visible);
     }
-    ShowWindow(_hwnd, _visible ? SW_SHOWNORMAL : SW_HIDE);
+    if (_visible) {
+        if (_flags & DIALOG_FLAG_POPUP) {
+            ShowWindow(_hwnd, SW_SHOWNOACTIVATE);
+        } else {
+            ShowWindow(_hwnd, SW_SHOWNORMAL);
+        }
+    } else {
+        ShowWindow(_hwnd, SW_HIDE);
+    }
     if (_hwnd_parent) {
         EnableWindow(_hwnd_parent, !_visible);
     }
@@ -105,7 +118,7 @@ void Dialog::Resize(float width, float height) {
         0, 0,
         (int)pixel_size.width,
         (int)pixel_size.height,
-        SWP_NOMOVE);
+        SWP_NOMOVE | SWP_NOACTIVATE);
 }
 
 void Dialog::SetTitle(const std::string& text) {
@@ -128,10 +141,13 @@ void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON 
             style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
             ex_style = WS_EX_OVERLAPPEDWINDOW;
         }
+    } else if (_flags & DIALOG_FLAG_POPUP) {
+        style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+        ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR | WS_EX_NOACTIVATE | WS_EX_TOPMOST;
     } else {
         style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
         ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
-            | WS_EX_STATICEDGE | WS_EX_APPWINDOW;// | WS_EX_TOPMOST;
+            | WS_EX_STATICEDGE | WS_EX_APPWINDOW;
     }
     int wnd_left = 360;
     int wnd_top = 240;
@@ -372,9 +388,16 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         _mouse_event_tracking = false;
         RequestUpdate();
         return 0;
+    case WM_MOUSEACTIVATE:
+        if (_flags & DIALOG_FLAG_POPUP) {
+            return MA_NOACTIVATE;
+        } else {
+            return DefWindowProcW(hWnd, message, wParam, lParam);
+        }
+        break;
     case WM_ACTIVATE: {
         LRESULT ret = DefWindowProcW(hWnd, message, wParam, lParam);
-        if (wParam == WA_INACTIVE) {
+        if (GET_WM_ACTIVATE_STATE(wParam) == WA_INACTIVE) {
             OnActivate(false);
         } else {
             OnActivate(true);
@@ -506,6 +529,7 @@ void Dialog::OnCreate() {
             _size.height + py * 2,
             _hwnd, L"kwui::PopupShadow", *_popup_shadow_data);
     }
+    SetupHook();
 }
 void Dialog::OnPaint() {
     if (!_rt) {
@@ -548,6 +572,7 @@ void Dialog::OnPaint() {
 }
 void Dialog::OnResize() {
     //LOG(INFO) << "OnResize " << _pixel_size.width << "x" << _pixel_size.height << "px";
+    ClosePopups();
     UpdateBorderAndRenderTarget();
     RequestPaint();
 }
@@ -875,6 +900,8 @@ void Dialog::UpdateMouseTracking() {
     }
 }
 void Dialog::OnDestroy() {
+    ReleaseHook();
+    ClosePopups();
     _scene = nullptr;
     // _title_label = nullptr;
     // _close_button = nullptr;
@@ -893,6 +920,9 @@ void Dialog::OnActivate(bool active) {
             0, 0,
             0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+    }
+    if (!active) {
+        ClosePopups();
     }
 }
 void Dialog::OnWindowPosChanged(WINDOWPOS* wnd_pos) {
@@ -995,6 +1025,55 @@ void Dialog::OnAnimationTimerEvent() {
     if (_animating_nodes.empty() && _animation_timer_id) {
         KillTimer(_hwnd, _animation_timer_id);
         _animation_timer_id = 0;
+    }
+}
+
+LRESULT CALLBACK Dialog::hookProc(int code, WPARAM wParam, LPARAM lParam) {
+    MSG* msg = (MSG*)lParam;
+    if (wParam == PM_REMOVE) {
+        if (msg->message == WM_LBUTTONDOWN || msg->message == WM_RBUTTONDOWN
+            || msg->message == WM_NCLBUTTONDOWN || msg->message == WM_NCRBUTTONDOWN
+            || msg->message == WM_SYSCHAR) {
+            Dialog* dlg = nullptr;
+            for (auto it = g_dialog_map.begin(); it != g_dialog_map.end(); ++it) {
+                if (it->second->GetHwnd() == msg->hwnd) {
+                    dlg = it->second;
+                    break;
+                }
+            }
+            if (dlg) {
+                dlg->ClosePopups();
+            }
+        }
+    }
+    return ::CallNextHookEx(NULL, code, wParam, lParam);
+}
+void Dialog::ClosePopups()
+{
+    bool found;
+    do {
+        found = false;
+        for (auto it = g_dialog_map.begin(); it != g_dialog_map.end(); ++it) {
+            if (it->second->_hwnd_anchor == _hwnd) {
+                auto dlg = it->second;
+                g_dialog_map.erase(it);
+                dlg->Close();
+                found = true;
+                break;
+            }
+        }
+    } while (found);
+}
+void Dialog::SetupHook()
+{
+    _hook = ::SetWindowsHookExW(WH_GETMESSAGE, &Dialog::hookProc, NULL, GetCurrentThreadId());
+}
+
+void Dialog::ReleaseHook()
+{
+    if (_hook) {
+        ::UnhookWindowsHookEx(_hook);
+        _hook = NULL;
     }
 }
 

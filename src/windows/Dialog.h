@@ -46,7 +46,8 @@ public:
     static Dialog* findDialogById(const std::string& id);
 
     inline void SetParent(HWND parent) { _hwnd_parent = parent; }
-    inline void SetParent(Dialog* parent) { SetParent(parent->_hwnd); }
+    inline void SetParent(Dialog* parent) { SetParent(parent ? parent->_hwnd : nullptr); }
+    void SetPopupAnchor(Dialog* anchor);
     inline void Show() {
         SetVisible(true);
     }
@@ -111,8 +112,13 @@ private:
     void DiscardNodeDeviceResources(scene2d::Node* node);
     void UpdateBorderAndRenderTarget();
     void OnAnimationTimerEvent();
+    void SetupHook();
+    void ReleaseHook();
+    static LRESULT CALLBACK hookProc(int code, WPARAM wParam, LPARAM lParam);
+    void ClosePopups();
 
     HWND _hwnd_parent;
+    HWND _hwnd_anchor;
     HWND _hwnd;
     int _flags;
     absl::optional<CreateData> _create_data;
@@ -138,6 +144,7 @@ private:
     HIMC _himc;
     std::vector<base::object_weakptr<scene2d::Node>>  _animating_nodes;
     UINT_PTR _animation_timer_id;
+    HHOOK _hook = NULL;
 
     std::string id_;
 };
