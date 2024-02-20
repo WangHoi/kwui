@@ -56,8 +56,14 @@ function ComboxBox() {
 	let parent = this.dialogId;
 	let show_popup = () => {
 		app.showDialog({
-			width: 200,
-			height: 120,
+			// width: 200,
+			// height: 120,
+			screenRect: {
+				left: 80,
+				top: 80,
+				right: 280,
+				bottom: 180,
+			},
 			flags: 2,
 			parent,
 			root: <div>

@@ -22,6 +22,28 @@ static ATOM RegisterWindowClass(HINSTANCE hInstance,
 
 static constexpr UINT_PTR ANIMATION_TIMER_EVENT = 0xFFFF00A0;
 static HCURSOR s_preloaded_cursors[NUM_CURSOR_TYPES] = {};
+typedef HRESULT (CALLBACK* GETDPIFORMONITOR)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
+static GETDPIFORMONITOR pGETDPIFORMONITOR = NULL;
+
+static float getMonitorDpiScale(HMONITOR monitor) {
+    if (!pGETDPIFORMONITOR) {
+        HMODULE hm = LoadLibraryW(L"Shcore.dll");
+        if (hm) {
+            pGETDPIFORMONITOR = (GETDPIFORMONITOR)GetProcAddress(hm, "GetDpiForMonitor");
+        }
+        if (!pGETDPIFORMONITOR) {
+            pGETDPIFORMONITOR = [](HMONITOR, MONITOR_DPI_TYPE, UINT* dpi_x, UINT* dpi_y) -> HRESULT {
+                float dpi_scale = windows::graphics::GraphicDevice::instance()->GetInitialDesktopDpiScale();
+                *dpi_x = *dpi_y = USER_DEFAULT_SCREEN_DPI * dpi_scale;
+                return S_OK;
+                };
+        }
+    }
+    UINT dpi = 96;
+    DEVICE_SCALE_FACTOR scale = SCALE_100_PERCENT;
+    (*pGETDPIFORMONITOR)(monitor, MDT_EFFECTIVE_DPI, &dpi, &dpi);
+    return (float)dpi / 96.0f;
+}
 
 static void PreloadCursor() {
     if (s_preloaded_cursors[0])
@@ -39,7 +61,8 @@ Dialog::Dialog(float width, float height,
     const WCHAR* wnd_class_name,
     HICON icon, int flags,
     absl::optional<PopupShadowData> popup_shadow,
-    absl::optional<CreateData> create_data)
+    absl::optional<CreateData> create_data,
+    absl::optional<scene2d::RectF> screen_rect)
     : _hwnd_parent(NULL), _hwnd_anchor(NULL), _hwnd(NULL)
     , _flags(flags), _create_data(create_data)
     , _visible(false), _first_show_window(true)
@@ -54,6 +77,7 @@ Dialog::Dialog(float width, float height,
     if (create_data.has_value()) {
         _dpi_scale = create_data.value().dpi_scale;
     }
+    _screen_rect = screen_rect;
 
     _mouse_position = scene2d::PointF(_size.width * 0.5f, _size.height * 0.5f);
     id_ = absl::StrFormat("%p", this);
@@ -162,6 +186,15 @@ void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON 
             wnd_left = (monitor_width - (int)_pixel_size.width) / 2;
             wnd_top = (monitor_height - (int)_pixel_size.height) / 2;
         }
+    } else if (_screen_rect.has_value()) {
+        wnd_left = _screen_rect.value().left;
+        wnd_top = _screen_rect.value().top;
+        _pixel_size = _screen_rect.value().size();
+        RECT r = { wnd_left, wnd_top, (LONG)_screen_rect.value().right, (LONG)_screen_rect.value().bottom };
+        HMONITOR monitor = ::MonitorFromRect(&r, MONITOR_DEFAULTTOPRIMARY);
+        _dpi_scale = getMonitorDpiScale(monitor);
+        _size.width = _pixel_size.width / _dpi_scale;
+        _size.height = _pixel_size.height / _dpi_scale;
     } else {
         _dpi_scale = graphics::GraphicDevice::instance()->GetInitialDesktopDpiScale();
         _pixel_size = (_size * _dpi_scale).makeRound();
@@ -397,7 +430,7 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         break;
     case WM_ACTIVATE: {
         LRESULT ret = DefWindowProcW(hWnd, message, wParam, lParam);
-        if (GET_WM_ACTIVATE_STATE(wParam) == WA_INACTIVE) {
+        if (GET_WM_ACTIVATE_STATE(wParam, lParam) == WA_INACTIVE) {
             OnActivate(false);
         } else {
             OnActivate(true);

@@ -438,7 +438,8 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	float height = 480.0;
 	int flags = windows::DIALOG_FLAG_MAIN;
 	absl::optional<std::string> title;
-	absl::optional<windows::PopupShadowData> popup_shadow = absl::nullopt;
+	absl::optional<windows::PopupShadowData> popup_shadow;
+	absl::optional<scene2d::RectF> screen_rect;
 	JSValue root = JS_UNDEFINED;
 	JSValue stylesheet = JS_UNDEFINED;
 	JSValue module = JS_UNDEFINED;
@@ -460,6 +461,36 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			double f64;
 			JS_ToFloat64(ctx, &f64, value);
 			height = (float)f64;
+		} else if (!strcmp(name, "screenRect") && JS_IsObjectPlain(ctx, value)) {
+			JSValue val;
+			int32_t left = 0, top = 0, right = 0, bottom = 0;
+			val = JS_GetPropertyStr(ctx, value, "left");
+			if (JS_IsNumber(val))
+				JS_ToInt32(ctx, &left, val);
+			JS_FreeValue(ctx, val);
+
+			val = JS_GetPropertyStr(ctx, value, "top");
+			if (JS_IsNumber(val))
+				JS_ToInt32(ctx, &top, val);
+			JS_FreeValue(ctx, val);
+
+			val = JS_GetPropertyStr(ctx, value, "right");
+			if (JS_IsNumber(val)) {
+				JS_ToInt32(ctx, &right, val);
+			} else {
+				right = left;
+			}
+			JS_FreeValue(ctx, val);
+
+			val = JS_GetPropertyStr(ctx, value, "bottom");
+			if (JS_IsNumber(val)) {
+				JS_ToInt32(ctx, &bottom, val);
+			} else {
+				bottom = top;
+			}
+			JS_FreeValue(ctx, val);
+
+			screen_rect.emplace(scene2d::RectF::fromLTRB(left, top, right, bottom));
 		} else if (!strcmp(name, "flags") && JS_IsNumber(value)) {
 			int32_t i32;
 			JS_ToInt32(ctx, &i32, value);
@@ -502,7 +533,7 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 
 	auto dialog = new windows::Dialog(
 		width, height, L"dialog", NULL, flags,
-		popup_shadow, absl::nullopt);
+		popup_shadow, absl::nullopt, screen_rect);
 	if (kwui::Application::scriptReloadEnabled()) {
 		dialog->SetTitle(title.value_or(std::string("Untitled")) + " - (F5 to reload)");
 	} else {

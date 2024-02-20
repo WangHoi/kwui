@@ -40,7 +40,8 @@ public:
     Dialog(float width, float height,
         const WCHAR* wnd_class_name, HICON icon, int flags,
         absl::optional<PopupShadowData> popup_shadow,
-        absl::optional<CreateData> create_data);
+        absl::optional<CreateData> create_data,
+        absl::optional<scene2d::RectF> screen_rect);
     virtual ~Dialog();
 
     static Dialog* findDialogById(const std::string& id);
@@ -141,6 +142,7 @@ private:
     std::unique_ptr<PopupShadow> _popup_shadow;
     bool _on_window_pos_changed;
     float _dpi_scale;
+    absl::optional<scene2d::RectF> _screen_rect;
     HIMC _himc;
     std::vector<base::object_weakptr<scene2d::Node>>  _animating_nodes;
     UINT_PTR _animation_timer_id;

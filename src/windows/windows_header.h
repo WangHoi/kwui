@@ -33,6 +33,7 @@
 //#define NODEFERWINDOWPOS
 #define NOMCX
 #include <windowsx.h>
+#include <ShellScalingApi.h>
 #include <guiddef.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
