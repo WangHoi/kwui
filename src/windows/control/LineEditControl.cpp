@@ -784,7 +784,11 @@ void LineEditControl::SyncStateFromModel() {
             std::string u8_text = EncodingManager::WideToUTF8(_text);
             JSValue val = JS_NewStringLen(jctx, u8_text.c_str(), u8_text.length());
             script::Value func = onchange_func_;
-            JS_Call(jctx, func.jsValue(), JS_UNDEFINED, 1, &val);
+            JSValue ret = JS_Call(jctx, func.jsValue(), JS_UNDEFINED, 1, &val);
+            if (JS_IsException(ret)) {
+                js_std_dump_error(jctx);
+            }
+            JS_FreeValue(jctx, ret);
             JS_FreeValue(jctx, val);
         }
     }

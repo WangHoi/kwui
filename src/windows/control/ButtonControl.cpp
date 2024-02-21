@@ -46,7 +46,11 @@ void ButtonControl::onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt)
 		JSContext* jctx = node->scene()->scriptContext().get();
 		if (JS_IsFunction(jctx, onclick_func_.jsValue())) {
 			auto func = onclick_func_;
-			JS_Call(jctx, func.jsValue(), JS_UNDEFINED, 0, nullptr);
+			JSValue ret = JS_Call(jctx, func.jsValue(), JS_UNDEFINED, 0, nullptr);
+			if (JS_IsException(ret)) {
+				js_std_dump_error(jctx);
+			}
+			JS_FreeValue(jctx, ret);
 		}
 	}
 }

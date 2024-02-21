@@ -335,6 +335,7 @@ Context::Context(Runtime* rt)
 	initSceneClass();
 	register_jsx_function(ctx_);
 	ComponentState::registerClass(ctx_);
+	ElementRef::registerClass(ctx_);
 	Keact::initModule(ctx_);
 
 	auto global_obj = JS_GetGlobalObject(ctx_);

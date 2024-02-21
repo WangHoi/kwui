@@ -1,3 +1,5 @@
+import { createRef } from 'Keact';
+
 var simple_stylesheet = css`
 kml {
 	height: 100%;
@@ -54,15 +56,17 @@ button:active {
 
 function ComboxBox() {
 	let parent = this.dialogId;
+	let btn_ref = createRef();
 	let show_popup = () => {
+		let anchorScreenRect = btn_ref.current.getScreenRect();
 		app.showDialog({
 			// width: 200,
 			// height: 120,
 			screenRect: {
-				left: 80,
-				top: 80,
-				right: 280,
-				bottom: 180,
+				left: anchorScreenRect.left,
+				top: anchorScreenRect.bottom,
+				right: anchorScreenRect.right,
+				bottom: anchorScreenRect.bottom + 400,
 			},
 			flags: 2,
 			parent,
@@ -74,7 +78,7 @@ function ComboxBox() {
 			stylesheet: simple_stylesheet,
 		});
 	};
-	return <button onclick={show_popup}>Show popup</button>;
+	return <button onclick={show_popup} ref={btn_ref}>Show popup</button>;
 }
 function PopupExample() {
 	return <div style="margin: 16px;">

@@ -4,6 +4,7 @@
 #include "Value.h"
 #include "ComponentState.h"
 #include "EventPort.h"
+#include "ElementRef.h"
 
 #include "quickjs.h"
 #include "quickjs-libc.h"

@@ -166,8 +166,9 @@ void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON 
             ex_style = WS_EX_OVERLAPPEDWINDOW;
         }
     } else if (_flags & DIALOG_FLAG_POPUP) {
-        style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-        ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR | WS_EX_NOACTIVATE | WS_EX_TOPMOST;
+        style = WS_POPUP | WS_BORDER | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+        ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
+            | WS_EX_NOACTIVATE | WS_EX_TOPMOST | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE;
     } else {
         style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
         ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR

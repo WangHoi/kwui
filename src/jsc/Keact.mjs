@@ -147,3 +147,15 @@ function sameArray(a, b) {
 export function useEffect(effect_fn, deps) {
     return __useEffect(effect_fn, deps, sameArray);
 }
+
+export function createRef() {
+    return {
+        current: null
+    };
+}
+
+export function useRef() {
+    return useState(() => {
+        current: null
+    })[0];
+}

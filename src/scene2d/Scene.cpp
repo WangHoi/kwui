@@ -433,6 +433,11 @@ void Scene::setupProps(Node* node, JSValue props)
 				node->setClass(style::Classes::parse(s));
 			}
 			JS_FreeCString(ctx, s);
+		} else if (name == base::string_intern("ref")) {
+			if (JS_IsObjectPlain(ctx, value)) {
+				JSValue elem_ref = script::ElementRef::create(ctx, node->weaken());
+				JS_SetPropertyStr(ctx, value, "current", elem_ref);
+			}
 		} else if (JS_IsFunction(ctx, value)) {
 			new_ehandlers[name] = script::Value(ctx, value);
 		} else {

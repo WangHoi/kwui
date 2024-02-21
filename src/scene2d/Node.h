@@ -171,6 +171,11 @@ public:
 	bool matchSimple(style::Selector *selector) const;
 	void computeLayout();
 
+	inline style::LayoutObject& layoutObject()
+	{
+		return layout_;
+	}
+
 	bool positioned() const;
 	bool relativePositioned() const;
 	bool absolutelyPositioned() const;
