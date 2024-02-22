@@ -166,6 +166,9 @@ struct RectF {
     inline DimensionF size() const {
         return DimensionF(right - left, bottom - top);
     }
+    inline PointF center() const {
+        return PointF((left + right) * 0.5f, (top + bottom) * 0.5f);
+    }
     inline float width() const { return right - left; }
     inline float height() const { return bottom - top; }
 

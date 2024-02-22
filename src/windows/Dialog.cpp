@@ -22,10 +22,14 @@ static ATOM RegisterWindowClass(HINSTANCE hInstance,
 
 static constexpr UINT_PTR ANIMATION_TIMER_EVENT = 0xFFFF00A0;
 static HCURSOR s_preloaded_cursors[NUM_CURSOR_TYPES] = {};
-typedef HRESULT (CALLBACK* GETDPIFORMONITOR)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
-static GETDPIFORMONITOR pGETDPIFORMONITOR = NULL;
 
-static float getMonitorDpiScale(HMONITOR monitor) {
+typedef HRESULT (WINAPI* GETDPIFORMONITOR)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
+
+typedef BOOL(WINAPI* ADJUSTWINDOWRECTEXFORDPI)(LPRECT, DWORD, BOOL, DWORD, UINT);
+
+float Dialog::getMonitorDpiScale(HMONITOR monitor)
+{
+    static GETDPIFORMONITOR pGETDPIFORMONITOR = NULL;
     if (!pGETDPIFORMONITOR) {
         HMODULE hm = LoadLibraryW(L"Shcore.dll");
         if (hm) {
@@ -57,16 +61,13 @@ static void PreloadCursor() {
 
 static std::unordered_map<std::string, Dialog*> g_dialog_map;
 
-Dialog::Dialog(float width, float height,
-    const WCHAR* wnd_class_name,
+Dialog::Dialog(const WCHAR* wnd_class_name,
     HICON icon, int flags,
     absl::optional<PopupShadowData> popup_shadow,
-    absl::optional<CreateData> create_data,
-    absl::optional<scene2d::RectF> screen_rect)
+    absl::optional<CreateData> create_data)
     : _hwnd_parent(NULL), _hwnd_anchor(NULL), _hwnd(NULL)
     , _flags(flags), _create_data(create_data)
     , _visible(false), _first_show_window(true)
-    , _size((float)width, (float)height)
     , _mouse_event_tracking(false), _mouse_capture(false)
     , _popup_shadow_data(popup_shadow)
     , _on_window_pos_changed(false)
@@ -77,7 +78,6 @@ Dialog::Dialog(float width, float height,
     if (create_data.has_value()) {
         _dpi_scale = create_data.value().dpi_scale;
     }
-    _screen_rect = screen_rect;
 
     _mouse_position = scene2d::PointF(_size.width * 0.5f, _size.height * 0.5f);
     id_ = absl::StrFormat("%p", this);
@@ -126,10 +126,45 @@ void Dialog::SetVisible(bool visible) {
     }
 }
 
+scene2d::RectF Dialog::adjustWindowRect(const scene2d::RectF& rect,
+    float dpi_scale, bool customFrame, bool popup)
+{
+    static ADJUSTWINDOWRECTEXFORDPI pADJUSTWINDOWRECTEXFORDPI = NULL;
+    if (!pADJUSTWINDOWRECTEXFORDPI) {
+        HMODULE hm = LoadLibraryW(L"Shcore.dll");
+        if (hm) {
+            pADJUSTWINDOWRECTEXFORDPI = (ADJUSTWINDOWRECTEXFORDPI)GetProcAddress(hm, "AdjustWindowRectExForDpi");
+        }
+        if (!pADJUSTWINDOWRECTEXFORDPI) {
+            pADJUSTWINDOWRECTEXFORDPI = [](LPRECT rect, DWORD style, BOOL menu, DWORD ex_style, UINT) -> BOOL {
+                return AdjustWindowRectEx(rect, style, menu, ex_style);
+                };
+        }
+    }
+    UINT dpi = (UINT)((float)USER_DEFAULT_SCREEN_DPI * dpi_scale);
+    RECT r = { (LONG)(rect.left), (LONG)rect.top, lroundf(rect.right), lroundf(rect.bottom) };
+    DWORD style, ex_style;
+    if (customFrame) {
+        style = WS_POPUP;
+        ex_style = 0;
+    } else {
+        if (popup) {
+            style = WS_POPUPWINDOW;
+            ex_style = WS_EX_PALETTEWINDOW;
+        } else {
+            style = WS_OVERLAPPEDWINDOW;
+            ex_style = WS_EX_OVERLAPPEDWINDOW;
+        }
+    }
+    pADJUSTWINDOWRECTEXFORDPI(&r, style, FALSE, ex_style, dpi);
+    return scene2d::RectF::fromLTRB((float)r.left,
+        (float)r.top, (float)r.right, (float)r.bottom);
+}
+
 void Dialog::Resize(float width, float height) {
-    if (_size.width == width && _size.height == height)
-        return;
-    _size = scene2d::DimensionF(width, height);
+    //if (_size.width == width && _size.height == height)
+    //    return;
+    //_size = scene2d::DimensionF(width, height);
     /* TODO: remove the code
     if (_popup_shadow) {
         float px = (float)_popup_shadow_data->padding ;
@@ -137,12 +172,25 @@ void Dialog::Resize(float width, float height) {
         _popup_shadow->_size.Set(width + 2.0f * px, height + 2.0f * px);
     }
     */
+    _size = scene2d::DimensionF(width, height);
     scene2d::DimensionF pixel_size = (_size * _dpi_scale).makeRound();
+    RECT r = {};
+    ::AdjustWindowRectEx(&r, GetWindowLongW(_hwnd, GWL_STYLE), FALSE, GetWindowLongW(_hwnd, GWL_EXSTYLE));
     SetWindowPos(_hwnd, NULL,
         0, 0,
-        (int)pixel_size.width,
-        (int)pixel_size.height,
+        (int)pixel_size.width + (r.right - r.left),
+        (int)pixel_size.height + (r.bottom - r.top),
         SWP_NOMOVE | SWP_NOACTIVATE);
+}
+
+void Dialog::setWindowPos(const scene2d::RectF& rect)
+{
+    SetWindowPos(_hwnd, NULL,
+        (int)rect.left,
+        (int)rect.top,
+        (int)rect.width(),
+        (int)rect.height(),
+        SWP_NOACTIVATE);
 }
 
 void Dialog::SetTitle(const std::string& text) {
@@ -162,13 +210,15 @@ void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON 
                 | WS_EX_STATICEDGE | WS_EX_APPWINDOW;
 
         } else {
-            style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+            style = WS_OVERLAPPEDWINDOW;
             ex_style = WS_EX_OVERLAPPEDWINDOW;
         }
     } else if (_flags & DIALOG_FLAG_POPUP) {
-        style = WS_POPUP | WS_BORDER | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-        ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
-            | WS_EX_NOACTIVATE | WS_EX_TOPMOST | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE;
+        //style = WS_POPUP | WS_BORDER | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+        //ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
+        //    | WS_EX_NOACTIVATE | WS_EX_TOPMOST | WS_EX_WINDOWEDGE | WS_EX_STATICEDGE;
+        style = WS_POPUPWINDOW;
+        ex_style = WS_EX_NOACTIVATE | WS_EX_PALETTEWINDOW;
     } else {
         style = WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
         ex_style = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR
@@ -187,15 +237,6 @@ void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON 
             wnd_left = (monitor_width - (int)_pixel_size.width) / 2;
             wnd_top = (monitor_height - (int)_pixel_size.height) / 2;
         }
-    } else if (_screen_rect.has_value()) {
-        wnd_left = _screen_rect.value().left;
-        wnd_top = _screen_rect.value().top;
-        _pixel_size = _screen_rect.value().size();
-        RECT r = { wnd_left, wnd_top, (LONG)_screen_rect.value().right, (LONG)_screen_rect.value().bottom };
-        HMONITOR monitor = ::MonitorFromRect(&r, MONITOR_DEFAULTTOPRIMARY);
-        _dpi_scale = getMonitorDpiScale(monitor);
-        _size.width = _pixel_size.width / _dpi_scale;
-        _size.height = _pixel_size.height / _dpi_scale;
     } else {
         _dpi_scale = graphics::GraphicDevice::instance()->GetInitialDesktopDpiScale();
         _pixel_size = (_size * _dpi_scale).makeRound();
@@ -207,13 +248,8 @@ void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON 
             wnd_top = (monitor_height - (int)_pixel_size.height) / 2;
         }
     }
-    RECT rect;
-
-    SetRect(&rect, wnd_left, wnd_top,
-        wnd_left + (int)_pixel_size.width,
-        wnd_top + (int)_pixel_size.height);
     CreateWindowExW(ex_style, wnd_class_name, title.c_str(), style,
-        rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         NULL, NULL, hInstance, this);
 }
 
@@ -605,7 +641,7 @@ void Dialog::OnPaint() {
     _scene->runPostRenderTasks();
 }
 void Dialog::OnResize() {
-    //LOG(INFO) << "OnResize " << _pixel_size.width << "x" << _pixel_size.height << "px";
+    LOG(INFO) << "OnResize pixelSize " << _pixel_size.width << "x" << _pixel_size.height << "px";
     ClosePopups();
     UpdateBorderAndRenderTarget();
     RequestPaint();

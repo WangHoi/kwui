@@ -82,6 +82,7 @@ struct LayoutObject {
 	void init(const Style* style, scene2d::Node* node);
 	void reset();
 
+	static void measure(LayoutObject* o);
 	static void reflow(FlowRoot root, const scene2d::DimensionF& viewport_size);
 	static void paint(LayoutObject* o, graph2d::PainterInterface* painter);
 	static LayoutObject* pick(LayoutObject* o, scene2d::PointF pos, int flag_mask, scene2d::PointF* out_local_pos);
@@ -116,7 +117,6 @@ private:
 		StableBothEdges,
 	};
 
-	static void measure(LayoutObject* o, float viewport_height);
 	static void arrangeBlock(LayoutObject* o,
 		BlockFormatContext& bfc,
 		const scene2d::DimensionF& viewport_size);

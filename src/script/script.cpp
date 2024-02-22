@@ -432,15 +432,70 @@ JSValue Context::wrapScene(scene2d::Scene* scene)
 	return j;
 }
 
+struct DialogLength {
+	enum Type {
+		Default,
+		Fixed,
+		Auto,
+	};
+	Type type = Default;
+	float length = 0;
+};
+
+struct DialogPosAnchor {
+	enum Type {
+		Default,
+		TopLeft,
+		Center,
+	};
+	Type type = Default;
+	scene2d::PointF pos;
+	scene2d::RectF computeWindowGeometry(float client_width, float client_height, bool customFrame, bool popup)
+	{
+		HMONITOR monitor;
+		MONITORINFO info = { sizeof(MONITORINFO) };
+		float dpi_scale = 1.0f;
+		
+		// get monitor info
+		if (type == Default) {
+			POINT p = {};
+			::GetCursorPos(&p);
+			monitor = ::MonitorFromPoint(p, MONITOR_DEFAULTTOPRIMARY);
+			::GetMonitorInfoW(monitor, &info);
+			pos.x = (float)((info.rcWork.left + info.rcWork.right) / 2);
+			pos.y = (float)((info.rcWork.top + info.rcWork.bottom) / 2);
+			type = Center;
+		} else {
+			monitor = ::MonitorFromPoint(POINT{}, MONITOR_DEFAULTTOPRIMARY);
+			::GetMonitorInfoW(monitor, &info);
+		}
+		dpi_scale = windows::Dialog::getMonitorDpiScale(monitor);
+		scene2d::RectF avail_rect = scene2d::RectF::fromLTRB(
+			info.rcWork.left, info.rcWork.top, info.rcWork.right, info.rcWork.bottom);
+
+		scene2d::RectF rect = scene2d::RectF::fromOriginSize(
+			scene2d::PointF(),
+			scene2d::DimensionF(client_width, client_height) * dpi_scale);
+		rect = windows::Dialog::adjustWindowRect(rect, dpi_scale, customFrame, popup);
+
+		if (type == TopLeft) {
+			rect.moveTo(pos);
+		} else if (type == Center) {
+			rect.translate(avail_rect.center() - rect.center());
+		}
+	
+		return rect;
+	}
+};
+
 JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
 	std::string parentDialogId;
-	float width = 640.0;
-	float height = 480.0;
 	int flags = windows::DIALOG_FLAG_MAIN;
 	absl::optional<std::string> title;
 	absl::optional<windows::PopupShadowData> popup_shadow;
-	absl::optional<scene2d::RectF> screen_rect;
+	DialogPosAnchor anchor;
+	DialogLength width, height;
 	JSValue root = JS_UNDEFINED;
 	JSValue stylesheet = JS_UNDEFINED;
 	JSValue module = JS_UNDEFINED;
@@ -454,44 +509,50 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	Context::eachObjectField(ctx, argv[0], [&](const char* name, JSValue value) {
 		if (!strcmp(name, "title") && JS_IsString(value)) {
 			title.emplace(Context::parse<std::string>(ctx, value));
-		} else if (!strcmp(name, "width") && JS_IsNumber(value)) {
-			double f64;
-			JS_ToFloat64(ctx, &f64, value);
-			width = (float)f64;
-		} else if (!strcmp(name, "height") && JS_IsNumber(value)) {
-			double f64;
-			JS_ToFloat64(ctx, &f64, value);
-			height = (float)f64;
-		} else if (!strcmp(name, "screenRect") && JS_IsObjectPlain(ctx, value)) {
-			JSValue val;
-			int32_t left = 0, top = 0, right = 0, bottom = 0;
-			val = JS_GetPropertyStr(ctx, value, "left");
-			if (JS_IsNumber(val))
-				JS_ToInt32(ctx, &left, val);
-			JS_FreeValue(ctx, val);
-
-			val = JS_GetPropertyStr(ctx, value, "top");
-			if (JS_IsNumber(val))
-				JS_ToInt32(ctx, &top, val);
-			JS_FreeValue(ctx, val);
-
-			val = JS_GetPropertyStr(ctx, value, "right");
-			if (JS_IsNumber(val)) {
-				JS_ToInt32(ctx, &right, val);
-			} else {
-				right = left;
+		} else if (!strcmp(name, "width")) {
+			if (JS_IsNumber(value)) {
+				double f64;
+				JS_ToFloat64(ctx, &f64, value);
+				width.type = DialogLength::Fixed;
+				width.length = (float)f64;
+			} else if (JS_IsString(value)) {
+				auto sval = Context::parse<std::string>(ctx, value);
+				if (sval == "auto") {
+					width.type = DialogLength::Auto;
+				}
 			}
-			JS_FreeValue(ctx, val);
-
-			val = JS_GetPropertyStr(ctx, value, "bottom");
-			if (JS_IsNumber(val)) {
-				JS_ToInt32(ctx, &bottom, val);
-			} else {
-				bottom = top;
+		} else if (!strcmp(name, "height")) {
+			if (JS_IsNumber(value)) {
+				double f64;
+				JS_ToFloat64(ctx, &f64, value);
+				height.type = DialogLength::Fixed;
+				height.length = (float)f64;
+			} else if (JS_IsString(value)) {
+				auto sval = Context::parse<std::string>(ctx, value);
+				if (sval == "auto") {
+					height.type = DialogLength::Auto;
+				}
 			}
-			JS_FreeValue(ctx, val);
-
-			screen_rect.emplace(scene2d::RectF::fromLTRB(left, top, right, bottom));
+		} else if (!strcmp(name, "anchor") && JS_IsObjectPlain(ctx, value)) {
+			int32_t x, y;
+			JSValue left, top, right, bottom;
+			left = JS_GetPropertyStr(ctx, value, "left");
+			top = JS_GetPropertyStr(ctx, value, "top");
+			right = JS_GetPropertyStr(ctx, value, "right");
+			bottom = JS_GetPropertyStr(ctx, value, "bottom");
+			if (JS_IsNumber(left) && JS_IsNumber(top)) {
+				JS_ToInt32(ctx, &x, left);
+				JS_ToInt32(ctx, &y, top);
+				anchor.type = DialogPosAnchor::TopLeft;
+				anchor.pos.x = x;
+				anchor.pos.y = y;
+			} else {
+				LOG(WARNING) << "anchor other than 'top-left' not implemented";
+			}
+			JS_FreeValue(ctx, left);
+			JS_FreeValue(ctx, top);
+			JS_FreeValue(ctx, right);
+			JS_FreeValue(ctx, bottom);
 		} else if (!strcmp(name, "flags") && JS_IsNumber(value)) {
 			int32_t i32;
 			JS_ToInt32(ctx, &i32, value);
@@ -533,8 +594,9 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		});
 
 	auto dialog = new windows::Dialog(
-		width, height, L"dialog", NULL, flags,
-		popup_shadow, absl::nullopt, screen_rect);
+		L"dialog", NULL, flags,
+		popup_shadow, absl::nullopt);
+	
 	if (kwui::Application::scriptReloadEnabled()) {
 		dialog->SetTitle(title.value_or(std::string("Untitled")) + " - (F5 to reload)");
 	} else {
@@ -560,6 +622,26 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	} else {
 		dialog->SetParent(windows::Dialog::findDialogById(parentDialogId));
 	}
+	
+	float cwidth = 640, cheight = 480;
+	if (width.type == DialogLength::Fixed) {
+		cwidth = width.length;
+	} else if (width.type == DialogLength::Auto) {
+		auto [min_intrin_width, max_intrin_width] = dialog->GetScene()->intrinsicWidth();
+		LOG(INFO) << absl::StrFormat("intrin width: min=%.0f, max=%.0f",
+			min_intrin_width, max_intrin_width);
+		cwidth = max_intrin_width;
+	}
+	if (height.type == DialogLength::Fixed) {
+		cheight = height.length;
+	} else if (height.type == DialogLength::Auto) {
+		cheight = dialog->GetScene()->intrinsicHeight(cwidth);
+		LOG(INFO) << absl::StrFormat("intrin height=%.0f for width: %.0f",
+			cheight, cwidth);
+	}
+	auto rect = anchor.computeWindowGeometry(cwidth, cheight,
+		popup_shadow.has_value(), (flags & windows::DIALOG_FLAG_POPUP));
+	dialog->setWindowPos(rect);
 	dialog->Show();
 	return JS_NewString(ctx, dialog->eventContextId().c_str());
 }

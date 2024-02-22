@@ -47,7 +47,7 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 	BlockBox& b = absl::get<BlockBox>(fl.root->box);
 
 	// Measure min(max)-content width
-	measure(fl.root, viewport_size.height);
+	measure(fl.root);
 
 	// Find containing bfc
 	BlockFormatContext bfc(nullptr);
@@ -497,7 +497,7 @@ EdgeOffsetF LayoutObject::padding(const LayoutObject* o)
 	return EdgeOffsetF();
 }
 
-void LayoutObject::measure(LayoutObject* o, float viewport_height)
+void LayoutObject::measure(LayoutObject* o)
 {
 	//static int depth = 0;
 	//base::scoped_setter _(depth, depth + 1);
@@ -505,7 +505,7 @@ void LayoutObject::measure(LayoutObject* o, float viewport_height)
 
 	LayoutObject* child = o->first_child;
 	while (child) {
-		measure(child, viewport_height);
+		measure(child);
 		child = child->next_sibling;
 	}
 

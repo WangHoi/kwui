@@ -44,6 +44,7 @@ button {
 	border: 1px solid black;
 	padding: 0px 4px;
 	height: 24px;
+	/* width: 80px; */
 	line-height: 24px;
 }
 button:hover {
@@ -60,13 +61,11 @@ function ComboxBox() {
 	let show_popup = () => {
 		let anchorScreenRect = btn_ref.current.getScreenRect();
 		app.showDialog({
-			// width: 200,
-			// height: 120,
-			screenRect: {
+			width: "auto",
+			height: "auto",
+			anchor: {
 				left: anchorScreenRect.left,
 				top: anchorScreenRect.bottom,
-				right: anchorScreenRect.right,
-				bottom: anchorScreenRect.bottom + 400,
 			},
 			flags: 2,
 			parent,

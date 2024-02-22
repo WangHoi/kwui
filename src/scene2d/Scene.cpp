@@ -399,6 +399,25 @@ void Scene::dispatchEvent(Node* node, Event& event, bool bubble)
 	}
 }
 
+std::tuple<float, float> Scene::intrinsicWidth()
+{
+	resolveStyle();
+	computeLayout(DimensionF(std::numeric_limits<float>::max(), 0.0f));
+	return std::make_tuple(std::max(0.0f, root_->layout_.min_width),
+		std::max(0.0f, root_->layout_.max_width));
+}
+
+float Scene::intrinsicHeight(float width)
+{
+	resolveStyle();
+	computeLayout(DimensionF(width, 0.0f));
+	if (root_->layout_.bfc.has_value()) {
+		return std::max(0.0f, root_->layout_.bfc.value().margin_bottom_edge);
+	} else {
+		return 0.0f;
+	}
+}
+
 void Scene::setupProps(Node* node, JSValue props)
 {
 	JSContext* ctx = script_ctx_->get();

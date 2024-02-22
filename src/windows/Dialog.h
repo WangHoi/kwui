@@ -37,13 +37,12 @@ public:
         float dpi_scale;
         HMONITOR monitor;
     };
-    Dialog(float width, float height,
-        const WCHAR* wnd_class_name, HICON icon, int flags,
+    Dialog(const WCHAR* wnd_class_name, HICON icon, int flags,
         absl::optional<PopupShadowData> popup_shadow,
-        absl::optional<CreateData> create_data,
-        absl::optional<scene2d::RectF> screen_rect);
+        absl::optional<CreateData> create_data);
     virtual ~Dialog();
 
+    static float getMonitorDpiScale(HMONITOR monitor);
     static Dialog* findDialogById(const std::string& id);
 
     inline void SetParent(HWND parent) { _hwnd_parent = parent; }
@@ -59,7 +58,12 @@ public:
     inline bool IsVisible() const {
         return _visible;
     }
+    static scene2d::RectF adjustWindowRect(const scene2d::RectF& rect,
+        float dpi_scale, bool customFrame, bool popup);
     void Resize(float width, float height);
+    
+    void setWindowPos(const scene2d::RectF& rect);
+    
     void SetTitle(const std::string& text);
     scene2d::Scene* GetScene() const { return _scene.get(); }
     const scene2d::DimensionF& GetSize() const { return _size; }

@@ -75,6 +75,9 @@ public:
 
 	void dispatchEvent(Node* node, Event& event, bool bubble);
 
+	std::tuple<float, float> intrinsicWidth();
+	float intrinsicHeight(float width);
+
 private:
 	enum class NodeCompareResult {
 		Unpatchable,
