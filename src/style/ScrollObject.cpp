@@ -39,7 +39,7 @@ absl::optional<ScrollObject::SubControl> ScrollObject::subControlHitTest(const S
 			return SubControl::VStartButton;
 		} else {
 			float bottom_btn_top = (sd->viewport_size.width < sd->content_size.width) // has h-scrollbar
-				? (sd->viewport_size.height - 2.0f * SCROLLBAR_GUTTER_WIDTH)
+				? (sd->viewport_size.height - SCROLLBAR_GUTTER_WIDTH)
 				: (sd->viewport_size.height - SCROLLBAR_GUTTER_WIDTH);
 			if (pos.y >= bottom_btn_top) {
 				return SubControl::VEndButton;
@@ -63,7 +63,7 @@ absl::optional<ScrollObject::SubControl> ScrollObject::subControlHitTest(const S
 			return SubControl::HStartButton;
 		} else {
 			float right_btn_left = (sd->viewport_size.height < sd->content_size.height) // has v-scrollbar
-				? (sd->viewport_size.width - 2.0f * SCROLLBAR_GUTTER_WIDTH)
+				? (sd->viewport_size.width - SCROLLBAR_GUTTER_WIDTH)
 				: (sd->viewport_size.width - SCROLLBAR_GUTTER_WIDTH);
 			if (pos.x >= right_btn_left) {
 				return SubControl::HEndButton;
