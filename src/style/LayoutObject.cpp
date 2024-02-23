@@ -597,24 +597,23 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, float 
 	BlockBox& b = absl::get<BlockBox>(o->box);
 	scene2d::RectF padding_rect = LayoutObject::paddingRect(o);
 	absl::optional<scene2d::RectF> children_bounding_rect = LayoutObject::getChildrenBoundingRect(o);
+
+	// Check overflow-y
 	if (st.overflow_y == OverflowType::Auto
 		&& children_bounding_rect.has_value()
-		&& children_bounding_rect.value().bottom > padding_rect.bottom) {
+		&& children_bounding_rect.value().bottom > padding_rect.bottom
+		&& scroll_y == ScrollbarPolicy::Hidden) {
 		// handle overflow-y
 		scroll_y = ScrollbarPolicy::Stable;
 		bfc.border_bottom_edge = saved_border_bottom_edge;
 		bfc.margin_bottom_edge = saved_margin_bottom_edge;
 		arrangeBlock(o, bfc, viewport_width, viewport_height, scroll_y);
+		padding_rect.right = std::max(padding_rect.left, padding_rect.right - ScrollObject::SCROLLBAR_GUTTER_WIDTH);
+		children_bounding_rect = LayoutObject::getChildrenBoundingRect(o);
 	}
 
-	// Check overflow-x
 	ScrollbarPolicy scroll_x = ScrollbarPolicy::Hidden;
 	if (st.overflow_x == OverflowType::Scroll) {
-		scroll_x = ScrollbarPolicy::Stable;
-	}
-	if (st.overflow_x == OverflowType::Auto
-		&& children_bounding_rect.has_value()
-		&& children_bounding_rect.value().right > padding_rect.right) {
 		scroll_x = ScrollbarPolicy::Stable;
 	}
 	if (scroll_x == ScrollbarPolicy::Stable) {
@@ -623,6 +622,29 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, float 
 		b.scrollbar_gutter.top = b.scrollbar_gutter.bottom = SCROLLBAR_GUTTER_WIDTH;
 	}
 	b.content.height = std::max(0.0f, b.content.height - b.scrollbar_gutter.top - b.scrollbar_gutter.bottom);
+
+	// Check overflow-x
+	if (st.overflow_x == OverflowType::Auto
+		&& children_bounding_rect.has_value()
+		&& children_bounding_rect.value().right > padding_rect.right
+		&& scroll_x == ScrollbarPolicy::Hidden) {
+		scroll_x = ScrollbarPolicy::Stable;
+		b.scrollbar_gutter.bottom = SCROLLBAR_GUTTER_WIDTH;
+		b.content.height = std::max(0.0f, b.content.height - b.scrollbar_gutter.bottom);
+		padding_rect.bottom = std::max(padding_rect.top, padding_rect.bottom - b.scrollbar_gutter.bottom);
+
+		// Check overflow-y again
+		//if (st.overflow_y == OverflowType::Auto
+		//	&& children_bounding_rect.has_value()
+		//	&& children_bounding_rect.value().bottom > padding_rect.bottom
+		//	&& scroll_y == ScrollbarPolicy::Hidden) {
+		//	// handle overflow-y
+		//	scroll_y = ScrollbarPolicy::Stable;
+		//	bfc.border_bottom_edge = saved_border_bottom_edge;
+		//	bfc.margin_bottom_edge = saved_margin_bottom_edge;
+		//	arrangeBlock(o, bfc, viewport_width, viewport_height, scroll_y);
+		//}
+	}
 
 	// Update ScrollObject
 	if (st.overflow_y != OverflowType::Visible || st.overflow_x != OverflowType::Visible) {
