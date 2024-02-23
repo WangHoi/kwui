@@ -9,8 +9,8 @@ function CheckBoxExample() {
     };
     return <div>
         <p>
-        <CheckBox label={"blue"} value={isBlue} onchange={setBlue} />
-        <CheckBox label={"red"} value={isRed} onchange={setRed} />
+            <p><CheckBox label={"blue"} value={isBlue} onchange={setBlue} /></p>
+            <p><CheckBox label={"red"} value={isRed} onchange={setRed} /></p>
         </p>
         <button onclick={selectAll}>select all</button>
     </div>;
@@ -18,16 +18,21 @@ function CheckBoxExample() {
 
 function CheckBox({ label, value, onchange }) {
     return <button checked={value} onclick={() => onchange(!value)}>
-        <span>{label}</span>
+        <span class="icon-font">{value ? "\u{2611}" : "\u{2610}"}</span><span>label</span>
     </button>;
 }
 
 var Style = css`
+.icon-font {
+    font-family: "Segoe UI Symbol";
+}
 button {
+    font-size: 24px;
     cursor: pointer;
+    margin: 4px;
 }
 button:checked {
-    color: green;
+    /* color: green; */
 }
 `;
 
