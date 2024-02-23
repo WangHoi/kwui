@@ -52,7 +52,7 @@ public:
 	
 	void appendStyleRule(std::unique_ptr<style::StyleRule>&& rule);
 	void resolveStyle();
-	void computeLayout(const scene2d::DimensionF &size);
+	void computeLayout(float width, absl::optional<float> height);
 
 	void paint(graph2d::PainterInterface* painter);
 

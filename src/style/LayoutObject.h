@@ -83,7 +83,7 @@ struct LayoutObject {
 	void reset();
 
 	static void measure(LayoutObject* o);
-	static void reflow(FlowRoot root, const scene2d::DimensionF& viewport_size);
+	static void reflow(FlowRoot root, float viewport_width, absl::optional<float> viewport_height);
 	static void paint(LayoutObject* o, graph2d::PainterInterface* painter);
 	static LayoutObject* pick(LayoutObject* o, scene2d::PointF pos, int flag_mask, scene2d::PointF* out_local_pos);
 	static scene2d::PointF getOffset(LayoutObject* o);
@@ -119,14 +119,13 @@ private:
 
 	static void arrangeBlock(LayoutObject* o,
 		BlockFormatContext& bfc,
-		const scene2d::DimensionF& viewport_size);
+		float viewport_width, absl::optional<float> viewport_height);
 	static void arrangeBlock(LayoutObject* o,
 		BlockFormatContext& bfc,
-		const scene2d::DimensionF& viewport_size,
+		float viewport_width, absl::optional<float> viewport_height,
 		ScrollbarPolicy scroll_y);
 	static void arrangeBlockX(LayoutObject* o,
 		BlockFormatContext& bfc,
-		const scene2d::DimensionF& viewport_size,
 		ScrollbarPolicy scroll_y);
 	static void arrangeBfcTop(LayoutObject* o,
 		BlockFormatContext& bfc,
@@ -134,28 +133,28 @@ private:
 	static void arrangeBfcChildren(LayoutObject* o,
 		BlockFormatContext& bfc,
 		BlockBox& box,
-		const scene2d::DimensionF& viewport_size);
+		float viewport_width, absl::optional<float> viewport_height);
 	static void arrangeBfcBottom(LayoutObject* o,
 		BlockFormatContext& bfc,
 		BlockBox& box);
-	static void prepare(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
-	static void arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
+	static void prepare(LayoutObject* o, InlineFormatContext& ifc, float viewport_width, absl::optional<float> viewport_height);
+	static void arrange(LayoutObject* o, InlineFormatContext& ifc, float viewport_width, absl::optional<float> viewport_height);
 	static void translate(LayoutObject* o, scene2d::PointF offset);
-	static void arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size);
+	static void arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc, float viewport_width, absl::optional<float> viewport_height);
 	static void arrangeInlineBlockX(LayoutObject* o,
 		BlockFormatContext& bfc,
-		const scene2d::DimensionF& viewport_size,
+		float viewport_width, absl::optional<float> viewport_height,
 		ScrollbarPolicy scroll_y);
 	static void arrangeInlineBlockChildren(LayoutObject* o,
 		absl::optional<float> contg_height,
-		const scene2d::DimensionF& viewport_size);
+		float viewport_width, absl::optional<float> viewport_height);
 	static absl::optional<float> findFirstBaseline(LayoutObject* o, float accum_y = 0.0f);
 	/* For box-container: clientRect(),
 	 *   inline box container: bounding rect of first line-box's inline-box's top-left
 	 *     and last line-box's inline-box's bottom-right.
 	 * used by reflow() and getChildrenBoundingRect() */
 	static absl::optional<scene2d::RectF> containingRectForPositionedChildren(LayoutObject* o);
-	static void arrangePositionedChildren(LayoutObject* o, const scene2d::DimensionF& viewport_size);
+	static void arrangePositionedChildren(LayoutObject* o, float viewport_width, absl::optional<float> viewport_height);
 	static void paintTextDecoration(LayoutObject* o, graph2d::PainterInterface* painter, const InlineBox* ib);
 
 	template <typename Sink>

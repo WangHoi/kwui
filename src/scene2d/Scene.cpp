@@ -284,13 +284,13 @@ void Scene::resolveStyle()
 	resolveNodeStyle(root_);
 }
 
-void Scene::computeLayout(const scene2d::DimensionF& size)
+void Scene::computeLayout(float width, absl::optional<float> height)
 {
 	style::LayoutTreeBuilder b(root_);
 	flow_roots_ = b.build();
 
 	for (auto& flow_root : flow_roots_) {
-		style::LayoutObject::reflow(flow_root, size);
+		style::LayoutObject::reflow(flow_root, width, height);
 	}
 
 	// trigger Control::onLayout
@@ -402,7 +402,7 @@ void Scene::dispatchEvent(Node* node, Event& event, bool bubble)
 std::tuple<float, float> Scene::intrinsicWidth()
 {
 	resolveStyle();
-	computeLayout(DimensionF(std::numeric_limits<float>::max(), 0.0f));
+	computeLayout(std::numeric_limits<float>::max(), absl::nullopt);
 	return std::make_tuple(std::max(0.0f, root_->layout_.min_width),
 		std::max(0.0f, root_->layout_.max_width));
 }
@@ -410,7 +410,7 @@ std::tuple<float, float> Scene::intrinsicWidth()
 float Scene::intrinsicHeight(float width)
 {
 	resolveStyle();
-	computeLayout(DimensionF(width, 0.0f));
+	computeLayout(width, absl::nullopt);
 	if (root_->layout_.bfc.has_value()) {
 		return std::max(0.0f, root_->layout_.bfc.value().margin_bottom_edge);
 	} else {

@@ -36,7 +36,7 @@ void LayoutObject::reset()
 	positioned_children.clear();
 }
 
-void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
+void LayoutObject::reflow(FlowRoot fl, float viewport_width, absl::optional<float> viewport_height)
 {
 	CHECK(fl.root->flags & LayoutObject::NEW_BFC_FLAG)
 		<< "LayoutObject::reflow: root expect NEW_BFC_FLAG";
@@ -51,9 +51,9 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 
 	// Find containing bfc
 	BlockFormatContext bfc(nullptr);
-	bfc.contg_width = viewport_size.width;
+	bfc.contg_width = viewport_width;
 	bfc.border_bottom_edge = bfc.margin_bottom_edge = 0.0f;
-	bfc.contg_height.emplace(viewport_size.height);
+	bfc.contg_height = viewport_height;
 
 	if (fl.positioned_parent) {
 		auto containing_rect = LayoutObject::containingRectForPositionedChildren(fl.positioned_parent);
@@ -65,7 +65,7 @@ void LayoutObject::reflow(FlowRoot fl, const scene2d::DimensionF& viewport_size)
 		}
 	}
 
-	arrangeBlock(fl.root, bfc, viewport_size);
+	arrangeBlock(fl.root, bfc, viewport_width, viewport_height);
 }
 
 void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
@@ -583,7 +583,7 @@ void LayoutObject::measure(LayoutObject* o)
 	o->max_width = max_width;
 }
 
-void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const scene2d::DimensionF& viewport_size)
+void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, float viewport_width, absl::optional<float> viewport_height)
 {
 	const Style& st = *o->style;
 	ScrollbarPolicy scroll_y = ScrollbarPolicy::Hidden;
@@ -592,7 +592,7 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 
 	float saved_border_bottom_edge = bfc.border_bottom_edge;
 	float saved_margin_bottom_edge = bfc.margin_bottom_edge;
-	arrangeBlock(o, bfc, viewport_size, scroll_y);
+	arrangeBlock(o, bfc, viewport_width, viewport_height, scroll_y);
 
 	BlockBox& b = absl::get<BlockBox>(o->box);
 	scene2d::RectF padding_rect = LayoutObject::paddingRect(o);
@@ -604,7 +604,7 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 		scroll_y = ScrollbarPolicy::Stable;
 		bfc.border_bottom_edge = saved_border_bottom_edge;
 		bfc.margin_bottom_edge = saved_margin_bottom_edge;
-		arrangeBlock(o, bfc, viewport_size, scroll_y);
+		arrangeBlock(o, bfc, viewport_width, viewport_height, scroll_y);
 	}
 
 	// Check overflow-x
@@ -648,13 +648,13 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, const 
 
 void LayoutObject::arrangeBlock(LayoutObject* o,
 	BlockFormatContext& bfc,
-	const scene2d::DimensionF& viewport_size,
+	float viewport_width, absl::optional<float> viewport_height,
 	ScrollbarPolicy scroll_y)
 {
 	const Style& st = *o->style;
 	BlockBox& box = absl::get<BlockBox>(o->box);
 	if (st.display == DisplayType::Block) {
-		arrangeBlockX(o, bfc, viewport_size, scroll_y);
+		arrangeBlockX(o, bfc, scroll_y);
 		if (o->flags & NEW_BFC_FLAG) {
 			BlockFormatContext& inner_bfc = o->bfc.value();
 			arrangeBfcTop(o, bfc, box);
@@ -669,7 +669,7 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 				inner_bfc.border_bottom_edge = bfc.margin_bottom_edge;
 				inner_bfc.margin_bottom_edge = bfc.margin_bottom_edge;
 			}
-			arrangeBfcChildren(o, inner_bfc, box, viewport_size);
+			arrangeBfcChildren(o, inner_bfc, box, viewport_width, viewport_height);
 			if (st.overflow_y == OverflowType::Visible) {
 				bfc.border_bottom_edge = bfc.margin_bottom_edge = inner_bfc.margin_bottom_edge;
 			} else {
@@ -691,11 +691,11 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 			}
 		} else {
 			arrangeBfcTop(o, bfc, box);
-			arrangeBfcChildren(o, bfc, box, viewport_size);
+			arrangeBfcChildren(o, bfc, box, viewport_width, viewport_height);
 			arrangeBfcBottom(o, bfc, box);
 		}
 
-		LayoutObject::arrangePositionedChildren(o, viewport_size);
+		LayoutObject::arrangePositionedChildren(o, viewport_width, viewport_height);
 	} else {
 		LOG(WARNING) << "LayoutObject::arrangeBlock " << st.display << " not implemented.";
 	}
@@ -703,7 +703,6 @@ void LayoutObject::arrangeBlock(LayoutObject* o,
 
 void LayoutObject::arrangeBlockX(LayoutObject* o,
 	BlockFormatContext& bfc,
-	const scene2d::DimensionF& viewport_size,
 	ScrollbarPolicy scroll_y)
 {
 	const Style& st = *o->style;
@@ -860,7 +859,7 @@ void LayoutObject::arrangeBfcTop(LayoutObject* o, BlockFormatContext& bfc, Block
 void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 	BlockFormatContext& bfc,
 	BlockBox& box,
-	const scene2d::DimensionF& viewport_size)
+	float viewport_width, absl::optional<float> viewport_height)
 {
 	const Style& st = *o->style;
 	float borpad_top = box.border.top + box.padding.top;
@@ -879,7 +878,7 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 		bfc.border_bottom_edge = -margin;
 		LayoutObject* child = o->first_child;
 		while (child) {
-			arrangeBlock(child, bfc, viewport_size);
+			arrangeBlock(child, bfc, viewport_width, viewport_height);
 			child = child->next_sibling;
 		}
 
@@ -910,13 +909,13 @@ void LayoutObject::arrangeBfcChildren(LayoutObject* o,
 			base::scoped_setter _3(bfc.contg_width, box.contentRect().width());
 			LayoutObject* child = o->first_child;
 			while (child) {
-				prepare(child, *o->ifc, viewport_size);
+				prepare(child, *o->ifc, viewport_width, viewport_height);
 				child = child->next_sibling;
 			}
 			o->ifc->arrangeX(o->style->text_align);
 			child = o->first_child;
 			while (child) {
-				arrange(child, *o->ifc, viewport_size);
+				arrange(child, *o->ifc, viewport_width, viewport_height);
 				child = child->next_sibling;
 			}
 			o->ifc->arrangeY();
@@ -1016,7 +1015,7 @@ private:
 	InlineFormatContext& ifc_;
 };
 
-void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size)
+void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc, float viewport_width, absl::optional<float> viewport_height)
 {
 	const auto& st = *o->style;
 
@@ -1027,18 +1026,18 @@ void LayoutObject::prepare(LayoutObject* o, InlineFormatContext& ifc, const scen
 		tb.text_flow->flowText(&tbf, &tbf);
 	} else if (st.display == DisplayType::InlineBlock) {
 		o->box.emplace<InlineBlockBox>();
-		arrangeInlineBlock(o, ifc, viewport_size);
+		arrangeInlineBlock(o, ifc, viewport_width, viewport_height);
 	} else if (o->flags & HAS_INLINE_CHILD_FLAG) {
 		LayoutObject* child = o->first_child;
 		while (child) {
-			prepare(child, ifc, viewport_size);
+			prepare(child, ifc, viewport_width, viewport_height);
 			child = child->next_sibling;
 		}
 	}
 }
 
 // arrangeBlock bottom up
-void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size)
+void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, float viewport_width, absl::optional<float> viewport_height)
 {
 	const auto& st = *o->style;
 
@@ -1047,7 +1046,7 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 			LayoutObject* child = o->first_child;
 			std::vector<InlineBox*> inline_boxes;
 			while (child) {
-				arrange(child, ifc, viewport_size);
+				arrange(child, ifc, viewport_width, viewport_height);
 
 				if (absl::holds_alternative<TextBox>(child->box)) {
 					const auto& child_inline_boxes = absl::get<TextBox>(child->box).glyph_run_boxes.inline_boxes;
@@ -1097,7 +1096,7 @@ void LayoutObject::arrange(LayoutObject* o, InlineFormatContext& ifc, const scen
 			}
 			o->box.emplace<std::vector<std::unique_ptr<InlineBox>>>(std::move(merged_boxes));
 
-			LayoutObject::arrangePositionedChildren(o, viewport_size);
+			LayoutObject::arrangePositionedChildren(o, viewport_width, viewport_height);
 		}
 	} else if (st.display == DisplayType::InlineBlock) {
 		InlineBlockBox& ibb = absl::get<InlineBlockBox>(o->box);
@@ -1139,7 +1138,7 @@ void LayoutObject::translate(LayoutObject* o, scene2d::PointF offset)
 	}
 }
 
-void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc, const scene2d::DimensionF& viewport_size)
+void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc, float viewport_width, absl::optional<float> viewport_height)
 {
 	CHECK(o->style->display == DisplayType::InlineBlock)
 		<< "LayoutObject::arrangeInlineBlock: expect inline-block element";
@@ -1173,7 +1172,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	}
 
 	BlockBox& b = absl::get<InlineBlockBox>(o->box).block_box;
-	arrangeInlineBlockX(o, bfc, viewport_size, scroll_y);
+	arrangeInlineBlockX(o, bfc, viewport_width, viewport_height, scroll_y);
 
 	BlockFormatContext& inner_bfc = o->bfc.value();
 	inner_bfc.contg_width = bfc.contg_width;
@@ -1181,7 +1180,7 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	inner_bfc.border_bottom_edge = 0;
 	inner_bfc.margin_bottom_edge = 0;
 	arrangeBfcTop(o, inner_bfc, b);
-	arrangeBfcChildren(o, inner_bfc, b, viewport_size);
+	arrangeBfcChildren(o, inner_bfc, b, viewport_width, viewport_height);
 	arrangeBfcBottom(o, inner_bfc, b);
 
 	/*
@@ -1265,12 +1264,12 @@ void LayoutObject::arrangeInlineBlock(LayoutObject* o, InlineFormatContext& ifc,
 	}
 	//line->line_height = std::max(line->line_height, ib.size.height);
 
-	LayoutObject::arrangePositionedChildren(o, viewport_size);
+	LayoutObject::arrangePositionedChildren(o, viewport_width, viewport_height);
 }
 
 void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
 	BlockFormatContext& bfc,
-	const scene2d::DimensionF& viewport_size,
+	float viewport_width, absl::optional<float> viewport_height,
 	ScrollbarPolicy scroll_y)
 {
 	const Style& st = *o->style;
@@ -1316,7 +1315,7 @@ void LayoutObject::arrangeInlineBlockX(LayoutObject* o,
 }
 
 void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
-	absl::optional<float> contg_height, const scene2d::DimensionF& viewport_size)
+	absl::optional<float> contg_height, float viewport_width, absl::optional<float> viewport_height)
 {
 	CHECK(absl::holds_alternative<InlineBlockBox>(o->box));
 
@@ -1336,7 +1335,7 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 		{
 			LayoutObject* child = o->first_child;
 			while (child) {
-				arrangeBlock(child, bfc, viewport_size);
+				arrangeBlock(child, bfc, viewport_width, viewport_height);
 				child = child->next_sibling;
 			}
 		}
@@ -1364,13 +1363,13 @@ void LayoutObject::arrangeInlineBlockChildren(LayoutObject* o,
 		{
 			LayoutObject* child = o->first_child;
 			while (child) {
-				prepare(child, *o->ifc, viewport_size);
+				prepare(child, *o->ifc, viewport_width, viewport_height);
 				child = child->next_sibling;
 			}
 			o->ifc->arrangeX(st.text_align);
 			child = o->first_child;
 			while (child) {
-				arrange(child, *o->ifc, viewport_size);
+				arrange(child, *o->ifc, viewport_width, viewport_height);
 				child = child->next_sibling;
 			}
 			o->ifc->arrangeY();
@@ -1562,12 +1561,12 @@ void LayoutObject::dumpTree()
 	LOG(INFO) << "DumpTree:\n" << stream.str();
 }
 
-void LayoutObject::arrangePositionedChildren(LayoutObject* o, const scene2d::DimensionF& viewport_size)
+void LayoutObject::arrangePositionedChildren(LayoutObject* o, float viewport_width, absl::optional<float> viewport_height)
 {
 	for (LayoutObject* po : o->positioned_children) {
 		if (po->style->position == PositionType::Absolute
 			|| po->style->position == PositionType::Fixed) {
-			reflow(FlowRoot{ po, o }, viewport_size);
+			reflow(FlowRoot{ po, o }, viewport_width, viewport_height);
 		} else {
 			CHECK(po->style->position == PositionType::Relative);
 			auto& st = *po->style;

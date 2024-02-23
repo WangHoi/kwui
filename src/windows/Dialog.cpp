@@ -608,7 +608,7 @@ void Dialog::OnPaint() {
     }
 
     _scene->resolveStyle();
-    _scene->computeLayout(_size);
+    _scene->computeLayout(_size.width, _size.height);
 
     int tries = 0;
     while (tries < 2) {
@@ -663,7 +663,7 @@ void Dialog::RequestPaint() {
 }
 void Dialog::RequestUpdate() {
     _scene->resolveStyle();
-    _scene->computeLayout(_size);
+    _scene->computeLayout(_size.width, _size.height);
 
     POINT point;
     if (GetCursorPos(&point) && ScreenToClient(_hwnd, &point)) {

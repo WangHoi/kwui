@@ -43,9 +43,9 @@ button {
 	display: inline-block;
 	border: 1px solid black;
 	padding: 0px 4px;
-	height: 24px;
-	/* width: 80px; */
-	line-height: 24px;
+	/*height: 24px;*/
+	/*width: 83px;*/
+	line-height: 22px;
 }
 button:hover {
 	background-color: lightblue;
