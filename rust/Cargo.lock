@@ -200,6 +200,7 @@ name = "kwui"
 version = "0.1.0"
 dependencies = [
  "kwui-sys",
+ "log",
  "windows_dpi",
 ]
 

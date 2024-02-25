@@ -37,8 +37,8 @@ extern "C" {
 	bool KWUI_EXPORT kwui_ScriptValue_to_bool(kwui_ScriptValue* v);
 	double KWUI_EXPORT kwui_ScriptValue_to_double(kwui_ScriptValue* v);
 	int KWUI_EXPORT kwui_ScriptValue_to_int(kwui_ScriptValue* v);
-	size_t KWUI_EXPORT kwui_ScriptValue_to_string(kwui_ScriptValue* v, char* s, size_t capacity);
-	
+	const char* KWUI_EXPORT kwui_ScriptValue_to_string(kwui_ScriptValue* v, size_t* len);
+
 	size_t KWUI_EXPORT kwui_ScriptValue_length(kwui_ScriptValue* arr, char* s, size_t capacity);
 
 	void KWUI_EXPORT kwui_ScriptValue_visitArray(

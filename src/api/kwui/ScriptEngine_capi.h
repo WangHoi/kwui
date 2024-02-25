@@ -13,7 +13,7 @@ extern "C" {
 
 	void KWUI_EXPORT kwui_ScriptEngine_addGlobalFunction(
 		const char* name, kwui_ScriptFunction func, void* udata);
-	void KWUI_EXPORT kwui_ScriptEngine_removeGlobalFfunction(const char* name);
+	void KWUI_EXPORT kwui_ScriptEngine_removeGlobalFunction(const char* name);
 	void KWUI_EXPORT kwui_ScriptEngine_loadFile(const char* path);
 	kwui_ScriptValue* KWUI_EXPORT kwui_ScriptEngine_callGlobalFunction(
 		const char* name, int argc, kwui_ScriptValue* argv[]);
