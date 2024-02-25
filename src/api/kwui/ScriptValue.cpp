@@ -1,4 +1,5 @@
 #include "ScriptValue.h"
+#include "base/log.h"
 #include "absl/types/variant.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -20,7 +21,9 @@ public:
 
 ScriptValue::ScriptValue()
 	: d(new Private)
-{}
+{
+	//LOG(INFO) << "ScriptValue ctor " << this;
+}
 ScriptValue::ScriptValue(bool v)
 	: ScriptValue()
 {
@@ -60,6 +63,7 @@ ScriptValue::ScriptValue(ScriptValue&& o) noexcept
 
 ScriptValue::~ScriptValue()
 {
+	//LOG(INFO) << "ScriptValue dtor " << this;
 	delete d;
 }
 

@@ -5,7 +5,7 @@
 namespace script {
 
 struct NativeSubItem {
-	kwui::ScriptFunction* func;
+	kwui::ScriptFunction func;
 	void* udata;
 };
 
@@ -29,15 +29,17 @@ kwui::ScriptValue EventPort::sendFromNative(const std::string& event, const kwui
 		});
 	return ret;
 }
-void EventPort::addListenerFromNative(const std::string& event, kwui::ScriptFunction* func, void* udata)
+void EventPort::addListenerFromNative(const std::string& event, kwui::ScriptFunction func, void* udata)
 {
+	LOG(INFO) << "addListenerFromNative event '" << event << "'";
 	Subscription& sub = g_subscription[event];
 	
 	// TODO: check duplicate add
 	
 	sub.native_subs.emplace_back<NativeSubItem>({ func, udata });
+	LOG(INFO) << "addListenerFromNative g_subscription.len=" << g_subscription.size();
 }
-bool EventPort::removeListenerFromNative(const std::string& event, kwui::ScriptFunction* func, void* udata)
+bool EventPort::removeListenerFromNative(const std::string& event, kwui::ScriptFunction func, void* udata)
 {
 	auto it = g_subscription.find(event);
 	if (it == g_subscription.end())
@@ -121,10 +123,12 @@ void EventPort::doPost(const std::string& event, const kwui::ScriptValue& value,
 	absl::optional<absl::FunctionRef<void(const kwui::ScriptValue&)>> fn)
 {
 	auto it = g_subscription.find(event);
-	if (it == g_subscription.end())
+	if (it == g_subscription.end()) {
 		return;
+	}
 	Subscription sub = it->second;
-	kwui::ScriptValue argv[2] = { event, value };
+	kwui::ScriptValue evt(event);
+	const kwui::ScriptValue* argv[2] = { &evt, &value };
 	for (auto& item : sub.native_subs) {
 		kwui::ScriptValue ret = item.func(2, argv, item.udata);
 		if (fn.has_value()) {

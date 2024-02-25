@@ -10,7 +10,7 @@ typedef std::tuple<std::string, kwui_ScriptFunction, void*> EventHandler;
 
 static std::set<std::unique_ptr<EventHandler>> g_event_handlers;
 
-static kwui::ScriptValue invoke_script_function(int argc, const kwui::ScriptValue* argv, void* udata);
+static kwui::ScriptValue invoke_script_function(int argc, const kwui::ScriptValue* argv[], void* udata);
 static EventHandler* find_handler(const char* event, kwui_ScriptFunction func, void* udata);
 static EventHandler* find_handler(const char* event);
 static EventHandler* add_handler(const char* event, kwui_ScriptFunction func, void* udata);
@@ -39,36 +39,41 @@ void kwui_ScriptEngine_loadFile(const char* path)
 
 kwui_ScriptValue* kwui_ScriptEngine_callGlobalFunction(const char* name, int argc, kwui_ScriptValue* argv[])
 {
-	std::vector<kwui::ScriptValue> args;
+	std::vector<const kwui::ScriptValue*> args;
 	for (int i = 0; i < argc; ++i) {
-		args.push_back(*(kwui::ScriptValue*)argv[i]);
+		args.push_back((const kwui::ScriptValue*)argv[i]);
 	}
 	kwui::ScriptValue ret = kwui::ScriptEngine::get()->callGlobalFunction(name, argc, args.data());
-	return (kwui_ScriptValue*)new kwui::ScriptValue(ret);
+	return (kwui_ScriptValue*)new kwui::ScriptValue(std::move(ret));
 }
 
 void kwui_ScriptEngine_postEvent0(const char* event)
 {
+	LOG(INFO) << "postEvent0 " << event;
 	kwui::ScriptEngine::get()->postEvent(event);
 }
 
 void kwui_ScriptEngine_postEvent1(const char* event, kwui_ScriptValue* arg)
 {
-	kwui::ScriptValue val(*(kwui::ScriptValue*)arg);
+	LOG(INFO) << "postEvent1 " << event;
+	const kwui::ScriptValue& val = *(kwui::ScriptValue*)arg;
 	kwui::ScriptEngine::get()->postEvent(event, val);
 }
 
 kwui_ScriptValue* kwui_ScriptEngine_sendEvent0(const char* event)
 {
-	return nullptr;
+	kwui::ScriptValue ret = kwui::ScriptEngine::get()->sendEvent(event);
+	return (kwui_ScriptValue*)new kwui::ScriptValue(std::move(ret));
 }
 
 kwui_ScriptValue* kwui_ScriptEngine_sendEvent1(const char* event, kwui_ScriptValue* arg)
 {
-	return nullptr;
+	const kwui::ScriptValue& val = *(kwui::ScriptValue*)arg;
+	kwui::ScriptValue ret = kwui::ScriptEngine::get()->sendEvent(event, val);
+	return (kwui_ScriptValue*)new kwui::ScriptValue(std::move(ret));
 }
 
-kwui::ScriptValue invoke_script_function(int argc, const kwui::ScriptValue* argv, void* udata)
+kwui::ScriptValue invoke_script_function(int argc, const kwui::ScriptValue* argv[], void* udata)
 {
 	auto h = (EventHandler*)udata;
 	kwui_ScriptFunction func = std::get<1>(*h);
@@ -76,10 +81,10 @@ kwui::ScriptValue invoke_script_function(int argc, const kwui::ScriptValue* argv
 	std::vector<kwui_ScriptValue*> args;
 	args.reserve(argc);
 	for (int i = 0; i < argc; ++i) {
-		args.push_back((kwui_ScriptValue*)&argv[i]);
+		args.push_back((kwui_ScriptValue*)argv[i]);
 	}
 	kwui_ScriptValue* c_ret = func(argc, args.data(), c_udata);
-	kwui::ScriptValue ret(*(kwui::ScriptValue*)c_ret);
+	kwui::ScriptValue ret(std::move(*(kwui::ScriptValue*)c_ret));
 	kwui_ScriptValue_delete(c_ret);
 	return ret;
 }
@@ -133,6 +138,7 @@ std::unique_ptr<EventHandler> remove_handler(const char* event)
 
 void kwui_ScriptEngine_addEventListener(const char* event, kwui_ScriptFunction func, void* udata)
 {
+	LOG(INFO) << "addEventListener " << event;
 	auto h = find_handler(event, func, udata);
 	if (h) {
 		LOG(ERROR) << "kwui_ScriptEngine_addEventListener: event " << event

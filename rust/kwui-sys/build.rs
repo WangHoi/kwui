@@ -2,10 +2,14 @@ use cmake::{self, Config};
 use bindgen;
 
 fn main() {
-    let cmake_project_dir = "../.."; 
+    let cmake_project_dir = "../..";
+    println!("cargo:rerun-if-changed={}/cmake", cmake_project_dir);
+    println!("cargo:rerun-if-changed={}/src", cmake_project_dir);
     let dst = Config::new(cmake_project_dir)
         .profile("Release")
         .define("CMAKE_CONFIGURATION_TYPES", "Release")
+        .define("BUILD_TESTS", "OFF")
+        .define("BUILD_EXAMPLES", "OFF")
         .generator("Ninja")
         .build();
     println!("cargo:rustc-link-search=native={}/lib", dst.display());

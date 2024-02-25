@@ -5,7 +5,7 @@
 
 namespace kwui {
 
-typedef ScriptValue(ScriptFunction)(int argc, const ScriptValue* argv, void* udata);
+typedef ScriptValue(*ScriptFunction)(int argc, const ScriptValue* argv[], void* udata);
 
 class KWUI_EXPORT ScriptEngine {
 public:
@@ -13,16 +13,16 @@ public:
 
 	static ScriptEngine* get();
 	static void release();
-	void addGlobalFunction(const char* name, ScriptFunction* func, void* udata);
+	void addGlobalFunction(const char* name, ScriptFunction func, void* udata);
 	void removeGlobalFunction(const char* name);
 	void loadFile(const char* path);
-	ScriptValue callGlobalFunction(const char* name, int argc, ScriptValue* argv);
+	ScriptValue callGlobalFunction(const char* name, int argc, const ScriptValue* argv[]);
 	//ModuleRegister& addGlobalModule(const char* name);
 	
 	void postEvent(const std::string& event, const ScriptValue& value = ScriptValue());
 	ScriptValue sendEvent(const std::string& event, const ScriptValue& value = ScriptValue());
-	void addEventListener(const std::string& event, ScriptFunction* func, void* udata);
-	bool removeEventListener(const std::string& event, ScriptFunction* func, void* udata);
+	void addEventListener(const std::string& event, ScriptFunction func, void* udata);
+	bool removeEventListener(const std::string& event, ScriptFunction func, void* udata);
 
 private:
 	ScriptEngine();

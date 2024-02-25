@@ -9,12 +9,12 @@ namespace kwui {
 
 struct FunctionDef {
 	std::string name;
-	ScriptFunction* func;
+	ScriptFunction func;
 	void* udata;
 };
 
 struct ScriptFunctionClosure {
-	ScriptFunction* func;
+	ScriptFunction func;
 	void* udata;
 };
 
@@ -72,13 +72,17 @@ public:
 
 		std::vector<ScriptValue> args;
 		args.reserve(argc + 1);
-
 		for (int i = 0; i < argc; ++i) {
-			args.emplace_back(script::wrap(ctx, argv[i]));
+			args.emplace_back(std::move(script::wrap(ctx, argv[i])));
 		}
 		args.emplace_back();
 
-		ScriptValue ret = closure->func(argc, args.data(), closure->udata);
+		std::vector<const ScriptValue*> pargs;
+		pargs.reserve(args.size());
+		for (auto& arg : args) {
+			pargs.push_back(&arg);
+		}
+		ScriptValue ret = closure->func(argc, pargs.data(), closure->udata);
 
 		return script::unwrap(ctx, ret);
 	}
@@ -123,7 +127,7 @@ void ScriptEngine::release()
 	g_engine = nullptr;
 }
 
-void ScriptEngine::addGlobalFunction(const char* name, ScriptFunction* func, void* udata)
+void ScriptEngine::addGlobalFunction(const char* name, ScriptFunction func, void* udata)
 {
 	d->global_funcs.emplace_back(std::make_unique<FunctionDef>(FunctionDef{ name, func, udata }));
 	script::Runtime::get()->eachContext(absl::bind_front(
@@ -147,7 +151,7 @@ void ScriptEngine::loadFile(const char* path)
 	d->default_ctx->loadFile(path);
 }
 
-ScriptValue ScriptEngine::callGlobalFunction(const char* name, int argc, ScriptValue* argv)
+ScriptValue ScriptEngine::callGlobalFunction(const char* name, int argc, const ScriptValue* argv[])
 {
 	JSContext* ctx = d->default_ctx->get();
 	JSValue global = JS_GetGlobalObject(ctx);
@@ -156,7 +160,7 @@ ScriptValue ScriptEngine::callGlobalFunction(const char* name, int argc, ScriptV
 	if (JS_IsFunction(ctx, func)) {
 		std::vector<JSValue> jargs;
 		for (int i = 0; i < argc; ++i) {
-			jargs.push_back(script::unwrap(ctx, argv[i]));
+			jargs.push_back(script::unwrap(ctx, *argv[i]));
 		}
 		JSValue jret = JS_Call(ctx, func, JS_UNDEFINED, argc, jargs.data());
 		if (JS_IsException(jret)) {
@@ -190,13 +194,13 @@ ScriptValue ScriptEngine::sendEvent(const std::string& event, const ScriptValue&
 }
 
 void ScriptEngine::addEventListener(const std::string& event,
-	ScriptFunction* func, void* udata)
+	ScriptFunction func, void* udata)
 {
 	return script::EventPort::addListenerFromNative(event, func, udata);
 }
 
 bool ScriptEngine::removeEventListener(const std::string& event,
-	ScriptFunction* func, void* udata)
+	ScriptFunction func, void* udata)
 {
 	return script::EventPort::removeListenerFromNative(event, func, udata);
 }

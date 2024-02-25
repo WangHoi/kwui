@@ -11,8 +11,8 @@ class EventPort {
 public:
 	static void postFromNative(const std::string& event, const kwui::ScriptValue& value);
 	static kwui::ScriptValue sendFromNative(const std::string& event, const kwui::ScriptValue& value);
-	static void addListenerFromNative(const std::string& event, kwui::ScriptFunction* func, void* udata);
-	static bool removeListenerFromNative(const std::string& event, kwui::ScriptFunction* func, void* udata);
+	static void addListenerFromNative(const std::string& event, kwui::ScriptFunction func, void* udata);
+	static bool removeListenerFromNative(const std::string& event, kwui::ScriptFunction func, void* udata);
 
 	static JSValue postFromScript(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 	static JSValue addListenerFromScript(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
