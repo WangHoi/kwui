@@ -50,10 +50,10 @@ app.showDialog({
 
 ## 样例展示
 
-### 语音通话质量测试工具
+### 通话质量测试工具
 ![image](docs/VoIPTool.png)
 
-### 远程桌面控制
+### 远程桌面客户端
 ![image](docs/KuDesk.jpg)
 
 ### 安装程序
