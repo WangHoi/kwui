@@ -17,9 +17,7 @@ impl ScriptValue {
     }
     pub(crate) fn from_inner(inner: *mut kwui_ScriptValue) -> Self {
         // eprintln!("from_inner {:?}", inner);
-        Self {
-            inner
-        }
+        Self { inner }
     }
     pub(crate) fn inner(&self) -> *mut kwui_ScriptValue {
         self.inner
@@ -80,25 +78,50 @@ impl IntoScriptValue for bool {
     }
 }
 
-impl FromScriptValue for i32 {
-    fn from_script_value(value: &ScriptValue) -> Result<Self, ()> {
-        unsafe { Ok(kwui_ScriptValue_to_double(value.inner) as _) }
-    }
+macro_rules! number_from_script_value {
+    ($ty:ident) => {
+        impl FromScriptValue for $ty {
+            fn from_script_value(value: &ScriptValue) -> Result<Self, ()> {
+                unsafe { Ok(kwui_ScriptValue_to_double(value.inner) as _) }
+            }
+        }
+    };
 }
+macro_rules! number_into_script_value {
+    ($ty:ident) => {
+        impl IntoScriptValue for $ty {
+            fn into_script_value(self) -> Result<ScriptValue, ()> {
+                let inner = unsafe { kwui_ScriptValue_newDouble(self as _) };
+                Ok(ScriptValue::from_inner(inner))
+            }
+        }
+    };
+}
+number_from_script_value!(i8);
+number_from_script_value!(u8);
+number_from_script_value!(i16);
+number_from_script_value!(u16);
+number_from_script_value!(i32);
+number_from_script_value!(u32);
+number_from_script_value!(i64);
+number_from_script_value!(u64);
+number_from_script_value!(isize);
+number_from_script_value!(usize);
+number_from_script_value!(f32);
+number_from_script_value!(f64);
 
-impl IntoScriptValue for i32 {
-    fn into_script_value(self) -> Result<ScriptValue, ()> {
-        let inner = unsafe { kwui_ScriptValue_newDouble(self as _) };
-        Ok(ScriptValue::from_inner(inner))
-    }
-}
-
-impl IntoScriptValue for f32 {
-    fn into_script_value(self) -> Result<ScriptValue, ()> {
-        let inner = unsafe { kwui_ScriptValue_newDouble(self as _) };
-        Ok(ScriptValue::from_inner(inner))
-    }
-}
+number_into_script_value!(i8);
+number_into_script_value!(u8);
+number_into_script_value!(i16);
+number_into_script_value!(u16);
+number_into_script_value!(i32);
+number_into_script_value!(u32);
+number_into_script_value!(i64);
+number_into_script_value!(u64);
+number_into_script_value!(isize);
+number_into_script_value!(usize);
+number_into_script_value!(f32);
+number_into_script_value!(f`64);
 
 impl FromScriptValue for String {
     fn from_script_value(value: &ScriptValue) -> Result<Self, ()> {
@@ -113,18 +136,14 @@ impl FromScriptValue for String {
 
 impl IntoScriptValue for String {
     fn into_script_value(self) -> Result<ScriptValue, ()> {
-        let inner = unsafe {
-            kwui_ScriptValue_newString(self.as_ptr() as _, self.len())
-        };
+        let inner = unsafe { kwui_ScriptValue_newString(self.as_ptr() as _, self.len()) };
         Ok(ScriptValue::from_inner(inner))
     }
 }
 
 impl IntoScriptValue for &str {
     fn into_script_value(self) -> Result<ScriptValue, ()> {
-        let inner = unsafe {
-            kwui_ScriptValue_newString(self.as_ptr() as _, self.len())
-        };
+        let inner = unsafe { kwui_ScriptValue_newString(self.as_ptr() as _, self.len()) };
         Ok(ScriptValue::from_inner(inner))
     }
 }

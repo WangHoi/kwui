@@ -63,10 +63,11 @@ impl ScriptEngine {
         A: ScriptFuntionParams,
     {
         let c_event = CString::new(event).unwrap();
-        let closure: Box<Callback> = Box::new(Box::new(move |args: &[ScriptValue]| -> Result<ScriptValue, ()> {
-            eprintln!("arg0={:?}", String::from_script_value(&args[0]));
-            func(A::from_params(args)?).into_script_value()
-        }) as Callback);
+        let closure: Box<Callback> = Box::new(Box::new(
+            move |args: &[ScriptValue]| -> Result<ScriptValue, ()> {
+                func(A::from_params(args)?).into_script_value()
+            },
+        ) as Callback);
         let inner = Box::into_raw(closure) as _;
         unsafe {
             kwui_ScriptEngine_addEventListener(c_event.as_ptr(), Some(invoke_closure), inner);
@@ -126,40 +127,45 @@ pub trait ScriptFuntionParams: Sized {
     fn from_params(params: &[ScriptValue]) -> Result<Self, ()>;
 }
 
-impl ScriptFuntionParams for () {
-    fn from_params(params: &[ScriptValue]) -> Result<Self, ()> {
-        Ok(())
-    }
+macro_rules! impl_script_function_param {
+    () => {
+        impl_script_function_param!(@expand 0usize ; ;);
+    };
+    ($($p:ident),*) => {
+        impl_script_function_param!(@expand 0usize ; ; $($p)*);
+    };
+    (@expand $n:expr ; $([$idx:expr, $pa:ident]),* ; $a:ident $($p:ident)*) => {
+        impl_script_function_param!(@expand $n + 1usize; $([$idx, $pa],)* [$n, $a] ; $($p)*);
+    };
+    (@expand $n:expr ; $([$idx:expr, $pa:tt]),* ;) => {
+        impl<$($pa,)*> ScriptFuntionParams for ($($pa,)*)
+        where
+        $(
+            $pa: FromScriptValue + Default,
+        )*
+        {
+            fn from_params(param: &[ScriptValue]) -> Result<Self, ()> {
+                Ok((
+                    $(
+                        param
+                            .get($idx)
+                            .and_then(|arg| $pa::from_script_value(arg).ok())
+                            .unwrap_or_default(),
+                    )*
+                ))
+            }
+        }
+    };
 }
-impl<A1> ScriptFuntionParams for (A1,)
-where
-    A1: FromScriptValue + Default,
-{
-    fn from_params(param: &[ScriptValue]) -> Result<Self, ()> {
-        let a1 = param
-            .get(0)
-            .and_then(|arg| A1::from_script_value(arg).ok())
-            .unwrap_or_default();
-        Ok((a1,))
-    }
-}
-impl<A1, A2> ScriptFuntionParams for (A1, A2)
-where
-    A1: FromScriptValue + Default,
-    A2: FromScriptValue + Default,
-{
-    fn from_params(param: &[ScriptValue]) -> Result<Self, ()> {
-        let a1 = param
-            .get(0)
-            .and_then(|arg| A1::from_script_value(arg).ok())
-            .unwrap_or_default();
-        let a2 = param
-            .get(1)
-            .and_then(|arg| A2::from_script_value(arg).ok())
-            .unwrap_or_default();
-        Ok((a1, a2))
-    }
-}
+impl_script_function_param!();
+impl_script_function_param!(A1);
+impl_script_function_param!(A1, A2);
+impl_script_function_param!(A1, A2, A3);
+impl_script_function_param!(A1, A2, A3, A4);
+impl_script_function_param!(A1, A2, A3, A4, A5);
+impl_script_function_param!(A1, A2, A3, A4, A5, A6);
+impl_script_function_param!(A1, A2, A3, A4, A5, A6, A7);
+impl_script_function_param!(A1, A2, A3, A4, A5, A6, A7, A8);
 
 unsafe extern "C" fn invoke_closure(
     argc: ::std::os::raw::c_int,
@@ -191,21 +197,23 @@ mod tests {
         eprintln!("f0 called");
     }
 
-    fn f1((a,): (String,)) {
-        eprintln!("f1 called with {}", a);
+    fn f1(args: (String, u8, f32)) {
+        eprintln!("f1 called with {:?}", args);
     }
 
-    fn on_test_event((evt, arg): (String, bool)) {
+    fn on_test_event((evt, arg): (String, f32)) {
         eprintln!("on_test_event evt={}, arg={}", evt, arg);
     }
 
     #[test]
     fn global_func() {
         let app = Application::new();
-        // ScriptEngine::add_global_function("f0", f0);
-        // ScriptEngine::call_global_function("f0", &[]);
-        //ScriptEngine::add_global_function("f1", f1);
-        //ScriptEngine::call_global_function("f1", &make_args!("abc"));
+        ScriptEngine::add_global_function("f0", f0);
+        ScriptEngine::call_global_function("f0", &[]);
+
+        ScriptEngine::add_global_function("f1", f1);
+        ScriptEngine::call_global_function("f1", &make_args!("a", 2, 3));
+
         let a = on_test_event as *const ();
         let _handler = ScriptEngine::add_event_listener("test-event", on_test_event);
         ScriptEngine::post_event1("test-event", true);

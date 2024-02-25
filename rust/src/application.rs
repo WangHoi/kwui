@@ -16,27 +16,22 @@ impl Application {
             .map(|s| s.as_ptr() as *mut i8)
             .collect::<Vec<_>>();
         let argc = args.len() as _;
-        let inner = unsafe { 
+        let inner = unsafe {
             #[cfg(debug_assertions)]
             kwui_Application_enableScriptReload(true);
-            
+
             kwui_Application_new(argc, args.as_mut_ptr())
         };
-        
 
         Self { inner }
     }
     pub fn exec(&self) -> i32 {
-        unsafe {
-            kwui_Application_exec(self.inner)
-        }
+        unsafe { kwui_Application_exec(self.inner) }
     }
 }
 
 impl Drop for Application {
     fn drop(&mut self) {
-        unsafe {
-            kwui_Application_delete(self.inner)
-        }
+        unsafe { kwui_Application_delete(self.inner) }
     }
 }
