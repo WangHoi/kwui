@@ -630,8 +630,8 @@ void LayoutObject::arrangeBlock(LayoutObject* o, BlockFormatContext& bfc, float 
 		&& scroll_x == ScrollbarPolicy::Hidden) {
 		scroll_x = ScrollbarPolicy::Stable;
 		b.scrollbar_gutter.bottom = SCROLLBAR_GUTTER_WIDTH;
-		b.content.height = std::max(0.0f, b.content.height - b.scrollbar_gutter.bottom);
-		padding_rect.bottom = std::max(padding_rect.top, padding_rect.bottom - b.scrollbar_gutter.bottom);
+		//b.content.height = std::max(0.0f, b.content.height - b.scrollbar_gutter.bottom);
+		//padding_rect.bottom = std::max(padding_rect.top, padding_rect.bottom - b.scrollbar_gutter.bottom);
 
 		// Check overflow-y again
 		//if (st.overflow_y == OverflowType::Auto
