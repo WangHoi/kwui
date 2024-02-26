@@ -112,18 +112,15 @@ function(bundle_static_library tgt_name bundled_tgt_name)
       list(APPEND static_libs_full_names $<TARGET_FILE:${tgt}>)
     endforeach()
 
-    # add_custom_target(${bundled_tgt_name}_target ALL DEPENDS ${bundled_tgt_full_name}})
-    add_custom_target(${bundled_tgt_name}_target ALL
-      ${lib_tool} /NOLOGO /OUT:${bundled_tgt_full_name} ${static_libs_full_names}
-      DEPENDS ${static_libs_full_names})
-    #[[
-    add_custom_command(
+    #[[ add_custom_target(${bundled_tgt_name}_target ALL DEPENDS ${bundled_tgt_full_name}})
+    add_custom_target(${bundled_tgt_name}_target
       COMMAND ${lib_tool} /NOLOGO /OUT:${bundled_tgt_full_name} ${static_libs_full_names}
-      OUTPUT ${bundled_tgt_full_name}
-      DEPENDS ${static_libs_full_names}
-      COMMENT "Bundling ${bundled_tgt_name}"
-      VERBATIM)
+      DEPENDS ${static_libs})
     ]]
+    add_custom_command(TARGET ${tgt_name} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E echo "Bundling ${bundled_tgt_name} library..."
+      COMMAND ${lib_tool} /NOLOGO /OUT:${bundled_tgt_full_name} ${static_libs_full_names}
+      VERBATIM)
   else()
     message(FATAL_ERROR "Unknown bundle scenario!")
   endif()

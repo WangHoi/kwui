@@ -121,7 +121,7 @@ number_into_script_value!(u64);
 number_into_script_value!(isize);
 number_into_script_value!(usize);
 number_into_script_value!(f32);
-number_into_script_value!(f`64);
+number_into_script_value!(f64);
 
 impl FromScriptValue for String {
     fn from_script_value(value: &ScriptValue) -> Result<Self, ()> {
