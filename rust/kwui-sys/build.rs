@@ -2,7 +2,10 @@ use cmake::{self, Config};
 use bindgen;
 
 fn main() {
-    let cmake_project_dir = "../..";
+    let cmake_project_dir = match std::env::var("KWUI_PROJECT_ROOT") {
+        Ok(root) => root,
+        Err(_) => String::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."))
+    };
     println!("cargo:rerun-if-changed={}/cmake", cmake_project_dir);
     println!("cargo:rerun-if-changed={}/src", cmake_project_dir);
     let dst = Config::new(cmake_project_dir)

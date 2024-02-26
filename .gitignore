@@ -40,3 +40,4 @@
 # Added by cargo
 
 /rust/target
+/rust/kwui-sys/target
