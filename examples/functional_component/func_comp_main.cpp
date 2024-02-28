@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
 {
     Application app(argc, argv);
     auto SE = ScriptEngine::get();
-    SE->loadFile("d:/projects/kwui/examples/functional_component/assets/functional.mjs");
+    SE->loadFile("d:/projects/kwui/examples/functional_component/assets/functional.js");
 
     return app.exec();
 }

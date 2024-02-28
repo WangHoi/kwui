@@ -1,5 +1,5 @@
-import { VerticalAlignExample } from "./vertical-align.mjs";
-import { StyledTextExample } from "./styled-text.mjs";
+import { VerticalAlignExample } from "./vertical-align.js";
+import { StyledTextExample } from "./styled-text.js";
 
 function RichTextExample() {
 	return [

@@ -8,6 +8,6 @@ int main(int argc, char* argv[])
 {
     Application app(argc, argv);
     ScriptEngine::get()
-        ->loadFile("d:/projects/kwui/tests/box_gen/assets/box_gen.mjs");
+        ->loadFile("d:/projects/kwui/tests/box_gen/assets/box_gen.js");
     return app.exec();
 }

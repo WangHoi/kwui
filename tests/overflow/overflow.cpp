@@ -12,6 +12,6 @@ int main(int argc, char* argv[])
     //    ->loadFile("d:/projects/kwui/tests/overflow/assets/entry.mjs");
     //return app.exec();
     auto app = kwui_Application_new(argc, argv);
-    kwui_ScriptEngine_loadFile("d:/projects/kwui/tests/overflow/assets/entry.mjs");
+    kwui_ScriptEngine_loadFile("d:/projects/kwui/tests/overflow/assets/entry.js");
     return kwui_Application_exec(app);
 }

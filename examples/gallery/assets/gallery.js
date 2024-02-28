@@ -1,6 +1,6 @@
 "use strict";
 "use math";
-import { VerticalAlignTest, VerticalAlignTestStyle } from "./vertical_align.mjs";
+import { VerticalAlignTest, VerticalAlignTestStyle } from "./vertical_align.js";
 
 function TestDtor(props, kids) {
 	let [n, setN] = useHook(() => props.n, (_, n) => {
@@ -181,5 +181,5 @@ app.showDialog({
 // });
 
 app.showDialog({
-	modulePath: "./radio.mjs",
+	modulePath: "./radio.js",
 });

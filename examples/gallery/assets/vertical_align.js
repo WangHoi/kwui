@@ -1,4 +1,4 @@
-import { P1 } from "./paragraph.mjs";
+import { P1 } from "./paragraph.js";
 
 export function VerticalAlignTest(props, kids) {
     let edit = <div id="path-edit">

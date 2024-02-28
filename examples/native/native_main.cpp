@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
     auto SE = ScriptEngine::get();
     SE->addGlobalFunction("add", &add, nullptr);
     SE->addEventListener("test-event", &onTestEvent, nullptr);
-    SE->loadFile("d:/projects/kwui/examples/native/assets/native.mjs");
+    SE->loadFile("d:/projects/kwui/examples/native/assets/native.js");
 
     ScriptValue a1 = 3, a2 = 4;
     const ScriptValue* args[2] = { &a1, &a2 };

@@ -9,6 +9,6 @@ int main(int argc, char* argv[])
 {
     Application app(argc, argv);
     ScriptEngine::get()
-        ->loadFile("d:/projects/kwui/tests/popup/assets/entry.mjs");
+        ->loadFile("d:/projects/kwui/tests/popup/assets/entry.js");
     return app.exec();
 }
