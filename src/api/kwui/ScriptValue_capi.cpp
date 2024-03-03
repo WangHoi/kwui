@@ -116,7 +116,7 @@ const char* kwui_ScriptValue_to_string(kwui_ScriptValue* v, size_t* len)
 	return s.c_str();
 }
 
-size_t kwui_ScriptValue_length(kwui_ScriptValue* v, char* s, size_t capacity)
+size_t kwui_ScriptValue_length(kwui_ScriptValue* v)
 {
 	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
 	return val.length();
@@ -124,19 +124,21 @@ size_t kwui_ScriptValue_length(kwui_ScriptValue* v, char* s, size_t capacity)
 
 void kwui_ScriptValue_visitArray(
 	kwui_ScriptValue* v,
-	void (*visitorFunction)(int index, const kwui_ScriptValue* val)
+	void (*visitorFunction)(int index, const kwui_ScriptValue* val, void* udata),
+	void* udata
 ) {
 	kwui::ScriptValue& arr = *(kwui::ScriptValue*)v;
 	arr.visitArray([&](int index, const kwui::ScriptValue& v) {
-		visitorFunction(index, (const kwui_ScriptValue*)&v);
+		visitorFunction(index, (const kwui_ScriptValue*)&v, udata);
 		});
 }
 void kwui_ScriptValue_visitObject(
 	kwui_ScriptValue* v,
-	void (*visitorFunction)(const char* key, size_t key_len, const kwui_ScriptValue* val)
+	void (*visitorFunction)(const char* key, size_t key_len, const kwui_ScriptValue* val, void* udata),
+	void* udata
 ) {
 	kwui::ScriptValue& obj = *(kwui::ScriptValue*)v;
 	obj.visitObject([&](const std::string& key, const kwui::ScriptValue& v) {
-		visitorFunction(key.c_str(), key.size(), (const kwui_ScriptValue*)&v);
+		visitorFunction(key.c_str(), key.size(), (const kwui_ScriptValue*)&v, udata);
 		});
 }
