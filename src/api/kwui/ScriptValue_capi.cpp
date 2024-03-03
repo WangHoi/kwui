@@ -63,6 +63,36 @@ void kwui_ScriptValue_set_by_str(kwui_ScriptValue* obj, const char* key, kwui_Sc
 	return;
 }
 
+bool kwui_ScriptValue_is_null(kwui_ScriptValue* v)
+{
+	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
+	return val.isNull();
+}
+bool kwui_ScriptValue_is_bool(kwui_ScriptValue* v)
+{
+	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
+	return val.isBool();
+}
+bool kwui_ScriptValue_is_number(kwui_ScriptValue* v)
+{
+	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
+	return val.isNumber();
+}
+bool kwui_ScriptValue_is_string(kwui_ScriptValue* v)
+{
+	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
+	return val.isString();
+}
+bool kwui_ScriptValue_is_array(kwui_ScriptValue* v)
+{
+	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
+	return val.isArray();
+}
+bool kwui_ScriptValue_is_object(kwui_ScriptValue* v)
+{
+	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
+	return val.isObject();
+}
 bool kwui_ScriptValue_to_bool(kwui_ScriptValue* v)
 {
 	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
@@ -84,4 +114,29 @@ const char* kwui_ScriptValue_to_string(kwui_ScriptValue* v, size_t* len)
 	static ABSL_PER_THREAD_TLS_KEYWORD std::string s = val.toString();
 	*len = s.length();
 	return s.c_str();
+}
+
+size_t kwui_ScriptValue_length(kwui_ScriptValue* v, char* s, size_t capacity)
+{
+	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
+	return val.length();
+}
+
+void kwui_ScriptValue_visitArray(
+	kwui_ScriptValue* v,
+	void (*visitorFunction)(int index, const kwui_ScriptValue* val)
+) {
+	kwui::ScriptValue& arr = *(kwui::ScriptValue*)v;
+	arr.visitArray([&](int index, const kwui::ScriptValue& v) {
+		visitorFunction(index, (const kwui_ScriptValue*)&v);
+		});
+}
+void kwui_ScriptValue_visitObject(
+	kwui_ScriptValue* v,
+	void (*visitorFunction)(const char* key, size_t key_len, const kwui_ScriptValue* val)
+) {
+	kwui::ScriptValue& obj = *(kwui::ScriptValue*)v;
+	obj.visitObject([&](const std::string& key, const kwui::ScriptValue& v) {
+		visitorFunction(key.c_str(), key.size(), (const kwui_ScriptValue*)&v);
+		});
 }

@@ -49,13 +49,13 @@ kwui_ScriptValue* kwui_ScriptEngine_callGlobalFunction(const char* name, int arg
 
 void kwui_ScriptEngine_postEvent0(const char* event)
 {
-	LOG(INFO) << "postEvent0 " << event;
+	//LOG(INFO) << "postEvent0 " << event;
 	kwui::ScriptEngine::get()->postEvent(event);
 }
 
 void kwui_ScriptEngine_postEvent1(const char* event, kwui_ScriptValue* arg)
 {
-	LOG(INFO) << "postEvent1 " << event;
+	//LOG(INFO) << "postEvent1 " << event;
 	const kwui::ScriptValue& val = *(kwui::ScriptValue*)arg;
 	kwui::ScriptEngine::get()->postEvent(event, val);
 }

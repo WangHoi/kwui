@@ -39,12 +39,12 @@ extern "C" {
 	int KWUI_EXPORT kwui_ScriptValue_to_int(kwui_ScriptValue* v);
 	const char* KWUI_EXPORT kwui_ScriptValue_to_string(kwui_ScriptValue* v, size_t* len);
 
-	size_t KWUI_EXPORT kwui_ScriptValue_length(kwui_ScriptValue* arr, char* s, size_t capacity);
+	size_t KWUI_EXPORT kwui_ScriptValue_length(kwui_ScriptValue* v, char* s, size_t capacity);
 
 	void KWUI_EXPORT kwui_ScriptValue_visitArray(
-		kwui_ScriptValue* arr, void (*VisitorFunction)(int index, kwui_ScriptValue* val));
+		kwui_ScriptValue* arr, void (*visitorFunction)(int index, const kwui_ScriptValue* val));
 	void KWUI_EXPORT kwui_ScriptValue_visitObject(
-		kwui_ScriptValue* obj, void (*VisitorFunction)(const char* key, size_t key_len, kwui_ScriptValue* val));
+		kwui_ScriptValue* obj, void (*visitorFunction)(const char* key, size_t key_len, const kwui_ScriptValue* val));
 
 #ifdef __cplusplus
 }
