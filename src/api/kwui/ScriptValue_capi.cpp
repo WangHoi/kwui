@@ -49,18 +49,22 @@ kwui_ScriptValue* kwui_ScriptValue_get_by_index(kwui_ScriptValue* arr, int index
 	return (kwui_ScriptValue*)new kwui::ScriptValue(std::move(cpp_arr[index]));
 }
 
-void kwui_ScriptValue_set_by_index(kwui_ScriptValue* arr, int index, kwui_ScriptValue* val)
+void kwui_ScriptValue_set_by_index(kwui_ScriptValue* a, int index, kwui_ScriptValue* v)
 {
+	kwui::ScriptValue& arr = *(kwui::ScriptValue*)a;
+	arr[index] = *(kwui::ScriptValue*)v;
 }
 
-kwui_ScriptValue* kwui_ScriptValue_get_by_str(kwui_ScriptValue* obj, const char* key)
+kwui_ScriptValue* kwui_ScriptValue_get_by_str(kwui_ScriptValue* o, const char* key)
 {
-	return nullptr;
+	kwui::ScriptValue& obj = *(kwui::ScriptValue*)o;
+	return (kwui_ScriptValue*)new kwui::ScriptValue(std::move(obj[key]));
 }
 
-void kwui_ScriptValue_set_by_str(kwui_ScriptValue* obj, const char* key, kwui_ScriptValue* val)
+void kwui_ScriptValue_set_by_str(kwui_ScriptValue* o, const char* key, kwui_ScriptValue* v)
 {
-	return;
+	kwui::ScriptValue& obj = *(kwui::ScriptValue*)o;
+	obj[key] = *(kwui::ScriptValue*)v;
 }
 
 bool kwui_ScriptValue_is_null(kwui_ScriptValue* v)
