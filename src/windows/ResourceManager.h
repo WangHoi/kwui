@@ -2,6 +2,7 @@
 
 #include "base/ResourceArchive.h"
 #include "windows_header.h"
+#include <map>
 
 namespace windows {
 
@@ -19,18 +20,22 @@ struct Resource {
 class ResourceManager {
 public:
     absl::optional<base::ResourceArchive::ResourceItem> LoadResource(int id);
-    absl::optional<base::ResourceArchive::ResourceItem> LoadResource(const wchar_t* name);
+    absl::optional<base::ResourceArchive::ResourceItem> loadResource(const wchar_t* name);
     bool preloadResourceArchive(int id);
-    
+    void setResourceRootDir(const char* dir);
+
     static ResourceManager* createInstance(HMODULE hModule);
     static ResourceManager* instance();
     static void releaseInstance();
 
 private:
-    ResourceManager(HMODULE hModule) : _hmodule(hModule) {}
+    ResourceManager(HMODULE hModule) : hmodule_(hModule) {}
+    absl::optional<base::ResourceArchive::ResourceItem> loadResourceFromFile(const std::wstring& dir, const wchar_t* name);
 
-    std::unique_ptr<base::ResourceArchive> _archive;
-    HMODULE _hmodule;
+    std::unique_ptr<base::ResourceArchive> archive_;
+    std::optional<std::wstring> root_dir_;
+    std::map<std::wstring, base::ResourceArchive::ResourceItem> root_dir_cache_;
+    HMODULE hmodule_;
 };
 
 }

@@ -104,7 +104,7 @@ static JSModuleDef* load_module(JSContext* ctx, const char* orig_module_name, vo
 
 	if (absl::StartsWith(module_name, ":")) {
 		auto u16_name = windows::EncodingManager::UTF8ToWide(&module_name[1]);
-		auto res_opt = windows::ResourceManager::instance()->LoadResource(u16_name.c_str());
+		auto res_opt = windows::ResourceManager::instance()->loadResource(u16_name.c_str());
 		if (res_opt.has_value()) {
 			buf_len = res_opt->size;
 			buf = (uint8_t*)js_mallocz(ctx, res_opt->size + 1);
@@ -382,7 +382,7 @@ void Context::loadFile(const std::string& fname)
 {
 	if (absl::StartsWith(fname, ":/")) {
 		std::wstring u16_fname = windows::EncodingManager::UTF8ToWide(fname.substr(1));
-		auto res_opt = windows::ResourceManager::instance()->LoadResource(u16_fname.c_str());
+		auto res_opt = windows::ResourceManager::instance()->loadResource(u16_fname.c_str());
 		if (res_opt.has_value() && res_opt->data) {
 			std::string content((const char*)res_opt->data, res_opt->size);
 			loadScript(fname, content);

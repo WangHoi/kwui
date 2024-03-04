@@ -27,6 +27,11 @@ void KWUI_EXPORT kwui_Application_enableScriptReload(bool enable)
 }
 
 //bool kwui_application_preload_resource_archive(kwui_Application* app, int id);
+void kwui_Application_setResourceRootDir(kwui_Application* app, const char* dir)
+{
+	return ((kwui::Application*)app)->setResourceRootDir(dir);
+}
+
 int kwui_Application_exec(kwui_Application* app)
 {
 	return ((kwui::Application*)app)->exec();

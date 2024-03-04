@@ -336,13 +336,13 @@ void GraphicDevice::LoadBitmapToCache(const std::string& name)
 		auto RM = windows::ResourceManager::instance();
 		std::string name_res = name.substr(1);
 		absl::optional<base::ResourceArchive::ResourceItem> x1, x1_5, x2;
-		x1 = RM->LoadResource(windows::EncodingManager::UTF8ToWide(name_res).c_str());
+		x1 = RM->loadResource(windows::EncodingManager::UTF8ToWide(name_res).c_str());
 		int idx = name_res.rfind('.');
 		if (idx != std::string::npos) {
 			std::string name_res_x1_5 = name_res.substr(0, idx) + "@1.5x" + name_res.substr(idx);
-			x1_5 = RM->LoadResource(windows::EncodingManager::UTF8ToWide(name_res_x1_5).c_str());
+			x1_5 = RM->loadResource(windows::EncodingManager::UTF8ToWide(name_res_x1_5).c_str());
 			std::string name_res_x2 = name_res.substr(0, idx) + "@2x" + name_res.substr(idx);
-			x2 = RM->LoadResource(windows::EncodingManager::UTF8ToWide(name_res_x2).c_str());
+			x2 = RM->loadResource(windows::EncodingManager::UTF8ToWide(name_res_x2).c_str());
 		}
 		if (!x1.has_value())
 			return;

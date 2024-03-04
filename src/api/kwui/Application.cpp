@@ -108,6 +108,11 @@ bool Application::preloadResourceArchive(int id)
     return windows::ResourceManager::instance()->preloadResourceArchive(id);
 }
 
+void Application::setResourceRootDir(const char* dir)
+{
+    windows::ResourceManager::instance()->setResourceRootDir(dir);
+}
+
 int Application::exec()
 {
     MSG msg;

@@ -14,6 +14,7 @@ public:
 	static bool scriptReloadEnabled();
 	static void enableScriptReload(bool enable);
 	bool preloadResourceArchive(int id);
+	void setResourceRootDir(const char* dir);
 	int exec();
 
 private:
