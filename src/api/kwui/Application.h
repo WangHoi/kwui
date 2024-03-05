@@ -16,6 +16,7 @@ public:
 	bool preloadResourceArchive(int id);
 	void setResourceRootDir(const char* dir);
 	int exec();
+	static void quit();
 
 private:
 	class Private;

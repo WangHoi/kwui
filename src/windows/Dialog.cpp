@@ -976,7 +976,7 @@ void Dialog::OnDestroy() {
     // _title_label = nullptr;
     // _close_button = nullptr;
     _rt = nullptr;
-    if (_flags & DIALOG_FLAG_MAIN)
+    if ((_flags & DIALOG_FLAG_MAIN) && g_dialog_map.size() == 1)
         PostQuitMessage(0);
     if (_hwnd_parent && _visible)
         EnableWindow(_hwnd_parent, true);

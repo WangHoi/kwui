@@ -36,3 +36,8 @@ int kwui_Application_exec(kwui_Application* app)
 {
 	return ((kwui::Application*)app)->exec();
 }
+
+void kwui_Application_quit()
+{
+	kwui::Application::quit();
+}

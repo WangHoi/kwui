@@ -112,12 +112,14 @@ int kwui_ScriptValue_to_int(kwui_ScriptValue* v)
 	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
 	return val.toInt();
 }
+static ABSL_PER_THREAD_TLS_KEYWORD std::string gt_cache;
 const char* kwui_ScriptValue_to_string(kwui_ScriptValue* v, size_t* len)
 {
+
 	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
-	static ABSL_PER_THREAD_TLS_KEYWORD std::string s = val.toString();
-	*len = s.length();
-	return s.c_str();
+	gt_cache.assign(val.toString());
+	*len = gt_cache.length();
+	return gt_cache.c_str();
 }
 
 size_t kwui_ScriptValue_length(kwui_ScriptValue* v)

@@ -124,4 +124,9 @@ int Application::exec()
     return 0;
 }
 
+void Application::quit()
+{
+    ::PostQuitMessage(0);
+}
+
 }
