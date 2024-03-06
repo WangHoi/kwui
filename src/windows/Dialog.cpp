@@ -162,24 +162,11 @@ scene2d::RectF Dialog::adjustWindowRect(const scene2d::RectF& rect,
 }
 
 void Dialog::Resize(float width, float height) {
-    //if (_size.width == width && _size.height == height)
-    //    return;
-    //_size = scene2d::DimensionF(width, height);
-    /* TODO: remove the code
-    if (_popup_shadow) {
-        float px = (float)_popup_shadow_data->padding ;
-        float py = (float)_popup_shadow_data->padding;
-        _popup_shadow->_size.Set(width + 2.0f * px, height + 2.0f * px);
-    }
-    */
-    _size = scene2d::DimensionF(width, height);
-    scene2d::DimensionF pixel_size = (_size * _dpi_scale).makeRound();
-    RECT r = {};
-    ::AdjustWindowRectEx(&r, GetWindowLongW(_hwnd, GWL_STYLE), FALSE, GetWindowLongW(_hwnd, GWL_EXSTYLE));
+    long w = lroundf(width * _dpi_scale);
+    long h = lroundf(height * _dpi_scale);
     SetWindowPos(_hwnd, NULL,
         0, 0,
-        (int)pixel_size.width + (r.right - r.left),
-        (int)pixel_size.height + (r.bottom - r.top),
+        (int)w, (int)h,
         SWP_NOMOVE | SWP_NOACTIVATE);
 }
 
