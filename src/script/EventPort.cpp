@@ -31,13 +31,11 @@ kwui::ScriptValue EventPort::sendFromNative(const std::string& event, const kwui
 }
 void EventPort::addListenerFromNative(const std::string& event, kwui::ScriptFunction func, void* udata)
 {
-	LOG(INFO) << "addListenerFromNative event '" << event << "'";
 	Subscription& sub = g_subscription[event];
 	
 	// TODO: check duplicate add
 	
 	sub.native_subs.emplace_back<NativeSubItem>({ func, udata });
-	LOG(INFO) << "addListenerFromNative g_subscription.len=" << g_subscription.size();
 }
 bool EventPort::removeListenerFromNative(const std::string& event, kwui::ScriptFunction func, void* udata)
 {

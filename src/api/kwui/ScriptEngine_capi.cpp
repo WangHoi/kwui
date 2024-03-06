@@ -138,7 +138,7 @@ std::unique_ptr<EventHandler> remove_handler(const char* event)
 
 void kwui_ScriptEngine_addEventListener(const char* event, kwui_ScriptFunction func, void* udata)
 {
-	LOG(INFO) << "addEventListener " << event;
+	//LOG(INFO) << "addEventListener " << event;
 	auto h = find_handler(event, func, udata);
 	if (h) {
 		LOG(ERROR) << "kwui_ScriptEngine_addEventListener: event " << event

@@ -327,7 +327,7 @@ static void register_jsx_function(JSContext* ctx)
 Context::Context(Runtime* rt)
 {
 	ctx_ = JS_NewContext(rt->rt_);
-	LOG(INFO) << "JS_NewContext: " << ctx_;
+	//LOG(INFO) << "JS_NewContext: " << ctx_;
 	JS_SetContextOpaque(ctx_, this);
 	js_init_module_std(ctx_, "std");
 	js_init_module_os(ctx_, "os");
@@ -373,7 +373,7 @@ Context::~Context()
 	if (it != rt->contexts_.end())
 		rt->contexts_.erase(it);
 	
-	LOG(INFO) << "JS_FreeContext: " << ctx_;
+	//LOG(INFO) << "JS_FreeContext: " << ctx_;
 	JS_FreeContext(ctx_);
 	ctx_ = nullptr;
 }
