@@ -1,5 +1,5 @@
 <div align="center">
-<img src="logo.svg" width="140px" />
+<img src="https://gitee.com/wanghoi/kwui/raw/master/icon.svg" height="140px" />
 
 # kwui
 
