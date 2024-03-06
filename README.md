@@ -1,6 +1,12 @@
+<div align="center">
+<img src="logo.svg" width="140px" />
+
 # kwui
 
-使用 JSX、CSS 构建简单的桌面应用。
+使用 JSX、CSS 构建简单的桌面应用。 
+
+</div>
+
 
 ```javascript
 import { useState } from "Keact";
