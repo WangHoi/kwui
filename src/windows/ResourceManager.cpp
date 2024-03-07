@@ -62,6 +62,11 @@ void ResourceManager::setResourceRootDir(const char* dir)
 	root_dir_.emplace(EncodingManager::UTF8ToWide(dir));
 }
 
+void ResourceManager::clearCache()
+{
+	root_dir_cache_.clear();
+}
+
 absl::optional<base::ResourceArchive::ResourceItem> ResourceManager::loadResourceFromFile(
 	const std::wstring& dir, const wchar_t* name)
 {

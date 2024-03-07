@@ -12,6 +12,7 @@
 #include "graph2d/Painter.h"
 #include "api/kwui/ScriptEngine.h"
 #include "api/kwui/Application.h"
+#include "ResourceManager.h"
 
 namespace windows {
 typedef LRESULT(CALLBACK* WndProc)(HWND, UINT, WPARAM, LPARAM);
@@ -1038,6 +1039,7 @@ void Dialog::OnEscapeKeyUp(EventContext& ctx)
 void Dialog::OnF5Down(EventContext& ctx)
 {
     if (kwui::Application::scriptReloadEnabled()) {
+        ResourceManager::instance()->clearCache();
         _scene->reloadScriptModule();
         OnPaint();
     }

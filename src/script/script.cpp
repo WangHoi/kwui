@@ -206,7 +206,7 @@ static char* normalize_module(JSContext* ctx, const char* base_name, const char*
 		strcat(filename, "~");
 		strcat(filename, std::to_string(version).c_str());
 	}
-	// LOG(INFO) << absl::StrFormat("normalize: %s %s -> %s", base_name, name, filename);
+	// LOG(INFO) << absl::StrFormat("normalize: base_name [%s] name [%s] -> filename [%s]", base_name, name, filename);
 	return filename;
 }
 

@@ -23,6 +23,7 @@ public:
     absl::optional<base::ResourceArchive::ResourceItem> loadResource(const wchar_t* name);
     bool preloadResourceArchive(int id);
     void setResourceRootDir(const char* dir);
+    void clearCache();
 
     static ResourceManager* createInstance(HMODULE hModule);
     static ResourceManager* instance();
