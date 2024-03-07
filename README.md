@@ -28,9 +28,7 @@ app.showDialog({
 
 ## 快速开始
 
-1. checkout and compile
-2. check examples/
-3. define KWUI_STATIC_LIBRARY, and link to kwui_static.lib
+**推荐使用**kwui的Rust语言绑定 [kwui-rs](https://gitee.com/wanghoi/kwui-rs)，kwui目前仅作为底层库，不提供公共API。
 
 ## 特点
 
