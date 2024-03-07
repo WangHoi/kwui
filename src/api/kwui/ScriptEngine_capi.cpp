@@ -149,13 +149,13 @@ void kwui_ScriptEngine_addEventListener(const char* event, kwui_ScriptFunction f
 	kwui::ScriptEngine::get()->addEventListener(event, &invoke_script_function, h);
 }
 
-bool kwui_ScriptEngine_removeEventListener(const char* event, kwui_ScriptFunction func, void* udata)
+void kwui_ScriptEngine_removeEventListener(const char* event, kwui_ScriptFunction func, void* udata)
 {
 	auto h = remove_handler(event, func, udata);
 	if (!h) {
 		LOG(ERROR) << "kwui_ScriptEngine_removeEventListener: event " << event
 			<< ", func " << func << ", udata " << udata << " not exists.";
-		return false;
+		return;
 	}
-	return kwui::ScriptEngine::get()->removeEventListener(event, &invoke_script_function, h.get());
+	kwui::ScriptEngine::get()->removeEventListener(event, &invoke_script_function, h.get());
 }

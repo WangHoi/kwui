@@ -1,5 +1,6 @@
 #pragma once
 #include "kwui_export.h"
+#include <functional>
 
 namespace kwui {
 
@@ -13,6 +14,8 @@ public:
 	static void setLogCallback(LogCallback callback);
 	static bool scriptReloadEnabled();
 	static void enableScriptReload(bool enable);
+	static bool isMainThread();
+	static void runInMainThread(std::function<void()>&& func);
 	bool preloadResourceArchive(int id);
 	void setResourceRootDir(const char* dir);
 	int exec();

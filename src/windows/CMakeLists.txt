@@ -16,6 +16,7 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/theme.h
   ${CMAKE_CURRENT_SOURCE_DIR}/theme.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ResourceManager.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/HiddenMsgWindow.cpp
 )
 
 set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)

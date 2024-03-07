@@ -10,22 +10,42 @@
 #include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"
 #include "windows/ResourceManager.h"
+#include "windows/HiddenMsgWindow.h"
 #include <ConsoleApi2.h>
 
 namespace kwui {
 
+static Application* g_app = nullptr;
 static LogCallback g_log_callback = nullptr;
 #ifdef NDEBUG
 static bool g_script_reload_enabled = false;
 #else
 static bool g_script_reload_enabled = true;
 #endif
+static DWORD g_main_thread_id = 0;
 
-class Application::Private {
+class Application::Private : windows::WindowMsgListener {
 public:
-    Private(Application* q_)
-        : q(q_)
-    {}
+    Private(Application* q)
+        : q_(q)
+    {
+        g_app = q;
+        msg_window_.setListener(this);
+        g_main_thread_id = ::GetCurrentThreadId();
+    }
+    ~Private()
+    {
+        msg_window_.setListener(nullptr);
+        g_app = nullptr;
+    }
+    void onAppMessage(WPARAM wParam, LPARAM lParam) override
+    {
+        auto f = (std::function<void()>*)((void*)wParam);
+        if (f) {
+            (*f)();
+            delete f;
+        }
+    }
     void init()
     {
         //::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -62,7 +82,8 @@ public:
         scene2d::ControlRegistry::get()->registerControl<windows::control::ImageButtonControl>();
     }
 
-    Application* q;
+    Application* q_;
+    windows::HiddenMsgWindow msg_window_;
 };
 
 Application::Application(int argc, char* argv[])
@@ -103,6 +124,20 @@ void Application::enableScriptReload(bool enable)
     g_script_reload_enabled = enable;
 }
 
+bool Application::isMainThread()
+{
+    return (::GetCurrentThreadId() == g_main_thread_id);
+}
+void Application::runInMainThread(std::function<void()>&& func)
+{
+    if (!g_app)
+        return;
+    ::PostMessageW(
+        g_app->d->msg_window_.getHwnd(),
+        windows::HiddenMsgWindow::MESSAGE_TYPE,
+        (WPARAM)new std::function<void()>(std::move(func)),
+        NULL);
+}
 bool Application::preloadResourceArchive(int id)
 {
     return windows::ResourceManager::instance()->preloadResourceArchive(id);

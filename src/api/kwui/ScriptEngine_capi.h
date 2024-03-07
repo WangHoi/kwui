@@ -28,7 +28,7 @@ extern "C" {
 		const char* event, kwui_ScriptValue* arg);
 	void KWUI_EXPORT kwui_ScriptEngine_addEventListener(
 		const char* event, kwui_ScriptFunction func, void* udata);
-	bool KWUI_EXPORT kwui_ScriptEngine_removeEventListener(
+	void KWUI_EXPORT kwui_ScriptEngine_removeEventListener(
 		const char* event, kwui_ScriptFunction func, void* udata);
 
 #ifdef __cplusplus

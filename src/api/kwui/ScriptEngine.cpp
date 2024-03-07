@@ -2,6 +2,7 @@
 #include "script/script.h"
 #include "absl/base/call_once.h"
 #include "absl/functional/bind_front.h"
+#include "base/log.h"
 #include <vector>
 #include <string>
 
@@ -129,6 +130,8 @@ void ScriptEngine::release()
 
 void ScriptEngine::addGlobalFunction(const char* name, ScriptFunction func, void* udata)
 {
+	CHECK(Application::isMainThread())
+		<< "addGlobalFunction() must be invoked from main thread";
 	d->global_funcs.emplace_back(std::make_unique<FunctionDef>(FunctionDef{ name, func, udata }));
 	script::Runtime::get()->eachContext(absl::bind_front(
 		&Private::setGlobalFunction, d, d->global_funcs.back().get()));
@@ -136,6 +139,8 @@ void ScriptEngine::addGlobalFunction(const char* name, ScriptFunction func, void
 
 void ScriptEngine::removeGlobalFunction(const char* name)
 {
+	CHECK(Application::isMainThread())
+		<< "removeGlobalFunction() must be invoked from main thread";
 	auto it = std::find_if(d->global_funcs.begin(), d->global_funcs.end(), [&](const auto& def) {
 		return def->name == name;
 		});
@@ -148,11 +153,15 @@ void ScriptEngine::removeGlobalFunction(const char* name)
 
 void ScriptEngine::loadFile(const char* path)
 {
+	CHECK(Application::isMainThread())
+		<< "loadFile() must be invoked from main thread";
 	d->default_ctx->loadFile(path);
 }
 
 ScriptValue ScriptEngine::callGlobalFunction(const char* name, int argc, const ScriptValue* argv[])
 {
+	CHECK(Application::isMainThread())
+		<< "callGlobalFunction() must be invoked from main thread";
 	JSContext* ctx = d->default_ctx->get();
 	JSValue global = JS_GetGlobalObject(ctx);
 	JSValue func = JS_GetPropertyStr(ctx, global, name);
@@ -185,24 +194,44 @@ ScriptValue ScriptEngine::callGlobalFunction(const char* name, int argc, const S
 
 void ScriptEngine::postEvent(const std::string& event, const ScriptValue& value)
 {
-	return script::EventPort::postFromNative(event, value);
+	if (!Application::isMainThread()) {
+		Application::runInMainThread([=] {
+			script::EventPort::postFromNative(event, value);
+			});
+		return;
+	}
+	script::EventPort::postFromNative(event, value);
 }
 
 ScriptValue ScriptEngine::sendEvent(const std::string& event, const ScriptValue& value)
 {
+	CHECK(Application::isMainThread())
+		<< "sendEvent() must be invoked from main thread";
 	return script::EventPort::sendFromNative(event, value);
 }
 
 void ScriptEngine::addEventListener(const std::string& event,
 	ScriptFunction func, void* udata)
 {
-	return script::EventPort::addListenerFromNative(event, func, udata);
+	if (!Application::isMainThread()) {
+		Application::runInMainThread([=] {
+			script::EventPort::addListenerFromNative(event, func, udata);
+			});
+		return;
+	}
+	script::EventPort::addListenerFromNative(event, func, udata);
 }
 
-bool ScriptEngine::removeEventListener(const std::string& event,
+void ScriptEngine::removeEventListener(const std::string& event,
 	ScriptFunction func, void* udata)
 {
-	return script::EventPort::removeListenerFromNative(event, func, udata);
+	if (!Application::isMainThread()) {
+		Application::runInMainThread([=] {
+			ScriptEngine::removeEventListener(event, func, udata);
+			});
+		return;
+	}
+	script::EventPort::removeListenerFromNative(event, func, udata);
 }
 
 ScriptEngine::ScriptEngine()

@@ -22,7 +22,7 @@ public:
 	void postEvent(const std::string& event, const ScriptValue& value = ScriptValue());
 	ScriptValue sendEvent(const std::string& event, const ScriptValue& value = ScriptValue());
 	void addEventListener(const std::string& event, ScriptFunction func, void* udata);
-	bool removeEventListener(const std::string& event, ScriptFunction func, void* udata);
+	void removeEventListener(const std::string& event, ScriptFunction func, void* udata);
 
 private:
 	ScriptEngine();
