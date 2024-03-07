@@ -16,6 +16,8 @@ extern "C" {
 	bool KWUI_EXPORT kwui_Application_scriptReloadEnabled();
 	void KWUI_EXPORT kwui_Application_enableScriptReload(bool enable);
 	//bool KWUI_EXPORT kwui_application_preloadResourceArchive(kwui_Application* app, int id);
+	bool KWUI_EXPORT kwui_Application_isMainThread();
+	void KWUI_EXPORT kwui_Application_runInMainThread(void (*task)(void* /*udata*/), void* udata);
 	void KWUI_EXPORT kwui_Application_setResourceRootDir(kwui_Application* app, const char* dir);
 	int KWUI_EXPORT kwui_Application_exec(kwui_Application* app);
 	void KWUI_EXPORT kwui_Application_quit();

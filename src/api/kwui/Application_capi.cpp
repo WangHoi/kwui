@@ -16,14 +16,25 @@ void kwui_Application_setLogCallback(kwui_LogCallback callback)
 	kwui::Application::setLogCallback(callback);
 }
 
-bool KWUI_EXPORT kwui_Application_scriptReloadEnabled()
+bool kwui_Application_scriptReloadEnabled()
 {
 	return kwui::Application::scriptReloadEnabled();
 }
 
-void KWUI_EXPORT kwui_Application_enableScriptReload(bool enable)
+void kwui_Application_enableScriptReload(bool enable)
 {
 	kwui::Application::enableScriptReload(enable);
+}
+
+bool kwui_Application_isMainThread()
+{
+	return kwui::Application::isMainThread();
+}
+void kwui_Application_runInMainThread(void (*task)(void* /*udata*/), void* udata)
+{
+	if (task) {
+		kwui::Application::runInMainThread([=]() { task(udata); });
+	}
 }
 
 //bool kwui_application_preload_resource_archive(kwui_Application* app, int id);
