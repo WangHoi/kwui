@@ -41,18 +41,19 @@ LRESULT HiddenMsgWindow::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		if (_listener) {
 			_listener->onAppMessage(wParam, lParam);
 		} else {
-			LOG(INFO) << "HiddenMsgWindow::WindowProc(): ignore WM_APP message";
+			LOG(INFO) << "HiddenMsgWindow::WindowProc(): ignore user message";
 		}
+		return 0;
+	} else {
+		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
-
-	return 0;
 }
 LRESULT CALLBACK HiddenMsgWindow::WndProcMain(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	HiddenMsgWindow *me;
-	if (message == WM_CREATE) {
+	if (message == WM_NCCREATE) {
 		me = reinterpret_cast<HiddenMsgWindow*>(((LPCREATESTRUCTW)lParam)->lpCreateParams);
 		me->_hwnd = hWnd;
-		SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG)me);
+		SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG_PTR)me);
 	} else {
 		me = reinterpret_cast<HiddenMsgWindow*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
 	}

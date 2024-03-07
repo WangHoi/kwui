@@ -169,6 +169,7 @@ void Scene::reloadScriptModule()
 			"reload dialog failed, run module %s %s failed.",
 			script_module_->base_filename.c_str(),
 			script_module_->module_path.c_str());
+		js_std_dump_error(ctx);
 		return;
 	}
 
