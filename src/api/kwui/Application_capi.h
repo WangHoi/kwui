@@ -1,6 +1,7 @@
 #pragma once
 #include "kwui_export.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +20,7 @@ extern "C" {
 	bool KWUI_EXPORT kwui_Application_isMainThread();
 	void KWUI_EXPORT kwui_Application_runInMainThread(void (*task)(void* /*udata*/), void* udata);
 	void KWUI_EXPORT kwui_Application_setResourceRootDir(kwui_Application* app, const char* dir);
+	void KWUI_EXPORT kwui_Application_setResourceRootData(kwui_Application* app, const uint8_t* data, size_t size);
 	int KWUI_EXPORT kwui_Application_exec(kwui_Application* app);
 	void KWUI_EXPORT kwui_Application_quit();
 

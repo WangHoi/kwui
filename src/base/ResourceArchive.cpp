@@ -41,7 +41,7 @@ std::unique_ptr<ResourceArchive> ResourceArchive::CreateFromData(const uint8_t* 
 {
 	auto arc = std::make_unique<ResourceArchive>();
 	if (!arc->Init(data, size)) {
-		LOG(INFO) << "ResourceArchive: init from data size " << size << " failed";
+		LOG(ERROR) << "ResourceArchive: init from data size " << size << " failed";
 		return nullptr;
 	}
 	return arc;

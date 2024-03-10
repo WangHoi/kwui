@@ -43,6 +43,11 @@ void kwui_Application_setResourceRootDir(kwui_Application* app, const char* dir)
 	return ((kwui::Application*)app)->setResourceRootDir(dir);
 }
 
+void kwui_Application_setResourceRootData(kwui_Application* app, const uint8_t* data, size_t size)
+{
+	return ((kwui::Application*)app)->setResourceRootData(data, size);
+}
+
 int kwui_Application_exec(kwui_Application* app)
 {
 	return ((kwui::Application*)app)->exec();

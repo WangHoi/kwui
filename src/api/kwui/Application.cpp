@@ -148,7 +148,10 @@ void Application::setResourceRootDir(const char* dir)
 {
     windows::ResourceManager::instance()->setResourceRootDir(dir);
 }
-
+void Application::setResourceRootData(const uint8_t* data, size_t len)
+{
+    windows::ResourceManager::instance()->setResourceRootData(data, len);
+}
 void Application::addFont(const char* family_name, const char* font_path)
 {
     std::wstring u16_font_path

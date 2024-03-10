@@ -63,7 +63,10 @@ void ResourceManager::setResourceRootDir(const char* dir)
 {
 	root_dir_.emplace(EncodingManager::UTF8ToWide(dir));
 }
-
+void ResourceManager::setResourceRootData(const uint8_t* data, size_t size)
+{
+	archive_ = base::ResourceArchive::CreateFromData(data, size);
+}
 void ResourceManager::clearCache()
 {
 	root_dir_cache_.clear();

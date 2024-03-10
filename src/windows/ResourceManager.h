@@ -24,6 +24,7 @@ public:
     absl::optional<base::ResourceArchive::ResourceItem> loadResource(const wchar_t* path);
     bool preloadResourceArchive(int id);
     void setResourceRootDir(const char* dir);
+    void setResourceRootData(const uint8_t* data, size_t size);
     void clearCache();
 
     static ResourceManager* createInstance(HMODULE hModule);
