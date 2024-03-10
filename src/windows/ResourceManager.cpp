@@ -37,12 +37,14 @@ absl::optional<base::ResourceArchive::ResourceItem> ResourceManager::LoadResourc
 	}
 }
 
-absl::optional<base::ResourceArchive::ResourceItem> ResourceManager::loadResource(const wchar_t* name)
+absl::optional<base::ResourceArchive::ResourceItem> ResourceManager::loadResource(const wchar_t* path)
 {
+	if (path[0] == L':')
+		++path;
 	if (archive_)
-		return archive_->FindItem(name);
+		return archive_->FindItem(path);
 	if (root_dir_.has_value())
-		return loadResourceFromFile(root_dir_.value(), name);
+		return loadResourceFromFile(root_dir_.value(), path);
 	return absl::nullopt;
 }
 

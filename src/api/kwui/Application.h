@@ -18,6 +18,7 @@ public:
 	static void runInMainThread(std::function<void()>&& func);
 	bool preloadResourceArchive(int id);
 	void setResourceRootDir(const char* dir);
+	void addFont(const char* family_name, const char* font_path);
 	int exec();
 	static void quit();
 

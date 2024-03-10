@@ -6,6 +6,7 @@ list(APPEND kwui_pub_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/TextFlow.h
 )
 list(APPEND kwui_priv_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFont.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/GraphicDevice.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Painter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/TextLayout.cpp

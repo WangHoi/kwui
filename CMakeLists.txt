@@ -10,7 +10,6 @@ project(kwui)
 option(CRT_STATIC "static MSVC runtime" OFF)
 option(BUILD_SHARED_LIBS "build shared kwui library" OFF)
 option(BUILD_TESTS "build kwui tests" ON)
-option(BUILD_EXAMPLES "build kwui examples" ON)
 
 include(util.cmake)
 
@@ -77,10 +76,6 @@ add_subdirectory(3rdparty/quickjspp)
 add_subdirectory(3rdparty/fifo_map)
 
 add_subdirectory(src)
-
-if(BUILD_EXAMPLES)
-add_subdirectory(examples)
-endif()
 
 if(BUILD_TESTS)
 add_subdirectory(tests)

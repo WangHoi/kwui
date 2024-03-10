@@ -9,6 +9,7 @@
 #include "windows/control/ImageButtonControl.h"
 #include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"
+#include "windows/EncodingManager.h"
 #include "windows/ResourceManager.h"
 #include "windows/HiddenMsgWindow.h"
 #include <ConsoleApi2.h>
@@ -146,6 +147,20 @@ bool Application::preloadResourceArchive(int id)
 void Application::setResourceRootDir(const char* dir)
 {
     windows::ResourceManager::instance()->setResourceRootDir(dir);
+}
+
+void Application::addFont(const char* family_name, const char* font_path)
+{
+    std::wstring u16_font_path
+        = windows::EncodingManager::UTF8ToWide(font_path);
+    auto res = windows::ResourceManager::instance()
+        ->loadResource(u16_font_path.c_str());
+    if (res.has_value()) {
+        windows::graphics::GraphicDevice::instance()
+            ->addFont(family_name, res.value().data, res.value().size);
+    } else {
+        LOG(ERROR) << "addFont: failed to load resource [" << font_path << "]";
+    }
 }
 
 int Application::exec()

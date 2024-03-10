@@ -20,7 +20,8 @@ struct Resource {
 class ResourceManager {
 public:
     absl::optional<base::ResourceArchive::ResourceItem> LoadResource(int id);
-    absl::optional<base::ResourceArchive::ResourceItem> loadResource(const wchar_t* name);
+    // path must be started with '/', eg. "/xx/aaa.bb"
+    absl::optional<base::ResourceArchive::ResourceItem> loadResource(const wchar_t* path);
     bool preloadResourceArchive(int id);
     void setResourceRootDir(const char* dir);
     void clearCache();

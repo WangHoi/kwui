@@ -63,76 +63,32 @@ HRESULT TextFlow::setTextFormat(ComPtr<IDWriteTextFormat> textFormat)
 	ComPtr<IDWriteFontFamily> fontFamily;
 	ComPtr<IDWriteFont> font;
 
-	wchar_t fontFamilyName[100];
+	wchar_t fontFamilyName[100] = {};
 
 	readingDirection_ = textFormat->GetReadingDirection();
 	fontEmSize_ = textFormat->GetFontSize();
 
 	hr = textFormat->GetLocaleName(localeName_, ARRAYSIZE(localeName_));
+	hr = textFormat->GetFontFamilyName(fontFamilyName, ARRAYSIZE(fontFamilyName));
+	
+	fontFace_ = GraphicDevice::instance()->getFirstMatchingFontFace(
+		fontFamilyName,
+		textFormat->GetFontWeight(),
+		textFormat->GetFontStretch(),
+		textFormat->GetFontStyle());
 
-	////////////////////
-	// Map font and style to fontFace.
-
-	if (SUCCEEDED(hr))
-	{
-		// Need the font collection to map from font name to actual font.
-		textFormat->GetFontCollection(fontCollection.GetAddressOf());
-		if (fontCollection == NULL)
-		{
-			// No font collection was set in the format, so use the system default.
-			hr = dwriteFactory_->GetSystemFontCollection(fontCollection.GetAddressOf());
-		}
+	if (fontFace_) {
+		DWRITE_FONT_METRICS fm;
+		fontFace_->GetMetrics(&fm);
+		const float factor = fontEmSize_ / fm.designUnitsPerEm;
+		font_metrics_.ascent = fm.ascent * factor;
+		font_metrics_.descent = fm.descent * factor;
+		font_metrics_.line_gap = fm.lineGap * factor;
+		font_metrics_.cap_height = fm.capHeight * factor;
+		font_metrics_.x_height = fm.xHeight * factor;
 	}
 
-	// Find matching family name in collection.
-	if (SUCCEEDED(hr))
-	{
-		hr = textFormat->GetFontFamilyName(fontFamilyName, ARRAYSIZE(fontFamilyName));
-	}
-
-	UINT32 fontIndex = 0;
-	if (SUCCEEDED(hr))
-	{
-		BOOL fontExists = false;
-		hr = fontCollection->FindFamilyName(fontFamilyName, &fontIndex, &fontExists);
-		if (!fontExists)
-		{
-			// If the given font does not exist, take what we can get
-			// (displaying something instead nothing), choosing the foremost
-			// font in the collection.
-			fontIndex = 0;
-		}
-	}
-
-	if (SUCCEEDED(hr))
-	{
-		hr = fontCollection->GetFontFamily(fontIndex, fontFamily.GetAddressOf());
-	}
-
-	if (SUCCEEDED(hr))
-	{
-		hr = fontFamily->GetFirstMatchingFont(
-			textFormat->GetFontWeight(),
-			textFormat->GetFontStretch(),
-			textFormat->GetFontStyle(),
-			font.GetAddressOf()
-		);
-	}
-
-	if (SUCCEEDED(hr))
-	{
-		hr = font->CreateFontFace(fontFace_.GetAddressOf());
-	}
-	DWRITE_FONT_METRICS fm;
-	fontFace_->GetMetrics(&fm);
-	const float factor = fontEmSize_ / fm.designUnitsPerEm;
-	font_metrics_.ascent = fm.ascent * factor;
-	font_metrics_.descent = fm.descent * factor;
-	font_metrics_.line_gap = fm.lineGap * factor;
-	font_metrics_.cap_height = fm.capHeight * factor;
-	font_metrics_.x_height = fm.xHeight * factor;
-
-	return S_OK;
+	return hr;
 }
 
 HRESULT TextFlow::SetNumberSubstitution(ComPtr<IDWriteNumberSubstitution> numberSubstitution)

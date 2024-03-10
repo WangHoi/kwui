@@ -4,6 +4,7 @@
 #include "windows/EncodingManager.h"
 #include "windows/ResourceManager.h"
 #include "TextAnalysis.h"
+#include "CustomFont.h"
 #include "absl/strings/match.h"
 #include <numeric>
 
@@ -14,6 +15,11 @@ static const wchar_t* DEFAULT_LOCALE = L"zh-CN";
 static const char* DEFAULT_FONT_FAMILY = "Microsoft YaHei";
 
 static GraphicDevice *gdev = nullptr;
+
+GraphicDevice::~GraphicDevice()
+{
+	_dwrite->UnregisterFontFileLoader(CDwFontFileLoader::getLoader());
+}
 
 GraphicDevice* GraphicDevice::createInstance()
 {
@@ -54,6 +60,7 @@ bool GraphicDevice::Init() {
 		LOG(ERROR) << "DWriteFactory::GetSystemFontCollection() failed hr=" << std::hex << hr;
 		return false;
 	}
+	_dwrite->RegisterFontFileLoader(CDwFontFileLoader::getLoader());
 
 	hr = CoCreateInstance(CLSID_WICImagingFactory1,
 		NULL,
@@ -396,6 +403,57 @@ float GraphicDevice::GetInitialDesktopDpiScale() const {
 	_factory->GetDesktopDpi(&x, &y);
 	(void)y;
 	return x / USER_DEFAULT_SCREEN_DPI;
+}
+
+void GraphicDevice::addFont(const char* family_name, const uint8_t* data, size_t size)
+{
+	std::wstring u16_family_name = EncodingManager::UTF8ToWide(family_name);
+	_font_cache[u16_family_name] = CDWriteExt::DwCreateFontFaceFromStream(_dwrite.Get(), data, size, DWRITE_FONT_SIMULATIONS_NONE);
+}
+
+ComPtr<IDWriteFontFace> GraphicDevice::getFirstMatchingFontFace(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style)
+{
+	auto it = _font_cache.find(family_name);
+	if (it != _font_cache.end()) {
+		return it->second;
+	}
+
+	UINT32 font_index = 0;
+	HRESULT hr = S_OK;
+	BOOL font_exists = false;
+	hr = _font_collection->FindFamilyName(family_name, &font_index, &font_exists);
+	if (!font_exists)
+	{
+		// If the given font does not exist, take what we can get
+		// (displaying something instead nothing), choosing the foremost
+		// font in the collection.
+		font_index = 0;
+	}
+
+	ComPtr<IDWriteFontFamily> font_family;
+	if (SUCCEEDED(hr))
+	{
+		hr = _font_collection->GetFontFamily(font_index, font_family.GetAddressOf());
+	}
+
+	ComPtr<IDWriteFont> font;
+	if (SUCCEEDED(hr))
+	{
+		hr = font_family->GetFirstMatchingFont(
+			weight,
+			stretch,
+			style,
+			font.GetAddressOf()
+		);
+	}
+
+	ComPtr<IDWriteFontFace> font_face;
+	if (SUCCEEDED(hr))
+	{
+		hr = font->CreateFontFace(font_face.GetAddressOf());
+	}
+
+	return font_face;
 }
 
 } // namespace graphics

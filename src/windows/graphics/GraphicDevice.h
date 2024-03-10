@@ -34,6 +34,7 @@ struct WicBitmapRenderTarget {
 };
 class GraphicDevice {
 public:
+	~GraphicDevice();
 	static GraphicDevice* createInstance();
 	static void releaseInstance();
 	static GraphicDevice* instance();
@@ -71,6 +72,13 @@ public:
 	void LoadBitmapToCache(const std::string& name, const std::wstring& filename);
 	BitmapSubItem GetBitmap(const std::string& name, float dpi_scale = 1.0f);
 	float GetInitialDesktopDpiScale() const;
+	void addFont(const char* family_name, const uint8_t* data, size_t size);
+	// Map font and style to fontFace.
+	ComPtr<IDWriteFontFace> getFirstMatchingFontFace(
+		const wchar_t* family_name,
+		DWRITE_FONT_WEIGHT  weight,
+		DWRITE_FONT_STRETCH stretch,
+		DWRITE_FONT_STYLE   style);
 
 private:
 	BitmapSubItem LoadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF& dpi_scale);
@@ -83,6 +91,7 @@ private:
 	ComPtr<IDWriteFontCollection> _font_collection;
 	ComPtr<IWICImagingFactory> _wic_factory;
 	std::unordered_map<std::string, BitmapItem> _bitmap_cache;
+	std::unordered_map<std::wstring, ComPtr<IDWriteFontFace>> _font_cache;
 };
 
 } // namespace graphics

@@ -1,6 +1,8 @@
 add_subdirectory(box_gen)
+add_subdirectory(custom_font)
 add_subdirectory(richtext)
 add_subdirectory(overflow)
 add_subdirectory(popup)
-
-
+add_subdirectory(gallery)
+add_subdirectory(native)
+add_subdirectory(functional_component)
