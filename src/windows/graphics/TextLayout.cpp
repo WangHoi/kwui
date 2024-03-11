@@ -33,7 +33,7 @@ TextLayoutBuilder::TextLayoutBuilder(const std::wstring& text) {
 void TextLayoutBuilder::Init(const std::wstring& text) {
     _text = text;
     _max_width = std::numeric_limits<float>::max();
-    _font_family = GraphicDevice::instance()->GetDefaultFontFamily();
+    _font_family = GraphicDevice::instance()->getDefaultFontFamily();
     _font_size = DEFAULT_FONT_SIZE;
     _font_style = FontStyle::REGULAR;
     _align = TEXT_ALIGN_TOP_LEFT;
@@ -41,7 +41,7 @@ void TextLayoutBuilder::Init(const std::wstring& text) {
 
 std::unique_ptr<TextLayout> TextLayoutBuilder::Build() {
     ComPtr<IDWriteTextLayout> layout = GraphicDevice::instance()
-        ->CreateTextLayout(_text, _font_family, _font_size, _font_weight, _font_style);
+        ->createTextLayout(_text, _font_family, _font_size, _font_weight, _font_style);
     layout->SetMaxWidth(_max_width);
     DWRITE_TEXT_ALIGNMENT align = DWRITE_TEXT_ALIGNMENT_LEADING;
     if (_align & TEXT_ALIGN_LEFT)
@@ -63,7 +63,7 @@ TextLayout::TextLayout(const std::wstring& text, const std::string& font_family,
 }
 void TextLayout::UpdateTextMetrics() {
     DWRITE_FONT_METRICS fm;
-    if (GraphicDevice::instance()->GetFontMetrics(_font_family, fm)) {
+    if (GraphicDevice::instance()->getFontMetrics(_font_family, fm)) {
         _line_height = (fm.ascent + fm.descent + fm.lineGap) * _font_size / fm.designUnitsPerEm;
         _baseline = fm.ascent * _font_size / fm.designUnitsPerEm;
     } else {

@@ -19,7 +19,7 @@ std::unique_ptr<TextFlowInterface> createTextFlow(
     windows::graphics::FontWeight win_font_weight(font_weight.raw());
     windows::graphics::FontStyle win_font_style = (windows::graphics::FontStyle)font_style;
     return windows::graphics::GraphicDevice::instance()
-        ->CreateTextFlow(u16_text, line_height, font_family, font_size, win_font_weight, win_font_style);
+        ->createTextFlow(u16_text, line_height, font_family, font_size, win_font_weight, win_font_style);
 }
 
 void updateTextFlow(std::unique_ptr<TextFlowInterface>& text_flow, const std::string& text, float line_height, const char* font_family, style::FontStyle font_style, style::FontWeight font_weight, float font_size)
@@ -29,7 +29,7 @@ void updateTextFlow(std::unique_ptr<TextFlowInterface>& text_flow, const std::st
     windows::graphics::FontStyle win_font_style = (windows::graphics::FontStyle)font_style;
     windows::graphics::TextFlow* win_tf = static_cast<windows::graphics::TextFlow*>(text_flow.get());
     return windows::graphics::GraphicDevice::instance()
-        ->UpdateTextFlow(win_tf, u16_text, line_height, font_family, font_size, win_font_weight, win_font_style);
+        ->updateTextFlow(win_tf, u16_text, line_height, font_family, font_size, win_font_weight, win_font_style);
 }
 
 style::FontMetrics getFontMetrics(const char* font_family, float font_size)
@@ -37,10 +37,10 @@ style::FontMetrics getFontMetrics(const char* font_family, float font_size)
     style::FontMetrics fm;
     DWRITE_FONT_METRICS dwrite_fm;
     auto GD = windows::graphics::GraphicDevice::instance();
-    bool ok = GD->GetFontMetrics(font_family, dwrite_fm);
+    bool ok = GD->getFontMetrics(font_family, dwrite_fm);
     if (!ok) {
-        std::string default_font = GD->GetDefaultFontFamily();
-        GD->GetFontMetrics(default_font, dwrite_fm);
+        std::string default_font = GD->getDefaultFontFamily();
+        GD->getFontMetrics(default_font, dwrite_fm);
     }
     const float factor = font_size / dwrite_fm.designUnitsPerEm;
     fm.ascent = dwrite_fm.ascent * factor;

@@ -39,24 +39,24 @@ public:
 	static void releaseInstance();
 	static GraphicDevice* instance();
 	bool Init();
-	ComPtr<ID2D1HwndRenderTarget> CreateHwndRenderTarget(
+	ComPtr<ID2D1HwndRenderTarget> createHwndRenderTarget(
 		HWND hwnd, const scene2d::DimensionF& size, float dpi_scale);
-	WicBitmapRenderTarget CreateWicBitmapRenderTarget(
+	WicBitmapRenderTarget createWicBitmapRenderTarget(
 		float width, float height, float dpi_scale);
-	ComPtr<IDWriteTextLayout> CreateTextLayout(
+	ComPtr<IDWriteTextLayout> createTextLayout(
 		const std::wstring& text,
 		const std::string& font_family,
 		float font_size,
 		FontWeight font_weight = FontWeight(),
 		FontStyle font_style = FontStyle());
-	std::unique_ptr<TextFlow> CreateTextFlow(
+	std::unique_ptr<TextFlow> createTextFlow(
 		const std::wstring& text,
 		float line_height,
 		const std::string& font_family,
 		float font_size,
 		FontWeight font_weight = FontWeight(),
 		FontStyle font_style = FontStyle());
-	void UpdateTextFlow(
+	void updateTextFlow(
 		TextFlow* text_flow,
 		const std::wstring& text,
 		float line_height,
@@ -64,14 +64,14 @@ public:
 		float font_size,
 		FontWeight font_weight = FontWeight(),
 		FontStyle font_style = FontStyle());
-	std::string GetDefaultFontFamily() const;
-	bool GetFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics);
-	void LoadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1);
-	void LoadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1,
+	std::string getDefaultFontFamily() const;
+	bool getFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics);
+	void loadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1);
+	void loadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1,
 		absl::Span<const uint8_t> res_x1_5, absl::Span<const uint8_t> res_x2);
-	void LoadBitmapToCache(const std::string& name, const std::wstring& filename);
-	BitmapSubItem GetBitmap(const std::string& name, float dpi_scale = 1.0f);
-	float GetInitialDesktopDpiScale() const;
+	void loadBitmapToCache(const std::string& name, const std::wstring& filename);
+	BitmapSubItem getBitmap(const std::string& name, float dpi_scale = 1.0f);
+	float getInitialDesktopDpiScale() const;
 	void addFont(const char* family_name, const uint8_t* data, size_t size);
 	// Map font and style to fontFace.
 	ComPtr<IDWriteFontFace> getFirstMatchingFontFace(
@@ -82,16 +82,16 @@ public:
 
 private:
 	BitmapSubItem LoadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF& dpi_scale);
-	BitmapSubItem LoadBitmapFromFilename(const std::wstring& filename, const scene2d::PointF& dpi_scale);
-	BitmapSubItem LoadBitmapFromStream(ComPtr<IWICStream> stream, const scene2d::PointF& dpi_scale);
-	void LoadBitmapToCache(const std::string& name);
+	BitmapSubItem loadBitmapFromFilename(const std::wstring& filename, const scene2d::PointF& dpi_scale);
+	BitmapSubItem loadBitmapFromStream(ComPtr<IWICStream> stream, const scene2d::PointF& dpi_scale);
+	void loadBitmapToCache(const std::string& name);
 
-	ComPtr<ID2D1Factory> _factory;
-	ComPtr<IDWriteFactory> _dwrite;
-	ComPtr<IDWriteFontCollection> _font_collection;
-	ComPtr<IWICImagingFactory> _wic_factory;
-	std::unordered_map<std::string, BitmapItem> _bitmap_cache;
-	std::unordered_map<std::wstring, ComPtr<IDWriteFontFace>> _font_cache;
+	ComPtr<ID2D1Factory> factory_;
+	ComPtr<IDWriteFactory> dwrite_;
+	ComPtr<IDWriteFontCollection> font_collection_;
+	ComPtr<IWICImagingFactory> wic_factory_;
+	std::unordered_map<std::string, BitmapItem> bitmap_cache_;
+	std::unordered_map<std::wstring, ComPtr<IDWriteFontFace>> font_cache_;
 };
 
 } // namespace graphics

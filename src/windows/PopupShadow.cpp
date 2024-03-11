@@ -199,7 +199,7 @@ void PopupShadow::OnPaint() {
 	p.Clear(style::Color());
 	if (!_bitmap) {
 		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
-			->GetBitmap(_data.image_name, _render_dpi_scale);
+			->getBitmap(_data.image_name, _render_dpi_scale);
 		if (item)
 			_bitmap = p.CreateBitmap(item);
 	}
@@ -253,7 +253,7 @@ void PopupShadow::Close() {
 }
 void PopupShadow::RecreateRenderTarget() {
 	_rt = graphics::GraphicDevice::instance()
-		->CreateWicBitmapRenderTarget(_pixel_size.width, _pixel_size.height, 1.0f);
+		->createWicBitmapRenderTarget(_pixel_size.width, _pixel_size.height, 1.0f);
 }
 void PopupShadow::OnDestroy() {
 	_bitmap = nullptr;

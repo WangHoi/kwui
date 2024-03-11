@@ -38,7 +38,7 @@ float Dialog::getMonitorDpiScale(HMONITOR monitor)
         }
         if (!pGETDPIFORMONITOR) {
             pGETDPIFORMONITOR = [](HMONITOR, MONITOR_DPI_TYPE, UINT* dpi_x, UINT* dpi_y) -> HRESULT {
-                float dpi_scale = windows::graphics::GraphicDevice::instance()->GetInitialDesktopDpiScale();
+                float dpi_scale = windows::graphics::GraphicDevice::instance()->getInitialDesktopDpiScale();
                 *dpi_x = *dpi_y = USER_DEFAULT_SCREEN_DPI * dpi_scale;
                 return S_OK;
                 };
@@ -226,7 +226,7 @@ void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON 
             wnd_top = (monitor_height - (int)_pixel_size.height) / 2;
         }
     } else {
-        _dpi_scale = graphics::GraphicDevice::instance()->GetInitialDesktopDpiScale();
+        _dpi_scale = graphics::GraphicDevice::instance()->getInitialDesktopDpiScale();
         _pixel_size = (_size * _dpi_scale).makeRound();
         RECT work_area;
         if (SystemParametersInfoW(SPI_GETWORKAREA, 0, &work_area, 0)) {
@@ -892,7 +892,7 @@ void Dialog::UpdateFocusedNode() {
     }
 }
 void Dialog::RecreateRenderTarget() {
-    _rt = graphics::GraphicDevice::instance()->CreateHwndRenderTarget(
+    _rt = graphics::GraphicDevice::instance()->createHwndRenderTarget(
         _hwnd, _size, _dpi_scale);
     LOG(INFO) << "Dialog::RecreateRenderTarget() hwnd=" << std::hex << _hwnd
         << " size=(" << _size.width << "x" << _size.height << ")"

@@ -156,3 +156,17 @@ macro(unrimp_replace_cmake_cxx_flags from to)
 		string(REPLACE "${from}" "${to}" ${CompilerFlag} "${${CompilerFlag}}")
 	endforeach()
 endmacro()
+
+macro(make_resource_header FILENAME VARNAME)
+    set(infile  "${CMAKE_SOURCE_DIR}/src/resources/${FILENAME}")
+    set(outfile  "${CMAKE_CURRENT_BINARY_DIR}/${VARNAME}.txt")
+
+    add_custom_command(OUTPUT "${outfile}"
+        COMMAND ${CMAKE_COMMAND} -D "INPUT_FILE=${infile}" -D "OUTPUT_FILE=${outfile}"
+            -P "${CMAKE_MODULE_PATH}/bin2h.script.cmake"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        DEPENDS "${infile}" "${CMAKE_MODULE_PATH}/bin2h.script.cmake"
+        VERBATIM
+    )
+    set(ALC_OBJS  ${ALC_OBJS} "${outfile}")
+endmacro()

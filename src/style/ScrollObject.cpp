@@ -5,10 +5,10 @@
 namespace style {
 
 const float ScrollObject::SCROLLBAR_GUTTER_WIDTH = 16.0f;
-static const char* VSCROLL_TOP_BUTTON_PNG = "D:/projects/kwui/vscroll_top_button.png";
-static const char* VSCROLL_BOTTOM_BUTTON_PNG = "D:/projects/kwui/vscroll_bottom_button.png";
-static const char* HSCROLL_LEFT_BUTTON_PNG = "D:/projects/kwui/hscroll_left_button.png";
-static const char* HSCROLL_RIGHT_BUTTON_PNG = "D:/projects/kwui/hscroll_right_button.png";
+static const char* VSCROLL_TOP_BUTTON_PNG = "kwui::vscroll_top_button.png";
+static const char* VSCROLL_BOTTOM_BUTTON_PNG = "kwui::vscroll_bottom_button.png";
+static const char* HSCROLL_LEFT_BUTTON_PNG = "kwui::hscroll_left_button.png";
+static const char* HSCROLL_RIGHT_BUTTON_PNG = "kwui::hscroll_right_button.png";
 static const Color SCROLLBAR_THUMB_NORMAL_COLOR(0xcc, 0xcc, 0xcc); // "#ccc"
 static const Color SCROLLBAR_THUMB_HOVER_COLOR(0xbb, 0xbb, 0xbb); // "#bbb"
 static const Color SCROLLBAR_THUMB_ACTIVE_COLOR(0xaa, 0xaa, 0xaa); // "#aaa"

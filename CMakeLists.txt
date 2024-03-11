@@ -11,6 +11,8 @@ option(CRT_STATIC "static MSVC runtime" OFF)
 option(BUILD_SHARED_LIBS "build shared kwui library" OFF)
 option(BUILD_TESTS "build kwui tests" ON)
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 include(util.cmake)
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")

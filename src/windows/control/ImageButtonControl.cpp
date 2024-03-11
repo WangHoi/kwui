@@ -25,13 +25,13 @@ void ImageButtonControl::onPaint(graph2d::PainterInterface& pi, const scene2d::R
 	graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
 	if (!_bitmap) {
 		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
-			->GetBitmap(_src, p.GetDpiScale());
+			->getBitmap(_src, p.GetDpiScale());
 		if (item)
 			_bitmap = p.CreateBitmap(item);
 	}
 	if (!_hover_bitmap) {
 		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
-			->GetBitmap(_hover_src, p.GetDpiScale());
+			->getBitmap(_hover_src, p.GetDpiScale());
 		if (item)
 			_hover_bitmap = p.CreateBitmap(item);
 	}

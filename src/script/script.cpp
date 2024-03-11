@@ -4,7 +4,7 @@
 #include "windows/ResourceManager.h"
 #include "windows/EncodingManager.h"
 #include "Keact.h"
-#include "jsc/jsc.h"
+#include "resources/resources.h"
 #include "absl/strings/str_format.h"
 #include "absl/cleanup/cleanup.h"
 
@@ -111,7 +111,7 @@ static JSModuleDef* load_module(JSContext* ctx, const char* orig_module_name, vo
 			memcpy(buf, res_opt->data, res_opt->size);
 		}
 	} else {
-		auto builtin_module = jsc::get_module_binary(module_name.c_str());
+		auto builtin_module = resources::get_module_binary(module_name.c_str());
 		if (builtin_module.has_value()) {
 			buf_len = builtin_module.value().length();
 			buf = (uint8_t*)js_mallocz(ctx, buf_len + 1);

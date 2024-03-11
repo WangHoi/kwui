@@ -19,7 +19,7 @@ void ImageControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& 
 	graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
 	if (!_bitmap) {
 		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
-			->GetBitmap(_image_src, p.GetDpiScale());
+			->getBitmap(_image_src, p.GetDpiScale());
 		if (item)
 			_bitmap = p.CreateBitmap(item);
 	}

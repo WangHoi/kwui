@@ -109,7 +109,7 @@ public:
     {
         if (!bitmap_) {
             BitmapSubItem item = GraphicDevice::instance()
-                ->GetBitmap(url_, 1.0f);
+                ->getBitmap(url_, 1.0f);
             if (item) {
                 UINT w, h;
                 item.frame->GetSize(&w, &h);
@@ -125,7 +125,7 @@ public:
     {
         if (!bitmap_) {
             BitmapSubItem item = GraphicDevice::instance()
-                ->GetBitmap(url_, p.GetDpiScale());
+                ->getBitmap(url_, p.GetDpiScale());
             if (item)
                 bitmap_ = p.CreateBitmap(item);
         }
