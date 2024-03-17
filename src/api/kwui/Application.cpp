@@ -12,6 +12,7 @@
 #include "windows/EncodingManager.h"
 #include "windows/ResourceManager.h"
 #include "windows/HiddenMsgWindow.h"
+#include "resources/resources.h"
 #include <ConsoleApi2.h>
 
 namespace kwui {
@@ -70,6 +71,11 @@ public:
         scene2d::ControlRegistry::get()->registerControl<windows::control::ImageControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ButtonControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ImageButtonControl>();
+
+        LOG(INFO) << "Register builtin icon font...";
+        auto icon_font = resources::get_icon_data();
+        windows::graphics::GraphicDevice::instance()
+            ->addFont("kwui", icon_font.data(), icon_font.size());
     }
 
     Application* q_;

@@ -8,10 +8,10 @@ function RadioExample() {
     return <div>
         <p>
             <p>
-                <Radio label={"blue"} value={state == 'blue'} onchange={() => setState('blue')} />
+                <Radio label={"选项1"} value={state == 'blue'} onchange={() => setState('blue')} />
             </p>
             <p>
-                <Radio label={"red"} value={state == 'red'} onchange={() => setState("red")} />
+                <Radio label={"选项2"} value={state == 'red'} onchange={() => setState("red")} />
             </p>
         </p>
         <button onclick={selectNone}>select none</button>
@@ -20,13 +20,13 @@ function RadioExample() {
 
 function Radio({ label, value, onchange }) {
     return <button checked={value} onclick={() => onchange(value)}>
-        <span class="icon-font">{value ? "\u{26ab}" : "\u{26aa}"}</span><span>label</span>
+        <span class="icon-font">{value ? "\u{f192}" : "\u{f111}"}</span><span>{label}</span>
     </button>;
 }
 
 var Style = css`
 .icon-font {
-    font-family: "Segoe UI Symbol";
+    font-family: "kwui";
 }
 button {
     display: block;

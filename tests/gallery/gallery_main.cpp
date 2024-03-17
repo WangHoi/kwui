@@ -8,6 +8,6 @@ int main(int argc, char* argv[])
 {
     Application app(argc, argv);
     ScriptEngine::get()
-        ->loadFile("d:/projects/kwui/examples/gallery/assets/gallery.js");
+        ->loadFile("d:/projects/kwui/tests/gallery/assets/gallery.js");
     return app.exec();
 }

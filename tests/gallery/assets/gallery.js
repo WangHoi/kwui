@@ -181,5 +181,5 @@ app.showDialog({
 // });
 
 app.showDialog({
-	modulePath: "./radio.js",
+	modulePath: "./checkbox.js",
 });

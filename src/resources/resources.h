@@ -7,5 +7,6 @@ namespace resources {
 
 absl::optional<absl::Span<const uint8_t>> get_module_binary(const char* mod_name);
 absl::optional<absl::Span<const uint8_t>> get_image_data(const std::string& image_path);
+absl::Span<const uint8_t> get_icon_data();
 
 }

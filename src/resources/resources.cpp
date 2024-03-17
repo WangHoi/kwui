@@ -21,6 +21,9 @@ const uint8_t hscroll_left_button_png[] = {
 const uint8_t hscroll_right_button_png[] = {
 #include "hscroll_right_button_png.txt"
 };
+const uint8_t icon_otf[] = {
+#include "icon_otf.txt"
+};
 
 namespace resources {
 
@@ -44,6 +47,10 @@ absl::optional<absl::Span<const uint8_t>> get_image_data(const std::string& imag
 		return absl::Span<const uint8_t>(hscroll_right_button_png, ABSL_ARRAYSIZE(hscroll_right_button_png));
 	}
 	return absl::nullopt;
+}
+absl::Span<const uint8_t> get_icon_data()
+{
+	return absl::Span<const uint8_t>(icon_otf, ABSL_ARRAYSIZE(icon_otf));
 }
 
 }
