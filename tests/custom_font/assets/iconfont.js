@@ -1,15 +1,21 @@
 
 function IconFontExample() {
 	return <p>
-		<p style="font-size: 28px; font-weight:bold;">自定义字体 - Font Awesome</p>
-		<p>笑脸：<span class="fa" style="color:orange;">{"\u{f118}"}</span><span class="fa">{"\u{f192}\u{f057}"}</span></p>
-		<p>聊天：<span class="fa" style="color:green;font-size:120px;">{"\u{f4ad}"}</span></p>
+		<p style="font-size: 28px; font-weight:bold;">自定义字体</p>
+		<p><span style="font-weight:bold;">界面</span>
+			<p>单选：<span class="fa">{"\u{f111}\u{f192}"}</span></p>
+			<p>多选：<span class="fa">{"\u{f0c8}\u{f14a}"}</span></p>
+			<p>箭头：<span class="fa">{"\u{f104}\u{f105}\u{f106}\u{f107}"}</span></p>
+		</p>
+		<p><span style="font-weight:bold;">图标</span>
+		<p><span class="fa" style="color:gold;font-size:120px;">{"\u{f005}"}</span></p>
+		</p>
 	</p>;
 }
 
 var stylesheet = css`
 .fa {
-	font-family: "Font Awesome";
+	font-family: "Custom Name";
 }
 kml {
 	overflow-y: auto;
