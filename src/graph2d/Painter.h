@@ -22,6 +22,7 @@ public:
 	virtual void save() = 0;
 	virtual void restore() = 0;
 	virtual void setTranslation(const scene2d::PointF& offset, bool combine) = 0;
+	virtual void setRotation(float degrees, const scene2d::PointF& center, bool combine) = 0;
 	virtual void pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) = 0;
 	virtual void popClipRect() = 0;
 	virtual void drawBox(const scene2d::RectF& border_rect,

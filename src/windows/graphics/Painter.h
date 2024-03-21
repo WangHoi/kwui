@@ -34,7 +34,9 @@ public:
     void Translate(float x, float y) { Translate({ x, y }); }
     void Translate(const scene2d::PointF& offset);
     void SetTranslation(const scene2d::PointF& abs_offset);
-    const scene2d::PointF& GetAccumTranslate() const { return _current.offset; }
+    void Rotate(float degrees, const scene2d::PointF& center);
+    void SetRotation(float degrees, const scene2d::PointF& center);
+    //const scene2d::PointF& GetAccumTranslate() const { return _current.offset; }
     void PushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size);
     void PopClipRect();
     void Save();
@@ -62,7 +64,8 @@ private:
     D2D1_RECT_F PixelSnapConservative(const D2D1_RECT_F& rect);
 
     struct State {
-        scene2d::PointF offset;
+        //scene2d::PointF offset;
+        D2D1::Matrix3x2F transform;
         style::Color color;
         style::Color stroke_color;
         float stroke_width;
@@ -73,7 +76,8 @@ private:
             Reset();
         }
         inline void Reset() {
-            offset = scene2d::PointF::fromZeros();
+            //offset = scene2d::PointF::fromZeros();
+            transform = D2D1::Matrix3x2F::Identity();
             color = style::Color();
             stroke_color = style::Color();
             stroke_width = 0.0f;
@@ -160,6 +164,13 @@ public:
             p_.Translate(offset);
         else
             p_.SetTranslation(offset);
+    }
+    void setRotation(float degrees, const scene2d::PointF& center, bool combine) override
+    {
+        if (combine)
+            p_.Rotate(degrees, center);
+        else
+            p_.SetRotation(degrees, center);
     }
     void pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) override
     {

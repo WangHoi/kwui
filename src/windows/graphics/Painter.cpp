@@ -1,5 +1,7 @@
 #include "Painter.h"
 #include "base/log.h"
+#define _USE_MATH_DEFINES 1
+#include <math.h>
 
 namespace windows {
 namespace graphics {
@@ -24,8 +26,8 @@ void Painter::SetStrokeWidth(float w) {
 	_current.stroke_width = w;
 }
 void Painter::DrawRect(float x, float y, float w, float h) {
-	D2D1_RECT_F stroke_rect = D2D1::RectF(_current.offset.x + x, _current.offset.y + y,
-		_current.offset.x + x + w, _current.offset.y + y + h);
+	D2D1_RECT_F stroke_rect = D2D1::RectF(x, y,
+		x + w, y + h);
 	if (_current.pixel_snap)
 		stroke_rect = PixelSnap(stroke_rect);
 
@@ -63,8 +65,8 @@ void Painter::DrawRect(float x, float y, float w, float h) {
 	}
 }
 void Painter::DrawRoundedRect(float x, float y, float w, float h, float r) {
-	D2D1_RECT_F rect = D2D1::RectF(_current.offset.x + x, _current.offset.y + y,
-		_current.offset.x + x + w, _current.offset.y + y + h);
+	D2D1_RECT_F rect = D2D1::RectF(x, y,
+		x + w, y + h);
 	if (_current.pixel_snap) {
 		rect = PixelSnap(rect);
 		//r = PixelSnap(r);
@@ -105,7 +107,7 @@ void Painter::DrawRoundedRect(float x, float y, float w, float h, float r) {
 	}
 }
 void Painter::DrawTextLayout(float x, float y, const TextLayout& layout) {
-	D2D1_POINT_2F origin = D2D1::Point2F(_current.offset.x + x, _current.offset.y + y);
+	D2D1_POINT_2F origin = D2D1::Point2F(x, y);
 	if (_current.HasFill()) {
 		ComPtr<ID2D1Brush> brush = CreateBrush(_current.color);
 		if (_current.gradient_brush) {
@@ -122,7 +124,7 @@ void Painter::DrawTextLayout(float x, float y, const TextLayout& layout) {
 }
 void Painter::DrawGlyphRun(float x, float y, const GlyphRun& gr)
 {
-	D2D1_POINT_2F origin = D2D1::Point2F(_current.offset.x + x, _current.offset.y + y);
+	D2D1_POINT_2F origin = D2D1::Point2F(x, y);
 	if (_current.HasFill()) {
 		ComPtr<ID2D1Brush> brush = CreateBrush(_current.color);
 		if (_current.gradient_brush) {
@@ -147,6 +149,7 @@ void Painter::Restore() {
 	} else {
 		_current.Reset();
 	}
+	_rt->SetTransform(_current.transform);
 }
 ComPtr<ID2D1Brush> Painter::CreateBrush(const style::Color& c) {
 	D2D1_COLOR_F color = D2D1::ColorF(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
@@ -169,18 +172,29 @@ D2D1_RECT_F Painter::PixelSnapConservative(const D2D1_RECT_F& rect) {
 	return D2D1::RectF(left, top, right, bottom);
 }
 void Painter::Translate(const scene2d::PointF& offset) {
-	_current.offset += offset;
+	//_current.offset += offset;
 	//LOG(INFO) << "Translate current: " << _current.offset;
+	_current.transform = _current.transform * D2D1::Matrix3x2F::Translation(offset.x, offset.y);
+	_rt->SetTransform(_current.transform);
 }
 void Painter::SetTranslation(const scene2d::PointF& abs_offset) {
-	_current.offset = abs_offset;
+	//_current.offset = abs_offset;
 	//LOG(INFO) << "SetTranslation current: " << _current.offset;
+	_current.transform = D2D1::Matrix3x2F::Translation(abs_offset.x, abs_offset.y);
+	_rt->SetTransform(_current.transform);
+}
+void Painter::Rotate(float degrees, const scene2d::PointF& center)
+{
+	_current.transform = _current.transform * D2D1::Matrix3x2F::Rotation(degrees, D2D1::Point2F(center.x, center.y));
+	_rt->SetTransform(_current.transform);
+}
+void Painter::SetRotation(float degrees, const scene2d::PointF& center)
+{
+	_current.transform = D2D1::Matrix3x2F::Rotation(degrees, D2D1::Point2F(center.x, center.y));
+	_rt->SetTransform(_current.transform);
 }
 void Painter::PushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) {
-	D2D1_RECT_F rect = D2D1::RectF(_current.offset.x + origin.x,
-		_current.offset.y + origin.y,
-		_current.offset.x + origin.x + size.width,
-		_current.offset.y + origin.y + size.height);
+	D2D1_RECT_F rect = D2D1::RectF(origin.x, origin.y, origin.x + size.width, origin.y + size.height);
 	if (_current.pixel_snap)
 		rect = PixelSnapConservative(rect);
 	_rt->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
@@ -203,10 +217,7 @@ ComPtr<ID2D1Bitmap> Painter::CreateBitmap(const BitmapSubItem& item) {
 	return bitmap;
 }
 void Painter::DrawBitmap(ID2D1Bitmap* bitmap, float x, float y, float w, float h) {
-	D2D1_RECT_F rect = D2D1::RectF(_current.offset.x + x,
-		_current.offset.y + y,
-		_current.offset.x + x + w,
-		_current.offset.y + y + h);
+	D2D1_RECT_F rect = D2D1::RectF(x, y, x + w, y + h);
 	if (_current.pixel_snap)
 		rect = PixelSnap(rect);
 	_rt->DrawBitmap(bitmap, rect, 1.0);
@@ -220,10 +231,7 @@ void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, f
 		0,
 		src_margin,
 		src_margin);
-	dst_rect = D2D1::RectF(_current.offset.x + x,
-		_current.offset.y + y,
-		_current.offset.x + x + dst_margin,
-		_current.offset.y + y + dst_margin);
+	dst_rect = D2D1::RectF(x, y, x + dst_margin, y + dst_margin);
 	if (_current.pixel_snap)
 		dst_rect = PixelSnap(dst_rect);
 	_rt->DrawBitmap(bitmap, dst_rect, 1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, src_rect);
@@ -232,10 +240,7 @@ void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, f
 		0,
 		bitmap_size.width - src_margin,
 		src_margin);
-	dst_rect = D2D1::RectF(_current.offset.x + x + dst_margin,
-		_current.offset.y + y,
-		_current.offset.x + x + w - dst_margin,
-		_current.offset.y + y + dst_margin);
+	dst_rect = D2D1::RectF(x + dst_margin, y, x + w - dst_margin, y + dst_margin);
 	if (_current.pixel_snap)
 		dst_rect = PixelSnap(dst_rect);
 	_rt->DrawBitmap(bitmap, dst_rect, 1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, src_rect);
@@ -244,10 +249,7 @@ void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, f
 		0,
 		bitmap_size.width,
 		src_margin);
-	dst_rect = D2D1::RectF(_current.offset.x + x + w - dst_margin,
-		_current.offset.y + y,
-		_current.offset.x + x + w,
-		_current.offset.y + y + dst_margin);
+	dst_rect = D2D1::RectF(x + w - dst_margin, y, x + w, y + dst_margin);
 	if (_current.pixel_snap)
 		dst_rect = PixelSnap(dst_rect);
 	_rt->DrawBitmap(bitmap, dst_rect, 1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, src_rect);
@@ -258,10 +260,7 @@ void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, f
 		src_margin,
 		src_margin,
 		bitmap_size.height - src_margin);
-	dst_rect = D2D1::RectF(_current.offset.x + x,
-		_current.offset.y + y + dst_margin,
-		_current.offset.x + x + dst_margin,
-		_current.offset.y + y + h - dst_margin);
+	dst_rect = D2D1::RectF(x, y + dst_margin, x + dst_margin, y + h - dst_margin);
 	if (_current.pixel_snap)
 		dst_rect = PixelSnap(dst_rect);
 	_rt->DrawBitmap(bitmap, dst_rect, 1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, src_rect);
@@ -270,10 +269,7 @@ void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, f
 		src_margin,
 		bitmap_size.width - src_margin,
 		bitmap_size.height - src_margin);
-	dst_rect = D2D1::RectF(_current.offset.x + x + dst_margin,
-		_current.offset.y + y + dst_margin,
-		_current.offset.x + x + w - dst_margin,
-		_current.offset.y + y + h - dst_margin);
+	dst_rect = D2D1::RectF(x + dst_margin, y + dst_margin, x + w - dst_margin, y + h - dst_margin);
 	if (_current.pixel_snap)
 		dst_rect = PixelSnap(dst_rect);
 	_rt->DrawBitmap(bitmap, dst_rect, 1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, src_rect);
@@ -282,10 +278,10 @@ void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, f
 		src_margin,
 		bitmap_size.width,
 		bitmap_size.height - src_margin);
-	dst_rect = D2D1::RectF(_current.offset.x + x + w - dst_margin,
-		_current.offset.y + y + dst_margin,
-		_current.offset.x + x + w,
-		_current.offset.y + y + h - dst_margin);
+	dst_rect = D2D1::RectF(x + w - dst_margin,
+		y + dst_margin,
+		x + w,
+		y + h - dst_margin);
 	if (_current.pixel_snap)
 		dst_rect = PixelSnap(dst_rect);
 	_rt->DrawBitmap(bitmap, dst_rect, 1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, src_rect);
@@ -295,10 +291,10 @@ void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, f
 		bitmap_size.height - src_margin,
 		src_margin,
 		bitmap_size.height);
-	dst_rect = D2D1::RectF(_current.offset.x + x,
-		_current.offset.y + y + h - dst_margin,
-		_current.offset.x + x + dst_margin,
-		_current.offset.y + y + h);
+	dst_rect = D2D1::RectF(x,
+		y + h - dst_margin,
+		x + dst_margin,
+		y + h);
 	if (_current.pixel_snap)
 		dst_rect = PixelSnap(dst_rect);
 	_rt->DrawBitmap(bitmap, dst_rect, 1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, src_rect);
@@ -307,10 +303,10 @@ void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, f
 		bitmap_size.height - src_margin,
 		bitmap_size.width - src_margin,
 		bitmap_size.height);
-	dst_rect = D2D1::RectF(_current.offset.x + x + dst_margin,
-		_current.offset.y + y + h - dst_margin,
-		_current.offset.x + x + w - dst_margin,
-		_current.offset.y + y + h);
+	dst_rect = D2D1::RectF(x + dst_margin,
+		y + h - dst_margin,
+		x + w - dst_margin,
+		y + h);
 	if (_current.pixel_snap)
 		dst_rect = PixelSnap(dst_rect);
 	_rt->DrawBitmap(bitmap, dst_rect, 1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, src_rect);
@@ -319,10 +315,10 @@ void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, f
 		bitmap_size.height - src_margin,
 		bitmap_size.width,
 		bitmap_size.height);
-	dst_rect = D2D1::RectF(_current.offset.x + x + w - dst_margin,
-		_current.offset.y + y + h - dst_margin,
-		_current.offset.x + x + w,
-		_current.offset.y + y + h);
+	dst_rect = D2D1::RectF(x + w - dst_margin,
+		y + h - dst_margin,
+		x + w,
+		y + h);
 	if (_current.pixel_snap)
 		dst_rect = PixelSnap(dst_rect);
 	_rt->DrawBitmap(bitmap, dst_rect, 1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, src_rect);
