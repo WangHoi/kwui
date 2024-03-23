@@ -43,6 +43,8 @@ public:
 		HWND hwnd, const scene2d::DimensionF& size, float dpi_scale);
 	WicBitmapRenderTarget createWicBitmapRenderTarget(
 		float width, float height, float dpi_scale);
+	ComPtr<ID2D1PathGeometry> createPathGeometry();
+	ComPtr<ID2D1EllipseGeometry> createEllipseGeometry(float center_x, float center_y, float radius_x, float radius_y);
 	ComPtr<IDWriteTextLayout> createTextLayout(
 		const std::wstring& text,
 		const std::string& font_family,

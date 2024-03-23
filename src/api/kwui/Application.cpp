@@ -9,6 +9,7 @@
 #include "windows/control/ImageButtonControl.h"
 #include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"
+#include "windows/control/SpinnerControl.h"
 #include "windows/EncodingManager.h"
 #include "windows/ResourceManager.h"
 #include "windows/HiddenMsgWindow.h"
@@ -71,6 +72,7 @@ public:
         scene2d::ControlRegistry::get()->registerControl<windows::control::ImageControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ButtonControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ImageButtonControl>();
+        scene2d::ControlRegistry::get()->registerControl<windows::control::SpinnerControl>();
 
         LOG(INFO) << "Register builtin icon font...";
         auto icon_font = resources::get_icon_data();

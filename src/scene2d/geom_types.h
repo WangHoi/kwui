@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <math.h>
 #include "absl/strings/str_format.h"
+#include "windows/windows_header.h"
 
 namespace scene2d {
 
@@ -22,6 +23,10 @@ struct PointF {
     static inline PointF fromAll(float f)
     {
         return PointF(f, f);
+    }
+    inline operator D2D1_POINT_2F() const
+    {
+        return D2D1::Point2F(x, y);
     }
     inline PointF operator-() const
     {
@@ -113,6 +118,10 @@ struct DimensionF {
     static inline DimensionF fromAll(float f)
     {
         return DimensionF(f, f);
+    }
+    inline operator D2D1_SIZE_F() const
+    {
+        return D2D1::SizeF(width, height);
     }
     inline DimensionF& operator*=(const PointF &p)
     {

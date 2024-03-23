@@ -133,6 +133,20 @@ WicBitmapRenderTarget GraphicDevice::createWicBitmapRenderTarget(
 	return rt;
 }
 
+ComPtr<ID2D1PathGeometry> GraphicDevice::createPathGeometry()
+{
+	ComPtr<ID2D1PathGeometry> geom;
+	factory_->CreatePathGeometry(geom.GetAddressOf());
+	return geom;
+}
+
+ComPtr<ID2D1EllipseGeometry> GraphicDevice::createEllipseGeometry(float center_x, float center_y, float radius_x, float radius_y)
+{
+	ComPtr<ID2D1EllipseGeometry> ellipse;
+	factory_->CreateEllipseGeometry(D2D1::Ellipse(D2D1::Point2F(center_x, center_y), radius_x, radius_y), ellipse.GetAddressOf());
+	return ellipse;
+}
+
 ComPtr<IDWriteTextLayout> GraphicDevice::createTextLayout(
 	const std::wstring& text,
 	const std::string& font_family,

@@ -106,6 +106,49 @@ void Painter::DrawRoundedRect(float x, float y, float w, float h, float r) {
 		_rt->DrawRoundedRectangle(stroke_rrect, brush.Get(), _current.stroke_width);
 	}
 }
+void Painter::DrawCircle(float center_x, float center_y, float radius)
+{
+	auto circle = D2D1::Ellipse(D2D1::Point2F(center_x, center_y), radius, radius);
+
+	if (_current.HasFill()) {
+		ComPtr<ID2D1Brush> brush;
+		if (_current.gradient_brush) {
+			brush = _current.gradient_brush;
+			//brush->SetTransform(D2D1::Matrix3x2F::Translation(center_xfill_rect.left, fill_rect.top));
+		} else {
+			brush = CreateBrush(_current.color);
+		}
+		_rt->FillEllipse(circle, brush.Get());
+	}
+	if (_current.HasStroke()) {
+		ComPtr<ID2D1Brush> brush = CreateBrush(_current.stroke_color);
+		_rt->DrawEllipse(circle, brush.Get(), _current.stroke_width);
+	}
+}
+void Painter::DrawArc(float center_x, float center_y, float radius, float start_angle, float span_angle)
+{
+	auto geom = GraphicDevice::instance()->createPathGeometry();
+	if (!geom)
+		return;
+	start_angle -= 90.0f;
+	float start_angle_radians = start_angle * M_PI / 180.f;
+	float end_angle_radians = (start_angle + span_angle) * M_PI / 180.f;
+	float start_x = center_x + radius * cosf(start_angle_radians);
+	float start_y = center_y + radius * sinf(start_angle_radians);
+	float end_x = center_x + radius * cosf(end_angle_radians);
+	float end_y = center_y + radius * sinf(end_angle_radians);
+	ComPtr<ID2D1GeometrySink> gs;
+	geom->Open(gs.GetAddressOf());
+	gs->BeginFigure(D2D1::Point2F(start_x, start_y), D2D1_FIGURE_BEGIN_HOLLOW);
+	D2D1_ARC_SIZE arc_size = span_angle > 180 ? D2D1_ARC_SIZE_LARGE : D2D1_ARC_SIZE_SMALL;
+	gs->AddArc(D2D1::ArcSegment(D2D1::Point2F(end_x, end_y), D2D1::SizeF(radius, radius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, arc_size));
+	gs->EndFigure(D2D1_FIGURE_END_OPEN);
+	gs->Close();
+	if (_current.HasStroke()) {
+		ComPtr<ID2D1Brush> brush = CreateBrush(_current.stroke_color);
+		_rt->DrawGeometry(geom.Get(), brush.Get(), _current.stroke_width);
+	}
+}
 void Painter::DrawTextLayout(float x, float y, const TextLayout& layout) {
 	D2D1_POINT_2F origin = D2D1::Point2F(x, y);
 	if (_current.HasFill()) {
@@ -185,12 +228,14 @@ void Painter::SetTranslation(const scene2d::PointF& abs_offset) {
 }
 void Painter::Rotate(float degrees, const scene2d::PointF& center)
 {
-	_current.transform = _current.transform * D2D1::Matrix3x2F::Rotation(degrees, D2D1::Point2F(center.x, center.y));
+	auto c = _current.transform.TransformPoint(D2D1::Point2F(center.x, center.y));
+	_current.transform = _current.transform * D2D1::Matrix3x2F::Rotation(degrees, c);
 	_rt->SetTransform(_current.transform);
 }
 void Painter::SetRotation(float degrees, const scene2d::PointF& center)
 {
-	_current.transform = D2D1::Matrix3x2F::Rotation(degrees, D2D1::Point2F(center.x, center.y));
+	auto c = _current.transform.TransformPoint(D2D1::Point2F(center.x, center.y));
+	_current.transform = D2D1::Matrix3x2F::Rotation(degrees, c);
 	_rt->SetTransform(_current.transform);
 }
 void Painter::PushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) {

@@ -181,5 +181,5 @@ app.showDialog({
 // });
 
 app.showDialog({
-	modulePath: "./checkbox.js",
+	modulePath: "./spinner.js",
 });

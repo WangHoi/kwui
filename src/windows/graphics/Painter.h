@@ -27,6 +27,10 @@ public:
     void DrawRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) { DrawRect(origin.x, origin.y, size.width, size.height); }
     void DrawRoundedRect(float x, float y, float w, float h, float r);
     void DrawRoundedRect(const scene2d::PointF& origin, const scene2d::DimensionF& size, float r) { DrawRoundedRect(origin.x, origin.y, size.width, size.height, r); }
+    void DrawCircle(float center_x, float center_y, float radius);
+    void DrawCircle(const scene2d::PointF& center, float radius) { DrawCircle(center.x, center.y, radius); }
+    void DrawArc(float center_x, float center_y, float radius, float start_angle, float span_angle);
+    void DrawArc(const scene2d::PointF& center, float radius, float start_angle, float span_angle) { DrawArc(center.x, center.y, radius, start_angle, span_angle); }
     void DrawTextLayout(const scene2d::PointF& origin, const TextLayout& layout) { DrawTextLayout(origin.x, origin.y, layout); }
     void DrawTextLayout(float x, float y, const TextLayout& layout);
     void DrawGlyphRun(const scene2d::PointF& origin, const GlyphRun& gr) { DrawGlyphRun(origin.x, origin.y, gr); }

@@ -229,12 +229,13 @@ void Node::resolveDefaultStyle()
 		 * and for <input> elements whose type is radio, checkbox, reset, button, submit, color, or search
 		 */
 		if (tag_ == base::string_intern("img")
-			|| tag_ == base::string_intern("span")
+			|| tag_ == base::string_intern("span")			
 			|| tag_ == base::string_intern("strong")
 			|| tag_ == base::string_intern("em")
 			|| tag_ == base::string_intern("b")) {
 			computed_style_.display = style::DisplayType::Inline;
-		} else if (tag_ == base::string_intern("button")) {
+		} else if (tag_ == base::string_intern("button")
+			|| tag_ == base::string_intern("spinner")) {
 			computed_style_.display = style::DisplayType::InlineBlock;
 			//computed_style_.box_sizing = style::BoxSizingType::BorderBox;
 		} else {
