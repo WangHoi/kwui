@@ -19,6 +19,7 @@ public:
 	static JSValue removeListenerFromScript(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 
 	static void setupAppObject(JSContext* ctx, JSValue app);
+	static void cleanup();
 
 private:
 	static void doPost(const std::string& event, const kwui::ScriptValue& value, 

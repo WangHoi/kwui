@@ -149,4 +149,9 @@ void EventPort::doPost(const std::string& event, const kwui::ScriptValue& value,
 		JS_FreeValue(item.jsContext(), jval[1]);
 	}
 }
+void EventPort::cleanup()
+{
+	g_subscription.clear();
+}
+
 }

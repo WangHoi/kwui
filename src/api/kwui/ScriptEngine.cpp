@@ -124,6 +124,7 @@ ScriptEngine* ScriptEngine::get()
 
 void ScriptEngine::release()
 {
+	script::EventPort::cleanup();
 	delete g_engine;
 	g_engine = nullptr;
 }
