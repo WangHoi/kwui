@@ -17,7 +17,7 @@ include(util.cmake)
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 	# For memory leak detection (see https://github.com/MicrosoftDocs/visualstudio-docs/blob/master/docs/debugger/finding-memory-leaks-using-the-crt-library.md )
-	add_definitions(-D "_CRTDBG_MAP_ALLOC")
+	# add_definitions(-D "_CRTDBG_MAP_ALLOC")
 
 	# Used debug build options:
 	# - "Debug Information Format"	= "Program Database for Edit And Continue (/ZI)" ( "/Z7, /Zi, /ZI (Debug Information Format)"-documentation at https://msdn.microsoft.com/en-us/library/958x11bc.aspx )

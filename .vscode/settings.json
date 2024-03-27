@@ -92,7 +92,8 @@
         "xutility": "cpp",
         "*.inc": "cpp",
         "coroutine": "cpp",
-        "*.rh": "cpp"
+        "*.rh": "cpp",
+        "stack": "cpp"
     },
     "rust-analyzer.checkOnSave": false
 }
