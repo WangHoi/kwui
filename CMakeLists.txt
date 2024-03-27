@@ -77,6 +77,7 @@ set(ABSL_ENABLE_INSTALL OFF)
 add_subdirectory(3rdparty/abseil-cpp-20230802.1)
 add_subdirectory(3rdparty/quickjspp)
 add_subdirectory(3rdparty/fifo_map)
+add_subdirectory(3rdparty/tgaimage)
 add_subdirectory(3rdparty/skia)
 
 add_subdirectory(src)

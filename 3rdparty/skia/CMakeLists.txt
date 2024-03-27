@@ -814,6 +814,7 @@ if(WIN32)
     PRIVATE src/ports/SkDebug_win.cpp
             src/ports/SkFontHost_win.cpp
             src/ports/SkFontMgr_win_dw.cpp
+            src/ports/SkFontMgr_win_dw_factory.cpp
             src/ports/SkOSFile_stdio.cpp
             src/ports/SkOSFile_win.cpp
             src/ports/SkRemotableFontMgr_win_dw.cpp
