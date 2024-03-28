@@ -1,8 +1,10 @@
 #include "script.h"
 #include "scene2d/Scene.h"
+#ifdef _WIN32
 #include "windows/Dialog.h"
 #include "windows/ResourceManager.h"
 #include "windows/EncodingManager.h"
+#endif
 #include "Keact.h"
 #include "resources/resources.h"
 #include "absl/strings/str_format.h"
@@ -103,6 +105,7 @@ static JSModuleDef* load_module(JSContext* ctx, const char* orig_module_name, vo
 	std::tie(module_name, std::ignore) = cleanup_module_name(orig_module_name);
 
 	if (absl::StartsWith(module_name, ":")) {
+#ifdef _WIN32
 		auto u16_name = windows::EncodingManager::UTF8ToWide(&module_name[1]);
 		auto res_opt = windows::ResourceManager::instance()->loadResource(u16_name.c_str());
 		if (res_opt.has_value()) {
@@ -110,6 +113,9 @@ static JSModuleDef* load_module(JSContext* ctx, const char* orig_module_name, vo
 			buf = (uint8_t*)js_mallocz(ctx, res_opt->size + 1);
 			memcpy(buf, res_opt->data, res_opt->size);
 		}
+#else
+#pragma message("TODO: load_module from resource archive not implemented.")
+#endif
 	} else {
 		auto builtin_module = resources::get_module_binary(module_name.c_str());
 		if (builtin_module.has_value()) {
@@ -381,6 +387,7 @@ Context::~Context()
 void Context::loadFile(const std::string& fname)
 {
 	if (absl::StartsWith(fname, ":/")) {
+#ifdef _WIN32
 		std::wstring u16_fname = windows::EncodingManager::UTF8ToWide(fname.substr(1));
 		auto res_opt = windows::ResourceManager::instance()->loadResource(u16_fname.c_str());
 		if (res_opt.has_value() && res_opt->data) {
@@ -390,6 +397,9 @@ void Context::loadFile(const std::string& fname)
 			LOG(WARNING) << "Load file [" << fname << "] from resource failed.";
 			return;
 		}
+#else
+#pragma message("TODO: loadFile from resource archive not implemented.")
+#endif
 	} else {
 		FILE* f = fopen(fname.c_str(), "rb");
 		if (!f)
@@ -452,6 +462,7 @@ struct DialogPosAnchor {
 	scene2d::PointF pos;
 	scene2d::RectF computeWindowGeometry(float client_width, float client_height, bool customFrame, bool popup)
 	{
+#ifdef _WIN32
 		HMONITOR monitor;
 		MONITORINFO info = { sizeof(MONITORINFO) };
 		float dpi_scale = 1.0f;
@@ -485,11 +496,16 @@ struct DialogPosAnchor {
 		}
 	
 		return rect;
+#else
+#pragma message("TODO: computeWindowGeometry not implemented.")
+		return scene2d::RectF();
+#endif
 	}
 };
 
 JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+#ifdef _WIN32
 	std::string parentDialogId;
 	int flags = windows::DIALOG_FLAG_MAIN;
 	absl::optional<std::string> title;
@@ -644,9 +660,14 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	dialog->setWindowPos(rect);
 	dialog->Show();
 	return JS_NewString(ctx, dialog->eventContextId().c_str());
+#else
+#pragma message("TODO: app_show_dialog not implemented.")
+	return JS_ThrowInternalError(ctx, "app_show_dialog not implemented.");
+#endif
 }
 JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+#ifdef _WIN32
 	if (!JS_IsString(argv[0])) {
 		return JS_ThrowTypeError(ctx, "closeDialog: expect id");
 	}
@@ -659,9 +680,14 @@ JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 		delete dialog;
 	}
 	return JS_UNDEFINED;
+#else
+#pragma message("TODO: app_close_dialog not implemented.")
+	return JS_ThrowInternalError(ctx, "app_close_dialog not implemented.");
+#endif
 }
 JSValue app_closing_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+#ifdef _WIN32
 	if (!JS_IsString(argv[0])) {
 		return JS_ThrowTypeError(ctx, "closingDialog: expect id");
 	}
@@ -673,9 +699,14 @@ JSValue app_closing_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 		dialog->OnCloseSysCommand(*dialog);
 	}
 	return JS_UNDEFINED;
+#else
+#pragma message("TODO: app_closing_dialog not implemented.")
+	return JS_ThrowInternalError(ctx, "app_closing_dialog not implemented.");
+#endif
 }
 JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+#ifdef _WIN32
 	if (!JS_IsString(argv[0])) {
 		return JS_ThrowTypeError(ctx, "resizeDialog: expect id");
 	}
@@ -695,6 +726,10 @@ JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSVal
 	if (dialog)
 		dialog->Resize((float)width, (float)height);
 	return JS_UNDEFINED;
+#else
+#pragma message("TODO: app_resize_dialog not implemented.")
+	return JS_ThrowInternalError(ctx, "app_resize_dialog not implemented.");
+#endif
 }
 JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
@@ -712,6 +747,7 @@ JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int argc, JSV
 }
 JSValue app_get_dialog_dpi_scale(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+#ifdef _WIN32
 	if (!JS_IsString(argv[0])) {
 		return JS_ThrowTypeError(ctx, "getDialogDpiScale: expect id");
 	}
@@ -723,9 +759,14 @@ JSValue app_get_dialog_dpi_scale(JSContext* ctx, JSValueConst this_val, int argc
 		return JS_NewFloat64(ctx, dialog->GetDpiScale());
 	}
 	return JS_NewFloat64(ctx, 1.0);
+#else
+#pragma message("TODO: app_get_dialog_dpi_scale not implemented.")
+	return JS_ThrowInternalError(ctx, "app_get_dialog_dpi_scale not implemented.");
+#endif
 }
 JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+#ifdef _WIN32
 	int32_t id = 0;
 	int ret = JS_ToInt32(ctx, &id, argv[1]);
 	if (ret == 0) {
@@ -733,6 +774,10 @@ JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSVal
 		windows::ResourceManager::instance()->preloadResourceArchive(id);
 	}
 	return JS_UNDEFINED;
+#else
+#pragma message("TODO: app_load_resource not implemented.")
+	return JS_ThrowInternalError(ctx, "app_load_resource not implemented.");
+#endif
 }
 
 kwui::ScriptValue wrap(JSContext* ctx, JSValueConst c)

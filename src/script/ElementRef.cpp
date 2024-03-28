@@ -1,6 +1,8 @@
 #include "ElementRef.h"
 #include "scene2d/Scene.h"
+#ifdef _WIN32
 #include "windows/Dialog.h"
+#endif
 
 namespace script {
 
@@ -43,6 +45,7 @@ void ElementRef::finalize(JSRuntime* rt, JSValue val)
 
 JSValue ElementRef::js_getScreenRect(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+#ifdef _WIN32
 	auto me = (ElementRef*)JS_GetOpaque(this_val, JS_CLASS_ID);
 	auto node = me->node_link_.upgrade();
 	if (!node || !node->scene())
@@ -74,6 +77,10 @@ JSValue ElementRef::js_getScreenRect(JSContext* ctx, JSValueConst this_val, int 
 	JS_SetPropertyStr(ctx, j, "right", JS_NewFloat64(ctx, rect.right));
 	JS_SetPropertyStr(ctx, j, "bottom", JS_NewFloat64(ctx, rect.bottom));
 	return j;
+#else
+#pragma message("TODO: js_getScreenRect not implemented.")
+	return JS_ThrowInternalError(ctx, "js_getScreenRect not implemented.");
+#endif
 }
 
 }

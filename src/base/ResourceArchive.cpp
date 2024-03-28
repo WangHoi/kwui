@@ -1,7 +1,9 @@
 #include "ResourceArchive.h"
 #include "algorithm/lzf.h"
 #include "absl/base/internal/endian.h"
+#ifdef _WIN32
 #include "windows/EncodingManager.h"
+#endif
 #include <wchar.h>
 
 namespace base {
@@ -237,7 +239,11 @@ void ResourceArchive::IterateNodes(int16_t idx, std::wstring& name, bool& valid)
 			return;
 		}
 		auto& item = _items[n.eqkid];
+#ifdef _WIN32
 		LOG(INFO) << "Loaded resource [" << windows::EncodingManager::WideToUTF8(name) << "]";
+#else
+#pragma message("TODO: implement cross platform EncodingManager.")
+#endif
 	}
 	IterateNodes(n.lokid, name, valid);
 	if (n.splitchar) {

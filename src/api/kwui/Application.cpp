@@ -1,6 +1,8 @@
 #include "Application.h"
 #include "ScriptEngine.h"
 #include "scene2d/KmlControl.h"
+#include "resources/resources.h"
+#ifdef _WIN32
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/Dialog.h"
 #include "windows/control/Control.h"
@@ -13,8 +15,8 @@
 #include "windows/EncodingManager.h"
 #include "windows/ResourceManager.h"
 #include "windows/HiddenMsgWindow.h"
-#include "resources/resources.h"
 #include <ConsoleApi2.h>
+#endif
 
 namespace kwui {
 
@@ -27,7 +29,13 @@ static bool g_script_reload_enabled = true;
 #endif
 static DWORD g_main_thread_id = 0;
 
-class Application::Private : windows::WindowMsgListener {
+class Application::Private
+#ifdef _WIN32
+ : windows::WindowMsgListener
+#else
+#pragma message("TODO: implement WindowMsgListener.")
+#endif
+{
 public:
     Private(Application* q)
         : q_(q)
@@ -41,6 +49,7 @@ public:
         msg_window_.setListener(nullptr);
         g_app = nullptr;
     }
+#ifdef _WIN32
     void onAppMessage(WPARAM wParam, LPARAM lParam) override
     {
         auto f = (std::function<void()>*)((void*)wParam);
@@ -49,10 +58,14 @@ public:
             delete f;
         }
     }
+#else
+#pragma message("TODO: Application::Private::onAppMessage().")
+#endif
     void init()
     {
         //::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         base::initialize_log(g_log_callback);
+#ifdef _WIN32
         CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
         ::SetConsoleOutputCP(65001);
@@ -78,10 +91,17 @@ public:
         auto icon_font = resources::get_icon_data();
         windows::graphics::GraphicDevice::instance()
             ->addFont("kwui", icon_font.data(), icon_font.size());
+#else
+#pragma message("TODO: Application::Private::init().")
+#endif
     }
 
     Application* q_;
+#ifdef _WIN32
     windows::HiddenMsgWindow msg_window_;
+#else
+#pragma message("TODO: implement platform specific HiddenMsgWindow.")
+#endif
 };
 
 Application::Application(int argc, char* argv[])
@@ -101,10 +121,14 @@ Application::~Application()
     delete d;
 
     ScriptEngine::release();
+#ifdef _WIN32
     windows::graphics::GraphicDevice::releaseInstance();
     windows::ResourceManager::releaseInstance();
 
     CoUninitialize();
+#else
+#pragma message("TODO: Application::~Application().")
+#endif
 }
 
 void Application::setLogCallback(LogCallback callback)
@@ -130,27 +154,46 @@ void Application::runInMainThread(std::function<void()>&& func)
 {
     if (!g_app)
         return;
+#ifdef _WIN32
     ::PostMessageW(
         g_app->d->msg_window_.getHwnd(),
         windows::HiddenMsgWindow::MESSAGE_TYPE,
         (WPARAM)new std::function<void()>(std::move(func)),
         NULL);
+#else
+#pragma message("TODO: implement platform specific HiddenMsgWindow.")
+#endif
 }
 bool Application::preloadResourceArchive(int id)
 {
+#ifdef _WIN32
     return windows::ResourceManager::instance()->preloadResourceArchive(id);
+#else
+#pragma message("TODO: Application::preloadResourceArchive().")
+    return false;
+#endif
 }
 
 void Application::setResourceRootDir(const char* dir)
 {
+#ifdef _WIN32
     windows::ResourceManager::instance()->setResourceRootDir(dir);
+#else
+#pragma message("TODO: Application::setResourceRootDir().")
+#endif
 }
 void Application::setResourceRootData(const uint8_t* data, size_t len)
 {
+#ifdef _WIN32
     windows::ResourceManager::instance()->setResourceRootData(data, len);
+#else
+#pragma message("TODO: Application::setResourceRootData().")
+    return false;
+#endif
 }
 void Application::addFont(const char* family_name, const char* font_path)
 {
+#ifdef _WIN32
     std::wstring u16_font_path
         = windows::EncodingManager::UTF8ToWide(font_path);
     auto res = windows::ResourceManager::instance()
@@ -161,22 +204,36 @@ void Application::addFont(const char* family_name, const char* font_path)
     } else {
         LOG(ERROR) << "addFont: failed to load resource [" << font_path << "]";
     }
+#else
+#pragma message("TODO: Application::addFont().")
+    return false;
+#endif
 }
 
 int Application::exec()
 {
+#ifdef _WIN32    
     MSG msg;
     while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+#else
+#pragma message("TODO: Application::exec().")
+    return false;
+#endif
 
     return 0;
 }
 
 void Application::quit()
 {
+#ifdef _WIN32
     ::PostQuitMessage(0);
+#else
+#pragma message("TODO: Application::quit().")
+    return false;
+#endif
 }
 
 }
