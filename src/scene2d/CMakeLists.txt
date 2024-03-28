@@ -13,8 +13,8 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/Control.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/KmlControl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/KmlControl.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ScrollbarControl.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ScrollbarControl.cpp
+#  ${CMAKE_CURRENT_SOURCE_DIR}/ScrollbarControl.h
+#  ${CMAKE_CURRENT_SOURCE_DIR}/ScrollbarControl.cpp
 )
 set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)
 set(kwui_priv_srcs ${kwui_priv_srcs} PARENT_SCOPE)

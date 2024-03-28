@@ -112,7 +112,8 @@ int kwui_ScriptValue_to_int(kwui_ScriptValue* v)
 	kwui::ScriptValue& val = *(kwui::ScriptValue*)v;
 	return val.toInt();
 }
-static ABSL_PER_THREAD_TLS_KEYWORD std::string gt_cache;
+#pragma message("TODO: inspect thread_local")
+static thread_local/*ABSL_PER_THREAD_TLS_KEYWORD*/ std::string gt_cache;
 const char* kwui_ScriptValue_to_string(kwui_ScriptValue* v, size_t* len)
 {
 

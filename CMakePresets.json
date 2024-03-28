@@ -1,68 +1,101 @@
 {
-    "version": 5,
-    "configurePresets": [
-        {
-            "name": "windows-base",
-            "description": "面向具有 Visual Studio 开发环境的 Windows。",
-            "hidden": true,
-            "generator": "Ninja",
-            "cmakeExecutable": "D:/Program Files/CMake/bin/cmake.exe",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "installDir": "${sourceDir}/out/install/${presetName}",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "cl.exe",
-                "CMAKE_CXX_COMPILER": "cl.exe"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
-            "name": "x86-debug",
-            "displayName": "x86 Debug",
-            "description": "x86 Debug MDd",
-            "inherits": "windows-base",
-            "architecture": {
-                "value": "x86",
-                "strategy": "external"
-            },
-            "toolset": {
-                "value": "host=x86",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "x86-release",
-            "displayName": "x86 Release",
-            "description": "x86 Release MD",
-            "inherits": "windows-base",
-            "architecture": {
-                "value": "x86",
-                "strategy": "external"
-            },
-            "toolset": {
-                "value": "host=x86",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        }
-    ],
-    "buildPresets": [
-        {
-            "name": "debug",
-            "configurePreset": "x86-debug"
-        },
-        {
-            "name": "release",
-            "configurePreset": "x86-release"
-        }
-    ],
-    "testPresets": []
+  "version": 5,
+  "configurePresets": [
+    {
+      "name": "windows-base",
+      "description": "面向具有 Visual Studio 开发环境的 Windows。",
+      "hidden": true,
+      "generator": "Ninja",
+      "cmakeExecutable": "D:/Program Files/CMake/bin/cmake.exe",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "x86-debug",
+      "displayName": "x86 Debug",
+      "description": "x86 Debug MDd",
+      "inherits": "windows-base",
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "toolset": {
+        "value": "host=x86",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "x86-release",
+      "displayName": "x86 Release",
+      "description": "x86 Release MD",
+      "inherits": "windows-base",
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "toolset": {
+        "value": "host=x86",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "android-base",
+      "description": "Android base",
+      "hidden": true,
+      "generator": "Ninja",
+      "cmakeExecutable": "D:/Program Files/CMake/bin/cmake.exe",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Android",
+        "CMAKE_ANDROID_ABI": "arm64-v8a",
+        "CMAKE_ANDROID_NDK": "D:/Android/Sdk/ndk/26.2.11394342",
+        "CMAKE_ANDROID_STL_TYPE": "c++_shared"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "android-debug",
+      "displayName": "Android Debug",
+      "description": "Android Debug",
+      "inherits": "android-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "x86-debug",
+      "configurePreset": "x86-debug"
+    },
+    {
+      "name": "x86-release",
+      "configurePreset": "x86-release"
+    },
+    {
+      "name": "android-debug",
+      "configurePreset": "android-debug"
+    }
+  ],
+  "testPresets": []
 }

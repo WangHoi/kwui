@@ -147,7 +147,7 @@ static JSModuleDef* load_module(JSContext* ctx, const char* orig_module_name, vo
 		return NULL;
 	}
 	/* XXX: could propagate the exception */
-	js_module_set_import_meta(ctx, func_val, TRUE, FALSE);
+	js_module_set_import_meta(ctx, func_val, true, false);
 	/* the module is already referenced, so we must free it */
 	m = (JSModuleDef*)JS_VALUE_GET_PTR(func_val);
 	JS_FreeValue(ctx, func_val);
@@ -234,7 +234,7 @@ void Context::initSceneClass()
 	JS_NewClassID(&scene_class_id);
 	JS_NewClass(JS_GetRuntime(ctx_), scene_class_id, &scene_class_def);
 	JSValue proto = JS_NewObject(ctx_);
-	JS_SetPropertyFunctionList(ctx_, proto, scene_methods, _countof(scene_methods));
+	JS_SetPropertyFunctionList(ctx_, proto, scene_methods, ABSL_ARRAYSIZE(scene_methods));
 	JS_FreeValue(ctx_, proto);
 }
 
@@ -733,6 +733,7 @@ JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSVal
 }
 JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+#ifdef _WIN32
 	if (!JS_IsString(argv[0])) {
 		return JS_ThrowTypeError(ctx, "getDialogHwnd: expect id");
 	}
@@ -744,6 +745,10 @@ JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int argc, JSV
 		return JS_NewString(ctx, absl::StrFormat("%p", dialog->GetHwnd()).c_str());
 	}
 	return JS_UNDEFINED;
+#else
+#pragma message("TODO: app_get_dialog_hwnd not implemented.")
+return JS_ThrowInternalError(ctx, "app_get_dialog_hwnd not implemented.");
+#endif
 }
 JSValue app_get_dialog_dpi_scale(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {

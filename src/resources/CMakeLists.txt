@@ -1,6 +1,7 @@
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Keact.js.c
-  COMMAND qjsc -c -m -o ${CMAKE_CURRENT_BINARY_DIR}/Keact.js.c ${CMAKE_CURRENT_SOURCE_DIR}/Keact.js
+  #COMMAND qjsc -c -m -o ${CMAKE_CURRENT_BINARY_DIR}/Keact.js.c ${CMAKE_CURRENT_SOURCE_DIR}/Keact.js
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/qjsc_aarch64.exe -c -m -o ${CMAKE_CURRENT_BINARY_DIR}/Keact.js.c ${CMAKE_CURRENT_SOURCE_DIR}/Keact.js
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Keact.js
 )
 make_resource_header(vscroll_top_button.png vscroll_top_button_png)

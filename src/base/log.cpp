@@ -1,10 +1,12 @@
 #include "log.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log_sink_registry.h"
+#ifdef _WIN32
 #include "windows/windows_header.h"
+#endif
 
 namespace base {
-
+#ifdef _WIN32
 class DebugOutputLogSink : public absl::LogSink {
 public:
     void Send(const absl::LogEntry& entry) override
@@ -13,7 +15,7 @@ public:
         OutputDebugStringA(msg);
     }
 };
-
+#endif
 class StdErrLogSink : public absl::LogSink {
 public:
     void Send(const absl::LogEntry& entry) override

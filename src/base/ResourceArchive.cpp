@@ -206,8 +206,10 @@ bool ResourceArchive::Init(const uint8_t* data, size_t size)
 		}
 	}
 	// Validate node's index
-	if (valid)
-		IterateNodes(0, std::wstring(), valid);
+	if (valid) {
+		std::wstring s;
+		IterateNodes(0, s, valid);
+	}
 	return valid;
 }
 

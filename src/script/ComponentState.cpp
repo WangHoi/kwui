@@ -28,6 +28,7 @@ static JSValue component_state_ctor(JSContext* ctx,
 {
 	JSValue obj = JS_UNDEFINED;
 	JSValue proto;
+	ComponentState* opaque;
 
 	if (!JS_IsFunction(ctx, argv[0]))
 		goto fail;
@@ -47,7 +48,7 @@ static JSValue component_state_ctor(JSContext* ctx,
 	JS_SetPropertyStr(ctx, obj, "renderFn", JS_DupValue(ctx, argv[0]));
 	JS_SetPropertyStr(ctx, obj, "props", JS_DupValue(ctx, argv[1]));
 	JS_SetPropertyStr(ctx, obj, "children", JS_DupValue(ctx, argv[2]));
-	auto opaque = new ComponentState(obj);
+	opaque = new ComponentState(obj);
 	//LOG(INFO) << "ComponentState: setOpaque " << opaque;
 	JS_SetOpaque(obj, opaque);
 	return obj;

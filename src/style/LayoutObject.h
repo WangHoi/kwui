@@ -163,11 +163,11 @@ private:
 		absl::Format(&sink, "flags=0x%04x, ", o.flags);
 		if (absl::holds_alternative<BlockBox>(o.box)) {
 			absl::Format(&sink, "box=%v, ", absl::get<BlockBox>(o.box));
-		} else if (absl::holds_alternative<std::vector<InlineBox>>(o.box)) {
+		} else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o.box)) {
 			absl::Format(&sink, "box=[ ");
-			const auto& ibs = absl::get<std::vector<InlineBox>>(o.box);
+			const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o.box);
 			for (auto& ib : ibs) {
-				absl::Format(&sink, "%v, ", ib);
+				absl::Format(&sink, "%v, ", *ib);
 			}
 			absl::Format(&sink, "]");
 		} else if (absl::holds_alternative<TextBox>(o.box)) {

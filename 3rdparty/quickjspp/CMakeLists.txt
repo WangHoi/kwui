@@ -4,7 +4,7 @@ target_compile_definitions(quickjs PUBLIC
   CONFIG_BIGNUM
   CONFIG_JSX)
 
-file(READ "VERSION" VERSION)
+file(READ "VERSION.txt" VERSION)
 file(CONFIGURE OUTPUT "quickjs-version.h" CONTENT "#define QUICKJS_VERSION \"${VERSION}\"")
 target_sources(quickjs PRIVATE
 "cutils.h"

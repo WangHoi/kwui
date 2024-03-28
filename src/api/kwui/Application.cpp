@@ -27,7 +27,7 @@ static bool g_script_reload_enabled = false;
 #else
 static bool g_script_reload_enabled = true;
 #endif
-static DWORD g_main_thread_id = 0;
+static uint64_t g_main_thread_id = 0;
 
 class Application::Private
 #ifdef _WIN32
@@ -41,12 +41,20 @@ public:
         : q_(q)
     {
         g_app = q;
+#if _WIN32
         msg_window_.setListener(this);
         g_main_thread_id = ::GetCurrentThreadId();
+#else
+#pragma message("TODO: GetCurrentThreadID().")
+#endif
     }
     ~Private()
     {
+#ifdef _WIN32
         msg_window_.setListener(nullptr);
+#else
+#pragma message("TODO: Application::Private::~Private().")
+#endif
         g_app = nullptr;
     }
 #ifdef _WIN32
@@ -148,7 +156,12 @@ void Application::enableScriptReload(bool enable)
 
 bool Application::isMainThread()
 {
+#if _WIN32
     return (::GetCurrentThreadId() == g_main_thread_id);
+#else
+#pragma message("TODO: GetCurrentThreadID().")
+    return true;
+#endif
 }
 void Application::runInMainThread(std::function<void()>&& func)
 {
@@ -188,7 +201,6 @@ void Application::setResourceRootData(const uint8_t* data, size_t len)
     windows::ResourceManager::instance()->setResourceRootData(data, len);
 #else
 #pragma message("TODO: Application::setResourceRootData().")
-    return false;
 #endif
 }
 void Application::addFont(const char* family_name, const char* font_path)
@@ -206,7 +218,6 @@ void Application::addFont(const char* family_name, const char* font_path)
     }
 #else
 #pragma message("TODO: Application::addFont().")
-    return false;
 #endif
 }
 
@@ -232,7 +243,6 @@ void Application::quit()
     ::PostQuitMessage(0);
 #else
 #pragma message("TODO: Application::quit().")
-    return false;
 #endif
 }
 

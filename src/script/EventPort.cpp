@@ -44,7 +44,7 @@ bool EventPort::removeListenerFromNative(const std::string& event, kwui::ScriptF
 		return false;
 	auto& native_subs = it->second.native_subs;
 	bool removed = false;
-	for (auto& i = native_subs.begin(); i != native_subs.end(); ++i) {
+	for (auto i = native_subs.begin(); i != native_subs.end(); ++i) {
 		if (i->func == func && i->udata == udata) {
 			native_subs.erase(i);
 			removed = true;
@@ -96,7 +96,7 @@ JSValue EventPort::removeListenerFromScript(JSContext* ctx, JSValueConst this_va
 		return JS_FALSE;
 	auto& script_subs = it->second.script_subs;
 	bool removed = false;
-	for (auto& i = script_subs.begin(); i != script_subs.end(); ++i) {
+	for (auto i = script_subs.begin(); i != script_subs.end(); ++i) {
 		if (i->jsValue() == argv[1]) {
 			script_subs.erase(i);
 			removed = true;

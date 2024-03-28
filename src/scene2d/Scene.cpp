@@ -199,13 +199,13 @@ void Scene::reloadScriptModule()
 			LOG(INFO) << "reload dialog finished";
 		} else {
 			LOG(INFO) << absl::StrFormat(
-				"reload dialog failed, module.builder return value not { root, stylesheet }: ",
+				"reload dialog failed, module.builder return value not { root, stylesheet }: %s, %s",
 				script_module_->base_filename.c_str(),
 				script_module_->module_path.c_str());
 		}
 	} else {
 		LOG(INFO) << absl::StrFormat(
-			"reload dialog failed, module.builder not function: ",
+			"reload dialog failed, module.builder not function: %s, %s",
 			script_module_->base_filename.c_str(),
 			script_module_->module_path.c_str());
 	}
