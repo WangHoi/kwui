@@ -2,9 +2,11 @@
 #include "scene2d/Scene.h"
 #include "windows/graphics/Painter.h"
 #include "base/log.h"
-#include "windows/EncodingManager.h"
+#include "base/EncodingManager.h"
 #include "windows/encoding_helpers.h"
 #include "absl/time/clock.h"
+
+using base::EncodingManager;
 
 namespace windows {
 namespace control {

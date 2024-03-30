@@ -4,8 +4,8 @@
 #include "windows/graphics/TextLayout.h"
 #include "windows/graphics/TextFlow.h"
 #include "windows/graphics/Painter.h"
-#include "windows/EncodingManager.h"
 #endif
+#include "base/EncodingManager.h"
 
 namespace graph2d {
 
@@ -18,7 +18,7 @@ std::unique_ptr<TextFlowInterface> createTextFlow(
     float font_size)
 {
 #ifdef _WIN32
-    std::wstring u16_text = windows::EncodingManager::UTF8ToWide(text);
+    std::wstring u16_text = base::EncodingManager::UTF8ToWide(text);
     windows::graphics::FontWeight win_font_weight(font_weight.raw());
     windows::graphics::FontStyle win_font_style = (windows::graphics::FontStyle)font_style;
     return windows::graphics::GraphicDevice::instance()
@@ -32,7 +32,7 @@ std::unique_ptr<TextFlowInterface> createTextFlow(
 void updateTextFlow(std::unique_ptr<TextFlowInterface>& text_flow, const std::string& text, float line_height, const char* font_family, style::FontStyle font_style, style::FontWeight font_weight, float font_size)
 {
 #ifdef _WIN32
-    std::wstring u16_text = windows::EncodingManager::UTF8ToWide(text);
+    std::wstring u16_text = base::EncodingManager::UTF8ToWide(text);
     windows::graphics::FontWeight win_font_weight(font_weight.raw());
     windows::graphics::FontStyle win_font_style = (windows::graphics::FontStyle)font_style;
     windows::graphics::TextFlow* win_tf = static_cast<windows::graphics::TextFlow*>(text_flow.get());

@@ -1,11 +1,13 @@
 #include "PopupShadow.h"
-#include "EncodingManager.h"
+#include "base/EncodingManager.h"
 #include "graphics/GraphicDevice.h"
 #include "graphics/Painter.h"
 #include "style/StyleColor.h"
 #include "Dialog.h"
 #include "theme.h"
 #include <dwmapi.h>
+
+using base::EncodingManager;
 
 namespace windows {
 

@@ -1,7 +1,7 @@
 #include "Dialog.h"
 #include "base/log.h"
 #include "scene2d/scene2d.h"
-#include "EncodingManager.h"
+#include "base/EncodingManager.h"
 #include "graphics/GraphicDevice.h"
 #include "graphics/Painter.h"
 #include "theme.h"
@@ -12,7 +12,10 @@
 #include "graph2d/Painter.h"
 #include "api/kwui/ScriptEngine.h"
 #include "api/kwui/Application.h"
-#include "ResourceManager.h"
+#include "base/ResourceManager.h"
+
+using base::EncodingManager;
+using base::ResourceManager;
 
 namespace windows {
 typedef LRESULT(CALLBACK* WndProc)(HWND, UINT, WPARAM, LPARAM);

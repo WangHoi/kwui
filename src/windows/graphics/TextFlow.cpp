@@ -2,7 +2,7 @@
 #include "TextAnalysis.h"
 #include "graph2d/graph2d.h"
 #include "base/log.h"
-#include "windows/EncodingManager.h"
+#include "base/EncodingManager.h"
 #include "windows/graphics/GraphicDevice.h"
 #include <numeric>
 
@@ -446,7 +446,7 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 			// Fit as many clusters between breakpoints that will go in.
 			bool overflow = FitText(cluster, textLength, rect.right - rect.left, empty_line, &nextCluster);
 			std::wstring seg = text_.substr(cluster.textPosition, nextCluster.textPosition - cluster.textPosition);
-			// LOG(INFO) << "text fit [" << windows::EncodingManager::WideToUTF8(seg) << "] overflow=" << overflow;
+			// LOG(INFO) << "text fit [" << base::EncodingManager::WideToUTF8(seg) << "] overflow=" << overflow;
 
 			// Check overflow
 			if (!empty_line && overflow) {

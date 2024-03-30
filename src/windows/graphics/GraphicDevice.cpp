@@ -1,13 +1,15 @@
 // #pragma warning(disable:4996)
 #include "GraphicDevice.h"
 #include "base/log.h"
-#include "windows/EncodingManager.h"
-#include "windows/ResourceManager.h"
+#include "base/EncodingManager.h"
+#include "base/ResourceManager.h"
 #include "TextAnalysis.h"
 #include "CustomFont.h"
 #include "absl/strings/match.h"
 #include "resources/resources.h"
 #include <numeric>
+
+using base::EncodingManager;
 
 namespace windows {
 namespace graphics {
@@ -373,16 +375,16 @@ void GraphicDevice::loadBitmapToCache(const std::string& name)
 			x2 = x1_5;
 		loadBitmapToCache(name, x1.value(), x1_5.value(), x2.value());
 	} else if (absl::StartsWith(name, ":")) {
-		auto RM = windows::ResourceManager::instance();
+		auto RM = base::ResourceManager::instance();
 		std::string name_res = name.substr(1);
 		absl::optional<base::ResourceArchive::ResourceItem> x1, x1_5, x2;
-		x1 = RM->loadResource(windows::EncodingManager::UTF8ToWide(name_res).c_str());
+		x1 = RM->loadResource(base::EncodingManager::UTF8ToWide(name_res).c_str());
 		int idx = name_res.rfind('.');
 		if (idx != std::string::npos) {
 			std::string name_res_x1_5 = name_res.substr(0, idx) + "@1.5x" + name_res.substr(idx);
-			x1_5 = RM->loadResource(windows::EncodingManager::UTF8ToWide(name_res_x1_5).c_str());
+			x1_5 = RM->loadResource(base::EncodingManager::UTF8ToWide(name_res_x1_5).c_str());
 			std::string name_res_x2 = name_res.substr(0, idx) + "@2x" + name_res.substr(idx);
-			x2 = RM->loadResource(windows::EncodingManager::UTF8ToWide(name_res_x2).c_str());
+			x2 = RM->loadResource(base::EncodingManager::UTF8ToWide(name_res_x2).c_str());
 		}
 		if (!x1.has_value())
 			return;
@@ -393,13 +395,13 @@ void GraphicDevice::loadBitmapToCache(const std::string& name)
 		loadBitmapToCache(name, absl::MakeSpan(x1->data, x1->size),
 			absl::MakeSpan(x1_5->data, x1_5->size), absl::MakeSpan(x2->data, x2->size));
 	} else {
-		auto filename_x1 = windows::EncodingManager::UTF8ToWide(name);
+		auto filename_x1 = base::EncodingManager::UTF8ToWide(name);
 		absl::optional<std::wstring> filename_x1_5, filename_x2;
 		int idx = name.rfind('.');
 		if (idx != std::string::npos) {
-			filename_x1_5.emplace(windows::EncodingManager::UTF8ToWide(
+			filename_x1_5.emplace(base::EncodingManager::UTF8ToWide(
 				name.substr(0, idx) + "@1.5x" + name.substr(idx)));
-			filename_x2.emplace(windows::EncodingManager::UTF8ToWide(
+			filename_x2.emplace(base::EncodingManager::UTF8ToWide(
 				name.substr(0, idx) + "@2x" + name.substr(idx)));
 		}
 		BitmapItem bi;

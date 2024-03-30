@@ -85,6 +85,7 @@ add_subdirectory(3rdparty/quickjspp)
 add_subdirectory(3rdparty/fifo_map)
 add_subdirectory(3rdparty/tgaimage)
 add_subdirectory(3rdparty/skia)
+add_subdirectory(3rdparty/utf)
 
 add_subdirectory(src)
 

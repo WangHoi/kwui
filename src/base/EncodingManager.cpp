@@ -1,8 +1,12 @@
 #include "EncodingManager.h"
-#include "windows_header.h"
+#ifdef _WIN32
+#include "windows/windows_header.h"
+#else
+#include "utf.h"
+#endif
 
-namespace windows {
-
+namespace base {
+#ifdef _WIN32
 static std::string WideToCodePage(const std::wstring& text, UINT cp) {
 	int utf8_size = ::WideCharToMultiByte(cp, 0,
 		text.data(), (int)text.length(),
@@ -31,11 +35,21 @@ static std::wstring CodePageToWide(const std::string& text, UINT cp) {
 		wchar_size);
 	return wstr;
 }
+#endif
 std::wstring EncodingManager::UTF8ToWide(const std::string& text) {
+#ifdef _WIN32
 	return CodePageToWide(text, CP_UTF8);
+#else
+	return utf::utf8_to_utf16<std::wstring>(text.begin(), text.end());
+#endif
 }
 std::string EncodingManager::WideToUTF8(const std::wstring& text) {
+#ifdef _WIN32
 	return WideToCodePage(text, CP_UTF8);
+#else
+	static_assert(sizeof(wchar_t) == sizeof(uint32_t), "wchar_t size mismatch");
+	return utf::utf32_to_utf8<std::string>((const uint32_t*)text.data(), (const uint32_t*)text.data() + text.size());
+#endif
 }
 
 }

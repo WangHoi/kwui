@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <string>
 
-namespace windows {
+namespace base {
 
 class EncodingManager {
 public:

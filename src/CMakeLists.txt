@@ -31,6 +31,8 @@ set(dep_libs
     quickjs)
 if(WIN32)
     list(APPEND dep_libs d2d1.lib dwrite.lib Windowscodecs.lib Imm32.lib)
+else()
+    list(APPEND dep_libs utf)
 endif()
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/api/

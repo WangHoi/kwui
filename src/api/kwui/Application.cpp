@@ -12,11 +12,11 @@
 #include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"
 #include "windows/control/SpinnerControl.h"
-#include "windows/EncodingManager.h"
-#include "windows/ResourceManager.h"
 #include "windows/HiddenMsgWindow.h"
 #include <ConsoleApi2.h>
 #endif
+#include "base/EncodingManager.h"
+#include "base/ResourceManager.h"
 
 namespace kwui {
 
@@ -82,7 +82,7 @@ public:
         PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
 
         LOG(INFO) << "Init ResourceManager...";
-        windows::ResourceManager::createInstance(::GetModuleHandleW(NULL));
+        base::ResourceManager::createInstance();
         LOG(INFO) << "Init GraphicDevice...";
         windows::graphics::GraphicDevice::createInstance()->Init();
 
@@ -131,7 +131,7 @@ Application::~Application()
     ScriptEngine::release();
 #ifdef _WIN32
     windows::graphics::GraphicDevice::releaseInstance();
-    windows::ResourceManager::releaseInstance();
+    base::ResourceManager::releaseInstance();
 
     CoUninitialize();
 #else
@@ -180,7 +180,7 @@ void Application::runInMainThread(std::function<void()>&& func)
 bool Application::preloadResourceArchive(int id)
 {
 #ifdef _WIN32
-    return windows::ResourceManager::instance()->preloadResourceArchive(id);
+    return base::ResourceManager::instance()->preloadResourceArchive(id);
 #else
 #pragma message("TODO: Application::preloadResourceArchive().")
     return false;
@@ -190,7 +190,7 @@ bool Application::preloadResourceArchive(int id)
 void Application::setResourceRootDir(const char* dir)
 {
 #ifdef _WIN32
-    windows::ResourceManager::instance()->setResourceRootDir(dir);
+    base::ResourceManager::instance()->setResourceRootDir(dir);
 #else
 #pragma message("TODO: Application::setResourceRootDir().")
 #endif
@@ -198,7 +198,7 @@ void Application::setResourceRootDir(const char* dir)
 void Application::setResourceRootData(const uint8_t* data, size_t len)
 {
 #ifdef _WIN32
-    windows::ResourceManager::instance()->setResourceRootData(data, len);
+    base::ResourceManager::instance()->setResourceRootData(data, len);
 #else
 #pragma message("TODO: Application::setResourceRootData().")
 #endif
@@ -207,8 +207,8 @@ void Application::addFont(const char* family_name, const char* font_path)
 {
 #ifdef _WIN32
     std::wstring u16_font_path
-        = windows::EncodingManager::UTF8ToWide(font_path);
-    auto res = windows::ResourceManager::instance()
+        = base::EncodingManager::UTF8ToWide(font_path);
+    auto res = base::ResourceManager::instance()
         ->loadResource(u16_font_path.c_str());
     if (res.has_value()) {
         windows::graphics::GraphicDevice::instance()

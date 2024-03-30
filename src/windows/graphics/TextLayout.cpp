@@ -1,6 +1,6 @@
 #include "TextLayout.h"
 #include "GraphicDevice.h"
-#include "windows/EncodingManager.h"
+#include "base/EncodingManager.h"
 #include <limits>
 
 namespace windows {
@@ -24,7 +24,7 @@ const float DEFAULT_FONT_SIZE = 14;
 FontWeight::FontWeight() : _raw(DWRITE_FONT_WEIGHT_NORMAL) {}
 
 TextLayoutBuilder::TextLayoutBuilder(const std::string& text) {
-    std::wstring utf16_text = EncodingManager::UTF8ToWide(text);
+    std::wstring utf16_text = base::EncodingManager::UTF8ToWide(text);
     Init(utf16_text);
 }
 TextLayoutBuilder::TextLayoutBuilder(const std::wstring& text) {

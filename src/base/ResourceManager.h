@@ -1,18 +1,20 @@
 #pragma once
 
-#include "base/ResourceArchive.h"
-#include "windows_header.h"
+#include "ResourceArchive.h"
+#ifdef _WIN32
+#include "windows/windows_header.h"
+#endif
 #include <map>
 
-namespace windows {
+namespace base {
 
 struct Resource {
     int id;
-    const byte* data;
+    const uint8_t* data;
     size_t size;
 
     Resource() : id(0), data(NULL), size(0) {}
-    Resource(int id_, const byte* d, size_t s)
+    Resource(int id_, const uint8_t* d, size_t s)
         : id(id_), data(d), size(s) {}
     inline bool IsValid() const { return id > 0; }
 };
@@ -27,18 +29,20 @@ public:
     void setResourceRootData(const uint8_t* data, size_t size);
     void clearCache();
 
-    static ResourceManager* createInstance(HMODULE hModule);
+    static ResourceManager* createInstance();
     static ResourceManager* instance();
     static void releaseInstance();
 
 private:
-    ResourceManager(HMODULE hModule) : hmodule_(hModule) {}
+    ResourceManager();
     absl::optional<base::ResourceArchive::ResourceItem> loadResourceFromFile(const std::wstring& dir, const wchar_t* name);
 
     std::unique_ptr<base::ResourceArchive> archive_;
     std::optional<std::wstring> root_dir_;
     std::map<std::wstring, base::ResourceArchive::ResourceItem> root_dir_cache_;
+#ifdef _WIN32
     HMODULE hmodule_;
+#endif
 };
 
 }

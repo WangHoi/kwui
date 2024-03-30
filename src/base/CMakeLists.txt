@@ -7,6 +7,10 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/scoped_setter.h
   ${CMAKE_CURRENT_SOURCE_DIR}/log.h
   ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/EncodingManager.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/EncodingManager.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ResourceManager.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ResourceManager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/PEG.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ResourceArchive.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ResourceArchive.cpp

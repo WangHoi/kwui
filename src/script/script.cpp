@@ -2,8 +2,8 @@
 #include "scene2d/Scene.h"
 #ifdef _WIN32
 #include "windows/Dialog.h"
-#include "windows/ResourceManager.h"
-#include "windows/EncodingManager.h"
+#include "base/ResourceManager.h"
+#include "base/EncodingManager.h"
 #endif
 #include "Keact.h"
 #include "resources/resources.h"
@@ -106,8 +106,8 @@ static JSModuleDef* load_module(JSContext* ctx, const char* orig_module_name, vo
 
 	if (absl::StartsWith(module_name, ":")) {
 #ifdef _WIN32
-		auto u16_name = windows::EncodingManager::UTF8ToWide(&module_name[1]);
-		auto res_opt = windows::ResourceManager::instance()->loadResource(u16_name.c_str());
+		auto u16_name = base::EncodingManager::UTF8ToWide(&module_name[1]);
+		auto res_opt = base::ResourceManager::instance()->loadResource(u16_name.c_str());
 		if (res_opt.has_value()) {
 			buf_len = res_opt->size;
 			buf = (uint8_t*)js_mallocz(ctx, res_opt->size + 1);
@@ -388,8 +388,8 @@ void Context::loadFile(const std::string& fname)
 {
 	if (absl::StartsWith(fname, ":/")) {
 #ifdef _WIN32
-		std::wstring u16_fname = windows::EncodingManager::UTF8ToWide(fname.substr(1));
-		auto res_opt = windows::ResourceManager::instance()->loadResource(u16_fname.c_str());
+		std::wstring u16_fname = base::EncodingManager::UTF8ToWide(fname.substr(1));
+		auto res_opt = base::ResourceManager::instance()->loadResource(u16_fname.c_str());
 		if (res_opt.has_value() && res_opt->data) {
 			std::string content((const char*)res_opt->data, res_opt->size);
 			loadScript(fname, content);
@@ -776,7 +776,7 @@ JSValue app_load_resource(JSContext* ctx, JSValueConst this_val, int argc, JSVal
 	int ret = JS_ToInt32(ctx, &id, argv[1]);
 	if (ret == 0) {
 		LOG(INFO) << "load resource with id " << id;
-		windows::ResourceManager::instance()->preloadResourceArchive(id);
+		base::ResourceManager::instance()->preloadResourceArchive(id);
 	}
 	return JS_UNDEFINED;
 #else
