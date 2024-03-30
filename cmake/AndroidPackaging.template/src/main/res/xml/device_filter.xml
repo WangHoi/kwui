@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<!-- 0x04D8 / 0xEC5A: Emteq Mask (Atmel)  -->
+	<usb-device vendor-id="1240" product-id="60506" />
+</resources>

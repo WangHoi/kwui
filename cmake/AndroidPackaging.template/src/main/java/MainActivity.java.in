@@ -1,0 +1,12 @@
+package @ANDROID_PACKAGE_NAME@;
+
+public class MainActivity extends android.app.NativeActivity 
+{
+  static 
+  {
+    // @TBD Note: Must handle loading of dependent shared libraries manually before the shared library that depends on them is loaded?
+    //System.loadLibrary("openxr_loader");
+    
+    System.loadLibrary("@ANDROID_APPLICATION_NAME@");
+  }
+}

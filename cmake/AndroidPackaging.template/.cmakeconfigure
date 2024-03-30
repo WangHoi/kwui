@@ -1,0 +1,30 @@
+# Configurable (Have `.in` extension in file system)
+build.gradle
+gradle.properties
+local.properties
+settings.gradle
+build.gradle
+CMakeLists.txt
+proguard-rules.pro
+src/main/AndroidManifest.xml
+src/main/res/values/strings.xml
+
+
+# TODO: Manifest needs no JAVA if: <activity android:name="android.app.NativeActivity
+#src/main/java/MainActivity.java
+
+# Debug Only (Prefixed with '!')
+!src/main/jni/Android.mk
+!src/main/gdb-path.txt
+
+# Non-Confiugrable
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.properties
+src/main/res/mipmap-hdpi/ic_launcher.png
+src/main/res/mipmap-mdpi/ic_launcher.png
+src/main/res/mipmap-xhdpi/ic_launcher.png
+src/main/res/mipmap-xxhdpi/ic_launcher.png
+src/main/res/mipmap-xxxhdpi/ic_launcher.png
+src/main/res/xml/device_filter.xml

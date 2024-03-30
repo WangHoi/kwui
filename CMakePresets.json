@@ -63,14 +63,16 @@
       "installDir": "${sourceDir}/out/install/${presetName}",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Android",
-        "CMAKE_ANDROID_ABI": "arm64-v8a",
+        "CMAKE_SYSTEM_VERSION": "23",
+        "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
         "CMAKE_ANDROID_NDK": "D:/Android/Sdk/ndk/26.2.11394342",
-        "CMAKE_ANDROID_STL_TYPE": "c++_shared"
+        "CMAKE_ANDROID_STL_TYPE": "c++_shared",
+        "BUILD_SHARED_LIBS": "ON"
       },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "android-clang-arm64"
+        }
       }
     },
     {
@@ -80,6 +82,10 @@
       "inherits": "android-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "architecture": {
+        "value": "arm64",
+        "strategy": "external"
       }
     }
   ],

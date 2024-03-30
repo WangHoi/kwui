@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+		package="@ANDROID_PACKAGE_ID@"
+		android:versionCode="@ANDROID_PACKAGE_VERSIONCODE@"
+		android:versionName="@ANDROID_PACKAGE_VERSIONNAME@"
+		android:installLocation="auto" >
+	
+	<!-- This filter lets use detect usb attach. -->
+	<uses-feature android:name="android.hardware.usb.host" />
+	<!-- Tell the system this app requires OpenGL ES 3.2. -->
+	<uses-feature android:glEsVersion="0x00030002" android:required="true"/>
+	<!--If your app requires Vulkan 1.1 support, you should declare the following feature -->
+	<uses-feature
+		android:name="android.hardware.vulkan.version"
+		android:version="0x401000"
+		android:required="true" />
+		
+	<!-- Tell the system this app works in either 3dof or 6dof mode -->
+	<uses-feature android:name="android.hardware.vr.headtracking" android:required="true" />
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+	<!-- OpenXR Runtime discovery -->
+	<uses-permission android:name="org.khronos.openxr.permission.OPENXR" />
+	<uses-permission android:name="org.khronos.openxr.permission.OPENXR_SYSTEM" />
+	<queries>
+		<provider android:authorities="org.khronos.openxr.runtime_broker;org.khronos.openxr.system_runtime_broker" />
+	</queries>
+		
+	<!-- This .apk has no Java code itself, so set hasCode to false. -->
+	<application android:allowBackup="false"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+		android:hasCode="false"
+		@ANDROID_ADDITIONAL_PARAMS@
+				 >
+
+		<!-- The activity is the built-in NativeActivity framework class. -->
+		<!-- launchMode is set to singleTask because there should never be multiple copies of the app running. -->
+		<!-- Theme.Black.NoTitleBar.Fullscreen gives solid black instead of a (bad stereoscopic) gradient on app transition. -->
+		<!-- If targeting API level 24+, configChanges should additionally include 'density'. -->
+		<!-- If targeting API level 24+, android:resizeableActivity="false" should be added. -->
+		<!-- exported="true" is needed to launch programatically via `adb shell monkey`? -->
+		<activity android:name="android.app.NativeActivity"
+				android:label="@string/app_name"
+				android:exported="true"
+				android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+				android:launchMode="singleTask"
+				android:screenOrientation="landscape"
+				android:excludeFromRecents="false"
+				android:configChanges="density|screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode"
+				android:resizeableActivity="false"
+			android:versionName="@ANDROID_APPLICATION_VERSIONNAME@"
+			android:versionCode="@ANDROID_APPLICATION_VERSIONCODE@">
+			<!-- Tell NativeActivity the name of the .so -->
+			<meta-data android:name="android.app.lib_name"
+                android:value="@ANDROID_APPLICATION_NAME@" />
+			<!-- This filter lets the apk show up as a launchable icon. -->
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+
+			<!-- This filter lets use detect usb attach. -->
+		<!-- TODO: Only for service?
+			<intent-filter>
+				<action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+				<action android:name="android.intent.action.MAIN" />
+			</intent-filter>
+			<meta-data android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" android:resource="@xml/device_filter" />
+		-->
+			
+		</activity>
+		<meta-data android:name="pvr.app.type" android:value="vr" />
+	</application>
+</manifest>
+

@@ -1,0 +1,86 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        // DEPRECATED jcenter()
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.2.1'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        // DEPRECATED jcenter()
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.application'
+
+
+android {
+    compileSdkVersion 29
+
+    defaultConfig {
+
+        //Suppress: Google Play requires that apps target API level 30 or higher.
+        //noinspection ExpiredTargetSdkVersion
+        targetSdkVersion 29
+        minSdkVersion 26
+
+        shaders {
+            glslcArgs.addAll(['-c', '-g'])
+        }
+
+       externalNativeBuild {
+           cmake {
+               abiFilters "@ANDROID_ABIS@"
+               cppFlags "-std=c++11"
+               arguments "-DFIXED_TIMESTEP=@FIXED_TIMESTEP@",
+                     "-DPREFER_SEPARATE_PRESENT=@PREFER_SEPARATE_PRESENT@"
+               //targets "@ANDROID_TARGET_NAME@", "VkLayer_CallbackSwapchain"
+           }
+       }
+    }
+    buildTypes {
+        debug {
+            minifyEnabled false
+            debuggable true
+            applicationIdSuffix ".debug"
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    
+    androidResources {
+        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        noCompress '.ress', '.resource', '.obb'
+    }
+    
+    packagingOptions {
+        jniLibs {
+            keepDebugSymbols += ['*/arm64-v8a/*.so']
+        }
+    }
+
+    //externalNativeBuild {
+    //    cmake {
+    //        path file('../../../../CMakeLists.txt')
+    //        version '3.20.0'
+    //    }
+    //}
+}
+
+dependencies {
+    // @todo We should explciitly include only the required libs instead of a catch all as we may have old/renamed artifacts etc
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}

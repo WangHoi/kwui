@@ -15,6 +15,11 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(util.cmake)
 
+if(BUILD_SHARED_LIBS)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
+if (WIN32)
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 	# For memory leak detection (see https://github.com/MicrosoftDocs/visualstudio-docs/blob/master/docs/debugger/finding-memory-leaks-using-the-crt-library.md )
 	# add_definitions(-D "_CRTDBG_MAP_ALLOC")
@@ -61,6 +66,7 @@ else()
 		set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS} /LARGEADDRESSAWARE /LTCG /OPT:ICF /OPT:REF")
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE /LTCG /OPT:ICF /OPT:REF")
 	endif()
+endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 17)

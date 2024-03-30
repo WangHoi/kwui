@@ -28,9 +28,10 @@ set(dep_libs
     absl::status
     absl::bind_front
     fifo_map
-    quickjs
-    d2d1.lib dwrite.lib Windowscodecs.lib
-    Imm32.lib)
+    quickjs)
+if(WIN32)
+    list(APPEND dep_libs d2d1.lib dwrite.lib Windowscodecs.lib Imm32.lib)
+endif()
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/api/
     DESTINATION include
@@ -46,7 +47,7 @@ if(BUILD_SHARED_LIBS)
     endif()
     target_compile_definitions(kwui PRIVATE -DKWUI_SHARED_LIBRARY)
     target_include_directories(kwui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(kwui PUBLIC ${dep_libs})
+    target_link_libraries(kwui PUBLIC ${dep_libs} PRIVATE kwui_resources)
 endif()
 
 # Build static library
