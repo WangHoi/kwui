@@ -148,8 +148,8 @@ private:
 class PainterImpl : public graph2d::PainterInterface
 {
 public:
-    PainterImpl(graphics::Painter& p)
-        : p_(p) {}
+    PainterImpl(ID2D1RenderTarget* rt, const scene2d::PointF& mouse_pos)
+        : p_(rt, mouse_pos) {}
     static inline graphics::Painter& unwrap(graph2d::PainterInterface& pi)
     {
         return ((PainterImpl&)pi).p_;
@@ -226,7 +226,7 @@ public:
         control->onPaint(*this, rect);
     }
 private:
-    graphics::Painter& p_;
+    graphics::Painter p_;
 };
 
 } // namespace graphics

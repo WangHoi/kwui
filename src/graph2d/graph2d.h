@@ -3,7 +3,7 @@
 #include "TextLayout.h"
 #include "Bitmap.h"
 #include "Painter.h"
-#include "PainterSurface.h"
+#include "PaintSurface.h"
 #include "style/StyleFont.h"
 #include <memory>
 #include <string>

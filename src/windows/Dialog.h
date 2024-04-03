@@ -1,6 +1,7 @@
 #pragma once
 #include "base/base.h"
 #include "scene2d/scene2d.h"
+#include "graph2d/PaintSurface.h"
 #include "windows_header.h"
 #include "absl/types/optional.h"
 #include "PopupShadow.h"
@@ -45,8 +46,8 @@ public:
     static float getMonitorDpiScale(HMONITOR monitor);
     static Dialog* findDialogById(const std::string& id);
 
-    inline void SetParent(HWND parent) { _hwnd_parent = parent; }
-    inline void SetParent(Dialog* parent) { SetParent(parent ? parent->_hwnd : nullptr); }
+    inline void SetParent(HWND parent) { hwnd_parent_ = parent; }
+    inline void SetParent(Dialog* parent) { SetParent(parent ? parent->hwnd_ : nullptr); }
     void SetPopupAnchor(Dialog* anchor);
     inline void Show() {
         SetVisible(true);
@@ -56,7 +57,7 @@ public:
     }
     void SetVisible(bool visible);
     inline bool IsVisible() const {
-        return _visible;
+        return visible_;
     }
     static scene2d::RectF adjustWindowRect(const scene2d::RectF& rect,
         float dpi_scale, bool customFrame, bool popup);
@@ -65,15 +66,15 @@ public:
     void setWindowPos(const scene2d::RectF& rect);
     
     void SetTitle(const std::string& text);
-    scene2d::Scene* GetScene() const { return _scene.get(); }
-    const scene2d::DimensionF& GetSize() const { return _size; }
-    inline float GetDpiScale() const { return _dpi_scale; }
-    HWND GetHwnd() const { return _hwnd; }
+    scene2d::Scene* GetScene() const { return scene_.get(); }
+    const scene2d::DimensionF& GetSize() const { return size_; }
+    inline float GetDpiScale() const { return dpi_scale_; }
+    HWND GetHwnd() const { return hwnd_; }
     void Close();
 
     // implements EventContext
     std::string eventContextId() const override { return id_; }
-    scene2d::PointF GetMousePosition() const override { return _mouse_position; }
+    scene2d::PointF GetMousePosition() const override { return mouse_position_; }
     void RequestPaint() override;
     void RequestUpdate() override;
     void RequestAnimationFrame(scene2d::Node* node) override;
@@ -112,7 +113,7 @@ private:
     void UpdateHoveredNode();
     void UpdateFocusedNode();
     void UpdateMouseTracking();
-    void RecreateRenderTarget();
+    void recreateSurface();
     void OnDpiChanged(UINT dpi, const RECT* rect);
     void DiscardNodeDeviceResources(scene2d::Node* node);
     void UpdateBorderAndRenderTarget();
@@ -122,35 +123,32 @@ private:
     static LRESULT CALLBACK hookProc(int code, WPARAM wParam, LPARAM lParam);
     void ClosePopups();
 
-    HWND _hwnd_parent;
-    HWND _hwnd_anchor;
-    HWND _hwnd;
-    int _flags;
-    absl::optional<CreateData> _create_data;
-    bool _visible;
-    bool _first_show_window;
-    scene2d::DimensionF _size;
-    scene2d::DimensionF _pixel_size;
-    scene2d::PointF _mouse_position;
-    ComPtr<ID2D1HwndRenderTarget> _rt;
-    std::unique_ptr<scene2d::Scene> _scene;
-    // Node2DRef _root;
-    // LabelNodeRef _title_label;
-    // ImageButtonNodeRef _close_button;
-    base::object_weakptr<scene2d::Node> _hovered_node;
-    base::object_weakptr<scene2d::Node> _active_node;
-    base::object_weakptr<scene2d::Node> _focused_node;
-    bool _mouse_event_tracking;
-    bool _mouse_capture;
-    absl::optional<PopupShadowData> _popup_shadow_data;
-    std::unique_ptr<PopupShadow> _popup_shadow;
-    bool _on_window_pos_changed;
-    float _dpi_scale;
-    absl::optional<scene2d::RectF> _screen_rect;
-    HIMC _himc;
-    std::vector<base::object_weakptr<scene2d::Node>>  _animating_nodes;
-    UINT_PTR _animation_timer_id;
-    HHOOK _hook = NULL;
+    HWND hwnd_parent_;
+    HWND hwnd_anchor_;
+    HWND hwnd_;
+    int flags_;
+    absl::optional<CreateData> create_data_;
+    bool visible_;
+    bool first_show_window_;
+    scene2d::DimensionF size_;
+    scene2d::DimensionF pixel_size_;
+    scene2d::PointF mouse_position_;
+    std::unique_ptr<graph2d::PaintSurfaceInterface> surface_;
+    std::unique_ptr<scene2d::Scene> scene_;
+    base::object_weakptr<scene2d::Node> hovered_node_;
+    base::object_weakptr<scene2d::Node> active_node_;
+    base::object_weakptr<scene2d::Node> focused_node_;
+    bool mouse_event_tracking_;
+    bool mouse_capture_;
+    absl::optional<PopupShadowData> popup_shadow_data_;
+    std::unique_ptr<PopupShadow> popup_shadow_;
+    bool on_window_pos_changed_;
+    float dpi_scale_;
+    absl::optional<scene2d::RectF> screen_rect_;
+    HIMC himc_;
+    std::vector<base::object_weakptr<scene2d::Node>>  animating_nodes_;
+    UINT_PTR animation_timer_id_;
+    HHOOK hook_ = NULL;
 
     std::string id_;
 };
