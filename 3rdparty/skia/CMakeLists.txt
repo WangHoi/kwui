@@ -861,3 +861,6 @@ target_compile_definitions(skia PUBLIC
     GR_GL_FUNCTION_TYPE=__stdcall
     SK_BUILD_FOR_WIN32)
 target_compile_definitions(skia PRIVATE SKIA_IMPLEMENTATION=1)
+if(WIN32)
+target_link_libraries(skia PUBLIC d3d12.lib d3dcompiler.lib DXGI.lib OpenGL32.lib)
+endif()

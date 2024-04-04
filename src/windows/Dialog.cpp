@@ -898,7 +898,7 @@ void Dialog::recreateSurface() {
     config.size = size_;
     config.dpi_scale = dpi_scale_;
     surface_ = graphics::PaintSurfaceD2D::create(config);
-    LOG(INFO) << "Dialog::RecreateRenderTarget() hwnd=" << std::hex << hwnd_
+    LOG(INFO) << "Dialog::recreateSurface() hwnd=" << std::hex << hwnd_
         << " size=(" << size_.width << "x" << size_.height << ")"
         << " dpi_scale=" << dpi_scale_
         << " surface=" << std::hex << surface_.get();

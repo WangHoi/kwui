@@ -11,7 +11,6 @@ std::unique_ptr<PaintSurfaceD2D> PaintSurfaceD2D::create(const Configuration& co
 {
     return std::unique_ptr<PaintSurfaceD2D>(new PaintSurfaceD2D(config));
 }
-
 void PaintSurfaceD2D::resize(int pixel_width, int pixel_height, float dpi_scale) {
     config_.size.width = pixel_width;
     config_.size.height = pixel_height;

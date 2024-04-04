@@ -10,6 +10,7 @@ project(kwui)
 option(CRT_STATIC "static MSVC runtime" OFF)
 option(BUILD_SHARED_LIBS "build shared kwui library" OFF)
 option(BUILD_TESTS "build kwui tests" ON)
+option(WITH_SKIA "with skia" ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -84,7 +85,10 @@ add_subdirectory(3rdparty/abseil-cpp-20230802.1)
 add_subdirectory(3rdparty/quickjspp)
 add_subdirectory(3rdparty/fifo_map)
 add_subdirectory(3rdparty/tgaimage)
+if(WITH_SKIA)
+add_compile_definitions(WITH_SKIA=1)
 add_subdirectory(3rdparty/skia)
+endif()
 add_subdirectory(3rdparty/utf)
 
 add_subdirectory(src)

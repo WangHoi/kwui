@@ -7,12 +7,12 @@
 namespace windows {
 namespace graphics {
 
-class TextFlow;
+class TextFlowD2D;
 
 class GlyphRun : public graph2d::GlyphRunInterface
 {
 public:
-	GlyphRun(const TextFlow* flow,
+	GlyphRun(const TextFlowD2D* flow,
 		UINT32 glyphCount,
 		const UINT16* glyphIndices, // [glyphCount]
 		const float* glyphAdvances, // [glyphCount]
@@ -25,12 +25,12 @@ public:
 	inline const DWRITE_GLYPH_RUN* raw() const { return &raw_; }
 
 private:
-	const TextFlow* flow_;
+	const TextFlowD2D* flow_;
 	DWRITE_GLYPH_RUN raw_;
 	std::vector<float> glyph_advances_;
 };
 
-class TextFlow : public graph2d::TextFlowInterface
+class TextFlowD2D : public graph2d::TextFlowInterface
 {
 	// This custom layout processes layout in two stages.
 	//
@@ -61,7 +61,7 @@ public:
 	};
 
 public:
-	TextFlow(ComPtr<IDWriteFactory> dwriteFactory)
+	TextFlowD2D(ComPtr<IDWriteFactory> dwriteFactory)
 		: dwriteFactory_(dwriteFactory),
 		fontFace_(),
 		numberSubstitution_(),
@@ -72,7 +72,7 @@ public:
 	{
 	}
 
-	~TextFlow()
+	~TextFlowD2D()
 	{
 	}
 

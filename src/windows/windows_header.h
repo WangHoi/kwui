@@ -18,7 +18,9 @@
 //#define NOMB
 #define NOMEMMGR
 #define NOMETAFILE
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #define NOOPENFILE
 #define NOSCROLL
 #define NOSERVICE

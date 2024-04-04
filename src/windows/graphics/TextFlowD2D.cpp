@@ -1,4 +1,4 @@
-#include "TextFlow.h"
+#include "TextFlowD2D.h"
 #include "TextAnalysis.h"
 #include "graph2d/graph2d.h"
 #include "base/log.h"
@@ -20,7 +20,7 @@ UINT32 EstimateGlyphCount(UINT32 textLength)
 }
 }
 
-GlyphRun::GlyphRun(const TextFlow* flow,
+GlyphRun::GlyphRun(const TextFlowD2D* flow,
 	UINT32 glyphCount,
 	const UINT16* glyphIndices,
 	const float* glyphAdvances,
@@ -51,7 +51,7 @@ scene2d::RectF GlyphRun::boundingRect()
 	return rect;
 }
 
-HRESULT TextFlow::setTextFormat(ComPtr<IDWriteTextFormat> textFormat)
+HRESULT TextFlowD2D::setTextFormat(ComPtr<IDWriteTextFormat> textFormat)
 {
 	text_format_ = textFormat;
 	// Initializes properties using a text format, like font family, font size,
@@ -91,7 +91,7 @@ HRESULT TextFlow::setTextFormat(ComPtr<IDWriteTextFormat> textFormat)
 	return hr;
 }
 
-HRESULT TextFlow::SetNumberSubstitution(ComPtr<IDWriteNumberSubstitution> numberSubstitution)
+HRESULT TextFlowD2D::SetNumberSubstitution(ComPtr<IDWriteNumberSubstitution> numberSubstitution)
 {
 	numberSubstitution_ = numberSubstitution;
 
@@ -99,7 +99,7 @@ HRESULT TextFlow::SetNumberSubstitution(ComPtr<IDWriteNumberSubstitution> number
 }
 
 
-HRESULT TextFlow::AnalyzeText(
+HRESULT TextFlowD2D::AnalyzeText(
 	const wchar_t* text,                // [textLength]
 	UINT32 textLength
 ) throw()
@@ -156,7 +156,7 @@ HRESULT TextFlow::AnalyzeText(
 }
 
 
-HRESULT TextFlow::ShapeGlyphRuns(IDWriteTextAnalyzer* textAnalyzer)
+HRESULT TextFlowD2D::ShapeGlyphRuns(IDWriteTextAnalyzer* textAnalyzer)
 {
 	// Shapes all the glyph runs in the layout.
 
@@ -197,7 +197,7 @@ HRESULT TextFlow::ShapeGlyphRuns(IDWriteTextAnalyzer* textAnalyzer)
 }
 
 
-HRESULT TextFlow::ShapeGlyphRun(
+HRESULT TextFlowD2D::ShapeGlyphRun(
 	IDWriteTextAnalyzer* textAnalyzer,
 	UINT32 runIndex,
 	IN OUT UINT32& glyphStart
@@ -345,12 +345,12 @@ HRESULT TextFlow::ShapeGlyphRun(
 	return hr;
 }
 
-style::FontMetrics TextFlow::fontMetrics()
+style::FontMetrics TextFlowD2D::fontMetrics()
 {
 	return font_metrics_;
 }
 
-std::tuple<float, float> TextFlow::measureWidth()
+std::tuple<float, float> TextFlowD2D::measureWidth()
 {
 	if (!isTextAnalysisComplete_)
 		return std::tuple<float, float>(0.0f, std::numeric_limits<float>::max());
@@ -389,7 +389,7 @@ std::tuple<float, float> TextFlow::measureWidth()
 	// LOG(INFO) << "measure " << min_text_width << "/" << max_text_width;
 	return std::make_tuple(min_text_width, max_text_width);
 }
-void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::TextFlowSinkInterface* flowSink)
+void TextFlowD2D::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::TextFlowSinkInterface* flowSink)
 {
 	// Reflow all the text, from source to sink.
 
@@ -464,7 +464,7 @@ void TextFlow::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::T
 }
 
 
-bool TextFlow::FitText(
+bool TextFlowD2D::FitText(
 	const ClusterPosition& clusterStart,
 	UINT32 textEnd,
 	float maxWidth,
@@ -536,7 +536,7 @@ bool TextFlow::FitText(
 }
 
 
-HRESULT TextFlow::ProduceGlyphRuns(
+HRESULT TextFlowD2D::ProduceGlyphRuns(
 	graph2d::TextFlowSinkInterface* flowSink,
 	style::LineBox* line,
 	const scene2d::RectF& rect,
@@ -675,7 +675,7 @@ HRESULT TextFlow::ProduceGlyphRuns(
 }
 
 
-void TextFlow::ProduceBidiOrdering(
+void TextFlowD2D::ProduceBidiOrdering(
 	UINT32 spanStart,
 	UINT32 spanCount,
 	OUT UINT32* spanIndices     // [spanCount]
@@ -756,7 +756,7 @@ void TextFlow::ProduceBidiOrdering(
 }
 
 
-HRESULT TextFlow::ProduceJustifiedAdvances(
+HRESULT TextFlowD2D::ProduceJustifiedAdvances(
 	const scene2d::RectF& rect,
 	const ClusterPosition& clusterStart,
 	const ClusterPosition& clusterEnd,
@@ -840,7 +840,7 @@ HRESULT TextFlow::ProduceJustifiedAdvances(
 // Since layout should never split text clusters, we want to move ahead whole
 // clusters at a time.
 
-void TextFlow::SetClusterPosition(
+void TextFlowD2D::SetClusterPosition(
 	IN OUT ClusterPosition& cluster,
 	UINT32 textPosition
 ) const throw()
@@ -887,7 +887,7 @@ void TextFlow::SetClusterPosition(
 }
 
 
-void TextFlow::AdvanceClusterPosition(
+void TextFlowD2D::AdvanceClusterPosition(
 	IN OUT ClusterPosition& cluster
 ) const throw()
 {
@@ -919,7 +919,7 @@ void TextFlow::AdvanceClusterPosition(
 }
 
 
-UINT32 TextFlow::GetClusterGlyphStart(const ClusterPosition& cluster) const throw()
+UINT32 TextFlowD2D::GetClusterGlyphStart(const ClusterPosition& cluster) const throw()
 {
 	// Maps from text position to corresponding starting index in the glyph array.
 	// This is needed because there isn't a 1:1 correspondence between text and
@@ -933,7 +933,7 @@ UINT32 TextFlow::GetClusterGlyphStart(const ClusterPosition& cluster) const thro
 }
 
 
-float TextFlow::GetClusterRangeWidth(
+float TextFlowD2D::GetClusterRangeWidth(
 	const ClusterPosition& clusterStart,
 	const ClusterPosition& clusterEnd
 ) const throw()
@@ -948,7 +948,7 @@ float TextFlow::GetClusterRangeWidth(
 }
 
 
-float TextFlow::GetClusterRangeWidth(
+float TextFlowD2D::GetClusterRangeWidth(
 	UINT32 glyphStart,
 	UINT32 glyphEnd,
 	const float* glyphAdvances          // [glyphEnd]
