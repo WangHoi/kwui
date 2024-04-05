@@ -2,6 +2,9 @@
 #include "base/string_intern.h"
 #include "absl/types/optional.h"
 #include "absl/strings/string_view.h"
+#if WITH_SKIA
+#include "include/core/SkColor.h"
+#endif
 
 namespace style {
 
@@ -15,6 +18,9 @@ public:
 	Color(int r, int g, int b, int a = 255) { set(r, g, b, a); }
 	static Color fromString(std::string_view str); // from web color name #FFDDEE or #FFDDEEFF
 	uint32_t getGdiRgb() const;
+#if WITH_SKIA
+	operator SkColor4f() const;
+#endif
 
 	/***** accessors *****/
 #define FIELD_ACCESSOR(Field, field, index) \

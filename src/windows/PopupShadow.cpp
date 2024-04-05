@@ -1,7 +1,7 @@
 #include "PopupShadow.h"
 #include "base/EncodingManager.h"
 #include "graphics/GraphicDevice.h"
-#include "graphics/Painter.h"
+#include "graphics/PainterD2D.h"
 #include "style/StyleColor.h"
 #include "Dialog.h"
 #include "theme.h"

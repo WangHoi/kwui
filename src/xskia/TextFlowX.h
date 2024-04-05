@@ -9,7 +9,7 @@ namespace xskia {
 class PainterX;
 class GlyphRunX : public graph2d::GlyphRunInterface {
 public:
-    GlyphRunX(SkFont font, const SkFontMetrics& fm, absl::Span<SkGlyphID> glyphs, float left, absl::Span<SkScalar> advances);
+    GlyphRunX(SkFont font, const SkFontMetrics& fm, absl::Span<SkGlyphID> glyphs, absl::Span<SkScalar> advances);
     ~GlyphRunX() override {}
     scene2d::RectF boundingRect() override;
 

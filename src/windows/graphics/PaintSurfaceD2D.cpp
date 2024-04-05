@@ -1,6 +1,6 @@
 #include "PaintSurfaceD2D.h"
 #include "GraphicDevice.h"
-#include "Painter.h"
+#include "PainterD2D.h"
 
 namespace windows
 {

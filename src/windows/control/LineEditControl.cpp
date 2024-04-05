@@ -1,6 +1,6 @@
 #include "LineEditControl.h"
 #include "scene2d/Scene.h"
-#include "windows/graphics/Painter.h"
+#include "windows/graphics/PainterD2D.h"
 #include "base/log.h"
 #include "base/EncodingManager.h"
 #include "windows/encoding_helpers.h"

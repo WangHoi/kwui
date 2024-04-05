@@ -1,6 +1,6 @@
 #include "SpinnerControl.h"
 #include "windows/graphics/GraphicDevice.h"
-#include "windows/graphics/Painter.h"
+#include "windows/graphics/PainterD2D.h"
 
 namespace windows {
 namespace control {

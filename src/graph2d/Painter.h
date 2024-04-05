@@ -25,6 +25,7 @@ public:
 	virtual void setRotation(float degrees, const scene2d::PointF& center, bool combine) = 0;
 	virtual void pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) = 0;
 	virtual void popClipRect() = 0;
+	virtual void clear(const style::Color& c) = 0;
 	virtual void drawBox(const scene2d::RectF& border_rect,
 		const style::EdgeOffsetF& inset_border_width,
 		const style::CornerRadiusF& border_radius,

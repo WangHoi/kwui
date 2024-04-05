@@ -184,6 +184,10 @@ public:
     {
         p_.PopClipRect();
     }
+    void clear(const style::Color& c) override
+    {
+        p_.Clear(c);
+    }
     void drawBox(const scene2d::RectF& padding_rect,
         const style::EdgeOffsetF& border_width,
         const style::CornerRadiusF& border_radius,

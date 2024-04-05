@@ -1,5 +1,5 @@
 #include "ProgressBarControl.h"
-#include "windows/graphics/Painter.h"
+#include "windows/graphics/PainterD2D.h"
 
 namespace windows {
 namespace control {

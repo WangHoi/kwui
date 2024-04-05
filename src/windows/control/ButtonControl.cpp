@@ -2,7 +2,7 @@
 #include "ButtonControl.h"
 #include "ButtonControl.h"
 #include "windows/graphics/GraphicDevice.h"
-#include "windows/graphics/Painter.h"
+#include "windows/graphics/PainterD2D.h"
 #include "scene2d/Scene.h"
 #include "script/script.h"
 

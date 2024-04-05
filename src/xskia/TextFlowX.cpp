@@ -83,18 +83,17 @@ static size_t linebreak(const char text[], const char stop[],
     return text - start;
 }
 
-GlyphRunX::GlyphRunX(SkFont font, const SkFontMetrics& fm, absl::Span<SkGlyphID> glyphs, float left, absl::Span<SkScalar> advances)
+GlyphRunX::GlyphRunX(SkFont font, const SkFontMetrics& fm, absl::Span<SkGlyphID> glyphs, absl::Span<SkScalar> advances)
     : font_(font)
 {
     glyphs_.assign(glyphs.begin(), glyphs.end());
     positions_.resize(advances.size());
-    float x = left;
+    float x = 0;
     for (size_t i = 0; i < advances.length(); ++i) {
         positions_[i].fX = x;
         x += advances[i];
     }
     bounds_.bottom = -fm.fAscent + fm.fDescent + fm.fLeading;
-    bounds_.left = left;
     bounds_.right = x;
 }
 scene2d::RectF GlyphRunX::boundingRect()
@@ -102,12 +101,18 @@ scene2d::RectF GlyphRunX::boundingRect()
     return bounds_;
 }
 
+static SkFontStyle make_sk_font_style(style::FontStyle style, style::FontWeight weight)
+{
+    SkFontStyle::Slant slant = (style == style::FontStyle::Italic) ? SkFontStyle::kItalic_Slant : SkFontStyle::kUpright_Slant;
+    SkFontStyle s(weight.raw(), SkFontStyle::kNormal_Width, slant);
+    return s;
+}
 TextFlowX::TextFlowX(const std::string& text,
 	const char* font_family,
 	style::FontStyle font_style,
 	style::FontWeight font_weight,
 	float font_size)
-	: font_(SkTypeface::MakeFromName(font_family, SkFontStyle()), font_size)
+	: font_(SkTypeface::MakeFromName(font_family, make_sk_font_style(font_style, font_weight)), font_size)
 	, text_(text)
 {
 	font_.getMetrics(&font_metrics_);
@@ -123,9 +128,9 @@ style::FontMetrics TextFlowX::fontMetrics()
 	fm.line_gap = font_metrics_.fLeading;
 	fm.cap_height = font_metrics_.fCapHeight;
 	fm.x_height = font_metrics_.fXHeight;
-	fm.underline_offset = font_metrics_.fUnderlinePosition;
+	fm.underline_offset = -font_metrics_.fUnderlinePosition;
 	fm.underline_thickness = font_metrics_.fUnderlineThickness;
-	fm.line_through_offset = font_metrics_.fStrikeoutPosition;
+	fm.line_through_offset = -font_metrics_.fStrikeoutPosition;
 	fm.line_through_thickness = font_metrics_.fStrikeoutThickness;
 	return fm;
 }
@@ -170,8 +175,11 @@ void TextFlowX::flowText(graph2d::TextFlowSourceInterface* source, graph2d::Text
 
         size_t numGlyphs = SkUTF::CountUTF8(utf8, bytesVisible);
         float line_advance = font_.measureText(utf8, bytesVisible, SkTextEncoding::kUTF8);
-        auto run = std::make_unique<GlyphRunX>(font_, font_metrics_, absl::MakeSpan(glyphs.data() + glyphOffset, numGlyphs),
-            left, absl::MakeSpan(advances.data() + glyphOffset, numGlyphs));
+        auto run = std::make_unique<GlyphRunX>(
+            font_,
+            font_metrics_,
+            absl::MakeSpan(glyphs.data() + glyphOffset, numGlyphs),
+            absl::MakeSpan(advances.data() + glyphOffset, numGlyphs));
         sink->addGlyphRun(line, scene2d::PointF(left, 0.0f), std::move(run));
 
         glyphOffset += SkUTF::CountUTF8(utf8, bytesConsumed);

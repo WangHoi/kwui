@@ -36,7 +36,12 @@ uint32_t Color::getGdiRgb() const {
 		| ((uint32_t(_c[1] * 255.0f) & 0xff) << 8)
 		| ((uint32_t(_c[2] * 255.0f) & 0xff) << 16);
 }
-
+#if WITH_SKIA
+Color::operator SkColor4f() const
+{
+	return SkColor4f{ _c[0], _c[1], _c[2], _c[3] };
+}
+#endif
 namespace named_color {
 static std::unordered_map<std::string, const Color*> COLOR_TABLE = {
 	{"black", &black},

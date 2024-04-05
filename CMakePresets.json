@@ -54,6 +54,13 @@
       }
     },
     {
+      "name": "x86-debug-skia",
+      "inherits": "x86-debug",
+      "cacheVariables": {
+        "WITH_SKIA": "ON"
+      }
+    },
+    {
       "name": "android-base",
       "description": "Android base",
       "hidden": true,

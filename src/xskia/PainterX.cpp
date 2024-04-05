@@ -34,7 +34,10 @@ void PainterX::pushClipRect(const scene2d::PointF& origin, const scene2d::Dimens
 void PainterX::popClipRect()
 {
 }
-
+void PainterX::clear(const style::Color& c)
+{
+	canvas_->clear(c);
+}
 void PainterX::drawBox(
 	const scene2d::RectF& border_rect,
 	const style::EdgeOffsetF& inset_border_width,
@@ -51,7 +54,7 @@ void PainterX::drawGlyphRun(
 	const style::Color& color)
 {
 	SkPaint paint;
-	paint.setColor(SkColor4f{ color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha() });
+	paint.setColor(color);
 	auto run = static_cast<const GlyphRunX*>(text_flow);
 	canvas_->drawGlyphs((int)run->glyphs_.size(),
 		run->glyphs_.data(),

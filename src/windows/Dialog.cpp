@@ -3,7 +3,7 @@
 #include "scene2d/scene2d.h"
 #include "base/EncodingManager.h"
 #include "graphics/GraphicDevice.h"
-#include "graphics/Painter.h"
+#include "graphics/PainterD2D.h"
 #include "theme.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/numbers.h"
@@ -613,8 +613,7 @@ void Dialog::OnPaint() {
         BeginPaint(hwnd_, &ps);
         auto pi = surface_->beginPaint();
 
-#pragma warning("TODO: PainterInterface::clear(Color)")
-        //graphics::PainterImpl::unwrap(*pi).Clear(theme::BACKGROUND_COLOR);
+        pi->clear(theme::BACKGROUND_COLOR);
         scene_->paint(pi.get());
 
         bool ok = surface_->endPaint();

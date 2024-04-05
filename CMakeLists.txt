@@ -7,10 +7,21 @@ endif(POLICY CMP0091)
 
 project(kwui)
 
-option(CRT_STATIC "static MSVC runtime" OFF)
-option(BUILD_SHARED_LIBS "build shared kwui library" OFF)
-option(BUILD_TESTS "build kwui tests" ON)
-option(WITH_SKIA "with skia" ON)
+include(FeatureSummary)
+
+option(CRT_STATIC "Link with static MSVC runtime" OFF)
+add_feature_info(CRT_STATIC CRT_STATIC "Link with static MSVC runtime")
+option(BUILD_SHARED_LIBS "Build shared kwui library" OFF)
+add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build shared kwui library")
+option(BUILD_TESTS "Build kwui tests" ON)
+add_feature_info(BUILD_TESTS BUILD_TESTS "Build kwui tests")
+option(WITH_SKIA "Build with Skia renderer" $<IF:$<BOOL:${WIN32}>,OFF,ON>)
+add_feature_info(WITH_SKIA WITH_SKIA "Build with Skia renderer")
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    feature_summary(WHAT ENABLED_FEATURES DISABLED_FEATURES PACKAGES_FOUND)
+    feature_summary(FILENAME ${CMAKE_CURRENT_BINARY_DIR}/features.log WHAT ALL)
+endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 

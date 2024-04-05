@@ -3,7 +3,7 @@
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/graphics/TextLayout.h"
 #include "windows/graphics/TextFlowD2D.h"
-#include "windows/graphics/Painter.h"
+#include "windows/graphics/PainterD2D.h"
 #endif
 #if WITH_SKIA
 #include "xskia/TextFlowX.h"
@@ -75,9 +75,9 @@ style::FontMetrics getFontMetrics(const char* font_family, float font_size)
 	fm.line_gap = sfm.fLeading;
 	fm.cap_height = sfm.fCapHeight;
 	fm.x_height = sfm.fXHeight;
-	fm.underline_offset = sfm.fUnderlinePosition;
+	fm.underline_offset = -sfm.fUnderlinePosition;
 	fm.underline_thickness = sfm.fUnderlineThickness;
-	fm.line_through_offset = sfm.fStrikeoutPosition;
+	fm.line_through_offset = -sfm.fStrikeoutPosition;
 	fm.line_through_thickness = sfm.fStrikeoutThickness;
 	return fm;
 #else
