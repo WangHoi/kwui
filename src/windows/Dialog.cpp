@@ -13,7 +13,12 @@
 #include "api/kwui/ScriptEngine.h"
 #include "api/kwui/Application.h"
 #include "base/ResourceManager.h"
+#ifdef _WIN32
 #include "graphics/PaintSurfaceD2D.h"
+#endif
+#if WITH_SKIA
+#include "xskia/PaintSurfaceX.h"
+#endif
 
 using base::EncodingManager;
 using base::ResourceManager;
@@ -608,7 +613,8 @@ void Dialog::OnPaint() {
         BeginPaint(hwnd_, &ps);
         auto pi = surface_->beginPaint();
 
-        graphics::PainterImpl::unwrap(*pi).Clear(theme::BACKGROUND_COLOR);
+#pragma warning("TODO: PainterInterface::clear(Color)")
+        //graphics::PainterImpl::unwrap(*pi).Clear(theme::BACKGROUND_COLOR);
         scene_->paint(pi.get());
 
         bool ok = surface_->endPaint();
@@ -893,6 +899,17 @@ void Dialog::UpdateFocusedNode() {
     }
 }
 void Dialog::recreateSurface() {
+#if WITH_SKIA
+    xskia::PaintSurfaceX::Configuration config;
+    config.hwnd = hwnd_;
+    config.size = size_;
+    config.dpi_scale = dpi_scale_;
+    surface_ = xskia::PaintSurfaceX::create(config);
+    LOG(INFO) << "Dialog::recreateSurface() hwnd=" << std::hex << hwnd_
+        << " size=(" << size_.width << "x" << size_.height << ")"
+        << " dpi_scale=" << dpi_scale_
+        << " surface=" << std::hex << surface_.get();
+#else
     graphics::PaintSurfaceD2D::Configuration config;
     config.hwnd = hwnd_;
     config.size = size_;
@@ -902,6 +919,7 @@ void Dialog::recreateSurface() {
         << " size=(" << size_.width << "x" << size_.height << ")"
         << " dpi_scale=" << dpi_scale_
         << " surface=" << std::hex << surface_.get();
+#endif
 }
 void Dialog::OnDpiChanged(UINT dpi, const RECT* rect) {
     LOG(INFO) << "Dialog dpi changed to " << dpi

@@ -3,6 +3,10 @@ list(APPEND kwui_pub_srcs
 list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/TextFlowX.h
   ${CMAKE_CURRENT_SOURCE_DIR}/TextFlowX.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PainterX.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PainterX.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PaintSurfaceX.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PaintSurfaceX.cpp
   )
 
 set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)
