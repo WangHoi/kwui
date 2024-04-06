@@ -26,7 +26,8 @@ void updateTextFlow(
 	style::FontWeight font_weight,
 	float font_size);
 style::FontMetrics getFontMetrics(const char* font_family, float font_size);
-
+void addFont(const char* family_name, const void* data, size_t size);
+float getInitialDesktopDpiScale();
 std::shared_ptr<BitmapInterface> createBitmap(const std::string& url);
 
 }

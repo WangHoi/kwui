@@ -4,11 +4,15 @@
 #include "windows/graphics/TextLayout.h"
 #include "windows/graphics/TextFlowD2D.h"
 #include "windows/graphics/PainterD2D.h"
+#include "windows/windows_header.h"
 #endif
 #if WITH_SKIA
 #include "xskia/TextFlowX.h"
+#include "xskia/GraphicDeviceX.h"
 #include "include/core/SkFont.h"
 #include "include/core/SkFontMetrics.h"
+#include "include/core/SkFontMgr.h"
+#include "include/core/SkStream.h"
 #endif
 #include "base/EncodingManager.h"
 
@@ -67,7 +71,9 @@ style::FontMetrics getFontMetrics(const char* font_family, float font_size)
 {
 #if WITH_SKIA
 	style::FontMetrics fm;
-	SkFont fnt(SkTypeface::MakeFromName(font_family, SkFontStyle()), font_size);
+	auto font_face = xskia::GraphicDeviceX::instance()
+		->getFirstMatchingFontFace(font_family, SkFontStyle());
+	SkFont fnt(font_face, font_size);
 	SkFontMetrics sfm;
 	fnt.getMetrics(&sfm);
 	fm.ascent = -sfm.fAscent;
@@ -107,7 +113,32 @@ style::FontMetrics getFontMetrics(const char* font_family, float font_size)
 #endif
 #endif
 }
-
+void addFont(const char* family_name, const void* data, size_t size)
+{
+#if WITH_SKIA
+	xskia::GraphicDeviceX::instance()
+		->addFont(family_name, data, size);
+#else
+#ifdef _WIN32
+	windows::graphics::GraphicDevice::instance()
+		->addFont(family_name, data, size);
+#else
+#pragma message("TODO: implement graph2d::addFont().")
+#endif
+#endif
+}
+float getInitialDesktopDpiScale()
+{
+#ifdef _WIN32
+	HDC screen = GetDC(NULL);
+	float hPixelsPerInch = GetDeviceCaps(screen, LOGPIXELSX);
+	ReleaseDC(NULL, screen);
+	return hPixelsPerInch / 96.0f;
+#else
+#pragma message("TODO: graph2d::getInitialDesktopDpiScale().")
+	return 1.0f;
+#endif
+}
 std::shared_ptr<BitmapInterface> createBitmap(const std::string& url)
 {
 #if WITH_SKIA

@@ -7,6 +7,8 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/PainterX.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/PaintSurfaceX.h
   ${CMAKE_CURRENT_SOURCE_DIR}/PaintSurfaceX.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/GraphicDeviceX.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GraphicDeviceX.cpp
   )
 
 set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)

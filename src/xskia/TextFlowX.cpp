@@ -1,6 +1,7 @@
 #include "TextFlowX.h"
 #include "base/EncodingManager.h"
 #include "src/utils/SkUTF.h"
+#include "GraphicDeviceX.h"
 #include <vector>
 
 namespace xskia {
@@ -112,9 +113,11 @@ TextFlowX::TextFlowX(const std::string& text,
 	style::FontStyle font_style,
 	style::FontWeight font_weight,
 	float font_size)
-	: font_(SkTypeface::MakeFromName(font_family, make_sk_font_style(font_style, font_weight)), font_size)
-	, text_(text)
+	: text_(text)
 {
+    auto font_face = GraphicDeviceX::instance()
+        ->getFirstMatchingFontFace(font_family, make_sk_font_style(font_style, font_weight));
+    font_ = SkFont(font_face, font_size);
 	font_.getMetrics(&font_metrics_);
 }
 

@@ -17,6 +17,10 @@
 #endif
 #include "base/EncodingManager.h"
 #include "base/ResourceManager.h"
+#include "graph2d/graph2d.h"
+#if WITH_SKIA
+#include "xskia/GraphicDeviceX.h"
+#endif
 
 namespace kwui {
 
@@ -73,6 +77,14 @@ public:
     {
         //::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         base::initialize_log(g_log_callback);
+
+        LOG(INFO) << "Init ResourceManager...";
+        base::ResourceManager::createInstance();
+
+#if WITH_SKIA
+        LOG(INFO) << "Init GraphicDevice...";
+        xskia::GraphicDeviceX::createInstance();
+#else
 #ifdef _WIN32
         CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
@@ -81,8 +93,6 @@ public:
         MSG msg;
         PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
 
-        LOG(INFO) << "Init ResourceManager...";
-        base::ResourceManager::createInstance();
         LOG(INFO) << "Init GraphicDevice...";
         windows::graphics::GraphicDevice::createInstance()->Init();
 
@@ -95,13 +105,13 @@ public:
         scene2d::ControlRegistry::get()->registerControl<windows::control::ImageButtonControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::SpinnerControl>();
 
-        LOG(INFO) << "Register builtin icon font...";
-        auto icon_font = resources::get_icon_data();
-        windows::graphics::GraphicDevice::instance()
-            ->addFont("kwui", icon_font.data(), icon_font.size());
 #else
 #pragma message("TODO: Application::Private::init().")
 #endif
+#endif
+        LOG(INFO) << "Register builtin icon font...";
+        auto icon_font = resources::get_icon_data();
+        graph2d::addFont("kwui", icon_font.data(), icon_font.size());
     }
 
     Application* q_;
@@ -129,13 +139,21 @@ Application::~Application()
     delete d;
 
     ScriptEngine::release();
+
+#if WITH_SKIA
+    xskia::GraphicDeviceX::releaseInstance();
+#else
 #ifdef _WIN32
     windows::graphics::GraphicDevice::releaseInstance();
+#else
+#pragma message("TODO: GraphicDevice::releaseInstance().")
+#endif
+#endif
+
     base::ResourceManager::releaseInstance();
 
+#ifdef _WIN32
     CoUninitialize();
-#else
-#pragma message("TODO: Application::~Application().")
 #endif
 }
 
@@ -205,20 +223,15 @@ void Application::setResourceRootData(const uint8_t* data, size_t len)
 }
 void Application::addFont(const char* family_name, const char* font_path)
 {
-#ifdef _WIN32
     std::wstring u16_font_path
         = base::EncodingManager::UTF8ToWide(font_path);
     auto res = base::ResourceManager::instance()
         ->loadResource(u16_font_path.c_str());
     if (res.has_value()) {
-        windows::graphics::GraphicDevice::instance()
-            ->addFont(family_name, res.value().data, res.value().size);
+        graph2d::addFont(family_name, res.value().data, res.value().size);
     } else {
         LOG(ERROR) << "addFont: failed to load resource [" << font_path << "]";
     }
-#else
-#pragma message("TODO: Application::addFont().")
-#endif
 }
 
 int Application::exec()

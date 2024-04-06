@@ -13,6 +13,7 @@
 #include "api/kwui/ScriptEngine.h"
 #include "api/kwui/Application.h"
 #include "base/ResourceManager.h"
+#include "graph2d/graph2d.h"
 #ifdef _WIN32
 #include "graphics/PaintSurfaceD2D.h"
 #endif
@@ -47,7 +48,7 @@ float Dialog::getMonitorDpiScale(HMONITOR monitor)
         }
         if (!pGETDPIFORMONITOR) {
             pGETDPIFORMONITOR = [](HMONITOR, MONITOR_DPI_TYPE, UINT* dpi_x, UINT* dpi_y) -> HRESULT {
-                float dpi_scale = windows::graphics::GraphicDevice::instance()->getInitialDesktopDpiScale();
+                float dpi_scale = graph2d::getInitialDesktopDpiScale();
                 *dpi_x = *dpi_y = USER_DEFAULT_SCREEN_DPI * dpi_scale;
                 return S_OK;
                 };
@@ -235,7 +236,7 @@ void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON 
             wnd_top = (monitor_height - (int)pixel_size_.height) / 2;
         }
     } else {
-        dpi_scale_ = graphics::GraphicDevice::instance()->getInitialDesktopDpiScale();
+        dpi_scale_ = graph2d::getInitialDesktopDpiScale();
         pixel_size_ = (size_ * dpi_scale_).makeRound();
         RECT work_area;
         if (SystemParametersInfoW(SPI_GETWORKAREA, 0, &work_area, 0)) {
