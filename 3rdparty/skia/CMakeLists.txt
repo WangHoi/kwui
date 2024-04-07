@@ -821,6 +821,7 @@ if(WIN32)
             src/ports/SkScalerContext_win_dw.cpp
             src/ports/SkTLS_win.cpp
             src/ports/SkTypeface_win_dw.cpp
+            src/ports/SkImageGeneratorWIC.cpp
             src/utils/win/SkDWrite.cpp
             src/utils/win/SkDWriteFontFileStream.cpp
             src/utils/win/SkDWriteGeometrySink.cpp

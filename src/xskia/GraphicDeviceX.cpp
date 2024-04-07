@@ -1,6 +1,13 @@
 #include "GraphicDeviceX.h"
 #include "include/core/SkStream.h"
 #include "include/core/SkFontMgr.h"
+#include "include/core/SkImageGenerator.h"
+#include "include/core/SkGraphics.h"
+#include "include/ports/SkImageGeneratorWIC.h"
+#include "absl/strings/match.h"
+#include "resources/resources.h"
+#include "base/ResourceManager.h"
+#include "base/EncodingManager.h"
 
 namespace xskia {
 
@@ -10,8 +17,11 @@ GraphicDeviceX::~GraphicDeviceX()
 {}
 GraphicDeviceX* GraphicDeviceX::createInstance()
 {
-	if (!s_instance)
+	if (!s_instance) {
 		s_instance = new GraphicDeviceX();
+		SkGraphics::Init();
+		SkGraphics::SetImageGeneratorFromEncodedDataFactory(&SkImageGeneratorWIC::MakeFromEncodedWIC);
+	}
 	return s_instance;
 }
 void GraphicDeviceX::releaseInstance()
@@ -30,18 +40,55 @@ void GraphicDeviceX::addFont(const char* family_name, const void* data, size_t s
 	sk_sp<SkTypeface> font_face = SkFontMgr::RefDefault()
 		->makeFromStream(SkMemoryStream::MakeCopy(data, size));
 	if (font_face)
-		cache_fonts_[family_name] = font_face;
+		font_cache_[family_name] = font_face;
 }
 sk_sp<SkTypeface> GraphicDeviceX::getFirstMatchingFontFace(
 	const char* family_name,
 	SkFontStyle style)
 {
 	if (family_name) {
-		auto it = cache_fonts_.find(family_name);
-		if (it != cache_fonts_.end())
+		auto it = font_cache_.find(family_name);
+		if (it != font_cache_.end())
 			return it->second;
 	}
 	return SkTypeface::MakeFromName(family_name, style);
 }
-
+BitmapSubItemX GraphicDeviceX::getBitmap(const std::string& name, float dpi_scale)
+{
+	auto it = bitmap_cache_.find(name);
+	if (it == bitmap_cache_.end()) {
+		loadBitmapToCache(name);
+		it = bitmap_cache_.find(name);
+	}
+	if (it == bitmap_cache_.end())
+		return BitmapSubItemX();
+	BitmapSubItemX res;
+	res.frame = it->second;
+	res.dpi_scale = dpi_scale;
+	return res;
+}
+void GraphicDeviceX::loadBitmapToCache(const std::string& name)
+{
+	if (absl::StartsWith(name, "kwui::")) {
+		std::string name_res = name.substr(6);
+		absl::optional<absl::Span<const uint8_t>> x1;
+		x1 = resources::get_image_data(name_res);
+		if (!x1.has_value())
+			return;
+		loadBitmapFromResource(name, x1.value());
+	} else if (absl::StartsWith(name, ":")) {
+		auto RM = base::ResourceManager::instance();
+		std::string name_res = name.substr(1);
+		absl::optional<base::ResourceArchive::ResourceItem> x1, x1_5, x2;
+		x1 = RM->loadResource(base::EncodingManager::UTF8ToWide(name_res).c_str());
+		if (!x1.has_value())
+			return;
+		loadBitmapFromResource(name, absl::MakeSpan(x1->data, x1->size));
+	} else {
+		LOG(INFO) << "TODO: GraphicDeviceX::loadBitmapFromFile";
+	}
+}
+void GraphicDeviceX::loadBitmapFromResource(const std::string& name, absl::Span<const uint8_t> res_x1) {
+	//SkImageGenerator::MakeFromEncoded
+}
 }

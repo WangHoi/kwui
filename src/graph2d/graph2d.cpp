@@ -9,6 +9,7 @@
 #if WITH_SKIA
 #include "xskia/TextFlowX.h"
 #include "xskia/GraphicDeviceX.h"
+#include "xskia/BitmapX.h"
 #include "include/core/SkFont.h"
 #include "include/core/SkFontMetrics.h"
 #include "include/core/SkFontMgr.h"
@@ -142,8 +143,7 @@ float getInitialDesktopDpiScale()
 std::shared_ptr<BitmapInterface> createBitmap(const std::string& url)
 {
 #if WITH_SKIA
-#pragma message("TODO: implement graph2d::createBitmap().")
-	return nullptr;
+	return std::shared_ptr<BitmapInterface>(new xskia::BitmapX(url));
 #else
 #ifdef _WIN32
 	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapImpl(url));

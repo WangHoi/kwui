@@ -4,3 +4,4 @@
 #include "PainterX.h"
 #include "PaintSurfaceX.h"
 #include "GraphicDeviceX.h"
+#include "BitmapX.h"
