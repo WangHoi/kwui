@@ -77,6 +77,10 @@ bool PaintSurfaceX::endPaint()
 		return false;
 	surface_->flush();
 
+	return true;
+}
+void PaintSurfaceX::swapBuffers()
+{
 #ifdef _WIN32
 	BITMAPINFO* bmpInfo = reinterpret_cast<BITMAPINFO*>(buffer_.get());
 	if (::GetWindowLong(config_.hwnd, GWL_EXSTYLE) & WS_EX_LAYERED)
@@ -99,8 +103,6 @@ bool PaintSurfaceX::endPaint()
 		ReleaseDC(config_.hwnd, dc);
 	}
 #endif
-
-	return true;
 }
 PaintSurfaceX::PaintSurfaceX(const Configuration& config)
 	: config_(config)

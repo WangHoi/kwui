@@ -377,30 +377,6 @@ target_sources(
   src/gpu/ganesh/SkGr.cpp
   src/gpu/ganesh/SurfaceContext.cpp
   src/gpu/ganesh/SurfaceFillContext.cpp
-  src/gpu/ganesh/d3d/GrD3DAMDMemoryAllocator.cpp
-  src/gpu/ganesh/d3d/GrD3DAttachment.cpp
-  src/gpu/ganesh/d3d/GrD3DBuffer.cpp
-  src/gpu/ganesh/d3d/GrD3DCaps.cpp
-  src/gpu/ganesh/d3d/GrD3DCommandList.cpp
-  src/gpu/ganesh/d3d/GrD3DCommandSignature.cpp
-  src/gpu/ganesh/d3d/GrD3DCpuDescriptorManager.cpp
-  src/gpu/ganesh/d3d/GrD3DDescriptorHeap.cpp
-  src/gpu/ganesh/d3d/GrD3DDescriptorTableManager.cpp
-  src/gpu/ganesh/d3d/GrD3DGpu.cpp
-  src/gpu/ganesh/d3d/GrD3DOpsRenderPass.cpp
-  src/gpu/ganesh/d3d/GrD3DPipelineState.cpp
-  src/gpu/ganesh/d3d/GrD3DPipelineStateBuilder.cpp
-  src/gpu/ganesh/d3d/GrD3DPipelineStateDataManager.cpp
-  src/gpu/ganesh/d3d/GrD3DRenderTarget.cpp
-  src/gpu/ganesh/d3d/GrD3DResourceProvider.cpp
-  src/gpu/ganesh/d3d/GrD3DRootSignature.cpp
-  src/gpu/ganesh/d3d/GrD3DSemaphore.cpp
-  src/gpu/ganesh/d3d/GrD3DTexture.cpp
-  src/gpu/ganesh/d3d/GrD3DTextureRenderTarget.cpp
-  src/gpu/ganesh/d3d/GrD3DTextureResource.cpp
-  src/gpu/ganesh/d3d/GrD3DTypesMinimal.cpp
-  src/gpu/ganesh/d3d/GrD3DTypesPriv.cpp
-  src/gpu/ganesh/d3d/GrD3DUtil.cpp
   src/gpu/ganesh/effects/GrBezierEffect.cpp
   src/gpu/ganesh/effects/GrBicubicEffect.cpp
   src/gpu/ganesh/effects/GrBitmapTextGeoProc.cpp
@@ -781,25 +757,24 @@ target_sources(
   src/utils/SkThreadUtils_win.cpp
   src/utils/SkUTF.cpp
   src/utils/SkVMVisualizer.cpp
-  src/utils/win/SkAutoCoInitialize.cpp
 #   src/utils/win/SkDWrite.cpp
 #   src/utils/win/SkDWriteFontFileStream.cpp
 #   src/utils/win/SkDWriteGeometrySink.cpp
 #   src/utils/win/SkHRESULT.cpp
 #   src/utils/win/SkIStream.cpp
 #   src/utils/win/SkWGL_win.cpp
-  third_party/d3d12allocator/D3D12MemAlloc.cpp
+#  third_party/d3d12allocator/D3D12MemAlloc.cpp
   third_party/skcms/skcms.cc
 #   third_party/vulkanmemoryallocator/GrVulkanMemoryAllocator.cpp
   tools/gpu/FlushFinishTracker.cpp
   tools/gpu/TestContext.cpp
-  tools/gpu/d3d/D3DTestContext.cpp
-  tools/gpu/d3d/D3DTestUtils.cpp
-  tools/gpu/vk/VkTestContext.cpp
-  tools/gpu/vk/VkTestHelper.cpp
-  tools/gpu/vk/VkTestUtils.cpp
-  tools/gpu/vk/VkYcbcrSamplerHelper.cpp
-  tools/sk_app/GLWindowContext.cpp
+#  tools/gpu/d3d/D3DTestContext.cpp
+#  tools/gpu/d3d/D3DTestUtils.cpp
+#  tools/gpu/vk/VkTestContext.cpp
+#  tools/gpu/vk/VkTestHelper.cpp
+#  tools/gpu/vk/VkTestUtils.cpp
+#  tools/gpu/vk/VkYcbcrSamplerHelper.cpp
+#  tools/sk_app/GLWindowContext.cpp
 #   tools/sk_app/VulkanSharedWindowContext.cpp
 #   tools/sk_app/VulkanWindowContext.cpp
   tools/sk_app/WindowContext.cpp
@@ -822,26 +797,56 @@ if(WIN32)
             src/ports/SkTLS_win.cpp
             src/ports/SkTypeface_win_dw.cpp
             src/ports/SkImageGeneratorWIC.cpp
+            src/utils/win/SkAutoCoInitialize.cpp
             src/utils/win/SkDWrite.cpp
             src/utils/win/SkDWriteFontFileStream.cpp
             src/utils/win/SkDWriteGeometrySink.cpp
             src/utils/win/SkHRESULT.cpp
             src/utils/win/SkIStream.cpp
-            src/utils/win/SkWGL_win.cpp)
+            src/utils/win/SkWGL_win.cpp
+
+            src/gpu/ganesh/d3d/GrD3DAMDMemoryAllocator.cpp
+          src/gpu/ganesh/d3d/GrD3DAttachment.cpp
+          src/gpu/ganesh/d3d/GrD3DBuffer.cpp
+          src/gpu/ganesh/d3d/GrD3DCaps.cpp
+          src/gpu/ganesh/d3d/GrD3DCommandList.cpp
+          src/gpu/ganesh/d3d/GrD3DCommandSignature.cpp
+          src/gpu/ganesh/d3d/GrD3DCpuDescriptorManager.cpp
+          src/gpu/ganesh/d3d/GrD3DDescriptorHeap.cpp
+          src/gpu/ganesh/d3d/GrD3DDescriptorTableManager.cpp
+          src/gpu/ganesh/d3d/GrD3DGpu.cpp
+          src/gpu/ganesh/d3d/GrD3DOpsRenderPass.cpp
+          src/gpu/ganesh/d3d/GrD3DPipelineState.cpp
+          src/gpu/ganesh/d3d/GrD3DPipelineStateBuilder.cpp
+          src/gpu/ganesh/d3d/GrD3DPipelineStateDataManager.cpp
+          src/gpu/ganesh/d3d/GrD3DRenderTarget.cpp
+          src/gpu/ganesh/d3d/GrD3DResourceProvider.cpp
+          src/gpu/ganesh/d3d/GrD3DRootSignature.cpp
+          src/gpu/ganesh/d3d/GrD3DSemaphore.cpp
+          src/gpu/ganesh/d3d/GrD3DTexture.cpp
+          src/gpu/ganesh/d3d/GrD3DTextureRenderTarget.cpp
+          src/gpu/ganesh/d3d/GrD3DTextureResource.cpp
+          src/gpu/ganesh/d3d/GrD3DTypesMinimal.cpp
+          src/gpu/ganesh/d3d/GrD3DTypesPriv.cpp
+          src/gpu/ganesh/d3d/GrD3DUtil.cpp
+            third_party/d3d12allocator/D3D12MemAlloc.cpp)
 
     target_sources(
         skia
         PRIVATE third_party/skcms/skcms.cc)
 endif()
-target_sources(
+if(ANDROID)
+  target_sources(
     skia
-    PRIVATE third_party/d3d12allocator/D3D12MemAlloc.cpp)
+    PRIVATE src/ports/SkImageGeneratorNDK.cpp)
+endif()
 
 target_include_directories(skia PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(skia PRIVATE
 third_party/d3d12allocator
 include/third_party/skcms
 )
+if(WIN32)
 target_compile_definitions(skia PUBLIC
     NOMINMAX    
     SKIA_BACKEND
@@ -861,6 +866,24 @@ target_compile_definitions(skia PUBLIC
     SK_FORCE_DISTANCE_FIELD_TEXT=0
     GR_GL_FUNCTION_TYPE=__stdcall
     SK_BUILD_FOR_WIN32)
+endif()
+if(ANDROID)
+target_compile_definitions(skia PUBLIC
+    SKIA_BACKEND
+    SK_GL
+    SK_DEBUG
+    # SK_VULKAN
+    # SK_USE_VMA
+    SK_INTERNAL
+    SK_GAMMA_SRGB
+    SK_GAMMA_APPLY_TO_A8
+    SK_SCALAR_TO_FLOAT_EXCLUDED
+    SK_ALLOW_STATIC_GLOBAL_INITIALIZERS=1
+    SK_SUPPORT_GPU=1
+    SK_FORCE_DISTANCE_FIELD_TEXT=0
+    SK_BUILD_FOR_ANDROID
+    SK_ENABLE_NDK_IMAGES)
+endif()
 target_compile_definitions(skia PRIVATE SKIA_IMPLEMENTATION=1)
 if(WIN32)
 target_link_libraries(skia PUBLIC d3d12.lib d3dcompiler.lib DXGI.lib OpenGL32.lib)

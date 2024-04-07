@@ -608,6 +608,7 @@ void Dialog::OnPaint() {
     scene_->resolveStyle();
     scene_->computeLayout(size_.width, size_.height);
 
+    bool ok = false;
     int tries = 0;
     while (tries < 2) {
         PAINTSTRUCT ps;
@@ -617,7 +618,7 @@ void Dialog::OnPaint() {
         pi->clear(theme::BACKGROUND_COLOR);
         scene_->paint(pi.get());
 
-        bool ok = surface_->endPaint();
+        ok = surface_->endPaint();
         if (!ok) {
             EndPaint(hwnd_, &ps);
 
@@ -632,6 +633,8 @@ void Dialog::OnPaint() {
         EndPaint(hwnd_, &ps);
         break;
     }
+    if (ok)
+        surface_->swapBuffers();
 
     scene_->runPostRenderTasks();
 }

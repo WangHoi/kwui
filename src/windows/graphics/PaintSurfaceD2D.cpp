@@ -41,6 +41,8 @@ bool PaintSurfaceD2D::endPaint() {
     }
     return true;
 }
+void PaintSurfaceD2D::swapBuffers()
+{}
 PaintSurfaceD2D::PaintSurfaceD2D(const Configuration& config)
     : config_(config) {
     recreateRenderTarget();
