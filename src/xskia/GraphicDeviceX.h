@@ -2,6 +2,7 @@
 #include "include/core/SkFont.h"
 #include "include/core/SkFontTypes.h"
 #include "include/core/SkImage.h"
+#include "absl/types/span.h"
 #include <unordered_map>
 #include <string>
 

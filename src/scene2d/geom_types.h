@@ -5,6 +5,11 @@
 #ifdef _WIN32
 #include "windows/windows_header.h"
 #endif
+#if WITH_SKIA
+#include "include/core/SkRect.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkSize.h"
+#endif
 
 namespace scene2d {
 
@@ -30,6 +35,12 @@ struct PointF {
     inline operator D2D1_POINT_2F() const
     {
         return D2D1::Point2F(x, y);
+    }
+#endif
+#if WITH_SKIA
+    inline operator SkPoint() const
+    {
+        return SkPoint::Make(x, y);
     }
 #endif
     inline PointF operator-() const
@@ -129,6 +140,12 @@ struct DimensionF {
         return D2D1::SizeF(width, height);
     }
 #endif
+#if WITH_SKIA
+    inline operator SkSize() const
+    {
+        return SkSize::Make(width, height);
+    }
+#endif
     inline DimensionF& operator*=(const PointF &p)
     {
         width *= p.x;
@@ -175,6 +192,18 @@ struct RectF {
     static inline RectF fromLTRB(float l, float t, float r, float b) {
         return RectF(l, t, r, b);
     }
+#ifdef _WIN32
+    inline operator D2D1_RECT_F() const
+    {
+        return D2D1::RectF(left, top, right, bottom);
+    }
+#endif
+#if WITH_SKIA
+    inline operator SkRect() const
+    {
+        return SkRect::MakeLTRB(left, top, right, bottom);
+    }
+#endif
     inline PointF origin() const {
         return PointF(left, top);
     }

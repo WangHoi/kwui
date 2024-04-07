@@ -75,7 +75,15 @@ public:
 #endif
     void init()
     {
+#ifdef _WIN32
+        CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+        ::SetConsoleOutputCP(65001);
+
+        MSG msg;
+        PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
         //::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+#endif
         base::initialize_log(g_log_callback);
 
         LOG(INFO) << "Init ResourceManager...";
@@ -86,29 +94,25 @@ public:
         xskia::GraphicDeviceX::createInstance();
 #else
 #ifdef _WIN32
-        CoInitializeEx(NULL, COINIT_MULTITHREADED);
-
-        ::SetConsoleOutputCP(65001);
-
-        MSG msg;
-        PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE);
-
         LOG(INFO) << "Init GraphicDevice...";
         windows::graphics::GraphicDevice::createInstance()->Init();
+#else
+#pragma message("TODO: Application::Private::init().")
+#endif
+#endif
 
         LOG(INFO) << "Register builtin ui controls...";
         scene2d::ControlRegistry::get()->registerControl<scene2d::KmlControl>();
+
+#if !WITH_SKIA && defined(_WIN32)
         scene2d::ControlRegistry::get()->registerControl<windows::control::LineEditControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ProgressBarControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ImageControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ButtonControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ImageButtonControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::SpinnerControl>();
+#endif
 
-#else
-#pragma message("TODO: Application::Private::init().")
-#endif
-#endif
         LOG(INFO) << "Register builtin icon font...";
         auto icon_font = resources::get_icon_data();
         graph2d::addFont("kwui", icon_font.data(), icon_font.size());

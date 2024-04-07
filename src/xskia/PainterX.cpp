@@ -1,5 +1,6 @@
 #include "PainterX.h"
 #include "TextFlowX.h"
+#include "BitmapX.h"
 
 namespace xskia {
 
@@ -29,10 +30,17 @@ void PainterX::setRotation(float degrees, const scene2d::PointF& center, bool co
 
 void PainterX::pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size)
 {
+	SkIRect r = SkIRect::MakeXYWH((int32_t)floorf(origin.x),
+		(int32_t)floorf(origin.y),
+		(int32_t)ceilf(origin.x + size.width),
+		(int32_t)ceilf(origin.y + size.height));
+	canvas_->save();
+	canvas_->clipIRect(r);
 }
 
 void PainterX::popClipRect()
 {
+	canvas_->restore();
 }
 void PainterX::clear(const style::Color& c)
 {
@@ -46,8 +54,13 @@ void PainterX::drawBox(
 	const style::Color& border_color,
 	const graph2d::BitmapInterface* background_image)
 {
+	auto image = (const BitmapX*)background_image;
+	if (image && image->skImage()) {
+		canvas_->drawImageRect(image->skImage(),
+			border_rect,
+			SkSamplingOptions());
+	}
 }
-
 void PainterX::drawGlyphRun(
 	const scene2d::PointF& pos,
 	const graph2d::GlyphRunInterface* text_flow,

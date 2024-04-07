@@ -3,6 +3,7 @@
 #include "include/core/SkFontMgr.h"
 #include "include/core/SkImageGenerator.h"
 #include "include/core/SkGraphics.h"
+#include "include/core/SkData.h"
 #include "include/ports/SkImageGeneratorWIC.h"
 #include "absl/strings/match.h"
 #include "resources/resources.h"
@@ -89,6 +90,9 @@ void GraphicDeviceX::loadBitmapToCache(const std::string& name)
 	}
 }
 void GraphicDeviceX::loadBitmapFromResource(const std::string& name, absl::Span<const uint8_t> res_x1) {
-	//SkImageGenerator::MakeFromEncoded
+	sk_sp<SkImage> image = SkImage::MakeFromEncoded(SkData::MakeWithoutCopy(res_x1.data(), res_x1.size()));
+	if (image) {
+		bitmap_cache_[name] = image;
+	}
 }
 }
