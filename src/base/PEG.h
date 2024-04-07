@@ -22,8 +22,8 @@ struct StatusOrType<IResult<T>> {
 
 template <typename F1, typename F2>
 inline auto seq(F1&& f1, F2&& f2) {
-	using T1 = StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
-	using T2 = StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
+	using T1 = typename StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
+	using T2 = typename StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
 	return [f1, f2](absl::string_view input) -> IResult<std::tuple<T1, T2>> {
 		auto res1 = f1(input);
 		if (!res1.ok())
@@ -40,9 +40,9 @@ inline auto seq(F1&& f1, F2&& f2) {
 
 template <typename F1, typename F2, typename F3>
 inline auto seq(F1&& f1, F2&& f2, F3&& f3) {
-	using T1 = StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
-	using T2 = StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
-	using T3 = StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
+	using T1 = typename StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
+	using T2 = typename StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
+	using T3 = typename StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
 	return [f1, f2, f3](absl::string_view input) -> IResult<std::tuple<T1, T2, T3>> {
 		auto res1 = f1(input);
 		if (!res1.ok())
@@ -65,10 +65,10 @@ inline auto seq(F1&& f1, F2&& f2, F3&& f3) {
 
 template <typename F1, typename F2, typename F3, typename F4>
 inline auto seq(F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
-	using T1 = StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
-	using T2 = StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
-	using T3 = StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
-	using T4 = StatusOrType<typename std::result_of<F4(absl::string_view)>::type>::value_type;
+	using T1 = typename StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
+	using T2 = typename StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
+	using T3 = typename StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
+	using T4 = typename StatusOrType<typename std::result_of<F4(absl::string_view)>::type>::value_type;
 	return [f1, f2, f3, f4](absl::string_view input) -> IResult<std::tuple<T1, T2, T3, T4>> {
 		auto res1 = f1(input);
 		if (!res1.ok())
@@ -96,8 +96,8 @@ inline auto seq(F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
 
 template <typename F1, typename F2>
 inline auto alt(F1&& f1, F2&& f2) {
-	using T1 = StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
-	using T2 = StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
+	using T1 = typename StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
+	using T2 = typename StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
 	static_assert(std::is_same<T1, T2>::value, "alt type mismatch error.");
 	return [f1, f2](absl::string_view input) -> IResult<T1> {
 		auto res1 = f1(input);
@@ -109,9 +109,9 @@ inline auto alt(F1&& f1, F2&& f2) {
 }
 template <typename F1, typename F2, typename F3>
 inline auto alt(F1&& f1, F2&& f2, F3&& f3) {
-	using T1 = StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
-	using T2 = StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
-	using T3 = StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
+	using T1 = typename StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
+	using T2 = typename StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
+	using T3 = typename StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
 	static_assert(std::is_same<T1, T2>::value, "alt type mismatch error.");
 	static_assert(std::is_same<T1, T3>::value, "alt type mismatch error.");
 	return [f1, f2, f3](absl::string_view input) -> IResult<T1> {
@@ -128,10 +128,10 @@ inline auto alt(F1&& f1, F2&& f2, F3&& f3) {
 }
 template <typename F1, typename F2, typename F3, typename F4>
 inline auto alt(F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
-	using T1 = StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
-	using T2 = StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
-	using T3 = StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
-	using T4 = StatusOrType<typename std::result_of<F4(absl::string_view)>::type>::value_type;
+	using T1 = typename StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
+	using T2 = typename StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
+	using T3 = typename StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
+	using T4 = typename StatusOrType<typename std::result_of<F4(absl::string_view)>::type>::value_type;
 	static_assert(std::is_same<T1, T2>::value, "alt type mismatch error.");
 	static_assert(std::is_same<T1, T3>::value, "alt type mismatch error.");
 	static_assert(std::is_same<T1, T4>::value, "alt type mismatch error.");
@@ -153,11 +153,11 @@ inline auto alt(F1&& f1, F2&& f2, F3&& f3, F4&& f4) {
 }
 template <typename F1, typename F2, typename F3, typename F4, typename F5>
 inline auto alt(F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
-	using T1 = StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
-	using T2 = StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
-	using T3 = StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
-	using T4 = StatusOrType<typename std::result_of<F4(absl::string_view)>::type>::value_type;
-	using T5 = StatusOrType<typename std::result_of<F5(absl::string_view)>::type>::value_type;
+	using T1 = typename StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
+	using T2 = typename StatusOrType<typename std::result_of<F2(absl::string_view)>::type>::value_type;
+	using T3 = typename StatusOrType<typename std::result_of<F3(absl::string_view)>::type>::value_type;
+	using T4 = typename StatusOrType<typename std::result_of<F4(absl::string_view)>::type>::value_type;
+	using T5 = typename StatusOrType<typename std::result_of<F5(absl::string_view)>::type>::value_type;
 	static_assert(std::is_same<T1, T2>::value, "alt type mismatch error.");
 	static_assert(std::is_same<T1, T3>::value, "alt type mismatch error.");
 	static_assert(std::is_same<T1, T4>::value, "alt type mismatch error.");
@@ -185,7 +185,7 @@ inline auto alt(F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5) {
 
 template <typename F1>
 inline auto opt(F1&& f1) {
-	using T1 = StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
+	using T1 = typename StatusOrType<typename std::result_of<F1(absl::string_view)>::type>::value_type;
 	return [f1](absl::string_view input) -> IResult<absl::optional<T1>> {
 		auto res1 = f1(input);
 		if (!res1.ok())
@@ -241,7 +241,7 @@ inline auto take_while1(F&& f)
 template <typename SEP, typename F>
 inline auto separated_list0(SEP&& sep, F&& f)
 {
-	using T = StatusOrType<typename std::result_of<F(absl::string_view)>::type>::value_type;
+	using T = typename StatusOrType<typename std::result_of<F(absl::string_view)>::type>::value_type;
 	return [sep, f](absl::string_view input) -> IResult<std::vector<T>> {
 		std::vector<T> list;
 		absl::string_view output = input;

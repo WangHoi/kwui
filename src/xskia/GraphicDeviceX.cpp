@@ -4,7 +4,12 @@
 #include "include/core/SkImageGenerator.h"
 #include "include/core/SkGraphics.h"
 #include "include/core/SkData.h"
+#ifdef _WIN32
 #include "include/ports/SkImageGeneratorWIC.h"
+#endif
+#ifdef __ANDROID__
+#include "include/ports/SkImageGeneratorNDK.h"
+#endif
 #include "absl/strings/match.h"
 #include "resources/resources.h"
 #include "base/ResourceManager.h"
@@ -21,7 +26,12 @@ GraphicDeviceX* GraphicDeviceX::createInstance()
 	if (!s_instance) {
 		s_instance = new GraphicDeviceX();
 		SkGraphics::Init();
+#ifdef _WIN32
 		SkGraphics::SetImageGeneratorFromEncodedDataFactory(&SkImageGeneratorWIC::MakeFromEncodedWIC);
+#endif
+#ifdef __ANDROID__
+		SkGraphics::SetImageGeneratorFromEncodedDataFactory(&SkImageGeneratorNDK::MakeFromEncodedNDK);
+#endif
 	}
 	return s_instance;
 }

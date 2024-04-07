@@ -838,7 +838,19 @@ endif()
 if(ANDROID)
   target_sources(
     skia
-    PRIVATE src/ports/SkImageGeneratorNDK.cpp)
+    PRIVATE 
+    src/gpu/ganesh/gl/egl/GrGLMakeEGLInterface.cpp
+    src/gpu/ganesh/gl/egl/GrGLMakeNativeInterface_egl.cpp
+    src/ports/SkImageEncoder_NDK.cpp
+    src/ports/SkImageGeneratorNDK.cpp
+    src/ports/SkNDKConversions.cpp
+    src/ports/SkOSFile_posix.cpp
+    src/ports/SkOSFile_stdio.cpp
+    src/ports/SkDebug_android.cpp
+    src/ports/SkFontMgr_android.cpp
+    src/ports/SkFontMgr_android_parser.cpp
+    src/ports/SkFontMgr_android_factory.cpp
+  )
 endif()
 
 target_include_directories(skia PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -887,4 +899,15 @@ endif()
 target_compile_definitions(skia PRIVATE SKIA_IMPLEMENTATION=1)
 if(WIN32)
 target_link_libraries(skia PUBLIC d3d12.lib d3dcompiler.lib DXGI.lib OpenGL32.lib)
+endif()
+if(ANDROID)
+set(EXPAT_SHARED_LIBS OFF)
+set(EXPAT_BUILD_TOOLS OFF)
+set(EXPAT_BUILD_EXAMPLES OFF)
+set(EXPAT_BUILD_TESTS OFF)
+set(EXPAT_BUILD_DOCS OFF)
+set(EXPAT_ENABLE_INSTALL OFF)
+set(EXPAT_BUILD_PKGCONFIG OFF)
+add_subdirectory(third_party/expat-2.6.2)
+target_link_libraries(skia PUBLIC EGL GLESv2 jnigraphics android log expat)
 endif()
