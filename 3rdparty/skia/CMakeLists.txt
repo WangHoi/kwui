@@ -850,6 +850,9 @@ if(ANDROID)
     src/ports/SkFontMgr_android.cpp
     src/ports/SkFontMgr_android_parser.cpp
     src/ports/SkFontMgr_android_factory.cpp
+    src/ports/SkFontHost_FreeType.cpp
+    src/ports/SkFontHost_FreeType_common.cpp
+    src/ports/SkFontHost_FreeType_common.h
   )
 endif()
 
@@ -901,6 +904,7 @@ if(WIN32)
 target_link_libraries(skia PUBLIC d3d12.lib d3dcompiler.lib DXGI.lib OpenGL32.lib)
 endif()
 if(ANDROID)
+
 set(EXPAT_SHARED_LIBS OFF)
 set(EXPAT_BUILD_TOOLS OFF)
 set(EXPAT_BUILD_EXAMPLES OFF)
@@ -909,5 +913,12 @@ set(EXPAT_BUILD_DOCS OFF)
 set(EXPAT_ENABLE_INSTALL OFF)
 set(EXPAT_BUILD_PKGCONFIG OFF)
 add_subdirectory(third_party/expat-2.6.2)
-target_link_libraries(skia PUBLIC EGL GLESv2 jnigraphics android log expat)
+
+set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
+set(BUILD_SHARED_LIBS OFF)
+set(SKIP_INSTALL_ALL ON)
+add_subdirectory(third_party/freetype-2.13.2)
+set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
+
+target_link_libraries(skia PUBLIC EGL GLESv2 jnigraphics android log expat freetype)
 endif()
