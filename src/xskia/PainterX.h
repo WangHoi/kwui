@@ -5,11 +5,9 @@ namespace xskia {
 
 class PainterX : public graph2d::PainterInterface {
 public:
-	PainterX(SkCanvas* canvas);
+	PainterX(SkCanvas* canvas, float dpi_scale);
 
 private:
-	SkCanvas* canvas_;
-
 	// 通过 PainterInterface 继承
 	void save() override;
 	void restore() override;
@@ -26,6 +24,9 @@ private:
 		const graph2d::BitmapInterface* background_image) override;
 	void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* text_flow, const style::Color& color) override;
 	void drawControl(const scene2d::RectF& rect, scene2d::Control* control) override;
+
+	SkCanvas* canvas_;
+	float dpi_scale_;
 };
 
 }

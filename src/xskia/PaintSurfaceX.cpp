@@ -68,7 +68,7 @@ std::unique_ptr<graph2d::PainterInterface> PaintSurfaceX::beginPaint()
 {
 	if (!surface_)
 		return nullptr;
-	return std::make_unique<PainterX>(surface_->getCanvas());
+	return std::make_unique<PainterX>(surface_->getCanvas(), config_.dpi_scale);
 }
 
 bool PaintSurfaceX::endPaint()
