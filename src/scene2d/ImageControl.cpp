@@ -1,7 +1,5 @@
 #include "ImageControl.h"
 #include "graph2d/graph2d.h"
-#include "windows/graphics/GraphicDevice.h"
-#include "windows/graphics/PainterD2D.h"
 
 namespace scene2d {
 
