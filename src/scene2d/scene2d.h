@@ -5,3 +5,6 @@
 #include "Node.h"
 #include "Scene.h"
 #include "Control.h"
+#include "ButtonControl.h"
+#include "ImageControl.h"
+

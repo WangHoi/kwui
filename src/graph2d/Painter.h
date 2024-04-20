@@ -37,5 +37,8 @@ public:
 		const style::Color& color) = 0;
 	virtual void drawControl(const scene2d::RectF& rect,
 		scene2d::Control* control) = 0;
+	virtual void drawBitmap(const BitmapInterface* image,
+		const scene2d::PointF& origin,
+		const scene2d::DimensionF& size) = 0;
 };
 }

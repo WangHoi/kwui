@@ -1,9 +1,9 @@
 #include "ImageControl.h"
+#include "graph2d/graph2d.h"
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/graphics/PainterD2D.h"
 
-namespace windows {
-namespace control {
+namespace scene2d {
 
 const char* ImageControl::CONTROL_NAME = "img";
 
@@ -16,15 +16,12 @@ base::string_atom ImageControl::name()
 }
 void ImageControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect)
 {
-	graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
-	if (!_bitmap) {
-		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
-			->getBitmap(_image_src, p.GetDpiScale());
-		if (item)
-			_bitmap = p.CreateBitmap(item);
+	// TODO: bitmap DPI support
+	if (!bitmap_) {
+		bitmap_ = graph2d::createBitmap(image_src_);
 	}
-	if (_bitmap) {
-		p.DrawBitmap(_bitmap.Get(), rect.origin(), rect.size());
+	if (bitmap_) {
+		pi.drawBitmap(bitmap_.get(), rect.origin(), rect.size());
 	}
 }
 void ImageControl::onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value)
@@ -34,9 +31,8 @@ void ImageControl::onSetAttribute(base::string_atom name, const scene2d::NodeAtt
 	}
 }
 void ImageControl::setImageSource(const std::string& src) {
-	_image_src = src;
-	_bitmap = nullptr;
+	image_src_ = src;
+	bitmap_ = nullptr;
 }
 
-}
 }

@@ -74,7 +74,7 @@ void PainterX::drawBox(
 	if (image && image->skImage()) {
 		canvas_->drawImageRect(image->skImage(),
 			padding_rect,
-			SkSamplingOptions());
+			SkSamplingOptions(SkFilterMode::kLinear));
 	}
 
 	if (max_border_width > 0.0f) {
@@ -102,7 +102,17 @@ void PainterX::drawGlyphRun(
 
 void PainterX::drawControl(const scene2d::RectF& rect, scene2d::Control* control)
 {
-	// control->onPaint(*this, rect);
+	control->onPaint(*this, rect);
+}
+
+void PainterX::drawBitmap(const graph2d::BitmapInterface* image, const scene2d::PointF& origin, const scene2d::DimensionF& size)
+{
+	auto bitmap = static_cast<const BitmapX*>(image)->skImage();
+	if (bitmap) {
+		canvas_->drawImageRect(bitmap,
+			SkRect::MakeXYWH(origin.x, origin.y, size.width, size.height),
+			SkSamplingOptions());
+	}
 }
 
 }

@@ -24,6 +24,9 @@ private:
 		const graph2d::BitmapInterface* background_image) override;
 	void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* text_flow, const style::Color& color) override;
 	void drawControl(const scene2d::RectF& rect, scene2d::Control* control) override;
+	void drawBitmap(const graph2d::BitmapInterface* image,
+		const scene2d::PointF& origin,
+		const scene2d::DimensionF& size) override;
 
 	SkCanvas* canvas_;
 	float dpi_scale_;

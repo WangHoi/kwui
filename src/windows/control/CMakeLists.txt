@@ -1,12 +1,6 @@
 list(APPEND kwui_pub_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/control.h)
 list(APPEND kwui_priv_srcs
-  ${CMAKE_CURRENT_SOURCE_DIR}/ButtonControl.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ButtonControl.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ImageControl.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ImageControl.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ImageButtonControl.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/ImageButtonControl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/LineEditControl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/LineEditControl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ProgressBarControl.h

@@ -96,7 +96,20 @@ void GraphicDeviceX::loadBitmapToCache(const std::string& name)
 			return;
 		loadBitmapFromResource(name, absl::MakeSpan(x1->data, x1->size));
 	} else {
-		LOG(INFO) << "TODO: GraphicDeviceX::loadBitmapFromFile";
+		FILE* f = nullptr;
+#ifdef _WIN32
+		auto filename_x1 = base::EncodingManager::UTF8ToWide(name);
+		f = _wfopen(filename_x1.c_str(), L"rb");
+#else
+		f = fopen(name.c_str(), "rb");
+#endif
+		if (f) {
+			sk_sp<SkImage> image = SkImage::MakeFromEncoded(SkData::MakeFromFILE(f));
+			if (image) {
+				bitmap_cache_[name] = image;
+			}
+			fclose(f);
+		}
 	}
 }
 void GraphicDeviceX::loadBitmapFromResource(const std::string& name, absl::Span<const uint8_t> res_x1) {

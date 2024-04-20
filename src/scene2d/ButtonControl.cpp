@@ -1,13 +1,8 @@
 #include "ButtonControl.h"
-#include "ButtonControl.h"
-#include "ButtonControl.h"
-#include "windows/graphics/GraphicDevice.h"
-#include "windows/graphics/PainterD2D.h"
-#include "scene2d/Scene.h"
+#include "Scene.h"
 #include "script/script.h"
 
-namespace windows {
-namespace control {
+namespace scene2d {
 
 const char* ButtonControl::CONTROL_NAME = "button";
 
@@ -72,5 +67,4 @@ void ButtonControl::onDetach(scene2d::Node* node)
 	onclick_func_ = script::Value();
 }
 
-}
 }

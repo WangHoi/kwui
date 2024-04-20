@@ -15,7 +15,7 @@ export function VerticalAlignExample() {
 	</div>;
 }
 function AlignImage() {
-	return <p>Align bottom<img class="fs-16 va-bottom" src="expand.png"></img><span>middle <img class="fs-16 va-middle" src="expand.png"></img> and <img class="fs-16 va-top" src="expand.png"></img> top image.</span></p>;
+	return <p>Align bottom<img class="fs-16 va-bottom" src=":/expand.png"></img><span>middle <img class="fs-16 va-middle" src=":/expand.png"></img> and <img class="fs-16 va-top" src=":/expand.png"></img> top image.</span></p>;
 }
 function Styled() {
 	return <p>This is <span class="bold">bold</span>, <span class="italic">italic</span> and <span class="bold italic">bold-italic</span> text.</p>;

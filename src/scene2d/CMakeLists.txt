@@ -13,6 +13,10 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/Control.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/KmlControl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/KmlControl.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ButtonControl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ButtonControl.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ImageControl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ImageControl.cpp
 #  ${CMAKE_CURRENT_SOURCE_DIR}/ScrollbarControl.h
 #  ${CMAKE_CURRENT_SOURCE_DIR}/ScrollbarControl.cpp
 )

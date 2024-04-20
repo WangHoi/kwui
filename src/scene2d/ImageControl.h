@@ -3,10 +3,12 @@
 #include "scene2d/Control.h"
 #include "scene2d/geom_types.h"
 #include "style/StyleColor.h"
-#include "windows/windows_header.h"
 
-namespace windows {
-namespace control {
+namespace graph2d {
+class BitmapInterface;
+}
+
+namespace scene2d {
 
 class ImageControl : public scene2d::Control {
 public:
@@ -18,9 +20,8 @@ public:
     void setImageSource(const std::string& name);
 
 private:
-    std::string _image_src;
-    ComPtr<ID2D1Bitmap> _bitmap;
+    std::string image_src_;
+    std::shared_ptr<graph2d::BitmapInterface> bitmap_;
 };
 
-}
 }

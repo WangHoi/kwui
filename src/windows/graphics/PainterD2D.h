@@ -229,6 +229,15 @@ public:
     {
         control->onPaint(*this, rect);
     }
+    void drawBitmap(const graph2d::BitmapInterface* image,
+        const scene2d::PointF& origin,
+        const scene2d::DimensionF& size) override
+    {
+        auto bitmap = static_cast<const BitmapImpl*>(image)->d2dBitmap(p_);
+        if (bitmap) {
+            p_.DrawBitmap(bitmap, origin, size);
+        }
+    }
 private:
     graphics::Painter p_;
 };

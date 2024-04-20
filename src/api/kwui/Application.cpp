@@ -1,14 +1,13 @@
 #include "Application.h"
 #include "ScriptEngine.h"
 #include "scene2d/KmlControl.h"
+#include "scene2d/ButtonControl.h"
+#include "scene2d/ImageControl.h"
 #include "resources/resources.h"
 #ifdef _WIN32
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/Dialog.h"
 #include "windows/control/Control.h"
-#include "windows/control/ButtonControl.h"
-#include "windows/control/ImageControl.h"
-#include "windows/control/ImageButtonControl.h"
 #include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"
 #include "windows/control/SpinnerControl.h"
@@ -103,13 +102,11 @@ public:
 
         LOG(INFO) << "Register builtin ui controls...";
         scene2d::ControlRegistry::get()->registerControl<scene2d::KmlControl>();
-
+        scene2d::ControlRegistry::get()->registerControl<scene2d::ImageControl>();
+        scene2d::ControlRegistry::get()->registerControl<scene2d::ButtonControl>();
 #if !WITH_SKIA && defined(_WIN32)
         scene2d::ControlRegistry::get()->registerControl<windows::control::LineEditControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::ProgressBarControl>();
-        scene2d::ControlRegistry::get()->registerControl<windows::control::ImageControl>();
-        scene2d::ControlRegistry::get()->registerControl<windows::control::ButtonControl>();
-        scene2d::ControlRegistry::get()->registerControl<windows::control::ImageButtonControl>();
         scene2d::ControlRegistry::get()->registerControl<windows::control::SpinnerControl>();
 #endif
 
