@@ -50,7 +50,7 @@ absl::optional<base::ResourceArchive::ResourceItem> ResourceManager::loadResourc
 	if (path[0] == L':')
 		++path;
 	if (archive_)
-		return archive_->FindItem(path);
+		return archive_->findItem(path);
 	if (root_dir_.has_value())
 		return loadResourceFromFile(root_dir_.value(), path);
 	return absl::nullopt;
@@ -61,7 +61,7 @@ bool ResourceManager::preloadResourceArchive(int id)
 #ifdef _WIN32
 	absl::optional<absl::Span<uint8_t>> res = win32_load_resource(hmodule_, id);
 	if (res.has_value()) {
-		archive_ = base::ResourceArchive::CreateFromData(res->data(), res->size());
+		archive_ = base::ResourceArchive::createFromData(res->data(), res->size());
 		return true;
 	} else {
 		return false;
@@ -77,7 +77,7 @@ void ResourceManager::setResourceRootDir(const char* dir)
 }
 void ResourceManager::setResourceRootData(const uint8_t* data, size_t size)
 {
-	archive_ = base::ResourceArchive::CreateFromData(data, size);
+	archive_ = base::ResourceArchive::createFromData(data, size);
 }
 void ResourceManager::clearCache()
 {

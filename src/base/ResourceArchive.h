@@ -1,4 +1,5 @@
 #pragma once
+#include "ResourceProviderInterface.h"
 #include "log.h"
 #include "absl/types/optional.h"
 #include <memory>
@@ -8,21 +9,16 @@
 
 namespace base {
 
-class ResourceArchive
+class ResourceArchive : public ResourceProviderInterface
 {
 public:
 	~ResourceArchive();
 
 	// static std::unique_ptr<ResourceArchive> CreateFromFile(const wchar_t* filename);
-	static std::unique_ptr<ResourceArchive> CreateFromData(const uint8_t* data, size_t size);
+	static std::unique_ptr<ResourceProviderInterface> createFromData(const uint8_t* data, size_t size);
 
-	struct ResourceItem {
-		std::wstring name;
-		const uint8_t* data;
-		size_t size;
-	};
-	size_t GetItemCount() const;
-	absl::optional<ResourceItem> FindItem(const wchar_t* path) const;
+	absl::optional<ResourceItem> findItem(const wchar_t* path) const override;
+	size_t getItemCount() const;
 
 private:
 	// bool Init(std::unique_ptr<MmapFile> file);

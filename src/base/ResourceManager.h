@@ -37,7 +37,7 @@ private:
     ResourceManager();
     absl::optional<base::ResourceArchive::ResourceItem> loadResourceFromFile(const std::wstring& dir, const wchar_t* name);
 
-    std::unique_ptr<base::ResourceArchive> archive_;
+    std::unique_ptr<base::ResourceProviderInterface> archive_;
     std::optional<std::wstring> root_dir_;
     std::map<std::wstring, base::ResourceArchive::ResourceItem> root_dir_cache_;
 #ifdef _WIN32

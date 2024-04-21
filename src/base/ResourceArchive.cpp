@@ -37,7 +37,7 @@ ResourceArchive::~ResourceArchive()
 	Reset();
 }
 
-std::unique_ptr<ResourceArchive> ResourceArchive::CreateFromData(const uint8_t* data, size_t size)
+std::unique_ptr<ResourceProviderInterface> ResourceArchive::createFromData(const uint8_t* data, size_t size)
 {
 	auto arc = std::make_unique<ResourceArchive>();
 	if (!arc->Init(data, size)) {
@@ -47,12 +47,12 @@ std::unique_ptr<ResourceArchive> ResourceArchive::CreateFromData(const uint8_t* 
 	return arc;
 }
 
-size_t ResourceArchive::GetItemCount() const
+size_t ResourceArchive::getItemCount() const
 {
 	return _items.size();
 }
 
-absl::optional<ResourceArchive::ResourceItem> ResourceArchive::FindItem(const wchar_t* path) const
+absl::optional<ResourceArchive::ResourceItem> ResourceArchive::findItem(const wchar_t* path) const
 {
 	const wchar_t* p = path;
 	int16_t idx = 0;
