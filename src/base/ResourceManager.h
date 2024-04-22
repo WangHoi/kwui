@@ -4,6 +4,9 @@
 #ifdef _WIN32
 #include "windows/windows_header.h"
 #endif
+#ifdef __ANDROID__
+#include <jni.h>
+#endif
 #include <map>
 
 namespace base {
@@ -29,13 +32,20 @@ public:
     void setResourceRootData(const uint8_t* data, size_t size);
     void clearCache();
 
+#ifdef __ANDROID__
+    static ResourceManager* createInstance(JNIEnv* env, jobject asset_manager);
+#else
     static ResourceManager* createInstance();
+#endif
     static ResourceManager* instance();
     static void releaseInstance();
 
 private:
     ResourceManager();
     absl::optional<base::ResourceArchive::ResourceItem> loadResourceFromFile(const std::wstring& dir, const wchar_t* name);
+#ifdef __ANDROID__
+    void preloadAndroidAssets(JNIEnv* env, jobject asset_manager);
+#endif
 
     std::unique_ptr<base::ResourceProviderInterface> archive_;
     std::optional<std::wstring> root_dir_;

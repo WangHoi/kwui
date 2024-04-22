@@ -72,7 +72,12 @@ public:
 #else
 #pragma message("TODO: Application::Private::onAppMessage().")
 #endif
+
+#ifdef __ANDROID__
+    void init(JNIEnv* env, jobject asset_manager)
+#else
     void init()
+#endif
     {
 #ifdef _WIN32
         CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -86,7 +91,11 @@ public:
         base::initialize_log(g_log_callback);
 
         LOG(INFO) << "Init ResourceManager...";
+#ifdef __ANDROID__
+        base::ResourceManager::createInstance(env, asset_manager);
+#else
         base::ResourceManager::createInstance();
+#endif
 
 #if WITH_SKIA
         LOG(INFO) << "Init GraphicDevice...";
@@ -123,6 +132,13 @@ public:
 #endif
 };
 
+#ifdef __ANDROID__
+Application::Application(JNIEnv* env, jobject asset_manager)
+    : d(new Private(this))
+{
+    d->init(env, asset_manager);
+}
+#else
 Application::Application(int argc, char* argv[])
     : d(new Private(this))
 {
@@ -134,6 +150,7 @@ Application::Application(int argc, wchar_t* argv[])
 {
     d->init();
 }
+#endif
 
 Application::~Application()
 {

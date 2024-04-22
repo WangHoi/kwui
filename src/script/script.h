@@ -170,11 +170,8 @@ public:
 	}
 	template<>
 	static style::Value parse<style::Value>(JSContext* ctx_, JSValue j);
-	JSValue wrapScene(scene2d::Scene* scene);
 
 private:
-	void initSceneClass();
-
 	JSContext* ctx_;
 	JSValue app_ = JS_UNINITIALIZED;
 	size_t reload_version_ = 0;

@@ -1,6 +1,9 @@
 #include "ResourceManager.h"
 #include "EncodingManager.h"
 #include "absl/types/span.h"
+#ifdef __ANDROID__
+#include "ResourceAndroid.h"
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
@@ -79,6 +82,12 @@ void ResourceManager::setResourceRootData(const uint8_t* data, size_t size)
 {
 	archive_ = base::ResourceArchive::createFromData(data, size);
 }
+#ifdef __ANDROID__
+void ResourceManager::preloadAndroidAssets(JNIEnv* env, jobject asset_manager)
+{
+	archive_ = base::ResourceAndroid::createFromJava(env, asset_manager);
+}
+#endif
 void ResourceManager::clearCache()
 {
 	root_dir_cache_.clear();
@@ -110,9 +119,17 @@ absl::optional<base::ResourceArchive::ResourceItem> ResourceManager::loadResourc
 	return item;
 }
 
-ResourceManager* ResourceManager::createInstance() {
+#ifdef __ANDROID__
+ResourceManager* ResourceManager::createInstance(JNIEnv* env, jobject asset_manager)
+#else
+ResourceManager* ResourceManager::createInstance()
+#endif
+{
 	if (!g_manager) {
 		g_manager = new ResourceManager();
+#ifdef __ANDROID__
+		g_manager->preloadAndroidAssets(env, asset_manager);
+#endif
 	}
 	return g_manager;
 }

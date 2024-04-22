@@ -1,6 +1,9 @@
 #pragma once
 #include "kwui_export.h"
 #include <functional>
+#ifdef __ANDROID__
+#include <jni.h>
+#endif
 
 namespace kwui {
 
@@ -8,8 +11,12 @@ typedef void KWUI_EXPORT (*LogCallback)(const char* msg);
 
 class KWUI_EXPORT Application {
 public:
+#ifdef __ANDROID__
+	Application(JNIEnv* env, jobject asset_manager);
+#else
 	Application(int argc, char* argv[]);
 	Application(int argc, wchar_t* argv[]);
+#endif
 	~Application();
 	static void setLogCallback(LogCallback callback);
 	static bool scriptReloadEnabled();

@@ -17,6 +17,14 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptEngine_capi.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptValue_capi.cpp
 )
+if(ANDROID)
+list(APPEND kwui_priv_srcs
+  ${CMAKE_CURRENT_SOURCE_DIR}/kwui_jni.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/kwui_jni.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/kwui/Application_jni.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/kwui/Application_jni.cpp
+)
+endif()
 
 set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)
 set(kwui_priv_srcs ${kwui_priv_srcs} PARENT_SCOPE)

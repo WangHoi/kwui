@@ -3,7 +3,12 @@
 
 kwui_Application* kwui_Application_new(int argc, char* argv[])
 {
+#ifdef __ANDROID__
+#pragma message("TODO: android: kwui_Application_new()")
+	return nullptr;
+#else
 	return (kwui_Application*)(new kwui::Application(argc, argv));
+#endif
 }
 
 void kwui_Application_delete(kwui_Application* app)

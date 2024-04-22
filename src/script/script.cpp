@@ -12,25 +12,6 @@
 
 namespace script {
 
-static JSClassID scene_class_id = 0;
-static void scene_finalizer(JSRuntime* rt, JSValue val);
-static void scene_gcmarker(JSRuntime* rt, JSValueConst val,
-	JS_MarkFunc* mark_func);
-static JSValue scene_render(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-static JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-
-static JSClassDef scene_class_def = {
-	"Scene",
-	scene_finalizer,
-	scene_gcmarker,
-	nullptr,
-	nullptr,
-};
-static const JSCFunctionListEntry scene_methods[] = {
-	js_cfunc_def("render", 1, scene_render),
-	js_cfunc_def("updateComponent", 1, scene_update_component),
-};
-
 static Runtime* g_rt = nullptr;
 
 Runtime* Runtime::createInstance()
@@ -229,41 +210,6 @@ Runtime::~Runtime()
 	rt_ = nullptr;
 }
 
-void Context::initSceneClass()
-{
-	JS_NewClassID(&scene_class_id);
-	JS_NewClass(JS_GetRuntime(ctx_), scene_class_id, &scene_class_def);
-	JSValue proto = JS_NewObject(ctx_);
-	JS_SetPropertyFunctionList(ctx_, proto, scene_methods, ABSL_ARRAYSIZE(scene_methods));
-	JS_FreeValue(ctx_, proto);
-}
-
-void scene_finalizer(JSRuntime* rt, JSValue val)
-{
-	auto scene_weakptr = (base::WeakObjectProxy<scene2d::Scene> *)JS_GetOpaque(val, scene_class_id);
-	scene_weakptr->release();
-}
-
-void scene_gcmarker(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)
-{
-	// TODO: mark Components in scene
-}
-
-JSValue scene_render(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-{
-	return JS_EXCEPTION;
-}
-
-JSValue scene_update_component(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-{
-	auto scene_weakptr = (base::WeakObjectProxy<scene2d::Scene> *)JS_GetOpaque(this_val, scene_class_id);
-	auto scene = scene_weakptr->get();
-	if (!scene)
-		return JS_UNDEFINED;
-	scene->updateComponentNodeChildren(nullptr, argv[1]);
-	return JS_UNDEFINED;
-}
-
 static JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 static JSValue app_closing_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
@@ -338,7 +284,6 @@ Context::Context(Runtime* rt)
 	js_init_module_std(ctx_, "std");
 	js_init_module_os(ctx_, "os");
 	js_std_add_helpers(ctx_, 0, nullptr);
-	initSceneClass();
 	register_jsx_function(ctx_);
 	ComponentState::registerClass(ctx_);
 	ElementRef::registerClass(ctx_);
@@ -431,15 +376,6 @@ void Context::loadScript(const std::string& fname, const std::string& content)
 		js_std_dump_error(ctx_);
 	}
 	JS_FreeValue(ctx_, ret);
-}
-
-JSValue Context::wrapScene(scene2d::Scene* scene)
-{
-	JSValue j = JS_NewObjectClass(ctx_, scene_class_id);
-	auto scene_weakptr = scene->weakProxy();
-	scene_weakptr->retain();
-	JS_SetOpaque(j, scene_weakptr);
-	return j;
 }
 
 struct DialogLength {
