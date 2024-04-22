@@ -86,7 +86,6 @@ static JSModuleDef* load_module(JSContext* ctx, const char* orig_module_name, vo
 	std::tie(module_name, std::ignore) = cleanup_module_name(orig_module_name);
 
 	if (absl::StartsWith(module_name, ":")) {
-#ifdef _WIN32
 		auto u16_name = base::EncodingManager::UTF8ToWide(&module_name[1]);
 		auto res_opt = base::ResourceManager::instance()->loadResource(u16_name.c_str());
 		if (res_opt.has_value()) {
@@ -94,9 +93,6 @@ static JSModuleDef* load_module(JSContext* ctx, const char* orig_module_name, vo
 			buf = (uint8_t*)js_mallocz(ctx, res_opt->size + 1);
 			memcpy(buf, res_opt->data, res_opt->size);
 		}
-#else
-#pragma message("TODO: load_module from resource archive not implemented.")
-#endif
 	} else {
 		auto builtin_module = resources::get_module_binary(module_name.c_str());
 		if (builtin_module.has_value()) {
@@ -332,7 +328,6 @@ Context::~Context()
 void Context::loadFile(const std::string& fname)
 {
 	if (absl::StartsWith(fname, ":/")) {
-#ifdef _WIN32
 		std::wstring u16_fname = base::EncodingManager::UTF8ToWide(fname.substr(1));
 		auto res_opt = base::ResourceManager::instance()->loadResource(u16_fname.c_str());
 		if (res_opt.has_value() && res_opt->data) {
@@ -342,9 +337,6 @@ void Context::loadFile(const std::string& fname)
 			LOG(WARNING) << "Load file [" << fname << "] from resource failed.";
 			return;
 		}
-#else
-#pragma message("TODO: loadFile from resource archive not implemented.")
-#endif
 	} else {
 		FILE* f = fopen(fname.c_str(), "rb");
 		if (!f)

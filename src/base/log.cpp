@@ -72,17 +72,17 @@ private:
 
 void initialize_log(kwui::LogCallback func)
 {
-    absl::LogSink* sink;
+    absl::LogSink* sink = nullptr;
     if (func) {
         sink = new CallbackLogSink(func);
     } else {
-#ifdef __ANDROID__
-        sink = new AndroidLogSink;
-#else
+#ifndef __ANDROID__
         sink = new StdErrLogSink;
 #endif
     }
-    absl::AddLogSink(sink);
+    if (sink) {
+        absl::AddLogSink(sink);
+    }
     absl::InitializeLog();
 }
 

@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "ScriptEngine.h"
 #include "absl/base/macros.h"
+#include "base/log.h"
 #include <pthread.h>
 #include <unistd.h>
 #include <android/looper.h>
@@ -118,6 +119,7 @@ void* JApplication::pthread_main(void* arg) {
     kwui_java_vm->AttachCurrentThread(&env, nullptr);
 
     kwui::Application app(env, me->asset_manager_);
+    //LOG(INFO) << "JApplication::pthread_main(): entry_js=[" << me->entry_js_ << "]";
     if (!me->entry_js_.empty()) {
         kwui::ScriptEngine::get()->loadFile(me->entry_js_.c_str());
     }

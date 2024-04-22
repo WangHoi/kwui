@@ -1,5 +1,6 @@
 #include "ResourceAndroid.h"
 #include "EncodingManager.h"
+#include "base/log.h"
 #include <stdlib.h>
 
 namespace base {
@@ -21,6 +22,8 @@ ResourceAndroid::~ResourceAndroid()
 
 absl::optional<ResourceProviderInterface::ResourceItem> ResourceAndroid::findItem(const wchar_t* path) const
 {
+	if (path && path[0] == L'/')
+		++path;
 	std::wstring key(path);
 	auto it = cache_.find(path);
 	if (it != cache_.end())
@@ -28,8 +31,9 @@ absl::optional<ResourceProviderInterface::ResourceItem> ResourceAndroid::findIte
 
 	auto filename = EncodingManager::WideToUTF8(path);
 	AAsset* f = AAssetManager_open(manager_, filename.c_str(), AASSET_MODE_BUFFER);
-	if (!f)
+	if (!f) {
 		return absl::nullopt;
+	}
 	ResourceProviderInterface::ResourceItem item;
 	item.size = AAsset_getLength(f);
 	auto data = malloc(item.size);
@@ -44,6 +48,7 @@ absl::optional<ResourceProviderInterface::ResourceItem> ResourceAndroid::findIte
 void ResourceAndroid::init(JNIEnv* env, jobject asset_manager)
 {
 	manager_ = AAssetManager_fromJava(env, asset_manager);
+	LOG(INFO) << "AAssetManager_fromJava return " << manager_;
 }
 
 }
