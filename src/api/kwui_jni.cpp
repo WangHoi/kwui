@@ -1,9 +1,15 @@
 #include "kwui_jni.h"
 #include "absl/base/macros.h"
 #include <android/log.h>
+#include <malloc.h>
 #include <jni.h>
 
 JavaVM* kwui_java_vm = nullptr;
+
+void __attribute__((constructor)) disable_tagged_pointer_hook() {
+    extern int mallopt(int param, int value);
+    mallopt(-204, 0);
+}
 
 #define REGISTER_NATIVES(class_name)                     \
 extern int kwui_jni_register_##class_name(JNIEnv*);    \
