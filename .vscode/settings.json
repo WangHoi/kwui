@@ -95,5 +95,6 @@
         "*.rh": "cpp",
         "stack": "cpp"
     },
-    "rust-analyzer.checkOnSave": false
+    "rust-analyzer.checkOnSave": false,
+    "mesonbuild.configureOnOpen": false
 }

@@ -774,14 +774,15 @@ target_sources(
 #  tools/gpu/vk/VkTestHelper.cpp
 #  tools/gpu/vk/VkTestUtils.cpp
 #  tools/gpu/vk/VkYcbcrSamplerHelper.cpp
-#  tools/sk_app/GLWindowContext.cpp
 #   tools/sk_app/VulkanSharedWindowContext.cpp
 #   tools/sk_app/VulkanWindowContext.cpp
-  tools/sk_app/WindowContext.cpp
 #   tools/sk_app/win/D3D12WindowContext_win.cpp
 #   tools/sk_app/win/GLWindowContext_win.cpp
 #   tools/sk_app/win/RasterWindowContext_win.cpp
 #   tools/sk_app/win/VulkanWindowContext_win.cpp       
+  tools/sk_app/GLWindowContext.cpp
+  tools/sk_app/Window.cpp
+  tools/sk_app/WindowContext.cpp
 )
 if(WIN32)
   target_sources(
@@ -853,6 +854,7 @@ if(ANDROID)
     src/ports/SkFontHost_FreeType.cpp
     src/ports/SkFontHost_FreeType_common.cpp
     src/ports/SkFontHost_FreeType_common.h
+    tools/sk_app/android/GLWindowContext_android.cpp
   )
 endif()
 
