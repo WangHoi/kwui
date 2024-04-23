@@ -558,6 +558,9 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 		L"dialog", NULL, cfg.flags,
 		cfg.popup_shadow, absl::nullopt);
 #endif
+#ifdef __ANDROID__
+	dialog = new android::DialogAndroid();
+#endif
 	if (!dialog) {
 		return JS_ThrowInternalError(ctx, "app_show_dialog not implemented.");
 	}

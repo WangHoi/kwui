@@ -10,6 +10,7 @@
 #include "include/core/SkColor.h"
 #include "tools/sk_app/android/WindowContextFactory_android.h"
 #include "android/SurfaceAndroid.h"
+#include "android/DialogAndroid.h"
 #include <pthread.h>
 #include <unistd.h>
 #include <android/log.h>
@@ -23,12 +24,13 @@ enum MessageType {
 	kUndefined,
 	kSurfaceChanged,
 	kSurfaceDestroyed,
-	kRenderPicture,
+	kSurfaceRedrawNeeded,
 };
 
 struct Message {
 	MessageType fType = kUndefined;
 	ANativeWindow* fNativeWindow = nullptr;
+    float fDensity = 1.0f;
 	//SkPicture* fPicture = nullptr;
 	//WindowSurface** fWindowSurface = nullptr;
 
@@ -57,25 +59,26 @@ private:
     jobject asset_manager_;
     std::string entry_js_;
     std::unique_ptr<android::WindowSurface> surface_;
+    float surface_density_ = 1.0f;
 };
 
 JApplication::JApplication(jobject asset_manager, const std::string& entry_js)
     : asset_manager_(asset_manager), entry_js_(entry_js)
 {
     pipe(fPipe);
-    LOG(INFO) << "JApplication::JApplication() " << fPipe[0] << "/" << fPipe[1];
+    //LOG(INFO) << "JApplication::JApplication() " << fPipe[0] << "/" << fPipe[1];
     fRunning = true;
     pthread_create(&fThread, nullptr, pthread_main, this);
 }
 
-void JApplication::postMessage(const Message& message) const {
+void JApplication::postMessage(const Message& message) const
+{
     ssize_t ret = write(fPipe[1], &message, sizeof(message));
-    LOG(INFO) << "write pipe return " << ret;
 }
 
-void JApplication::readMessage(Message* message) const {
+void JApplication::readMessage(Message* message) const
+{
     ssize_t ret = read(fPipe[0], message, sizeof(Message));
-    LOG(INFO) << "read pipe return " << ret;
 }
 
 void JApplication::release() {
@@ -83,7 +86,6 @@ void JApplication::release() {
 }
 
 int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
-    LOG(INFO) << "message_callback";
     auto app = (JApplication*)data;
     Message message;
     app->readMessage(&message);
@@ -91,12 +93,11 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
 
     switch (message.fType) {
     case kSurfaceChanged: {
-        LOG(INFO) << "Surface changed";
         app->surface_ = nullptr;
+        app->surface_density_ = message.fDensity;
         sk_app::DisplayParams params;
         auto wnd_ctx = sk_app::window_context_factory::MakeGLForAndroid(message.fNativeWindow, params);
         if (wnd_ctx) {
-            LOG(INFO) << "creating WindowSurface";
             app->surface_.reset(new android::WindowSurface(message.fNativeWindow, std::move(wnd_ctx)));
         } else {
             LOG(ERROR) << "MakeGLForAndroid failed";
@@ -104,23 +105,21 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
         break;
     }
     case kSurfaceDestroyed: {
-        LOG(INFO) << "Surface destroyed";
         app->surface_ = nullptr;
-        //SkDebugf("surface destroyed, shutting down thread");
-        //JApplication->fRunning = false;
-        //if (auto* windowSurface = reinterpret_cast<Surface*>(*message.fWindowSurface)) {
-        //    windowSurface->release(nullptr);
-        //    delete windowSurface;
-        //}
         return 0;
         break;
     }
-    case kRenderPicture: {
-        //sk_sp<SkPicture> picture(message.fPicture);
-        //if (auto* windowSurface = reinterpret_cast<Surface*>(*message.fWindowSurface)) {
-        //    windowSurface->getCanvas()->drawPicture(picture);
-        //    windowSurface->flushAndSubmit();
-        //}
+    case kSurfaceRedrawNeeded: {
+        if (app->surface_) {
+            auto canvas = app->surface_->getCanvas();
+            if (canvas) {
+                auto dlg = android::DialogAndroid::firstDialog();
+                if (dlg) {
+                    dlg->paint(canvas, app->surface_density_);
+                }
+                app->surface_->flushAndSubmit();
+            }
+        }
         break;
     }
     default: {
@@ -136,8 +135,7 @@ void* JApplication::pthread_main(void* arg) {
     auto me = (JApplication*)arg;
     // Looper setup
     ALooper* looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
-    ALooper_addFd(looper, me->fPipe[0], ALOOPER_POLL_CALLBACK, ALOOPER_EVENT_INPUT,
-        me->message_callback, me);
+    ALooper_addFd(looper, me->fPipe[0], 1, ALOOPER_EVENT_INPUT, nullptr, nullptr);
     JNIEnv* env = nullptr;
     kwui_java_vm->AttachCurrentThread(&env, nullptr);
 
@@ -147,20 +145,15 @@ void* JApplication::pthread_main(void* arg) {
         kwui::ScriptEngine::get()->loadFile(me->entry_js_.c_str());
     }
     while (me->fRunning) {
-        const int ident = ALooper_pollOnce(2000, nullptr, nullptr, nullptr);
+        const int ident = ALooper_pollOnce(0, nullptr, nullptr, nullptr);
 
         //if (ident != ALOOPER_POLL_TIMEOUT) {
             //SkDebugf("Unhandled ALooper_pollAll ident=%d !", ident);
-            LOG(INFO) << "ALooper_pollOnce return " << ident;
-        //}
-        if (me->surface_) {
-            auto canvas = me->surface_->getCanvas();
-            if (canvas) {
-                //LOG(INFO) << "clear canvas";
-                canvas->clear(SK_ColorBLUE);
-                me->surface_->flushAndSubmit();
-            }
+        //LOG(INFO) << "ALooper_pollOnce return " << ident;
+        if (ident == 1) {
+            message_callback(0, 0, me);
         }
+        //}
     }
     return nullptr;
 }
@@ -181,12 +174,13 @@ static void Application_Release(JNIEnv* env, jobject, jlong ptr)
 }
 
 static void Application_SurfaceChanged(JNIEnv* env, jobject, jlong ptr, jobject surface,
-    jint /*format*/, jint /*width*/, jint /*height*/)
+    jint /*format*/, jint /*width*/, jint /*height*/, jfloat density)
 {
     LOG(INFO) << "Application_SurfaceChanged";
     auto me = reinterpret_cast<JApplication*>(ptr);
     Message msg(kSurfaceChanged);
     msg.fNativeWindow = ANativeWindow_fromSurface(env, surface);
+    msg.fDensity = density;
     me->postMessage(msg);
 }
 
@@ -195,13 +189,19 @@ static void Application_SurfaceDestroyed(JNIEnv* env, jobject, jlong ptr)
     auto me = reinterpret_cast<JApplication*>(ptr);
     me->postMessage(Message(kSurfaceDestroyed));
 }
+static void Application_SurfaceRedrawNeeded(JNIEnv* env, jobject, jlong ptr)
+{
+    auto me = reinterpret_cast<JApplication*>(ptr);
+    me->postMessage(Message(kSurfaceRedrawNeeded));
+}
 
 int kwui_jni_register_Application(JNIEnv* env) {
 	static const JNINativeMethod methods[] = {
 		{"nCreate" , "(Landroid/content/res/AssetManager;Ljava/lang/String;)J", reinterpret_cast<void*>(Application_Create)},
 		{"nRelease", "(J)V", reinterpret_cast<void*>(Application_Release)},
-        {"nSurfaceChanged", "(JLandroid/view/Surface;III)V", reinterpret_cast<void*>(Application_SurfaceChanged)},
+        {"nSurfaceChanged", "(JLandroid/view/Surface;IIIF)V", reinterpret_cast<void*>(Application_SurfaceChanged)},
         {"nSurfaceDestroyed", "(J)V", reinterpret_cast<void*>(Application_SurfaceDestroyed)},
+        {"nSurfaceRedrawNeeded", "(J)V", reinterpret_cast<void*>(Application_SurfaceRedrawNeeded)},
 	};
 
 	const auto clazz = env->FindClass("com/example/myapplication/Native");

@@ -7,7 +7,6 @@ class PainterX : public graph2d::PainterInterface {
 public:
 	PainterX(SkCanvas* canvas, float dpi_scale);
 
-private:
 	// 通过 PainterInterface 继承
 	void save() override;
 	void restore() override;
@@ -28,6 +27,7 @@ private:
 		const scene2d::PointF& origin,
 		const scene2d::DimensionF& size) override;
 
+private:
 	SkCanvas* canvas_;
 	float dpi_scale_;
 };
