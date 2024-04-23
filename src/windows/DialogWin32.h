@@ -2,6 +2,7 @@
 #include "base/base.h"
 #include "scene2d/scene2d.h"
 #include "graph2d/PaintSurface.h"
+#include "script/Dialog.h"
 #include "windows_header.h"
 #include "absl/types/optional.h"
 #include "PopupShadow.h"
@@ -32,23 +33,23 @@ enum DialogFlag {
     DIALOG_FLAG_POPUP = 2,
 };
 
-class Dialog : public scene2d::EventContext {
+class DialogWin32 : public script::DialogInterface {
 public:
     struct CreateData {
         float dpi_scale;
         HMONITOR monitor;
     };
-    Dialog(const WCHAR* wnd_class_name, HICON icon, int flags,
+    DialogWin32(const WCHAR* wnd_class_name, HICON icon, int flags,
         absl::optional<PopupShadowData> popup_shadow,
         absl::optional<CreateData> create_data);
-    virtual ~Dialog();
+    virtual ~DialogWin32();
 
     static float getMonitorDpiScale(HMONITOR monitor);
-    static Dialog* findDialogById(const std::string& id);
+    static DialogWin32* findDialogById(const std::string& id);
 
     inline void SetParent(HWND parent) { hwnd_parent_ = parent; }
-    inline void SetParent(Dialog* parent) { SetParent(parent ? parent->hwnd_ : nullptr); }
-    void SetPopupAnchor(Dialog* anchor);
+    inline void SetParent(DialogWin32* parent) { SetParent(parent ? parent->hwnd_ : nullptr); }
+    void SetPopupAnchor(DialogWin32* anchor);
     inline void Show() {
         SetVisible(true);
     }
@@ -66,7 +67,7 @@ public:
     void setWindowPos(const scene2d::RectF& rect);
     
     void SetTitle(const std::string& text);
-    scene2d::Scene* GetScene() const { return scene_.get(); }
+    scene2d::Scene* GetScene() const override { return scene_.get(); }
     const scene2d::DimensionF& GetSize() const { return size_; }
     inline float GetDpiScale() const { return dpi_scale_; }
     HWND GetHwnd() const { return hwnd_; }

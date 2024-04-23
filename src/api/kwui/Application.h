@@ -7,7 +7,7 @@
 
 namespace kwui {
 
-typedef void KWUI_EXPORT (*LogCallback)(const char* msg);
+typedef void (*LogCallback)(const char* msg);
 
 class KWUI_EXPORT Application {
 public:

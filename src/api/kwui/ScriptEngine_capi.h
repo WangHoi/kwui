@@ -6,8 +6,8 @@
 extern "C" {
 #endif
 
-	typedef void KWUI_EXPORT(*kwui_LogCallback)(const char* msg);
-	typedef kwui_ScriptValue* KWUI_EXPORT(*kwui_ScriptFunction)(int argc, kwui_ScriptValue* argv[], void* udata);
+	typedef void (*kwui_LogCallback)(const char* msg);
+	typedef kwui_ScriptValue* (*kwui_ScriptFunction)(int argc, kwui_ScriptValue* argv[], void* udata);
 
 	typedef struct kwui_ScriptEngine kwui_ScriptEngine;
 

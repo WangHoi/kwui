@@ -15,7 +15,7 @@
 #include "style/LayoutObject.h"
 
 namespace windows {
-class Dialog;
+class DialogWin32;
 namespace graphics {
 class Painter;
 }
@@ -257,7 +257,7 @@ protected:
 	} scroll_data_;
 
 	friend class Scene;
-	friend class windows::Dialog;
+	friend class windows::DialogWin32;
 	friend class style::InlineBoxBuilder;
 	friend class style::LayoutTreeBuilder;
 	friend class style::LayoutObject;

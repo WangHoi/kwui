@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-	typedef void KWUI_EXPORT(*kwui_LogCallback)(const char* msg);
+	typedef void (*kwui_LogCallback)(const char* msg);
 
 	typedef struct kwui_Application kwui_Application;
 

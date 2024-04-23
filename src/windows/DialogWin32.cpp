@@ -1,4 +1,4 @@
-#include "Dialog.h"
+#include "DialogWin32.h"
 #include "base/log.h"
 #include "scene2d/scene2d.h"
 #include "base/EncodingManager.h"
@@ -38,7 +38,7 @@ typedef HRESULT (WINAPI* GETDPIFORMONITOR)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UI
 
 typedef BOOL(WINAPI* ADJUSTWINDOWRECTEXFORDPI)(LPRECT, DWORD, BOOL, DWORD, UINT);
 
-float Dialog::getMonitorDpiScale(HMONITOR monitor)
+float DialogWin32::getMonitorDpiScale(HMONITOR monitor)
 {
     static GETDPIFORMONITOR pGETDPIFORMONITOR = NULL;
     if (!pGETDPIFORMONITOR) {
@@ -70,9 +70,9 @@ static void PreloadCursor() {
     s_preloaded_cursors[CURSOR_WAIT] = LoadCursor(NULL, IDC_WAIT);
 }
 
-static std::unordered_map<std::string, Dialog*> g_dialog_map;
+static std::unordered_map<std::string, DialogWin32*> g_dialog_map;
 
-Dialog::Dialog(const WCHAR* wnd_class_name,
+DialogWin32::DialogWin32(const WCHAR* wnd_class_name,
     HICON icon, int flags,
     absl::optional<PopupShadowData> popup_shadow,
     absl::optional<CreateData> create_data)
@@ -97,22 +97,22 @@ Dialog::Dialog(const WCHAR* wnd_class_name,
     InitWindow(GetModuleHandle(NULL), wnd_class_name, icon);
 }
 
-Dialog::~Dialog() {
+DialogWin32::~DialogWin32() {
     g_dialog_map.erase(id_);
 }
 
-Dialog* Dialog::findDialogById(const std::string& id)
+DialogWin32* DialogWin32::findDialogById(const std::string& id)
 {
     auto it = g_dialog_map.find(id);
     return (it == g_dialog_map.end()) ? nullptr : it->second;
 }
 
-void Dialog::SetPopupAnchor(Dialog* anchor)
+void DialogWin32::SetPopupAnchor(DialogWin32* anchor)
 {
     hwnd_anchor_ = anchor ? anchor->hwnd_ : NULL;
 }
 
-void Dialog::SetVisible(bool visible) {
+void DialogWin32::SetVisible(bool visible) {
     if (visible_ != visible) {
         visible_ = visible;
     }
@@ -137,7 +137,7 @@ void Dialog::SetVisible(bool visible) {
     }
 }
 
-scene2d::RectF Dialog::adjustWindowRect(const scene2d::RectF& rect,
+scene2d::RectF DialogWin32::adjustWindowRect(const scene2d::RectF& rect,
     float dpi_scale, bool customFrame, bool popup)
 {
     static ADJUSTWINDOWRECTEXFORDPI pADJUSTWINDOWRECTEXFORDPI = NULL;
@@ -172,7 +172,7 @@ scene2d::RectF Dialog::adjustWindowRect(const scene2d::RectF& rect,
         (float)r.top, (float)r.right, (float)r.bottom);
 }
 
-void Dialog::Resize(float width, float height) {
+void DialogWin32::Resize(float width, float height) {
     long w = lroundf(width * dpi_scale_);
     long h = lroundf(height * dpi_scale_);
     SetWindowPos(hwnd_, NULL,
@@ -181,7 +181,7 @@ void Dialog::Resize(float width, float height) {
         SWP_NOMOVE | SWP_NOACTIVATE);
 }
 
-void Dialog::setWindowPos(const scene2d::RectF& rect)
+void DialogWin32::setWindowPos(const scene2d::RectF& rect)
 {
     SetWindowPos(hwnd_, NULL,
         (int)rect.left,
@@ -191,15 +191,15 @@ void Dialog::setWindowPos(const scene2d::RectF& rect)
         SWP_NOACTIVATE);
 }
 
-void Dialog::SetTitle(const std::string& text) {
+void DialogWin32::SetTitle(const std::string& text) {
     // _title_label->SetText(text);
     auto utf16_text = EncodingManager::UTF8ToWide(text);
     SetWindowTextW(hwnd_, utf16_text.c_str());
 }
 
-void Dialog::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON icon) {
+void DialogWin32::InitWindow(HINSTANCE hInstance, const WCHAR* wnd_class_name, HICON icon) {
     auto title = EncodingManager::UTF8ToWide("");
-    RegisterWindowClass(hInstance, wnd_class_name, icon, &Dialog::WndProcMain);
+    RegisterWindowClass(hInstance, wnd_class_name, icon, &DialogWin32::WndProcMain);
     DWORD style, ex_style;
     if (flags_ & DIALOG_FLAG_MAIN) {
         if (popup_shadow_data_.has_value()) {
@@ -329,7 +329,7 @@ static int IME_GetCaretPos(HIMC himc) {
     return (int)ImmGetCompositionStringW(himc, GCS_CURSORPOS, NULL, 0);
 }
 
-LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT DialogWin32::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
     case WM_CREATE:
         OnCreate();
@@ -375,7 +375,7 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         }
     }
     //case WM_NCACTIVATE:
-        //c2_log("Dialog HWND %p NCACTIVE wParam %d\n", hWnd, wParam);
+        //c2_log("DialogWin32 HWND %p NCACTIVE wParam %d\n", hWnd, wParam);
         //OnActivate(wParam);
         //return FALSE;
     case WM_DISPLAYCHANGE:
@@ -552,21 +552,21 @@ LRESULT Dialog::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
     }
     return 0;
 }
-LRESULT CALLBACK Dialog::WndProcMain(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    Dialog* me;
+LRESULT CALLBACK DialogWin32::WndProcMain(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    DialogWin32* me;
     if (message == WM_NCCREATE) {
-        me = reinterpret_cast<Dialog*>(((LPCREATESTRUCTW)lParam)->lpCreateParams);
+        me = reinterpret_cast<DialogWin32*>(((LPCREATESTRUCTW)lParam)->lpCreateParams);
         me->hwnd_ = hWnd;
         SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LONG_PTR)me);
     } else {
-        me = reinterpret_cast<Dialog*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
+        me = reinterpret_cast<DialogWin32*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
     }
     if (me)
         return me->WindowProc(hWnd, message, wParam, lParam);
     else
         return DefWindowProcW(hWnd, message, wParam, lParam);
 }
-void Dialog::OnCreate() {
+void DialogWin32::OnCreate() {
     scene_ = std::make_unique<scene2d::Scene>(*this);
     /*
     _root = make_shared<Node2D>();
@@ -583,7 +583,7 @@ void Dialog::OnCreate() {
     _close_button->SetSize({ 40, 32 });
     _close_button->SetOrigin({ _size.x - 40, 0 });
     _root->AddChild(_close_button);
-    _close_button->SetClickedCallback(MakeCallback(this, &Dialog::OnCloseSysCommand));
+    _close_button->SetClickedCallback(MakeCallback(this, &DialogWin32::OnCloseSysCommand));
     */
     if (popup_shadow_data_.has_value()) {
         float px = (float)popup_shadow_data_->padding;
@@ -599,7 +599,7 @@ void Dialog::OnCreate() {
     }
     SetupHook();
 }
-void Dialog::OnPaint() {
+void DialogWin32::OnPaint() {
     if (!surface_) {
         LOG(WARNING) << "OnPaint: No surface.";
         return;
@@ -638,13 +638,13 @@ void Dialog::OnPaint() {
 
     scene_->runPostRenderTasks();
 }
-void Dialog::OnResize() {
+void DialogWin32::OnResize() {
     LOG(INFO) << "OnResize pixelSize " << pixel_size_.width << "x" << pixel_size_.height << "px";
     ClosePopups();
     UpdateBorderAndRenderTarget();
     RequestPaint();
 }
-void Dialog::Close() {
+void DialogWin32::Close() {
     if (animation_timer_id_) {
         KillTimer(hwnd_, animation_timer_id_);
         animation_timer_id_ = 0;
@@ -656,10 +656,10 @@ void Dialog::Close() {
     }
     SendMessageW(hwnd_, WM_CLOSE, 0, 0);
 }
-void Dialog::RequestPaint() {
+void DialogWin32::RequestPaint() {
     InvalidateRect(hwnd_, NULL, FALSE);
 }
-void Dialog::RequestUpdate() {
+void DialogWin32::RequestUpdate() {
     scene_->resolveStyle();
     scene_->computeLayout(size_.width, size_.height);
 
@@ -673,7 +673,7 @@ void Dialog::RequestUpdate() {
     UpdateHoveredNode();
     UpdateFocusedNode();
 }
-void Dialog::RequestAnimationFrame(scene2d::Node* node) {
+void DialogWin32::RequestAnimationFrame(scene2d::Node* node) {
     auto it = find_if(animating_nodes_.begin(), animating_nodes_.end(),
         [&](const auto& link) {
             return link.get() == node;
@@ -684,7 +684,7 @@ void Dialog::RequestAnimationFrame(scene2d::Node* node) {
         animation_timer_id_ = SetTimer(hwnd_, ANIMATION_TIMER_EVENT, USER_TIMER_MINIMUM, NULL);
     }
 }
-void Dialog::UpdateCaretRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) {
+void DialogWin32::UpdateCaretRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) {
     scene2d::PointF top_left = (origin * dpi_scale_).makeRound();
     scene2d::PointF bottom_right = ((origin + scene2d::PointF(size.width, size.height)) * dpi_scale_).makeRound();
 
@@ -719,7 +719,7 @@ void Dialog::UpdateCaretRect(const scene2d::PointF& origin, const scene2d::Dimen
         }
     }
 }
-void Dialog::OnKeyDown(int key, int modifiers, bool prev_down) {
+void DialogWin32::OnKeyDown(int key, int modifiers, bool prev_down) {
     if (key == VK_RETURN)
         return OnEnterKeyDown(*this);
     if (key == VK_ESCAPE)
@@ -735,7 +735,7 @@ void Dialog::OnKeyDown(int key, int modifiers, bool prev_down) {
         scene_->dispatchEvent(node.get(), key_down, true);
     }
 }
-void Dialog::OnKeyUp(int key, int modifiers) {
+void DialogWin32::OnKeyUp(int key, int modifiers) {
     if (key == VK_RETURN)
         return OnEnterKeyUp(*this);
     if (key == VK_ESCAPE)
@@ -747,28 +747,28 @@ void Dialog::OnKeyUp(int key, int modifiers) {
         scene_->dispatchEvent(node.get(), key_up, true);
     }
 }
-void Dialog::OnCharacter(wchar_t ch) {
+void DialogWin32::OnCharacter(wchar_t ch) {
     base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
     if (node) {
         scene2d::ImeEvent chars(node.get(), scene2d::CHARS, std::wstring(1, ch));
         scene_->dispatchEvent(node.get(), chars, true);
     }
 }
-void Dialog::OnImeComposition(const std::wstring& text, absl::optional<int> caret_pos) {
+void DialogWin32::OnImeComposition(const std::wstring& text, absl::optional<int> caret_pos) {
     base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
     if (node) {
         scene2d::ImeEvent composing(node.get(), scene2d::COMPOSING, text, caret_pos);
         scene_->dispatchEvent(node.get(), composing, true);
     }
 }
-void Dialog::OnImeCommit(const std::wstring& text) {
+void DialogWin32::OnImeCommit(const std::wstring& text) {
     base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
     if (node) {
         scene2d::ImeEvent commit(node.get(), scene2d::COMMIT, text);
         scene_->dispatchEvent(node.get(), commit, true);
     }
 }
-void Dialog::OnImeStartComposition() {
+void DialogWin32::OnImeStartComposition() {
     // Node2DRef node = _focused_node.lock();
     // if (node) {
     //     node->OnImeStartComposition(*this);
@@ -786,14 +786,14 @@ void Dialog::OnImeStartComposition() {
         }
     }
 }
-void Dialog::OnImeEndComposition() {
+void DialogWin32::OnImeEndComposition() {
     base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
     if (node) {
         scene2d::ImeEvent end_compose(node.get(), scene2d::END_COMPOSE);
         scene_->dispatchEvent(node.get(), end_compose, true);
     }
 }
-void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers) {
+void DialogWin32::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers) {
     if (button == buttons && !mouse_capture_) {
         //c2_log("capture mouse\n");
         mouse_capture_ = true;
@@ -828,7 +828,7 @@ void Dialog::OnMouseDown(scene2d::ButtonState button, int buttons, int modifiers
         scene_->dispatchEvent(focused_node_.get(), focus_in, true);
     }
 }
-void Dialog::OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers) {
+void DialogWin32::OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers) {
     if (buttons == 0 && mouse_capture_) {
         mouse_capture_ = false;
         //c2_log("release mouse\n");
@@ -846,7 +846,7 @@ void Dialog::OnMouseUp(scene2d::ButtonState button, int buttons, int modifiers) 
         scene_->dispatchEvent(node.get(), mouse_up, true);
     }
 }
-void Dialog::OnMouseMove(int buttons, int modifiers) {
+void DialogWin32::OnMouseMove(int buttons, int modifiers) {
     //c2_log("OnMouseMove %.0f, %.0f\n", _mouse_position.x, _mouse_position.y);
     UpdateMouseTracking();
     UpdateHoveredNode();
@@ -858,7 +858,7 @@ void Dialog::OnMouseMove(int buttons, int modifiers) {
         RequestPaint();
     }
 }
-void Dialog::OnMouseWheel(int delta, int buttons, int modifiers, bool hwheel)
+void DialogWin32::OnMouseWheel(int delta, int buttons, int modifiers, bool hwheel)
 {
     scene2d::Node* node;
     scene2d::PointF local_pos;
@@ -871,7 +871,7 @@ void Dialog::OnMouseWheel(int delta, int buttons, int modifiers, bool hwheel)
         scene_->dispatchEvent(node, mouse_wheel, true);
     }
 }
-void Dialog::UpdateHoveredNode() {
+void DialogWin32::UpdateHoveredNode() {
     scene2d::PointF local_pos;
     scene2d::Node* node = scene_->pickNode(mouse_position_, scene2d::NODE_FLAG_HOVERABLE, &local_pos);
     base::object_refptr<scene2d::Node> old_hovered = hovered_node_.upgrade();
@@ -890,7 +890,7 @@ void Dialog::UpdateHoveredNode() {
         RequestPaint();
     }
 }
-void Dialog::UpdateFocusedNode() {
+void DialogWin32::UpdateFocusedNode() {
     // Focused node become invisible
     if (auto node = focused_node_.upgrade()) {
         if (!node->visibleInHierarchy()) {
@@ -901,14 +901,14 @@ void Dialog::UpdateFocusedNode() {
         }
     }
 }
-void Dialog::recreateSurface() {
+void DialogWin32::recreateSurface() {
 #if WITH_SKIA
     xskia::PaintSurfaceX::Configuration config;
     config.hwnd = hwnd_;
     config.size = size_;
     config.dpi_scale = dpi_scale_;
     surface_ = xskia::PaintSurfaceX::create(config);
-    LOG(INFO) << "Dialog::recreateSurface() hwnd=" << std::hex << hwnd_
+    LOG(INFO) << "DialogWin32::recreateSurface() hwnd=" << std::hex << hwnd_
         << " size=(" << size_.width << "x" << size_.height << ")"
         << " dpi_scale=" << dpi_scale_
         << " surface=" << std::hex << surface_.get();
@@ -918,14 +918,14 @@ void Dialog::recreateSurface() {
     config.size = size_;
     config.dpi_scale = dpi_scale_;
     surface_ = graphics::PaintSurfaceD2D::create(config);
-    LOG(INFO) << "Dialog::recreateSurface() hwnd=" << std::hex << hwnd_
+    LOG(INFO) << "DialogWin32::recreateSurface() hwnd=" << std::hex << hwnd_
         << " size=(" << size_.width << "x" << size_.height << ")"
         << " dpi_scale=" << dpi_scale_
         << " surface=" << std::hex << surface_.get();
 #endif
 }
-void Dialog::OnDpiChanged(UINT dpi, const RECT* rect) {
-    LOG(INFO) << "Dialog dpi changed to " << dpi
+void DialogWin32::OnDpiChanged(UINT dpi, const RECT* rect) {
+    LOG(INFO) << "DialogWin32 dpi changed to " << dpi
         << "size " << rect->right - rect->left << "x" << rect->bottom - rect->top << "px";
     float new_dpi_scale = (float)dpi / USER_DEFAULT_SCREEN_DPI;
     if (new_dpi_scale == dpi_scale_)
@@ -961,7 +961,7 @@ void Dialog::OnDpiChanged(UINT dpi, const RECT* rect) {
     UpdateBorderAndRenderTarget();
     RequestUpdate();
 }
-void Dialog::OnCloseSysCommand(EventContext& ctx) {
+void DialogWin32::OnCloseSysCommand(EventContext& ctx) {
     auto ret = kwui::ScriptEngine::get()->sendEvent("dialog:request-close", id_);
     bool any_true = false;
     ret.visitArray([&](int, const kwui::ScriptValue& v) {
@@ -972,7 +972,7 @@ void Dialog::OnCloseSysCommand(EventContext& ctx) {
         return;
     Close();
 }
-void Dialog::UpdateMouseTracking() {
+void DialogWin32::UpdateMouseTracking() {
     if (!mouse_event_tracking_) {
         mouse_event_tracking_ = true;
         TRACKMOUSEEVENT tme = {};
@@ -982,7 +982,7 @@ void Dialog::UpdateMouseTracking() {
         TrackMouseEvent(&tme);
     }
 }
-void Dialog::OnDestroy() {
+void DialogWin32::OnDestroy() {
     ReleaseHook();
     ClosePopups();
     scene_ = nullptr;
@@ -995,7 +995,7 @@ void Dialog::OnDestroy() {
         EnableWindow(hwnd_parent_, true);
 }
 
-void Dialog::OnActivate(bool active) {
+void DialogWin32::OnActivate(bool active) {
     //c2_log("%p OnActive %d\n", _hwnd, active);
     if (active && popup_shadow_) {
         SetWindowPos(popup_shadow_->GetHwnd(),
@@ -1008,7 +1008,7 @@ void Dialog::OnActivate(bool active) {
         ClosePopups();
     }
 }
-void Dialog::OnWindowPosChanged(WINDOWPOS* wnd_pos) {
+void DialogWin32::OnWindowPosChanged(WINDOWPOS* wnd_pos) {
     if (on_window_pos_changed_)
         return;
     if (!popup_shadow_)
@@ -1042,26 +1042,26 @@ void Dialog::OnWindowPosChanged(WINDOWPOS* wnd_pos) {
     }
     on_window_pos_changed_ = false;
 }
-void Dialog::DiscardDeviceResources() {
+void DialogWin32::DiscardDeviceResources() {
     // DiscardNodeDeviceResources(_root.get());
 }
-void Dialog::OnEnterKeyDown(EventContext& ctx)
+void DialogWin32::OnEnterKeyDown(EventContext& ctx)
 {
     kwui::ScriptEngine::get()->postEvent("dialog:enter-key-down", id_);
 }
-void Dialog::OnEnterKeyUp(EventContext& ctx)
+void DialogWin32::OnEnterKeyUp(EventContext& ctx)
 {
     kwui::ScriptEngine::get()->postEvent("dialog:enter-key-up", id_);
 }
-void Dialog::OnEscapeKeyDown(EventContext& ctx)
+void DialogWin32::OnEscapeKeyDown(EventContext& ctx)
 {
     kwui::ScriptEngine::get()->postEvent("dialog:escape-key-down", id_);
 }
-void Dialog::OnEscapeKeyUp(EventContext& ctx)
+void DialogWin32::OnEscapeKeyUp(EventContext& ctx)
 {
     kwui::ScriptEngine::get()->postEvent("dialog:escape-key-up", id_);
 }
-void Dialog::OnF5Down(EventContext& ctx)
+void DialogWin32::OnF5Down(EventContext& ctx)
 {
     if (kwui::Application::scriptReloadEnabled()) {
         ResourceManager::instance()->clearCache();
@@ -1069,13 +1069,13 @@ void Dialog::OnF5Down(EventContext& ctx)
         OnPaint();
     }
 }
-void Dialog::DiscardNodeDeviceResources(scene2d::Node* node) {
+void DialogWin32::DiscardNodeDeviceResources(scene2d::Node* node) {
     // node->DiscardDeviceResources();
     // for (auto& child : node->GetChildren())
     //     DiscardNodeDeviceResources(child.get());
 }
 
-void Dialog::UpdateBorderAndRenderTarget() {
+void DialogWin32::UpdateBorderAndRenderTarget() {
     if (popup_shadow_data_.has_value()) {
         float border_radius = roundf(theme::DIALOG_BORDER_RADIUS * dpi_scale_);
         HRGN rgn = CreateRoundRectRgn(
@@ -1092,7 +1092,7 @@ void Dialog::UpdateBorderAndRenderTarget() {
         surface_->resize((int)pixel_size_.width, (int)pixel_size_.height, dpi_scale_);
     }
 }
-void Dialog::OnAnimationTimerEvent() {
+void DialogWin32::OnAnimationTimerEvent() {
     absl::Time timestamp = absl::Now();
     auto nodes = move(animating_nodes_);
     animating_nodes_.clear();
@@ -1107,13 +1107,13 @@ void Dialog::OnAnimationTimerEvent() {
     }
 }
 
-LRESULT CALLBACK Dialog::hookProc(int code, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK DialogWin32::hookProc(int code, WPARAM wParam, LPARAM lParam) {
     MSG* msg = (MSG*)lParam;
     if (wParam == PM_REMOVE) {
         if (msg->message == WM_LBUTTONDOWN || msg->message == WM_RBUTTONDOWN
             || msg->message == WM_NCLBUTTONDOWN || msg->message == WM_NCRBUTTONDOWN
             || msg->message == WM_SYSCHAR) {
-            Dialog* dlg = nullptr;
+            DialogWin32* dlg = nullptr;
             for (auto it = g_dialog_map.begin(); it != g_dialog_map.end(); ++it) {
                 if (it->second->GetHwnd() == msg->hwnd) {
                     dlg = it->second;
@@ -1127,7 +1127,7 @@ LRESULT CALLBACK Dialog::hookProc(int code, WPARAM wParam, LPARAM lParam) {
     }
     return ::CallNextHookEx(NULL, code, wParam, lParam);
 }
-void Dialog::ClosePopups()
+void DialogWin32::ClosePopups()
 {
     bool found;
     do {
@@ -1143,12 +1143,12 @@ void Dialog::ClosePopups()
         }
     } while (found);
 }
-void Dialog::SetupHook()
+void DialogWin32::SetupHook()
 {
-    hook_ = ::SetWindowsHookExW(WH_GETMESSAGE, &Dialog::hookProc, NULL, GetCurrentThreadId());
+    hook_ = ::SetWindowsHookExW(WH_GETMESSAGE, &DialogWin32::hookProc, NULL, GetCurrentThreadId());
 }
 
-void Dialog::ReleaseHook()
+void DialogWin32::ReleaseHook()
 {
     if (hook_) {
         ::UnhookWindowsHookEx(hook_);

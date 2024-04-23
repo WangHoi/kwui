@@ -3,7 +3,7 @@
 #include "graphics/GraphicDevice.h"
 #include "graphics/PainterD2D.h"
 #include "style/StyleColor.h"
-#include "Dialog.h"
+#include "DialogWin32.h"
 #include "theme.h"
 #include <dwmapi.h>
 

@@ -6,6 +6,7 @@
 #include "base/log.h"
 #include <pthread.h>
 #include <unistd.h>
+#include <android/log.h>
 #include <android/looper.h>
 #include <android/native_window.h>
 #include <string>
@@ -26,6 +27,8 @@ struct Message {
 	Message() {}
 	Message(MessageType t) : fType(t) {}
 };
+
+static int start_logger(const char* app_name);
 
 class JApplication {
 public:
@@ -110,6 +113,7 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
 }
 
 void* JApplication::pthread_main(void* arg) {
+    start_logger("script");
     auto me = (JApplication*)arg;
     // Looper setup
     ALooper* looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
@@ -124,7 +128,7 @@ void* JApplication::pthread_main(void* arg) {
         kwui::ScriptEngine::get()->loadFile(me->entry_js_.c_str());
     }
     while (me->fRunning) {
-        const int ident = ALooper_pollAll(0, nullptr, nullptr, nullptr);
+        const int ident = ALooper_pollOnce(0, nullptr, nullptr, nullptr);
 
         if (ident >= 0) {
             //SkDebugf("Unhandled ALooper_pollAll ident=%d !", ident);
@@ -157,4 +161,40 @@ int kwui_jni_register_Application(JNIEnv* env) {
 	return clazz
 		? env->RegisterNatives(clazz, methods, ABSL_ARRAYSIZE(methods))
 		: JNI_ERR;
+}
+
+static int pfd[2];
+static pthread_t thr;
+static const char* tag = "myapp";
+
+static void* thread_func(void*)
+{
+    ssize_t rdsz;
+    char buf[128];
+    while ((rdsz = read(pfd[0], buf, sizeof buf - 1)) > 0) {
+        if (buf[rdsz - 1] == '\n') --rdsz;
+        buf[rdsz] = 0;  /* add null-terminator */
+        __android_log_write(ANDROID_LOG_INFO, tag, buf);
+    }
+    return 0;
+}
+
+int start_logger(const char* app_name)
+{
+    tag = app_name;
+
+    /* make stdout line-buffered and stderr unbuffered */
+    setvbuf(stdout, 0, _IOLBF, 0);
+    setvbuf(stderr, 0, _IONBF, 0);
+
+    /* create the pipe and redirect stdout and stderr */
+    pipe(pfd);
+    dup2(pfd[1], 1);
+    dup2(pfd[1], 2);
+
+    /* spawn the logging thread */
+    if (pthread_create(&thr, 0, thread_func, 0) == -1)
+        return -1;
+    pthread_detach(thr);
+    return 0;
 }

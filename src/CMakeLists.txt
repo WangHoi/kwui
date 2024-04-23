@@ -11,9 +11,11 @@ add_subdirectory(resources)
 if(WITH_SKIA)
   add_subdirectory(xskia)
 endif()
-
 if(WIN32)
   add_subdirectory(windows)
+endif()
+if(ANDROID)
+  add_subdirectory(android)
 endif()
 
 set(dep_libs

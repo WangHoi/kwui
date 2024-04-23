@@ -1,7 +1,7 @@
 #include "ElementRef.h"
 #include "scene2d/Scene.h"
 #ifdef _WIN32
-#include "windows/Dialog.h"
+#include "windows/DialogWin32.h"
 #endif
 
 namespace script {
@@ -58,7 +58,7 @@ JSValue ElementRef::js_getScreenRect(JSContext* ctx, JSValueConst this_val, int 
 	rect = scene2d::RectF::fromOriginSize(scene_pos, rect.size());
 	
 	// convert to window coords
-	auto dlg = windows::Dialog::findDialogById(node->scene()->eventContextId());
+	auto dlg = windows::DialogWin32::findDialogById(node->scene()->eventContextId());
 	if (dlg) {
 		float dpi_scale = dlg->GetDpiScale();
 		POINT top_left = { lroundf(rect.left * dpi_scale), lroundf(rect.top * dpi_scale) };

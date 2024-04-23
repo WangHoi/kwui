@@ -1,9 +1,13 @@
 #include "script.h"
 #include "scene2d/Scene.h"
+#include "Dialog.h"
 #ifdef _WIN32
-#include "windows/Dialog.h"
+#include "windows/DialogWin32.h"
 #include "base/ResourceManager.h"
 #include "base/EncodingManager.h"
+#endif
+#ifdef __ANDROID__
+#include "android/DialogAndroid.h"
 #endif
 #include "Keact.h"
 #include "resources/resources.h"
@@ -408,14 +412,14 @@ struct DialogPosAnchor {
 			monitor = ::MonitorFromPoint(POINT{}, MONITOR_DEFAULTTOPRIMARY);
 			::GetMonitorInfoW(monitor, &info);
 		}
-		dpi_scale = windows::Dialog::getMonitorDpiScale(monitor);
+		dpi_scale = windows::DialogWin32::getMonitorDpiScale(monitor);
 		scene2d::RectF avail_rect = scene2d::RectF::fromLTRB(
 			info.rcWork.left, info.rcWork.top, info.rcWork.right, info.rcWork.bottom);
 
 		scene2d::RectF rect = scene2d::RectF::fromOriginSize(
 			scene2d::PointF(),
 			scene2d::DimensionF(client_width, client_height) * dpi_scale);
-		rect = windows::Dialog::adjustWindowRect(rect, dpi_scale, customFrame, popup);
+		rect = windows::DialogWin32::adjustWindowRect(rect, dpi_scale, customFrame, popup);
 
 		if (type == TopLeft) {
 			rect.moveTo(pos);
@@ -431,50 +435,49 @@ struct DialogPosAnchor {
 	}
 };
 
-JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-{
-#ifdef _WIN32
-	std::string parentDialogId;
-	int flags = windows::DIALOG_FLAG_MAIN;
+struct ShowDialogConfig {
+	std::string parent_dialog_id;
 	absl::optional<std::string> title;
-	absl::optional<windows::PopupShadowData> popup_shadow;
 	DialogPosAnchor anchor;
 	DialogLength width, height;
-	JSValue root = JS_UNDEFINED;
-	JSValue stylesheet = JS_UNDEFINED;
-	JSValue module = JS_UNDEFINED;
-	JSValue module_params = JS_UNDEFINED;
-	absl::Cleanup _ = [&]() {
-		JS_FreeValue(ctx, root);
-		JS_FreeValue(ctx, stylesheet);
-		JS_FreeValue(ctx, module);
-		JS_FreeValue(ctx, module_params);
-		};
-	Context::eachObjectField(ctx, argv[0], [&](const char* name, JSValue value) {
+	Value root;
+	Value stylesheet;
+	Value module;
+	Value module_params;
+#ifdef _WIN32
+	int flags = windows::DIALOG_FLAG_MAIN;
+	absl::optional<windows::PopupShadowData> popup_shadow;
+#endif
+};
+
+static absl::StatusOr<ShowDialogConfig> parse_show_dialog_config(JSContext* ctx, JSValue arg)
+{
+	ShowDialogConfig cfg;
+	Context::eachObjectField(ctx, arg, [&](const char* name, JSValue value) {
 		if (!strcmp(name, "title") && JS_IsString(value)) {
-			title.emplace(Context::parse<std::string>(ctx, value));
+			cfg.title.emplace(Context::parse<std::string>(ctx, value));
 		} else if (!strcmp(name, "width")) {
 			if (JS_IsNumber(value)) {
 				double f64;
 				JS_ToFloat64(ctx, &f64, value);
-				width.type = DialogLength::Fixed;
-				width.length = (float)f64;
+				cfg.width.type = DialogLength::Fixed;
+				cfg.width.length = (float)f64;
 			} else if (JS_IsString(value)) {
 				auto sval = Context::parse<std::string>(ctx, value);
 				if (sval == "auto") {
-					width.type = DialogLength::Auto;
+					cfg.width.type = DialogLength::Auto;
 				}
 			}
 		} else if (!strcmp(name, "height")) {
 			if (JS_IsNumber(value)) {
 				double f64;
 				JS_ToFloat64(ctx, &f64, value);
-				height.type = DialogLength::Fixed;
-				height.length = (float)f64;
+				cfg.height.type = DialogLength::Fixed;
+				cfg.height.length = (float)f64;
 			} else if (JS_IsString(value)) {
 				auto sval = Context::parse<std::string>(ctx, value);
 				if (sval == "auto") {
-					height.type = DialogLength::Auto;
+					cfg.height.type = DialogLength::Auto;
 				}
 			}
 		} else if (!strcmp(name, "anchor") && JS_IsObjectPlain(ctx, value)) {
@@ -487,9 +490,9 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			if (JS_IsNumber(left) && JS_IsNumber(top)) {
 				JS_ToInt32(ctx, &x, left);
 				JS_ToInt32(ctx, &y, top);
-				anchor.type = DialogPosAnchor::TopLeft;
-				anchor.pos.x = x;
-				anchor.pos.y = y;
+				cfg.anchor.type = DialogPosAnchor::TopLeft;
+				cfg.anchor.pos.x = x;
+				cfg.anchor.pos.y = y;
 			} else {
 				LOG(WARNING) << "anchor other than 'top-left' not implemented";
 			}
@@ -497,10 +500,11 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			JS_FreeValue(ctx, top);
 			JS_FreeValue(ctx, right);
 			JS_FreeValue(ctx, bottom);
+#ifdef _WIN32
 		} else if (!strcmp(name, "flags") && JS_IsNumber(value)) {
 			int32_t i32;
 			JS_ToInt32(ctx, &i32, value);
-			flags = i32;
+			cfg.flags = i32;
 		} else if (!strcmp(name, "customFrame") && JS_IsObjectPlain(ctx, value)) {
 			std::string image;
 			int padding = 0;
@@ -523,32 +527,44 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			}
 			JS_FreeValue(ctx, val);
 
-			popup_shadow.emplace<windows::PopupShadowData>({ image, padding });
+			cfg.popup_shadow.emplace<windows::PopupShadowData>({ image, padding });
+#endif
 		} else if (!strcmp(name, "root")) {
-			root = JS_DupValue(ctx, value);
+			cfg.root = Value(ctx, value);
 		} else if (!strcmp(name, "stylesheet")) {
-			stylesheet = JS_DupValue(ctx, value);
+			cfg.stylesheet = Value(ctx, value);
 		} else if (!strcmp(name, "modulePath")) {
-			module = JS_DupValue(ctx, value);
+			cfg.module = Value(ctx, value);
 		} else if (!strcmp(name, "moduleParams")) {
-			module_params = JS_DupValue(ctx, value);
+			cfg.module_params = Value(ctx, value);
 		} else if (!strcmp(name, "parent")) {
-			parentDialogId = Context::parse<std::string>(ctx, value);
+			cfg.parent_dialog_id = Context::parse<std::string>(ctx, value);
 		}
 		});
+	return cfg;
+}
 
-	auto dialog = new windows::Dialog(
-		L"dialog", NULL, flags,
-		popup_shadow, absl::nullopt);
-	
-	if (kwui::Application::scriptReloadEnabled()) {
-		dialog->SetTitle(title.value_or(std::string("Untitled")) + " - (F5 to reload)");
-	} else {
-		dialog->SetTitle(title.value_or(std::string("Untitled")));
+JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+	absl::StatusOr<ShowDialogConfig> res = parse_show_dialog_config(ctx, argv[0]);
+	if (!res.ok()) {
+		return JS_ThrowInternalError(ctx, "invalid arguments.");
 	}
-	dialog->GetScene()->setStyleSheet(stylesheet);
-	dialog->GetScene()->createComponentNode(dialog->GetScene()->root(), root);
-	if (JS_IsString(module)) {
+	auto&& cfg = std::move(res.value());
+
+	script::DialogInterface* dialog = nullptr;
+#ifdef _WIN32
+	dialog = new windows::DialogWin32(
+		L"dialog", NULL, cfg.flags,
+		cfg.popup_shadow, absl::nullopt);
+#endif
+	if (!dialog) {
+		return JS_ThrowInternalError(ctx, "app_show_dialog not implemented.");
+	}
+	
+	dialog->GetScene()->setStyleSheet(cfg.stylesheet.jsValue());
+	dialog->GetScene()->createComponentNode(dialog->GetScene()->root(), cfg.root.jsValue());
+	if (JS_IsString(cfg.module.jsValue())) {
 		JSAtom base_filename_atom = JS_GetScriptOrModuleName(ctx, 1);
 		JSValue base_filename_value = JS_AtomToString(ctx, base_filename_atom);
 		absl::Cleanup _ = [&]() {
@@ -556,42 +572,47 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			JS_FreeValue(ctx, base_filename_value);
 			};
 		std::string base_filename = Context::parse<std::string>(ctx, base_filename_value);
-		std::string module_path = Context::parse<std::string>(ctx, module);
-		dialog->GetScene()->setScriptModule(base_filename, module_path, Value(ctx, module_params));
+		std::string module_path = Context::parse<std::string>(ctx, cfg.module.jsValue());
+		dialog->GetScene()->setScriptModule(base_filename, module_path, cfg.module_params);
 		dialog->GetScene()->reloadScriptModule();
 	}
-	//LOG(INFO) << "show dialog";
-	if (flags & windows::DIALOG_FLAG_POPUP) {
-		dialog->SetPopupAnchor(windows::Dialog::findDialogById(parentDialogId));
+
+#ifdef _WIN32
+	auto dialog_win32 = static_cast<windows::DialogWin32*>(dialog);
+	if (kwui::Application::scriptReloadEnabled()) {
+		dialog_win32->SetTitle(cfg.title.value_or(std::string("Untitled")) + " - (F5 to reload)");
 	} else {
-		dialog->SetParent(windows::Dialog::findDialogById(parentDialogId));
+		dialog_win32->SetTitle(cfg.title.value_or(std::string("Untitled")));
+	}
+	//LOG(INFO) << "show dialog";
+	if (cfg.flags & windows::DIALOG_FLAG_POPUP) {
+		dialog_win32->SetPopupAnchor(windows::DialogWin32::findDialogById(cfg.parent_dialog_id));
+	} else {
+		dialog_win32->SetParent(windows::DialogWin32::findDialogById(cfg.parent_dialog_id));
 	}
 	
 	float cwidth = 640, cheight = 480;
-	if (width.type == DialogLength::Fixed) {
-		cwidth = width.length;
-	} else if (width.type == DialogLength::Auto) {
+	if (cfg.width.type == DialogLength::Fixed) {
+		cwidth = cfg.width.length;
+	} else if (cfg.width.type == DialogLength::Auto) {
 		auto [min_intrin_width, max_intrin_width] = dialog->GetScene()->intrinsicWidth();
 		LOG(INFO) << absl::StrFormat("intrin width: min=%.0f, max=%.0f",
 			min_intrin_width, max_intrin_width);
 		cwidth = max_intrin_width;
 	}
-	if (height.type == DialogLength::Fixed) {
-		cheight = height.length;
-	} else if (height.type == DialogLength::Auto) {
+	if (cfg.height.type == DialogLength::Fixed) {
+		cheight = cfg.height.length;
+	} else if (cfg.height.type == DialogLength::Auto) {
 		cheight = dialog->GetScene()->intrinsicHeight(cwidth);
 		LOG(INFO) << absl::StrFormat("intrin height=%.0f for width: %.0f",
 			cheight, cwidth);
 	}
-	auto rect = anchor.computeWindowGeometry(cwidth, cheight,
-		popup_shadow.has_value(), (flags & windows::DIALOG_FLAG_POPUP));
-	dialog->setWindowPos(rect);
-	dialog->Show();
-	return JS_NewString(ctx, dialog->eventContextId().c_str());
-#else
-#pragma message("TODO: app_show_dialog not implemented.")
-	return JS_ThrowInternalError(ctx, "app_show_dialog not implemented.");
+	auto rect = cfg.anchor.computeWindowGeometry(cwidth, cheight,
+		cfg.popup_shadow.has_value(), (cfg.flags & windows::DIALOG_FLAG_POPUP));
+	dialog_win32->setWindowPos(rect);
+	dialog_win32->Show();
 #endif
+	return JS_NewString(ctx, dialog->eventContextId().c_str());
 }
 JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
@@ -602,7 +623,7 @@ JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 	const char* id_str = JS_ToCString(ctx, argv[0]);
 	std::string id(id_str);
 	JS_FreeCString(ctx, id_str);
-	auto dialog = windows::Dialog::findDialogById(id);
+	auto dialog = windows::DialogWin32::findDialogById(id);
 	if (dialog) {
 		dialog->Close();
 		delete dialog;
@@ -622,7 +643,7 @@ JSValue app_closing_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 	const char* id_str = JS_ToCString(ctx, argv[0]);
 	std::string id(id_str);
 	JS_FreeCString(ctx, id_str);
-	auto dialog = windows::Dialog::findDialogById(id);
+	auto dialog = windows::DialogWin32::findDialogById(id);
 	if (dialog) {
 		dialog->OnCloseSysCommand(*dialog);
 	}
@@ -650,7 +671,7 @@ JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSVal
 	double width, height;
 	JS_ToFloat64(ctx, &width, argv[1]);
 	JS_ToFloat64(ctx, &height, argv[2]);
-	auto dialog = windows::Dialog::findDialogById(id);
+	auto dialog = windows::DialogWin32::findDialogById(id);
 	if (dialog)
 		dialog->Resize((float)width, (float)height);
 	return JS_UNDEFINED;
@@ -668,7 +689,7 @@ JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int argc, JSV
 	const char* id_str = JS_ToCString(ctx, argv[0]);
 	std::string id(id_str);
 	JS_FreeCString(ctx, id_str);
-	auto dialog = windows::Dialog::findDialogById(id);
+	auto dialog = windows::DialogWin32::findDialogById(id);
 	if (dialog) {
 		return JS_NewString(ctx, absl::StrFormat("%p", dialog->GetHwnd()).c_str());
 	}
@@ -687,7 +708,7 @@ JSValue app_get_dialog_dpi_scale(JSContext* ctx, JSValueConst this_val, int argc
 	const char* id_str = JS_ToCString(ctx, argv[0]);
 	std::string id(id_str);
 	JS_FreeCString(ctx, id_str);
-	auto dialog = windows::Dialog::findDialogById(id);
+	auto dialog = windows::DialogWin32::findDialogById(id);
 	if (dialog) {
 		return JS_NewFloat64(ctx, dialog->GetDpiScale());
 	}

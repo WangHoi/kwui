@@ -13,7 +13,7 @@ struct PopupShadowData {
     float dpi_scale;
 };
 
-class Dialog;
+class DialogWin32;
 class PopupShadow {
 public:
 	PopupShadow(float width, float height, HWND owner,
@@ -56,7 +56,7 @@ private:
 	PopupShadowData _data;
 	ComPtr<ID2D1Bitmap> _bitmap;
 	float _render_dpi_scale;
-	friend class Dialog;
+	friend class DialogWin32;
 };
 
 }

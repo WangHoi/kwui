@@ -6,7 +6,7 @@
 #include "resources/resources.h"
 #ifdef _WIN32
 #include "windows/graphics/GraphicDevice.h"
-#include "windows/Dialog.h"
+#include "windows/DialogWin32.h"
 #include "windows/control/Control.h"
 #include "windows/control/LineEditControl.h"
 #include "windows/control/ProgressBarControl.h"

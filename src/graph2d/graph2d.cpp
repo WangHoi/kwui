@@ -122,7 +122,7 @@ void addFont(const char* family_name, const void* data, size_t size)
 #else
 #ifdef _WIN32
 	windows::graphics::GraphicDevice::instance()
-		->addFont(family_name, data, size);
+		->addFont(family_name, (const uint8_t*)data, size);
 #else
 #pragma message("TODO: implement graph2d::addFont().")
 #endif
