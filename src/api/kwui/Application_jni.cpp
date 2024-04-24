@@ -158,19 +158,25 @@ void* JApplication::pthread_main(void* arg) {
     return nullptr;
 }
 
+static JApplication* g_japp = nullptr;
+
 static jlong Application_Create(JNIEnv* env, jclass, jobject asset_manager, jstring entry_js)
 {
+    if (g_japp) {
+        return reinterpret_cast<jlong>(g_japp);
+    }
 	auto asset_manager_ref = env->NewGlobalRef(asset_manager);
     const char* u8_js_path = env->GetStringUTFChars(entry_js, nullptr);
     std::string js_entry_str(u8_js_path);
     env->ReleaseStringUTFChars(entry_js, u8_js_path);
 
-	return reinterpret_cast<jlong>(new JApplication(asset_manager_ref, js_entry_str));
+    g_japp = new JApplication(asset_manager_ref, js_entry_str);
+	return reinterpret_cast<jlong>(g_japp);
 }
 
 static void Application_Release(JNIEnv* env, jobject, jlong ptr)
 {
-	delete reinterpret_cast<JApplication*>(ptr);
+	//delete reinterpret_cast<JApplication*>(ptr);
 }
 
 static void Application_SurfaceChanged(JNIEnv* env, jobject, jlong ptr, jobject surface,
