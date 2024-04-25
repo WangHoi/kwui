@@ -99,6 +99,19 @@
         "value": "arm64",
         "strategy": "external"
       }
+    },
+    {
+      "name": "android-release",
+      "displayName": "Android Release",
+      "description": "Android Release",
+      "inherits": "android-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      },
+      "architecture": {
+        "value": "arm64",
+        "strategy": "external"
+      }
     }
   ],
   "buildPresets": [
@@ -113,6 +126,10 @@
     {
       "name": "android-debug",
       "configurePreset": "android-debug"
+    },
+    {
+      "name": "android-release",
+      "configurePreset": "android-release"
     }
   ],
   "testPresets": []

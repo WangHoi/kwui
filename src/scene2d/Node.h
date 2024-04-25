@@ -14,6 +14,9 @@
 #include "Event.h"
 #include "style/LayoutObject.h"
 
+namespace android {
+class DialogAndroid;
+}
 namespace windows {
 class DialogWin32;
 namespace graphics {
@@ -257,6 +260,7 @@ protected:
 	} scroll_data_;
 
 	friend class Scene;
+	friend class android::DialogAndroid;
 	friend class windows::DialogWin32;
 	friend class style::InlineBoxBuilder;
 	friend class style::LayoutTreeBuilder;

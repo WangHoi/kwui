@@ -166,6 +166,26 @@ struct DimensionF {
     {
         return DimensionF(width * f, height * f);
     }
+    inline DimensionF& operator/=(const PointF& p)
+    {
+        width /= p.x;
+        height /= p.y;
+        return *this;
+    }
+    inline DimensionF operator/(const PointF& p) const
+    {
+        return DimensionF(width / p.x, height / p.y);
+    }
+    inline DimensionF& operator/=(float f)
+    {
+        width /= f;
+        height /= f;
+        return *this;
+    }
+    inline DimensionF operator/(float f) const
+    {
+        return DimensionF(width / f, height / f);
+    }
     inline DimensionF makeRound() const
     {
         return DimensionF(roundf(width), roundf(height));

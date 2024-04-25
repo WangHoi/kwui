@@ -11,6 +11,7 @@
 #include "tools/sk_app/android/WindowContextFactory_android.h"
 #include "android/SurfaceAndroid.h"
 #include "android/DialogAndroid.h"
+#include "absl/base/internal/per_thread_tls.h"
 #include <pthread.h>
 #include <unistd.h>
 #include <android/log.h>
@@ -25,18 +26,28 @@ enum MessageType {
 	kSurfaceChanged,
 	kSurfaceDestroyed,
 	kSurfaceRedrawNeeded,
+    kScrollEvent,
+    kShowPressEvent,
+    kLongPressEvent,
+    kSingleTapConfirmedEvent,
 };
 
 struct Message {
 	MessageType fType = kUndefined;
 	ANativeWindow* fNativeWindow = nullptr;
     float fDensity = 1.0f;
+    float x, y;
+    float dx, dy;
 	//SkPicture* fPicture = nullptr;
 	//WindowSurface** fWindowSurface = nullptr;
 
 	Message() {}
 	Message(MessageType t) : fType(t) {}
 };
+
+class JApplication;
+static JApplication* g_japp = nullptr;
+static ABSL_PER_THREAD_TLS_KEYWORD bool gt_main_thread = false;
 
 static int start_logger(const char* app_name);
 
@@ -47,7 +58,7 @@ public:
 	void postMessage(const Message& message) const;
 	void readMessage(Message* message) const;
 	void release();
-private:
+//private:
 	static void* pthread_main(void* arg);
 	static int message_callback(int fd, int events, void* data);
 	// TODO: This has to be static, which is weird now, but fine in a singleton
@@ -123,6 +134,34 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
         }
         break;
     }
+    case kScrollEvent: {
+        auto dlg = android::DialogAndroid::firstDialog();
+        if (dlg) {
+            dlg->handleScrollEvent(message.x, message.y, message.dx, message.dy);
+        }
+        break;
+    }
+    case kShowPressEvent: {
+        auto dlg = android::DialogAndroid::firstDialog();
+        if (dlg) {
+            dlg->handleShowPressEvent(message.x, message.y);
+        }
+        break;
+    }
+    case kLongPressEvent: {
+        auto dlg = android::DialogAndroid::firstDialog();
+        if (dlg) {
+            dlg->handleLongPressEvent(message.x, message.y);
+        }
+        break;
+    }
+    case kSingleTapConfirmedEvent: {
+        auto dlg = android::DialogAndroid::firstDialog();
+        if (dlg) {
+            dlg->handleSingleTapConfirmedEvent(message.x, message.y);
+        }
+        break;
+    }
     default: {
         // do nothing
     }
@@ -132,6 +171,7 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
 }
 
 void* JApplication::pthread_main(void* arg) {
+    gt_main_thread = true;
     start_logger("script");
     auto me = (JApplication*)arg;
     // Looper setup
@@ -158,8 +198,6 @@ void* JApplication::pthread_main(void* arg) {
     }
     return nullptr;
 }
-
-static JApplication* g_japp = nullptr;
 
 static jlong Application_Create(JNIEnv* env, jclass, jobject asset_manager, jstring entry_js)
 {
@@ -201,11 +239,50 @@ static void Application_SurfaceRedrawNeeded(JNIEnv* env, jobject, jlong ptr)
     auto me = reinterpret_cast<JApplication*>(ptr);
     me->postMessage(Message(kSurfaceRedrawNeeded));
 }
-static void Application_HandleTouchEvent(JNIEnv* env, jobject, jlong ptr, jint action, jfloat x, float y)
+static void Application_HandleTouchEvent(JNIEnv* env, jobject, jlong ptr, jint action, jfloat x, jfloat y)
 {
     auto me = reinterpret_cast<JApplication*>(ptr);
-    LOG(INFO) << "touch event: action " << action << " " << x << "," << y;
+    // LOG(INFO) << "touch event: action " << action << " " << x << "," << y;
     //me->postMessage(Message(kSurfaceRedrawNeeded));
+}
+
+static void Application_HandleScrollEvent(JNIEnv* env, jobject, jlong ptr, jfloat x, jfloat y, jfloat dx, jfloat dy)
+{
+    auto me = reinterpret_cast<JApplication*>(ptr);
+    LOG(INFO) << "scroll event: " << dx << "," << dy;
+    Message msg(kScrollEvent);
+    msg.x = x;
+    msg.y = y;
+    msg.dx = dx;
+    msg.dy = dy;
+    me->postMessage(msg);
+}
+static void Application_HandleShowPressEvent(JNIEnv* env, jobject, jlong ptr, jfloat x, jfloat y)
+{
+    auto me = reinterpret_cast<JApplication*>(ptr);
+    LOG(INFO) << "show press event: " << x << "," << y;
+    Message msg(kShowPressEvent);
+    msg.x = x;
+    msg.y = y;
+    me->postMessage(msg);
+}
+static void Application_HandleLongPressEvent(JNIEnv* env, jobject, jlong ptr, jfloat x, jfloat y)
+{
+    auto me = reinterpret_cast<JApplication*>(ptr);
+    LOG(INFO) << "long press event: " << x << "," << y;
+    Message msg(kLongPressEvent);
+    msg.x = x;
+    msg.y = y;
+    me->postMessage(msg);
+}
+static void Application_HandleSingleTapConfirmedEvent(JNIEnv* env, jobject, jlong ptr, jfloat x, jfloat y)
+{
+    auto me = reinterpret_cast<JApplication*>(ptr);
+    LOG(INFO) << "single tap confirmed event: " << x << "," << y;
+    Message msg(kSingleTapConfirmedEvent);
+    msg.x = x;
+    msg.y = y;
+    me->postMessage(msg);
 }
 
 int kwui_jni_register_Application(JNIEnv* env) {
@@ -216,6 +293,10 @@ int kwui_jni_register_Application(JNIEnv* env) {
         {"nSurfaceDestroyed", "(J)V", reinterpret_cast<void*>(Application_SurfaceDestroyed)},
         {"nSurfaceRedrawNeeded", "(J)V", reinterpret_cast<void*>(Application_SurfaceRedrawNeeded)},
         {"nHandleTouchEvent", "(JIFF)V", reinterpret_cast<void*>(Application_HandleTouchEvent)},
+        {"nHandleScrollEvent", "(JFFFF)V", reinterpret_cast<void*>(Application_HandleScrollEvent)},
+        {"nHandleShowPressEvent", "(JFF)V", reinterpret_cast<void*>(Application_HandleShowPressEvent)},
+        {"nHandleLongPressEvent", "(JFF)V", reinterpret_cast<void*>(Application_HandleLongPressEvent)},
+        {"nHandleSingleTapConfirmedEvent", "(JFF)V", reinterpret_cast<void*>(Application_HandleSingleTapConfirmedEvent)},
 	};
 
 	const auto clazz = env->FindClass("com/example/myapplication/Native");
@@ -258,4 +339,23 @@ int start_logger(const char* app_name)
         return -1;
     pthread_detach(thr);
     return 0;
+}
+
+void kwui_request_paint()
+{
+    if (gt_main_thread) {
+        if (g_japp && g_japp->surface_) {
+            auto canvas = g_japp->surface_->getCanvas();
+            if (canvas) {
+                canvas->setMatrix(SkMatrix::Scale(g_japp->surface_density_, g_japp->surface_density_));
+                auto dlg = android::DialogAndroid::firstDialog();
+                if (dlg) {
+                    dlg->paint(canvas, g_japp->surface_density_);
+                }
+                g_japp->surface_->flushAndSubmit();
+            }
+        }
+    } else {
+        LOG(ERROR) << "kwui_request_paint(): invalid calling thread.";
+    }
 }
