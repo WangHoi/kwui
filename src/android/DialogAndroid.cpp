@@ -56,7 +56,7 @@ void DialogAndroid::paint(SkCanvas* canvas, float dpi_scale)
 {
 	scene_->resolveStyle();
 	float width = canvas->getSurface()->width() / dpi_scale;
-	float height = canvas->getSurface()->width() / dpi_scale;
+	float height = canvas->getSurface()->height() / dpi_scale;
 	scene_->computeLayout(width, height);
 
 	xskia::PainterX p(canvas, dpi_scale);

@@ -9,7 +9,7 @@ Value::Value()
 }
 
 Value::Value(JSContext* ctx, const kwui::ScriptValue& v)
-	: ctx_(JS_DupContext(ctx))
+	: ctx_(ctx ? JS_DupContext(ctx) : nullptr)
 {
 	if (v.isNull()) {
 		value_ = JS_NULL;
@@ -27,7 +27,7 @@ Value::Value(JSContext* ctx, const kwui::ScriptValue& v)
 }
 
 Value::Value(JSContext* ctx, JSValue v)
-	: ctx_(JS_DupContext(ctx))
+	: ctx_(ctx ? JS_DupContext(ctx) : nullptr)
 {
 	if (ctx_) {
 		value_ = JS_DupValue(ctx_, v);
@@ -37,7 +37,7 @@ Value::Value(JSContext* ctx, JSValue v)
 }
 
 Value::Value(const Value& o)
-	: ctx_(JS_DupContext(o.ctx_))
+	: ctx_(o.ctx_ ? JS_DupContext(o.ctx_) : nullptr)
 {
 	if (ctx_) {
 		value_ = JS_DupValue(ctx_, o.value_);
@@ -69,7 +69,7 @@ Value& Value::operator=(const Value& o)
 	auto old_ctx = ctx_;
 	auto old_value = value_;
 
-	ctx_ = JS_DupContext(o.ctx_);
+	ctx_ = o.ctx_ ? JS_DupContext(o.ctx_) : nullptr;
 	if (ctx_) {
 		value_ = JS_DupValue(ctx_, o.value_);
 	} else {

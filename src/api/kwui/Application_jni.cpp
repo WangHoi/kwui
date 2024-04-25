@@ -113,6 +113,7 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
         if (app->surface_) {
             auto canvas = app->surface_->getCanvas();
             if (canvas) {
+                canvas->setMatrix(SkMatrix::Scale(app->surface_density_, app->surface_density_));
                 auto dlg = android::DialogAndroid::firstDialog();
                 if (dlg) {
                     dlg->paint(canvas, app->surface_density_);
@@ -200,6 +201,12 @@ static void Application_SurfaceRedrawNeeded(JNIEnv* env, jobject, jlong ptr)
     auto me = reinterpret_cast<JApplication*>(ptr);
     me->postMessage(Message(kSurfaceRedrawNeeded));
 }
+static void Application_HandleTouchEvent(JNIEnv* env, jobject, jlong ptr, jint action, jfloat x, float y)
+{
+    auto me = reinterpret_cast<JApplication*>(ptr);
+    LOG(INFO) << "touch event: action " << action << " " << x << "," << y;
+    //me->postMessage(Message(kSurfaceRedrawNeeded));
+}
 
 int kwui_jni_register_Application(JNIEnv* env) {
 	static const JNINativeMethod methods[] = {
@@ -208,6 +215,7 @@ int kwui_jni_register_Application(JNIEnv* env) {
         {"nSurfaceChanged", "(JLandroid/view/Surface;IIIF)V", reinterpret_cast<void*>(Application_SurfaceChanged)},
         {"nSurfaceDestroyed", "(J)V", reinterpret_cast<void*>(Application_SurfaceDestroyed)},
         {"nSurfaceRedrawNeeded", "(J)V", reinterpret_cast<void*>(Application_SurfaceRedrawNeeded)},
+        {"nHandleTouchEvent", "(JIFF)V", reinterpret_cast<void*>(Application_HandleTouchEvent)},
 	};
 
 	const auto clazz = env->FindClass("com/example/myapplication/Native");
