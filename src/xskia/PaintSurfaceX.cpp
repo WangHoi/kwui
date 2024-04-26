@@ -1,5 +1,8 @@
 #include "PaintSurfaceX.h"
 #include "PainterX.h"
+#ifdef __ANDROID__
+#include "tools/sk_app/android/WindowContextFactory_android.h"
+#endif
 
 namespace xskia {
 
@@ -58,29 +61,53 @@ std::unique_ptr<PaintSurfaceX> PaintSurfaceX::create(const Configuration& config
 }
 void PaintSurfaceX::resize(int pixel_width, int pixel_height, float dpi_scale)
 {
-	config_.size.width = pixel_width;
-	config_.size.height = pixel_height;
+	config_.pixel_size.width = pixel_width;
+	config_.pixel_size.height = pixel_height;
 	config_.dpi_scale = dpi_scale;
 	createSurface();
 }
 
 std::unique_ptr<graph2d::PainterInterface> PaintSurfaceX::beginPaint()
 {
+#ifdef __ANDROID__
+	if (!wnd_surface_)
+		return nullptr;
+	auto canvas = wnd_surface_->getCanvas();
+	if (canvas) {
+		return std::make_unique<PainterX>(canvas, config_.dpi_scale);
+	} else {
+		return nullptr;
+	}
+#else
 	if (!surface_)
 		return nullptr;
 	return std::make_unique<PainterX>(surface_->getCanvas(), config_.dpi_scale);
+#endif
 }
 
 bool PaintSurfaceX::endPaint()
 {
+#ifdef __ANDROID__
+	if (!wnd_surface_)
+		return false;
+	if (auto canvas = wnd_surface_->getCanvas()) {
+		canvas->flush();
+	} else {
+		return false;
+	}
+#else
 	if (!surface_)
 		return false;
 	surface_->flush();
-
+#endif
 	return true;
 }
 void PaintSurfaceX::swapBuffers()
 {
+#ifdef __ANDROID__
+	if (wnd_surface_)
+		wnd_surface_->flushAndSubmit();
+#else
 #ifdef _WIN32
 	BITMAPINFO* bmpInfo = reinterpret_cast<BITMAPINFO*>(buffer_.get());
 	if (::GetWindowLong(config_.hwnd, GWL_EXSTYLE) & WS_EX_LAYERED)
@@ -103,6 +130,7 @@ void PaintSurfaceX::swapBuffers()
 		ReleaseDC(config_.hwnd, dc);
 	}
 #endif
+#endif
 }
 PaintSurfaceX::PaintSurfaceX(const Configuration& config)
 	: config_(config)
@@ -111,8 +139,17 @@ PaintSurfaceX::PaintSurfaceX(const Configuration& config)
 }
 void PaintSurfaceX::createSurface()
 {
-	const size_t w = (size_t)config_.size.width;
-	const size_t h = (size_t)config_.size.height;
+#ifdef __ANDROID__
+	sk_app::DisplayParams params;
+    auto wnd_ctx = sk_app::window_context_factory::MakeGLForAndroid(config_.hwnd, params);
+	if (wnd_ctx) {
+		wnd_surface_.reset(new android::WindowSurface(config_.hwnd, std::move(wnd_ctx)));
+	} else {
+		LOG(ERROR) << "MakeGLForAndroid failed";
+	}
+#else
+	const size_t w = (size_t)config_.pixel_size.width;
+	const size_t h = (size_t)config_.pixel_size.height;
 	SkImageInfo image_info = SkImageInfo::MakeN32Premul((int)w, (int)h);
 
 #ifdef _WIN32
@@ -136,6 +173,7 @@ void PaintSurfaceX::createSurface()
 #else
 #pragma warning("TODO: PaintSurfaceX::createSurface().")
 #endif
+#endif // __ANDROID__
 }
 
 }

@@ -1,21 +1,26 @@
 #include "DialogAndroid.h"
 #include "scene2d/Scene.h"
+#include "absl/strings/str_format.h"
 #include "include/core/SkSurface.h"
-#include "api/kwui/Application_jni.h"
+#include "Application_jni.h"
 
 namespace android {
 
 static DialogAndroid* g_first_dialog = nullptr;
+static std::unordered_map<std::string, DialogAndroid*> g_dialog_map;
 
 DialogAndroid::DialogAndroid()
 {
 	if (!g_first_dialog) {
 		g_first_dialog = this;
 	}
+	id_ = absl::StrFormat("%p", this);
+	g_dialog_map[id_] = this;
 	scene_ = std::make_unique<scene2d::Scene>(*this);
 }
 DialogAndroid::~DialogAndroid()
 {
+	g_dialog_map.erase(id_);
 	if (g_first_dialog == this) {
 		g_first_dialog = nullptr;
 	}
@@ -28,7 +33,7 @@ DialogAndroid* DialogAndroid::firstDialog()
 
 std::string DialogAndroid::eventContextId() const
 {
-	return std::string();
+	return id_;
 }
 
 scene2d::PointF DialogAndroid::GetMousePosition() const
@@ -66,6 +71,11 @@ scene2d::Scene* DialogAndroid::GetScene() const
 	return scene_.get();
 }
 
+DialogAndroid* DialogAndroid::findDialogById(const std::string& id)
+{
+    return nullptr;
+}
+
 void DialogAndroid::paint(SkCanvas* canvas, float dpi_scale)
 {
 	dpi_scale_ = dpi_scale;
@@ -78,10 +88,27 @@ void DialogAndroid::paint(SkCanvas* canvas, float dpi_scale)
 	float height = canvas->getSurface()->height() / dpi_scale;
 	scene_->computeLayout(width, height);
 
-	xskia::PainterX p(canvas, dpi_scale);
-	const style::Color BACKGROUND_COLOR = style::Color::fromString("#F8F8F8");
-	p.clear(BACKGROUND_COLOR);
-	scene_->paint(&p);
+	if (surface_) {
+		auto p = surface_->beginPaint();
+		const style::Color BACKGROUND_COLOR = style::Color::fromString("#F8F8F8");
+		p->clear(BACKGROUND_COLOR);
+		scene_->paint(p.get());
+		if (surface_->endPaint())
+			surface_->swapBuffers();
+	}
+	scene_->runPostRenderTasks();
+}
+
+void DialogAndroid::handleSurfaceChanged(ANativeWindow* hwnd, float dpi_scale)
+{
+}
+
+void DialogAndroid::handleSurfaceDestroyed()
+{
+}
+
+void DialogAndroid::handleSurfaceRedrawNeeded()
+{
 }
 
 void DialogAndroid::handleScrollEvent(float x, float y, float dx, float dy)

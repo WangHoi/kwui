@@ -4,11 +4,14 @@
 #include <malloc.h>
 #include <jni.h>
 
+namespace android
+{
+
 JavaVM* kwui_java_vm = nullptr;
 
 void __attribute__((constructor)) disable_tagged_pointer_hook() {
-    extern int mallopt(int param, int value);
-    mallopt(-204, 0);
+    // extern int mallopt(int param, int value);
+    // mallopt(-204, 0);
 }
 
 #define REGISTER_NATIVES(class_name)                     \
@@ -18,9 +21,11 @@ if (auto rc = kwui_jni_register_##class_name(env)) {   \
         "Failed to load natives: " #class_name);         \
     return rc;                                           \
 }
+    
+} // namespace android
 
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
-    kwui_java_vm = vm;
+    android::kwui_java_vm = vm;
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;

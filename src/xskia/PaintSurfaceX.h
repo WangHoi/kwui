@@ -7,6 +7,10 @@
 #ifdef _WIN32
 #include "windows/windows_header.h"
 #endif
+#ifdef __ANDROID__
+#include "android/native_window.h"
+#include "android/SurfaceAndroid.h"
+#endif
 
 namespace xskia {
 class PaintSurfaceX : public graph2d::PaintSurfaceInterface {
@@ -15,7 +19,10 @@ public:
 #ifdef _WIN32
         HWND hwnd;
 #endif
-        scene2d::DimensionF size;
+#ifdef __ANDROID__
+        ANativeWindow* hwnd;
+#endif
+        scene2d::DimensionF pixel_size;
         float dpi_scale = 1.0f;
     };
     static std::unique_ptr<PaintSurfaceX> create(const Configuration& config);
@@ -31,5 +38,8 @@ private:
     Configuration config_;
     std::unique_ptr<uint8_t[]> buffer_;
     sk_sp<SkSurface> surface_;
+#ifdef __ANDROID__
+    std::unique_ptr<android::WindowSurface> wnd_surface_;
+#endif
 };
 }

@@ -1,7 +1,9 @@
 #pragma once
 #include "script/Dialog.h"
 #include "xskia/PainterX.h"
-#include "scene2d//geom_types.h"
+#include "xskia/PaintSurfaceX.h"
+#include "scene2d/geom_types.h"
+#include <android/native_window.h>
 
 namespace android {
 
@@ -19,7 +21,12 @@ public:
 	void RequestAnimationFrame(scene2d::Node* node) override;
 	scene2d::Scene* GetScene() const override;
 
+	static DialogAndroid* findDialogById(const std::string& id);
+
 	void paint(SkCanvas* canvas, float dpi_scale);
+	void handleSurfaceChanged(ANativeWindow* hwnd, float dpi_scale);
+	void handleSurfaceDestroyed();
+	void handleSurfaceRedrawNeeded();
 	void handleScrollEvent(float x, float y, float dx, float dy);
 	void handleShowPressEvent(float x, float y);
 	void handleLongPressEvent(float x, float y);
@@ -28,6 +35,8 @@ public:
 private:
 	void updateHoveredNode();
 
+	std::string id_;
+	std::unique_ptr<xskia::PaintSurfaceX> surface_;
 	std::unique_ptr<scene2d::Scene> scene_;
 	scene2d::DimensionF pixel_size_ = { 1.0f, 1.0f };
 	scene2d::DimensionF size_ = { 1.0f, 1.0f };
