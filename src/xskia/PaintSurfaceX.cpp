@@ -144,6 +144,9 @@ void PaintSurfaceX::createSurface()
     auto wnd_ctx = sk_app::window_context_factory::MakeGLForAndroid(config_.hwnd, params);
 	if (wnd_ctx) {
 		wnd_surface_.reset(new android::WindowSurface(config_.hwnd, std::move(wnd_ctx)));
+		if (wnd_surface_ && wnd_surface_->getCanvas()) {
+			wnd_surface_->getCanvas()->scale(config_.dpi_scale, config_.dpi_scale);
+		}
 	} else {
 		LOG(ERROR) << "MakeGLForAndroid failed";
 	}

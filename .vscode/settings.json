@@ -110,7 +110,8 @@
         "__tree": "cpp",
         "__tuple": "cpp",
         "cwctype": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "__verbose_abort": "cpp"
     },
     "rust-analyzer.checkOnSave": false,
     "mesonbuild.configureOnOpen": false

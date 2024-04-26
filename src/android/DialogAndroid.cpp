@@ -3,6 +3,7 @@
 #include "absl/strings/str_format.h"
 #include "include/core/SkSurface.h"
 #include "Application_jni.h"
+#include "absl/functional/bind_front.h"
 
 namespace android {
 
@@ -17,6 +18,7 @@ DialogAndroid::DialogAndroid()
 	id_ = absl::StrFormat("%p", this);
 	g_dialog_map[id_] = this;
 	scene_ = std::make_unique<scene2d::Scene>(*this);
+	android::create_dialog(id_);
 }
 DialogAndroid::~DialogAndroid()
 {
@@ -24,6 +26,7 @@ DialogAndroid::~DialogAndroid()
 	if (g_first_dialog == this) {
 		g_first_dialog = nullptr;
 	}
+	android::release_dialog(id_);
 }
 
 DialogAndroid* DialogAndroid::firstDialog()
@@ -43,7 +46,7 @@ scene2d::PointF DialogAndroid::GetMousePosition() const
 
 void DialogAndroid::RequestPaint()
 {
-	kwui_request_paint();
+	paint();
 }
 
 void DialogAndroid::RequestUpdate()
@@ -73,20 +76,17 @@ scene2d::Scene* DialogAndroid::GetScene() const
 
 DialogAndroid* DialogAndroid::findDialogById(const std::string& id)
 {
+    auto it = g_dialog_map.find(id);
+	if (it != g_dialog_map.end()) {
+		return it->second;
+    }
     return nullptr;
 }
 
-void DialogAndroid::paint(SkCanvas* canvas, float dpi_scale)
+void DialogAndroid::paint()
 {
-	dpi_scale_ = dpi_scale;
-	pixel_size_.width = canvas->getSurface()->width();
-	pixel_size_.height = canvas->getSurface()->height();
-	size_ = pixel_size_ / dpi_scale;
-
 	scene_->resolveStyle();
-	float width = canvas->getSurface()->width() / dpi_scale;
-	float height = canvas->getSurface()->height() / dpi_scale;
-	scene_->computeLayout(width, height);
+	scene_->computeLayout(size_.width, size_.height);
 
 	if (surface_) {
 		auto p = surface_->beginPaint();
@@ -99,16 +99,42 @@ void DialogAndroid::paint(SkCanvas* canvas, float dpi_scale)
 	scene_->runPostRenderTasks();
 }
 
+void DialogAndroid::handleActivityCreated()
+{
+	auto map = g_dialog_map;
+	for (auto& p : map) {
+		create_dialog(p.first);
+	}
+}
+
 void DialogAndroid::handleSurfaceChanged(ANativeWindow* hwnd, float dpi_scale)
 {
+	dpi_scale_ = dpi_scale;
+	pixel_size_.width = ANativeWindow_getWidth(hwnd);
+	pixel_size_.height = ANativeWindow_getHeight(hwnd);
+	size_ = pixel_size_ / dpi_scale;
+
+	LOG(INFO) << "surface changed: " << pixel_size_;
+
+	surface_ = nullptr;
+
+	xskia::PaintSurfaceX::Configuration cfg;
+	cfg.hwnd = hwnd;
+	cfg.pixel_size = pixel_size_;
+	cfg.dpi_scale = dpi_scale;
+	surface_ = xskia::PaintSurfaceX::create(cfg);
+
+	RequestPaint();
 }
 
 void DialogAndroid::handleSurfaceDestroyed()
 {
+	surface_ = nullptr;
 }
 
 void DialogAndroid::handleSurfaceRedrawNeeded()
 {
+	RequestPaint();
 }
 
 void DialogAndroid::handleScrollEvent(float x, float y, float dx, float dy)

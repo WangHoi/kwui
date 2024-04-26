@@ -1,4 +1,5 @@
 #include "kwui_jni.h"
+#include "Application_jni.h"
 #include "absl/base/macros.h"
 #include <android/log.h>
 #include <malloc.h>
@@ -15,8 +16,7 @@ void __attribute__((constructor)) disable_tagged_pointer_hook() {
 }
 
 #define REGISTER_NATIVES(class_name)                     \
-extern int kwui_jni_register_##class_name(JNIEnv*);    \
-if (auto rc = kwui_jni_register_##class_name(env)) {   \
+if (auto rc = android::kwui_jni_register_##class_name(env)) {   \
     __android_log_print(ANDROID_LOG_ERROR, "kwui", \
         "Failed to load natives: " #class_name);         \
     return rc;                                           \

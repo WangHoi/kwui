@@ -23,7 +23,7 @@ public:
 
 	static DialogAndroid* findDialogById(const std::string& id);
 
-	void paint(SkCanvas* canvas, float dpi_scale);
+	static void handleActivityCreated();
 	void handleSurfaceChanged(ANativeWindow* hwnd, float dpi_scale);
 	void handleSurfaceDestroyed();
 	void handleSurfaceRedrawNeeded();
@@ -33,6 +33,7 @@ public:
 	void handleSingleTapConfirmedEvent(float x, float y);
 
 private:
+	void paint();
 	void updateHoveredNode();
 
 	std::string id_;

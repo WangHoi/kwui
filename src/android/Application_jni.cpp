@@ -20,14 +20,15 @@
 #include <android/native_window_jni.h>
 #include <string>
 #include <memory>
-#include <unordered_map>
+#include <unordered_set>
 
 namespace android {
 
-static std::unordered_map<std::string, CreateDialogCb> create_dialog_cb_maps;
+static std::unordered_set<std::string> create_dialog_cb_set;
 
 enum MessageType {
     kUndefined,
+    kActivityCreated,
     kSurfaceChanged,
     kSurfaceDestroyed,
     kSurfaceRedrawNeeded,
@@ -103,6 +104,7 @@ void JApplication::readMessage(Message* message) const
 }
 
 void JApplication::release() {
+    fRunning = false;
     pthread_join(fThread, nullptr);
 }
 
@@ -113,6 +115,10 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
     // get target surface from Message
 
     switch (message.fType) {
+    case kActivityCreated: {
+        DialogAndroid::handleActivityCreated();
+        break;
+    }
     case kSurfaceChanged: {
         auto dlg = DialogAndroid::findDialogById(message.id);
         if (dlg) {
@@ -209,6 +215,7 @@ void* JApplication::pthread_main(void* arg) {
 static jlong Application_Create(JNIEnv* env, jclass, jobject asset_manager, jstring entry_js)
 {
     if (g_japp) {
+        g_japp->postMessage(Message(kActivityCreated));
         return reinterpret_cast<jlong>(g_japp);
     }
     auto asset_manager_ref = env->NewGlobalRef(asset_manager);
@@ -220,9 +227,12 @@ static jlong Application_Create(JNIEnv* env, jclass, jobject asset_manager, jstr
     return reinterpret_cast<jlong>(g_japp);
 }
 
-static void Application_Release(JNIEnv* env, jobject, jlong ptr)
+static void Application_Destroy(JNIEnv* env, jobject, jlong ptr)
 {
-    //delete reinterpret_cast<JApplication*>(ptr);
+    auto japp = reinterpret_cast<JApplication*>(ptr);
+    japp->release();
+    delete japp;
+    g_japp = nullptr;
 }
 
 static void Application_SurfaceChanged(JNIEnv* env, jobject, jlong ptr, jstring jid, jobject surface,
@@ -303,15 +313,16 @@ static void Application_HandleSingleTapConfirmedEvent(JNIEnv* env, jobject, jlon
 
 int kwui_jni_register_Application(JNIEnv* env)
 {
-    jclass_native = env->FindClass("com/example/myapplication/Native");
-    if (jclass_native) {
-        jmethod_create_dialog = env->GetStaticMethodID(jclass_native, "jCreateDialog", "L(Ljava/lang/String;)V");
-        jmethod_release_dialog = env->GetStaticMethodID(jclass_native, "jReleaseDialog", "L(Ljava/lang/String;)V");
+    const auto clazz = env->FindClass("com/example/myapplication/Native");
+    if (clazz) {
+        jclass_native = reinterpret_cast<jclass>(env->NewGlobalRef(reinterpret_cast<jobject>(clazz)));
+        jmethod_create_dialog = env->GetStaticMethodID(jclass_native, "jCreateDialog", "(Ljava/lang/String;)V");
+        jmethod_release_dialog = env->GetStaticMethodID(jclass_native, "jReleaseDialog", "(Ljava/lang/String;)V");
     }
 
     static const JNINativeMethod methods[] = {
         {"nCreate" , "(Landroid/content/res/AssetManager;Ljava/lang/String;)J", reinterpret_cast<void*>(Application_Create)},
-        {"nRelease", "(J)V", reinterpret_cast<void*>(Application_Release)},
+        {"nDestroy", "(J)V", reinterpret_cast<void*>(Application_Destroy)},
         {"nSurfaceChanged", "(JLjava/lang/String;Landroid/view/Surface;IIIF)V", reinterpret_cast<void*>(Application_SurfaceChanged)},
         {"nSurfaceDestroyed", "(JLjava/lang/String;)V", reinterpret_cast<void*>(Application_SurfaceDestroyed)},
         {"nSurfaceRedrawNeeded", "(JLjava/lang/String;)V", reinterpret_cast<void*>(Application_SurfaceRedrawNeeded)},
@@ -322,7 +333,6 @@ int kwui_jni_register_Application(JNIEnv* env)
         {"nHandleSingleTapConfirmedEvent", "(JLjava/lang/String;FF)V", reinterpret_cast<void*>(Application_HandleSingleTapConfirmedEvent)},
     };
 
-    const auto clazz = env->FindClass("com/example/myapplication/Native");
     return clazz
         ? env->RegisterNatives(clazz, methods, ABSL_ARRAYSIZE(methods))
         : JNI_ERR;
@@ -364,35 +374,14 @@ int start_logger(const char* app_name)
     return 0;
 }
 
-void kwui_request_paint()
-{
-    if (gt_main_thread) {
-        // if (g_japp && g_japp->surface_) {
-        //     auto canvas = g_japp->surface_->getCanvas();
-        //     if (canvas) {
-        //         canvas->setMatrix(SkMatrix::Scale(g_japp->surface_density_, g_japp->surface_density_));
-        //         auto dlg = android::DialogAndroid::firstDialog();
-        //         if (dlg) {
-        //             dlg->paint(canvas, g_japp->surface_density_);
-        //         }
-        //         g_japp->surface_->flushAndSubmit();
-        //     }
-        // }
-    } else {
-        LOG(ERROR) << "kwui_request_paint(): invalid calling thread.";
-    }
-}
-
-
-void create_dialog(const std::string& id, CreateDialogCb create_cb)
+void create_dialog(const std::string& id)
 {
     CHECK(gt_main_thread) << "expect create_dialog() from main thread";
     if (!jmain_jni_env || !jclass_native || !jmethod_create_dialog) {
         LOG(ERROR) << "create_dialog(): invalid JNIEnv.";
-        create_cb(id, nullptr);
         return;
     }
-    create_dialog_cb_maps[id] = create_cb;
+    create_dialog_cb_set.insert(id);
     auto jid = jmain_jni_env->NewStringUTF(id.c_str());
     jmain_jni_env->CallStaticVoidMethod(jclass_native, jmethod_create_dialog, jid);
     jmain_jni_env->DeleteLocalRef(jid);
