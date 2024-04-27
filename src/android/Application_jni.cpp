@@ -313,7 +313,7 @@ static void Application_HandleSingleTapConfirmedEvent(JNIEnv* env, jobject, jlon
 
 int kwui_jni_register_Application(JNIEnv* env)
 {
-    const auto clazz = env->FindClass("com/example/myapplication/Native");
+    const auto clazz = env->FindClass("prj/kwui/Native");
     if (clazz) {
         jclass_native = reinterpret_cast<jclass>(env->NewGlobalRef(reinterpret_cast<jobject>(clazz)));
         jmethod_create_dialog = env->GetStaticMethodID(jclass_native, "jCreateDialog", "(Ljava/lang/String;)V");
