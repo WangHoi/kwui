@@ -14,6 +14,9 @@
 #include "windows/HiddenMsgWindow.h"
 #include <ConsoleApi2.h>
 #endif
+#ifdef __ANDROID__
+#include <unistd.h>
+#endif
 #include "base/EncodingManager.h"
 #include "base/ResourceManager.h"
 #include "graph2d/graph2d.h"
@@ -47,6 +50,8 @@ public:
 #if _WIN32
         msg_window_.setListener(this);
         g_main_thread_id = ::GetCurrentThreadId();
+#elif defined(__ANDROID__)
+        g_main_thread_id = gettid();
 #else
 #pragma message("TODO: GetCurrentThreadID().")
 #endif
@@ -194,6 +199,8 @@ bool Application::isMainThread()
 {
 #if _WIN32
     return (::GetCurrentThreadId() == g_main_thread_id);
+#elif defined(__ANDROID__)
+    return (gettid() == g_main_thread_id);
 #else
 #pragma message("TODO: GetCurrentThreadID().")
     return true;
@@ -218,26 +225,18 @@ bool Application::preloadResourceArchive(int id)
 #ifdef _WIN32
     return base::ResourceManager::instance()->preloadResourceArchive(id);
 #else
-#pragma message("TODO: Application::preloadResourceArchive().")
+    LOG(ERROR) << "Application::preloadResourceArchive() not supported.";
     return false;
 #endif
 }
 
 void Application::setResourceRootDir(const char* dir)
 {
-#ifdef _WIN32
     base::ResourceManager::instance()->setResourceRootDir(dir);
-#else
-#pragma message("TODO: Application::setResourceRootDir().")
-#endif
 }
 void Application::setResourceRootData(const uint8_t* data, size_t len)
 {
-#ifdef _WIN32
     base::ResourceManager::instance()->setResourceRootData(data, len);
-#else
-#pragma message("TODO: Application::setResourceRootData().")
-#endif
 }
 void Application::addFont(const char* family_name, const char* font_path)
 {
