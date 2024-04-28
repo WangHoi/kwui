@@ -16,6 +16,7 @@
 #endif
 #ifdef __ANDROID__
 #include <unistd.h>
+#include "android/Application_jni.h"
 #endif
 #include "base/EncodingManager.h"
 #include "base/ResourceManager.h"
@@ -37,13 +38,13 @@ static uint64_t g_main_thread_id = 0;
 
 class Application::Private
 #ifdef _WIN32
- : windows::WindowMsgListener
+    : windows::WindowMsgListener
 #else
 #pragma message("TODO: implement WindowMsgListener.")
 #endif
 {
 public:
-    Private(Application* q)
+    Private(Application * q)
         : q_(q)
     {
         g_app = q;
@@ -78,11 +79,7 @@ public:
 #pragma message("TODO: Application::Private::onAppMessage().")
 #endif
 
-#ifdef __ANDROID__
-    void init(JNIEnv* env, jobject asset_manager)
-#else
     void init()
-#endif
     {
 #ifdef _WIN32
         CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -97,7 +94,8 @@ public:
 
         LOG(INFO) << "Init ResourceManager...";
 #ifdef __ANDROID__
-        base::ResourceManager::createInstance(env, asset_manager);
+        base::ResourceManager::createInstance(android::get_jni_env(),
+            android::get_asset_manager());
 #else
         base::ResourceManager::createInstance();
 #endif
@@ -129,7 +127,7 @@ public:
         graph2d::addFont("kwui", icon_font.data(), icon_font.size());
     }
 
-    Application* q_;
+    Application * q_;
 #ifdef _WIN32
     windows::HiddenMsgWindow msg_window_;
 #else
@@ -137,13 +135,6 @@ public:
 #endif
 };
 
-#ifdef __ANDROID__
-Application::Application(JNIEnv* env, jobject asset_manager)
-    : d(new Private(this))
-{
-    d->init(env, asset_manager);
-}
-#else
 Application::Application(int argc, char* argv[])
     : d(new Private(this))
 {
@@ -155,7 +146,6 @@ Application::Application(int argc, wchar_t* argv[])
 {
     d->init();
 }
-#endif
 
 Application::~Application()
 {
@@ -216,6 +206,8 @@ void Application::runInMainThread(std::function<void()>&& func)
         windows::HiddenMsgWindow::MESSAGE_TYPE,
         (WPARAM)new std::function<void()>(std::move(func)),
         NULL);
+#elif defined(__ANDROID__)
+    android::run_in_main_thread(std::move(func));
 #else
 #pragma message("TODO: implement platform specific HiddenMsgWindow.")
 #endif
@@ -259,18 +251,21 @@ int Application::exec()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+    return 0;
+#elif defined(__ANDROID__)
+    return android::application_exec();
 #else
 #pragma message("TODO: Application::exec().")
-    return false;
-#endif
-
     return 0;
+#endif
 }
 
 void Application::quit()
 {
 #ifdef _WIN32
     ::PostQuitMessage(0);
+#elif defined(__ANDROID__)
+    LOG(ERROR) << "TODO: Application::quit().";
 #else
 #pragma message("TODO: Application::quit().")
 #endif

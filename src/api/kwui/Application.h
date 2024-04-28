@@ -7,16 +7,21 @@
 
 namespace kwui {
 
+#ifndef KWUI_MAIN
+#ifdef __ANDROID__
+extern "C" int __attribute__((visibility("default"))) kwui_main(int, char* []);
+#define KWUI_MAIN kwui_main
+#else
+#define KWUI_MAIN main
+#endif
+#endif
+
 typedef void (*LogCallback)(const char* msg);
 
 class KWUI_EXPORT Application {
 public:
-#ifdef __ANDROID__
-	Application(JNIEnv* env, jobject asset_manager);
-#else
 	Application(int argc, char* argv[]);
 	Application(int argc, wchar_t* argv[]);
-#endif
 	~Application();
 	static void setLogCallback(LogCallback callback);
 	static bool scriptReloadEnabled();

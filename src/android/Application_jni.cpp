@@ -198,7 +198,7 @@ void* JApplication::pthread_main(void* arg) {
     jmain_jni_env = nullptr;
     kwui_java_vm->AttachCurrentThread(&jmain_jni_env, nullptr);
 
-    kwui::Application app(jmain_jni_env, me->asset_manager_);
+    //kwui::Application app(jmain_jni_env, me->asset_manager_);
     //LOG(INFO) << "JApplication::pthread_main(): entry_js=[" << me->entry_js_ << "]";
     // if (!me->entry_js_.empty()) {
     //     kwui::ScriptEngine::get()->loadFile(me->entry_js_.c_str());
@@ -214,17 +214,6 @@ void* JApplication::pthread_main(void* arg) {
         LOG(ERROR) << "native function [" << get_main_function() << "] not found in shared object [" << get_main_shared_object() << "]";
     }
 
-    while (me->fRunning) {
-        const int ident = ALooper_pollOnce(0, nullptr, nullptr, nullptr);
-
-        //if (ident != ALOOPER_POLL_TIMEOUT) {
-            //SkDebugf("Unhandled ALooper_pollAll ident=%d !", ident);
-        //LOG(INFO) << "ALooper_pollOnce return " << ident;
-        if (ident == 1) {
-            message_callback(0, 0, me);
-        }
-        //}
-    }
     return nullptr;
 }
 
@@ -452,8 +441,32 @@ std::string string_from_jni(JNIEnv* env, jstring jstr)
     return s;
 }
 
+JNIEnv* get_jni_env()
+{
+    return jmain_jni_env;
+}
+jobject get_asset_manager()
+{
+    return g_japp ? g_japp->asset_manager_ : nullptr;
+}
+void run_in_main_thread(std::function<void()>&& func)
+{
+    LOG(ERROR) << "TODO: run in main thread";
+}
+int application_exec()
+{
+    while (g_japp && g_japp->fRunning) {
+        const int ident = ALooper_pollOnce(0, nullptr, nullptr, nullptr);
 
+        //if (ident != ALOOPER_POLL_TIMEOUT) {
+            //SkDebugf("Unhandled ALooper_pollAll ident=%d !", ident);
+        //LOG(INFO) << "ALooper_pollOnce return " << ident;
+        if (ident == 1) {
+            g_japp->message_callback(0, 0, g_japp);
+        }
+        //}
+    }
+    return 0;
 }
 
-
-
+}
