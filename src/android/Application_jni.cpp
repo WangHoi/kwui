@@ -18,6 +18,7 @@
 #include <android/looper.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+#include <dlfcn.h>
 #include <string>
 #include <memory>
 #include <unordered_set>
@@ -60,9 +61,13 @@ static ABSL_PER_THREAD_TLS_KEYWORD JNIEnv* jmain_jni_env = nullptr;
 static jclass jclass_native = nullptr;
 static jmethodID jmethod_create_dialog = nullptr;
 static jmethodID jmethod_release_dialog = nullptr;
+static jmethodID jmethod_get_main_shared_object = nullptr;
+static jmethodID jmethod_get_main_function = nullptr;
 
 static int start_logger(const char* app_name);
 static std::string string_from_jni(JNIEnv* env, jstring jstr);
+static std::string get_main_shared_object();
+static std::string get_main_function();
 
 class JApplication {
 public:
@@ -195,9 +200,20 @@ void* JApplication::pthread_main(void* arg) {
 
     kwui::Application app(jmain_jni_env, me->asset_manager_);
     //LOG(INFO) << "JApplication::pthread_main(): entry_js=[" << me->entry_js_ << "]";
-    if (!me->entry_js_.empty()) {
-        kwui::ScriptEngine::get()->loadFile(me->entry_js_.c_str());
+    // if (!me->entry_js_.empty()) {
+    //     kwui::ScriptEngine::get()->loadFile(me->entry_js_.c_str());
+    // }
+    int (*kwui_main)(int, char**) = nullptr;
+    void* dl_handle = dlopen(get_main_shared_object().c_str(), RTLD_GLOBAL);
+    if (dl_handle) {
+        kwui_main = (int (*)(int, char**))dlsym(dl_handle, get_main_function().c_str()); 
     }
+    if (kwui_main) {
+        kwui_main(0, nullptr);
+    } else {
+        LOG(ERROR) << "native function [" << get_main_function() << "] not found in shared object [" << get_main_shared_object() << "]";
+    }
+
     while (me->fRunning) {
         const int ident = ALooper_pollOnce(0, nullptr, nullptr, nullptr);
 
@@ -318,6 +334,8 @@ int kwui_jni_register_Application(JNIEnv* env)
         jclass_native = reinterpret_cast<jclass>(env->NewGlobalRef(reinterpret_cast<jobject>(clazz)));
         jmethod_create_dialog = env->GetStaticMethodID(jclass_native, "jCreateDialog", "(Ljava/lang/String;)V");
         jmethod_release_dialog = env->GetStaticMethodID(jclass_native, "jReleaseDialog", "(Ljava/lang/String;)V");
+        jmethod_get_main_shared_object = env->GetStaticMethodID(jclass_native, "jGetMainSharedObject", "()Ljava/lang/String;");
+        jmethod_get_main_function = env->GetStaticMethodID(jclass_native, "jGetMainFunction", "()Ljava/lang/String;");
     }
 
     static const JNINativeMethod methods[] = {
@@ -372,6 +390,31 @@ int start_logger(const char* app_name)
         return -1;
     pthread_detach(thr);
     return 0;
+}
+
+std::string get_main_shared_object()
+{
+    CHECK(gt_main_thread) << "expect get_main_shared_object() from main thread";
+    if (!jmain_jni_env || !jclass_native || !jmethod_get_main_shared_object) {
+        LOG(ERROR) << "get_main_shared_object(): invalid JNIEnv.";
+        return "";
+    }
+    auto jstr = jmain_jni_env->CallStaticObjectMethod(jclass_native, jmethod_get_main_shared_object);
+    auto str = string_from_jni(jmain_jni_env, (jstring)jstr);
+    jmain_jni_env->DeleteLocalRef(jstr);
+    return str;
+}
+std::string get_main_function()
+{
+    CHECK(gt_main_thread) << "expect get_main_function() from main thread";
+    if (!jmain_jni_env || !jclass_native || !jmethod_get_main_function) {
+        LOG(ERROR) << "get_main_function(): invalid JNIEnv.";
+        return "";
+    }
+    auto jstr = jmain_jni_env->CallStaticObjectMethod(jclass_native, jmethod_get_main_function);
+    auto str = string_from_jni(jmain_jni_env, (jstring)jstr);
+    jmain_jni_env->DeleteLocalRef(jstr);
+    return str;
 }
 
 void create_dialog(const std::string& id)
