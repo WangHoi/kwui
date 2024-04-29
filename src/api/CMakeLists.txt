@@ -1,6 +1,7 @@
 list(APPEND kwui_pub_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/kwui.h
   ${CMAKE_CURRENT_SOURCE_DIR}/kwui/kwui_export.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/kwui/kwui_main.h
   ${CMAKE_CURRENT_SOURCE_DIR}/kwui/Application.h
   ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptEngine.h
   ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptValue.h

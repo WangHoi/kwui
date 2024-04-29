@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package @ANDROID_PACKAGE_ID@;
 
 import android.os.Bundle;
 
@@ -16,6 +16,6 @@ public class MainActivity extends KwuiActivity {
 
     @Override
     protected String getMainSharedObject() {
-        return "libmyapplication.so";
+        return "lib@ANDROID_APPLICATION_NAME@.so";
     }
 }

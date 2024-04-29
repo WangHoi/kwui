@@ -1,20 +1,12 @@
 #pragma once
 #include "kwui_export.h"
+#include "kwui_main.h"
 #include <functional>
 #ifdef __ANDROID__
 #include <jni.h>
 #endif
 
 namespace kwui {
-
-#ifndef KWUI_MAIN
-#ifdef __ANDROID__
-extern "C" int __attribute__((visibility("default"))) kwui_main(int, char* []);
-#define KWUI_MAIN kwui_main
-#else
-#define KWUI_MAIN main
-#endif
-#endif
 
 typedef void (*LogCallback)(const char* msg);
 

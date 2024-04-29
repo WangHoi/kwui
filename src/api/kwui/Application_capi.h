@@ -1,19 +1,11 @@
 #pragma once
 #include "kwui_export.h"
+#include "kwui_main.h"
 #include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef KWUI_MAIN
-#ifdef __ANDROID__
-	int __attribute__((visibility("default"))) kwui_main(int, char* []);
-#define KWUI_MAIN kwui_main
-#else
-#define KWUI_MAIN main
-#endif
 #endif
 
 	typedef void (*kwui_LogCallback)(const char* msg);

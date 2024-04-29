@@ -4,13 +4,7 @@ option( ANDRODIPACKAGING_GRADLE_DAEMON
     FALSE )
 
 set(GRADLE_USER_HOME "${PROJECT_BINARY_DIR}/.gradle/" CACHE INTERNAL "Gradle cache")
-
-# build android_native_app_glue as a static lib
-set(APP_GLUE_DIR ${CMAKE_ANDROID_NDK}/sources/android/native_app_glue)
-add_library( android_native_app_glue STATIC ${APP_GLUE_DIR}/android_native_app_glue.c)
-add_library( android::native_app_glue ALIAS android_native_app_glue)
-target_include_directories( android_native_app_glue PUBLIC ${APP_GLUE_DIR} )
-  
+ 
 function(make_apk_ndk_library TARGET)
     # Global variables
     set(ANDROID_ABIS ${CMAKE_ANDROID_ARCH_ABI})
@@ -64,7 +58,7 @@ function(make_apk_ndk_library TARGET)
     set(ANDROIDPACKAGING_LIB_ROOT "${APK.BUILD_ROOT}/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}")
     file(MAKE_DIRECTORY ${ANDROIDPACKAGING_LIB_ROOT})
 
-    set(ANDROIDPACKAGING_ROOT_NS "com.emteq") 
+    set(ANDROIDPACKAGING_ROOT_NS "prj.kwui") 
     
     if ( NOT DEFINED ANDROID_VERSIONCODE)
         # Android uses an integer version-code to determine upgrade vs downgrade operations
@@ -167,15 +161,14 @@ function(make_apk_ndk_library TARGET)
     if ( NOT ANDRODIPACKAGING_GRADLE_DAEMON )
         set( GRADLE_OPTS_DAEMON --no-daemon)
     endif()
-
+#            --gradle-user-home ${GRADLE_USER_HOME}
     add_custom_command(
         TARGET ${TARGET}.APK
         #OUTPUT ${APK.BUILD_ROOT}/${hostSystemName}-build/
         COMMENT "Gathering gradle dependencies"
-        COMMAND ./gradlew $<IF:$<CONFIG:Release>,assembleRelease,assembleDebug>
+        COMMAND ./gradlew $<IF:$<CONFIG:Debug>,assembleDebug,assembleRelease>
             ${GRADLE_OPTS_DAEMON}
             --no-rebuild 
-            --gradle-user-home ${GRADLE_USER_HOME}
         WORKING_DIRECTORY ${APK.BUILD_ROOT}
         # Ninja Delete Bug on windows: BYPRODUCTS        ${APK.BUILD_ROOT}/${hostSystemName}-build/
         DEPENDS $<TARGET_PROPERTY:${TARGET},APK.SOURCES>
@@ -263,7 +256,6 @@ function(apk_add_executable TARGET)
     # We implcitly add common link targets
     target_link_libraries( ${TARGET} 
         $<$<BOOL:${ANDROID}>:android> # @note libandroid.so
-        $<$<BOOL:${ANDROID}>:android::native_app_glue>
         $<$<BOOL:${ANDROID}>:log>
     )
 endfunction()

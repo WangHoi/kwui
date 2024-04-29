@@ -19,6 +19,8 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "My Application"
-include ':app'
+rootProject.name = "@ANDROID_APPLICATION_NAME@"
+// include ':app'
 include ':kwui'
+project(':kwui').projectDir = new File("d:/projects/kwui/android/kwui")
+

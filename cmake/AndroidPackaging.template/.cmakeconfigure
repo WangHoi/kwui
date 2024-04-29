@@ -1,0 +1,45 @@
+# Configurable (Have `.in` extension in file system)
+build.gradle
+gradle.properties
+local.properties
+settings.gradle
+build.gradle
+# CMakeLists.txt
+proguard-rules.pro
+src/main/AndroidManifest.xml
+src/main/res/values/strings.xml
+src/main/java/prj/kwui/MainActivity.java
+
+# TODO: Manifest needs no JAVA if: <activity android:name="android.app.NativeActivity
+#src/main/java/MainActivity.java
+
+# Debug Only (Prefixed with '!')
+# !src/main/jni/Android.mk
+# !src/main/gdb-path.txt
+
+# Non-Confiugrable
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.properties
+gradle/libs.versions.toml
+src/main/res/drawable/ic_launcher_background.xml
+src/main/res/drawable/ic_launcher_foreground.xml
+src/main/res/mipmap-anydpi/ic_launcher.xml
+src/main/res/mipmap-anydpi/ic_launcher_round.xml
+src/main/res/mipmap-hdpi/ic_launcher.webp
+src/main/res/mipmap-hdpi/ic_launcher_round.webp
+src/main/res/mipmap-mdpi/ic_launcher.webp
+src/main/res/mipmap-mdpi/ic_launcher_round.webp
+src/main/res/mipmap-xhdpi/ic_launcher.webp
+src/main/res/mipmap-xhdpi/ic_launcher_round.webp
+src/main/res/mipmap-xxhdpi/ic_launcher.webp
+src/main/res/mipmap-xxhdpi/ic_launcher_round.webp
+src/main/res/mipmap-xxxhdpi/ic_launcher.webp
+src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp
+src/main/res/values/colors.xml
+src/main/res/values/strings.xml
+src/main/res/values/themes.xml
+src/main/res/values-night/themes.xml
+src/main/res/xml/backup_rules.xml
+src/main/res/xml/data_extraction_rules.xml
