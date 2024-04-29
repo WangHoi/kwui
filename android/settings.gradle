@@ -19,6 +19,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "@ANDROID_APPLICATION_NAME@"
+//rootProject.name = "@ANDROID_APPLICATION_NAME@"
 include ':kwui'
-include ':app'
+
+

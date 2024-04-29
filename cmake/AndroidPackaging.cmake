@@ -55,8 +55,8 @@ function(make_apk_ndk_library TARGET)
     #set(CMAKE_SHARED_LINKER_FLAGS
     #     "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
 
-    set(ANDROIDPACKAGING_LIB_ROOT "${APK.BUILD_ROOT}/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}")
-    file(MAKE_DIRECTORY ${ANDROIDPACKAGING_LIB_ROOT})
+    set(ANDROIDPACKAGING_LIB_ROOT "${APK.BUILD_ROOT}/app/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}")
+    file(MAKE_DIRECTORY "${ANDROIDPACKAGING_LIB_ROOT}/")
 
     set(ANDROIDPACKAGING_ROOT_NS "prj.kwui") 
     
@@ -108,6 +108,35 @@ function(make_apk_ndk_library TARGET)
     else()    
         set(ANDROID_ADDITIONAL_PARAMS "${ANDROID_ADDITIONAL_PARAMS} android:debuggable=\"true\"") #@todo  android:extractNativeLibs=\"true\"
         set(SOURCEEXCLUDE_DEBUGPREFIX  "") # Include debug files
+    endif()
+
+    # Copy kwui sources
+    add_custom_command(TARGET ${TARGET}.APK PRE_BUILD
+        DEPENDS ${TARGET}
+        COMMENT "Copy kwui android sources"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/android/kwui/src ${APK.BUILD_ROOT}/kwui/src
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/android/kwui/build.gradle ${APK.BUILD_ROOT}/kwui/build.gradle
+        )
+    
+    # Copy assets
+    if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/assets)
+        file(GLOB_RECURSE
+            ASSETS_FILES
+            RELATIVE ${CMAKE_CURRENT_LIST_DIR}/assets
+            CONFIGURE_DEPENDS
+
+            ${CMAKE_CURRENT_LIST_DIR}/assets/**
+        )
+        
+        FOREACH(MY_RESOURCE_FILE ${ASSETS_FILES})
+            message(STATUS "copy assets from ${CMAKE_CURRENT_LIST_DIR}/assets/${MY_RESOURCE_FILE} to ${APK.BUILD_ROOT}/app/src/main/assets/${MY_RESOURCE_FILE}")
+            add_custom_command(TARGET ${TARGET}.APK PRE_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                    ${CMAKE_CURRENT_LIST_DIR}/assets/${MY_RESOURCE_FILE}
+                    ${APK.BUILD_ROOT}/app/src/main/assets/${MY_RESOURCE_FILE}
+                DEPENDS ${CMAKE_CURRENT_LIST_DIR}/assets/${MY_RESOURCE_FILE}
+            )
+        ENDFOREACH()
     endif()
 
     # Load list of files in `android_project_template`

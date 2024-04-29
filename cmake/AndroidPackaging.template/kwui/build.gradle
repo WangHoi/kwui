@@ -33,7 +33,7 @@ android {
     }
     buildFeatures {
         viewBinding true
-        // prefabPublishing true
+        prefabPublishing true
     }
 
     compileOptions {
@@ -41,18 +41,18 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    // prefab {
-    //     kwui {
-    //         headers "d:/projects/kwui/src/api"
+    prefab {
+        kwui {
+            headers "d:/projects/kwui/src/api"
 //            libraryName "libkwui"
-    //     }
-    // }
-    // externalNativeBuild {
-    //     cmake {
-    //         path file('d:/projects/kwui/CMakeLists.txt')
-    //         version '3.22.1'
-    //     }
-    // }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path file('d:/projects/kwui/CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
 }
 
 dependencies {
