@@ -4,10 +4,10 @@
 #include <string.h>
 using namespace kwui;
 
-int main(int argc, char* argv[])
+KWUI_MAIN()
 {
     Application app(argc, argv);
     ScriptEngine::get()
-        ->loadFile("d:/projects/kwui/tests/box_gen/assets/box_gen.js");
+        ->loadFile(":/box_gen.js");
     return app.exec();
 }

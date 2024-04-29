@@ -55,8 +55,8 @@ function(make_apk_ndk_library TARGET)
     #set(CMAKE_SHARED_LINKER_FLAGS
     #     "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
 
-    set(ANDROIDPACKAGING_LIB_ROOT "${APK.BUILD_ROOT}/app/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}")
-    file(MAKE_DIRECTORY "${ANDROIDPACKAGING_LIB_ROOT}/")
+    set(ANDROIDPACKAGING_LIB_ROOT "${APK.BUILD_ROOT}/app/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/")
+    file(MAKE_DIRECTORY "${ANDROIDPACKAGING_LIB_ROOT}")
 
     set(ANDROIDPACKAGING_ROOT_NS "prj.kwui") 
     
@@ -110,6 +110,15 @@ function(make_apk_ndk_library TARGET)
         set(SOURCEEXCLUDE_DEBUGPREFIX  "") # Include debug files
     endif()
 
+    # Copy android licenese
+    if(EXISTS ${CMAKE_ANDROID_SDK}/licenses)
+        add_custom_command(TARGET ${TARGET}.APK PRE_BUILD
+            DEPENDS ${TARGET}
+            COMMENT "Copy android licenses"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_ANDROID_SDK}/licenses ${APK.BUILD_ROOT}/licenses
+            )
+    endif()
+
     # Copy kwui sources
     add_custom_command(TARGET ${TARGET}.APK PRE_BUILD
         DEPENDS ${TARGET}
@@ -159,10 +168,11 @@ function(make_apk_ndk_library TARGET)
         foreach( TARGET ${JNILIB_TARGETS})
             if ( TARGET ${TARGET}  )
                 get_target_property( type ${TARGET} TYPE )
-                if ( type STREQUAL "SHARED_LIBRARY" )
+                if ( type STREQUAL "SHARED_LIBRARY" )                    
                     add_custom_command( TARGET ${TARGET}.APK PRE_BUILD
                         DEPENDS ${TARGET}
                         COMMENT "Collecting ${TARGET}"
+                        COMMAND ${CMAKE_COMMAND} -E echo "Copying $<TARGET_FILE:${TARGET}> to ${ANDROIDPACKAGING_LIB_ROOT}"
                         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${TARGET}> ${ANDROIDPACKAGING_LIB_ROOT} )
                 endif()
             endif()
@@ -178,6 +188,13 @@ function(make_apk_ndk_library TARGET)
                 COMMENT "Collecting shared runtime ${ANDROIDPACKAGING_STLRUNTIME_PATH}"
                 COMMAND ${CMAKE_COMMAND} -E copy "${ANDROIDPACKAGING_STLRUNTIME_PATH}" "${ANDROIDPACKAGING_LIB_ROOT}" )
         endif()
+
+        #Copy kwui
+        add_custom_command( TARGET ${TARGET}.APK POST_BUILD
+            COMMENT "Collecting kwui shared library"
+            COMMAND ${CMAKE_COMMAND} -E echo "Copying $<TARGET_FILE:kwui> to ${ANDROIDPACKAGING_LIB_ROOT}"
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:kwui> ${ANDROIDPACKAGING_LIB_ROOT} )
+
 
     else() #TODO: Doens't appear to work? need dependencies flaggedas imports somehow...?
         add_custom_command( TARGET ${TARGET}.APK PRE_BUILD
@@ -197,7 +214,6 @@ function(make_apk_ndk_library TARGET)
         COMMENT "Gathering gradle dependencies"
         COMMAND ./gradlew $<IF:$<CONFIG:Debug>,assembleDebug,assembleRelease>
             ${GRADLE_OPTS_DAEMON}
-            --no-rebuild 
         WORKING_DIRECTORY ${APK.BUILD_ROOT}
         # Ninja Delete Bug on windows: BYPRODUCTS        ${APK.BUILD_ROOT}/${hostSystemName}-build/
         DEPENDS $<TARGET_PROPERTY:${TARGET},APK.SOURCES>

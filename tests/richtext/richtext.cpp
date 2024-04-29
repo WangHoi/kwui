@@ -4,11 +4,13 @@
 #include <string.h>
 using namespace kwui;
 
-int main(int argc, char* argv[])
+KWUI_MAIN()
 {
     Application app(argc, argv);
+#ifdef _WIN32
     app.setResourceRootDir("d:/projects/kwui/tests/richtext/assets");
+#endif
     ScriptEngine::get()
-        ->loadFile("d:/projects/kwui/tests/richtext/assets/entry.js");
+        ->loadFile(":/entry.js");
     return app.exec();
 }

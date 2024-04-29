@@ -71,13 +71,10 @@ message(CHECK_START "Finding JAVA home")
 # TODO: Document this behaviour....
 # org.gradle.java.home=@JAVA_HOME@
 find_package(Java 11 REQUIRED)
-if ( NOT JAVA_HOME ) # Extract `JAVA_HOME` from parent path of `Java_JAVA_EXECUTABLE`
-    cmake_path(GET Java_JAVA_EXECUTABLE PARENT_PATH  JAVA_HOME)
-    cmake_path(GET JAVA_HOME PARENT_PATH JAVA_HOME)
-endif()    
 if( NOT JAVA_HOME )
-    message( CHECK_FAIL "JAVA_HOME needs to be defined." )
-    list(APPEND MISSING_ANDROID_COMPONENTS JAVA)
+    set(JAVA_HOME $ENV{JAVA_HOME})
+    STRING(REPLACE "\\" "/" JAVA_HOME "$ENV{JAVA_HOME}")
+    message( CHECK_FAIL "setting JAVA_HOME to ${JAVA_HOME}." )
 else()
     message( CHECK_PASS "JAVA_HOME is ${JAVA_HOME}" )
 endif()    

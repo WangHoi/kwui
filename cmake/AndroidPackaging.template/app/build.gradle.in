@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.androidLibrary) apply false
     alias(libs.plugins.androidApplication)
 }
 
@@ -13,16 +12,6 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
-        externalNativeBuild {
-            cmake {
-                abiFilters "@ANDROID_ABIS@"
-                cppFlags ''
-                arguments "-DANDROID_STL=c++_shared",
-                        "-DANDROID_CPP_FEATURES=rtti exceptions"
-            }
-        }
-
-//        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -48,12 +37,6 @@ android {
 //    }
     buildFeatures {
         viewBinding true
-        prefab true
-    }
-
-    packagingOptions {
-        pickFirst 'lib/arm64-v8a/libc++_shared.so'
-//        doNotStrip "*/arm64-v8a/*.so"
     }
 }
 
@@ -62,7 +45,7 @@ dependencies {
     implementation libs.appcompat
     implementation libs.material
     implementation libs.constraintlayout
-    implementation project(path: ':kwui')
+    implementation project(':kwui')
 //    testImplementation libs.junit
 //    androidTestImplementation libs.ext.junit
 //    androidTestImplementation libs.espresso.core

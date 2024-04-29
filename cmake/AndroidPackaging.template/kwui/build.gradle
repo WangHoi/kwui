@@ -13,16 +13,6 @@ android {
         versionCode 1
         versionName '0.1'
         targetSdk 34
-        externalNativeBuild {
-            cmake {
-                cppFlags ''
-                arguments "-DANDROID_STL=c++_shared",
-                        "-DANDROID_CPP_FEATURES=rtti exceptions",
-                        "-DBUILD_SHARED_LIBS=ON"
-                abiFilters 'arm64-v8a'
-                targets 'kwui'
-            }
-        }
     }
 
     buildTypes {
@@ -40,26 +30,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
-    prefab {
-        kwui {
-            headers "d:/projects/kwui/src/api"
-//            libraryName "libkwui"
-        }
-    }
-    externalNativeBuild {
-        cmake {
-            path file('d:/projects/kwui/CMakeLists.txt')
-            version '3.22.1'
-        }
-    }
 }
 
 dependencies {
 
     implementation libs.appcompat
     implementation libs.material
-//    testImplementation libs.junit
-//    androidTestImplementation libs.ext.junit
-//    androidTestImplementation libs.espresso.core
 }
