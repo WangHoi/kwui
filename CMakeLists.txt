@@ -30,6 +30,8 @@ endif()
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(util.cmake)
+include(cmake/AndroidPackaging-Prerequisites.cmake)
+include(cmake/AndroidPackaging.cmake)
 
 if(BUILD_SHARED_LIBS)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)

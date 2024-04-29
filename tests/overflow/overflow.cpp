@@ -5,7 +5,7 @@
 #include <string.h>
 using namespace kwui;
 
-int main(int argc, char* argv[])
+int KWUI_MAIN(int argc, char* argv[])
 {
     //Application app(argc, argv);
     //ScriptEngine::get()
