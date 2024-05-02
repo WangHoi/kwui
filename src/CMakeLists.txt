@@ -46,7 +46,9 @@ endif()
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/api/
     DESTINATION include
     FILES_MATCHING PATTERN "*.h*")
-install(TARGETS quickjs)
+if(NOT ANDROID)
+    install(TARGETS quickjs)
+endif()
 
 # Build shared library
 if(BUILD_SHARED_LIBS)
@@ -58,6 +60,7 @@ if(BUILD_SHARED_LIBS)
     target_compile_definitions(kwui PRIVATE -DKWUI_SHARED_LIBRARY)
     target_include_directories(kwui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(kwui PUBLIC ${dep_libs} PRIVATE kwui_resources)
+    install(TARGETS kwui DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 
 # Build static library
@@ -69,4 +72,6 @@ endif()
 target_compile_definitions(c31 PUBLIC -DKWUI_STATIC_LIBRARY INTERFACE -DKWUI_STATIC_LIBRARY)
 target_include_directories(c31 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(c31 PUBLIC ${dep_libs} PRIVATE kwui_resources)
-bundle_static_library(c31 kwui_static)
+if(WIN32)
+    bundle_static_library(c31 kwui_static)
+endif()
