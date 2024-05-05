@@ -123,8 +123,8 @@ function(make_apk_ndk_library TARGET)
     add_custom_command(TARGET ${TARGET}.APK PRE_BUILD
         DEPENDS ${TARGET}
         COMMENT "Copy kwui android sources"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/android/kwui/src ${APK.BUILD_ROOT}/kwui/src
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/android/kwui/build.gradle ${APK.BUILD_ROOT}/kwui/build.gradle
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../android/kwui/src ${APK.BUILD_ROOT}/kwui/src
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../android/kwui/build.gradle ${APK.BUILD_ROOT}/kwui/build.gradle
         )
     
     # Copy assets
@@ -194,7 +194,6 @@ function(make_apk_ndk_library TARGET)
             COMMENT "Collecting kwui shared library"
             COMMAND ${CMAKE_COMMAND} -E echo "Copying $<TARGET_FILE:kwui> to ${ANDROIDPACKAGING_LIB_ROOT}"
             COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:kwui> ${ANDROIDPACKAGING_LIB_ROOT} )
-
 
     else() #TODO: Doens't appear to work? need dependencies flaggedas imports somehow...?
         add_custom_command( TARGET ${TARGET}.APK PRE_BUILD
