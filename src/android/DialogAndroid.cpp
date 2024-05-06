@@ -169,6 +169,10 @@ void DialogAndroid::handleShowPressEvent(float x, float y)
 }
 void DialogAndroid::handleLongPressEvent(float x, float y)
 {
+	mouse_position_.x = x / dpi_scale_;
+	mouse_position_.y = y / dpi_scale_;
+	updateHoveredNode();
+
 	scene2d::Node* node;
 	scene2d::PointF local_pos;
 	node = scene_->pickNode(mouse_position_, scene2d::NODE_FLAG_CLICKABLE, &local_pos);
@@ -176,7 +180,7 @@ void DialogAndroid::handleLongPressEvent(float x, float y)
 		//LOG(INFO) << "mouse down " << local_pos;
 		//active_node_ = node->weaken();
 		//node->state_ |= scene2d::NODE_STATE_ACTIVE;
-		int button = scene2d::LEFT_BUTTON;
+		int button = scene2d::RIGHT_BUTTON;
 		int modifiers = 0;
 		scene2d::MouseEvent mouse_down(node, scene2d::MOUSE_DOWN, mouse_position_, local_pos, button, button, modifiers);
 		scene_->dispatchEvent(node, mouse_down, true);
@@ -187,19 +191,30 @@ void DialogAndroid::handleLongPressEvent(float x, float y)
 }
 void DialogAndroid::handleSingleTapConfirmedEvent(float x, float y)
 {
+	mouse_position_.x = x / dpi_scale_;
+	mouse_position_.y = y / dpi_scale_;
+	updateHoveredNode();
+
 	scene2d::Node* node;
 	scene2d::PointF local_pos;
 	node = scene_->pickNode(mouse_position_, scene2d::NODE_FLAG_CLICKABLE, &local_pos);
+	// LOG(INFO) << "handleSingleTapConfirmedEvent pick pos=" << mouse_position_ << ", node=" << node;
 	if (node) {
-		//LOG(INFO) << "mouse down " << local_pos;
+		// LOG(INFO) << "handleSingleTapConfirmedEvent " << local_pos << ", tag=" << node->tag_;
 		//active_node_ = node->weaken();
 		//node->state_ |= scene2d::NODE_STATE_ACTIVE;
-		int button = scene2d::LEFT_BUTTON;
+		scene2d::ButtonState button = scene2d::LEFT_BUTTON;
 		int modifiers = 0;
 		scene2d::MouseEvent mouse_down(node, scene2d::MOUSE_DOWN, mouse_position_, local_pos, button, button, modifiers);
+		//mouse_down.button = button;
+		//mouse_down.buttons = button;
+		LOG(INFO) << "mouse_down button=" << (int)mouse_down.button << ", buttons=" << mouse_down.buttons;
 		scene_->dispatchEvent(node, mouse_down, true);
 
 		scene2d::MouseEvent mouse_up(node, scene2d::MOUSE_UP, mouse_position_, local_pos, button, 0, modifiers);
+		//mouse_up.button = button;
+		//mouse_up.buttons = 0;
+		LOG(INFO) << "mouse_up button=" << (int)mouse_up.button << ", buttons=" << mouse_up.buttons;
 		scene_->dispatchEvent(node, mouse_up, true);
 	}
 }

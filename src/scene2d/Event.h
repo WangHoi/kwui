@@ -75,7 +75,7 @@ enum MouseCommand {
 struct MouseEvent : public Event {
     PointF view_pos;
     PointF pos;
-    float wheel_delta;
+    float wheel_delta = 0.0f;
     ButtonState button = NO_BUTTON;
     int buttons = NO_BUTTON;
     int modifiers = NO_MODIFILER;
@@ -86,14 +86,14 @@ struct MouseEvent : public Event {
         : Event(t, c)
         , view_pos(vpos)
         , pos(lpos) {}
-    MouseEvent(Node* t, int c, const PointF& vpos, const PointF& lpos, ButtonState btn, int btns, int modi)
+    explicit MouseEvent(Node* t, int c, const PointF& vpos, const PointF& lpos, ButtonState btn, int btns, int modi)
         : Event(t, c)
         , view_pos(vpos)
         , pos(lpos)
         , button(btn)
         , buttons(btns)
         , modifiers(modi) {}
-    MouseEvent(Node* t, int c, const PointF& vpos, const PointF& lpos, float delta, int btns, int modi)
+    explicit MouseEvent(Node* t, int c, const PointF& vpos, const PointF& lpos, float delta, int btns, int modi)
         : Event(t, c)
         , view_pos(vpos)
         , pos(lpos)
