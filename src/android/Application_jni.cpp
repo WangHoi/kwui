@@ -47,7 +47,7 @@ struct Message {
     float fDensity = 1.0f;
     float x, y;
     float dx, dy;
-    std::function<void()> func;
+    std::function<void()>* func = nullptr;
     //SkPicture* fPicture = nullptr;
     //WindowSurface** fWindowSurface = nullptr;
 
@@ -183,7 +183,8 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
     }
     case kRunInMainThread: {
         if (message.func) {
-            std::move(message.func)();
+            (*message.func)();
+            delete message.func;
         }
         break;
     }
@@ -463,7 +464,7 @@ void run_in_main_thread(std::function<void()>&& func)
         func();
     } else if (g_japp) {
         Message msg(kRunInMainThread);
-        msg.func = std::move(func);
+        msg.func = new std::function<void()>(std::move(func));
         g_japp->postMessage(msg);
     } else {
         LOG(ERROR) << "run_in_main_thread(): invalid JApplication.";

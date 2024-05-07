@@ -1,0 +1,6 @@
+kwui_add_executable(test_relative_layout)
+target_sources(test_relative_layout PRIVATE relative_layout.cpp)
+if(WIN32)
+    target_sources(test_relative_layout PRIVATE dpi-aware.manifest)
+endif()
+target_include_directories(test_relative_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/api)

@@ -38,7 +38,7 @@ public:
 		if (_size.cx <= 0 || _size.cy <= 0) return;
 
 		_info.hdcSrc = source;
-#pragma TODO("partial update of layered?")
+#pragma message("TODO: partial update of layered?")
 		RECT rect;
 		GetWindowRect(window, &rect);
 		_window_pos.x = rect.left;
@@ -116,16 +116,23 @@ void PaintSurfaceX::swapBuffers()
 		LPVOID bits = NULL;
 		HBITMAP hdib = CreateDIBSection(dc, bmpInfo, DIB_RGB_COLORS, &bits, NULL, 0);
 		if (hdib) {
-			memcpy(bits, bmpInfo->bmiColors, config_.size.width * config_.size.height * sizeof(uint32_t));
+			memcpy(bits, bmpInfo->bmiColors, config_.pixel_size.width * config_.pixel_size.height * sizeof(uint32_t));
 			HGDIOBJ hprev = SelectObject(dc, hdib);
-			layered_window_ctx(config_.size.width, config_.size.height).update(config_.hwnd, dc);
+			layered_window_ctx(config_.pixel_size.width, config_.pixel_size.height).update(config_.hwnd, dc);
 			SelectObject(dc, hprev);
 			DeleteObject(hdib);
 		}
 		ReleaseDC(NULL, dc);
 	} else {
 		HDC dc = GetDC(config_.hwnd);
-		StretchDIBits(dc, 0, 0, config_.size.width, config_.size.height, 0, 0, config_.size.width, config_.size.height, bmpInfo->bmiColors, bmpInfo,
+		StretchDIBits(dc,
+			0, 0,
+			config_.pixel_size.width,
+			config_.pixel_size.height,
+			0, 0,
+			config_.pixel_size.width,
+			config_.pixel_size.height,
+			bmpInfo->bmiColors, bmpInfo,
 			DIB_RGB_COLORS, SRCCOPY);
 		ReleaseDC(config_.hwnd, dc);
 	}

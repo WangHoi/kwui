@@ -386,7 +386,8 @@ std::tuple<float, float> TextFlowD2D::measureWidth()
 		max_text_width = std::max(max_text_width, text_width);
 	}
 
-	// LOG(INFO) << "measure " << min_text_width << "/" << max_text_width;
+	// LOG(INFO) << "measure '" << base::EncodingManager::WideToUTF8(text_) << "': "
+	// 	<< min_text_width << "/" << max_text_width;
 	return std::make_tuple(min_text_width, max_text_width);
 }
 void TextFlowD2D::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::TextFlowSinkInterface* flowSink)

@@ -139,7 +139,40 @@ style::FontMetrics TextFlowX::fontMetrics()
 }
 std::tuple<float, float> TextFlowX::measureWidth()
 {
-	return std::make_tuple(0.0f, 1000.0f);
+	size_t glyph_count = font_.countText(text_.c_str(), text_.length(), SkTextEncoding::kUTF8);
+	std::vector<SkGlyphID> glyphs;
+	glyphs.resize(glyph_count);
+	std::vector<SkScalar> advances;
+	advances.resize(glyph_count);
+	font_.textToGlyphs(text_.c_str(), text_.length(), SkTextEncoding::kUTF8, glyphs.data(), glyph_count);
+	font_.getWidthsBounds(glyphs.data(), glyph_count, advances.data(), nullptr, nullptr);
+
+    float min_text_width = 0, max_text_width = 0;
+    const char* utf8 = text_.c_str();
+    size_t utf8Bytes = text_.length();
+    size_t glyphOffset = 0;
+    size_t utf8Offset = 0;
+    while (0 < utf8Bytes) {
+        size_t bytesCollapsed;
+        size_t bytesConsumed = linebreak(utf8, utf8 + utf8Bytes, font_, FLT_MAX,
+            advances.data() + glyphOffset, &bytesCollapsed);
+        size_t bytesVisible = bytesConsumed - bytesCollapsed;
+
+        size_t numGlyphs = SkUTF::CountUTF8(utf8, bytesVisible);
+        float line_advance = font_.measureText(utf8, bytesVisible, SkTextEncoding::kUTF8);
+        max_text_width = std::max(max_text_width, line_advance);
+        auto max_it = std::max_element(advances.data() + glyphOffset, advances.data() + glyphOffset + numGlyphs);
+        if (max_it != advances.data() + glyphOffset + numGlyphs) {
+            min_text_width = std::max(min_text_width, *max_it);
+        }
+
+        glyphOffset += SkUTF::CountUTF8(utf8, bytesConsumed);
+        utf8Offset += bytesConsumed;
+        utf8 += bytesConsumed;
+        utf8Bytes -= bytesConsumed;
+    }
+
+	return std::make_tuple(min_text_width, max_text_width);
 }
 void TextFlowX::flowText(graph2d::TextFlowSourceInterface* source, graph2d::TextFlowSinkInterface* sink)
 {

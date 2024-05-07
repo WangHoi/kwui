@@ -905,7 +905,7 @@ void DialogWin32::recreateSurface() {
 #if WITH_SKIA
     xskia::PaintSurfaceX::Configuration config;
     config.hwnd = hwnd_;
-    config.size = size_;
+    config.pixel_size = pixel_size_;
     config.dpi_scale = dpi_scale_;
     surface_ = xskia::PaintSurfaceX::create(config);
     LOG(INFO) << "DialogWin32::recreateSurface() hwnd=" << std::hex << hwnd_
