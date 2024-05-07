@@ -4,6 +4,7 @@
 #include "include/core/SkSurface.h"
 #include "Application_jni.h"
 #include "absl/functional/bind_front.h"
+#include <algorithm>
 
 namespace android {
 
@@ -22,6 +23,12 @@ DialogAndroid::DialogAndroid()
 }
 DialogAndroid::~DialogAndroid()
 {
+	if (animation_timer_id_) {
+        android::stop_timer(animation_timer_id_);
+        animation_timer_id_ = 0;
+        animating_nodes_.clear();
+    }
+
 	g_dialog_map.erase(id_);
 	if (g_first_dialog == this) {
 		g_first_dialog = nullptr;
@@ -67,6 +74,15 @@ void DialogAndroid::RequestUpdate()
 
 void DialogAndroid::RequestAnimationFrame(scene2d::Node* node)
 {
+	auto it = std::find_if(animating_nodes_.begin(), animating_nodes_.end(),
+		[&](const auto& link) {
+			return link.get() == node;
+		});
+	if (it == animating_nodes_.end())
+		animating_nodes_.push_back(node->weakProxy());
+	if (!animating_nodes_.empty() && !animation_timer_id_) {
+		animation_timer_id_ = android::start_timer(17, absl::bind_front(&DialogAndroid::handleAnimationFrameEvent, this));
+	}
 }
 
 scene2d::Scene* DialogAndroid::GetScene() const
@@ -236,6 +252,21 @@ void DialogAndroid::updateHoveredNode() {
 		}
 		RequestPaint();
 	}
+}
+void DialogAndroid::handleAnimationFrameEvent()
+{
+    absl::Time timestamp = absl::Now();
+    auto nodes = move(animating_nodes_);
+    animating_nodes_.clear();
+    for (auto& link : nodes) {
+        auto node = link.upgrade();
+        if (node)
+            node->onAnimationFrame(timestamp);
+    }
+    if (animating_nodes_.empty() && animation_timer_id_) {
+		android::stop_timer(animation_timer_id_);
+        animation_timer_id_ = 0;
+    }
 }
 
 }

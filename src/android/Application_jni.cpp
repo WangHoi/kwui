@@ -3,6 +3,7 @@
 #include "api/kwui/Application.h"
 #include "api/kwui/ScriptEngine.h"
 #include "absl/base/macros.h"
+#include "absl/time/time.h"
 #include "base/log.h"
 #include "tools/sk_app/DisplayParams.h"
 #include "tools/sk_app/WindowContext.h"
@@ -21,11 +22,11 @@
 #include <dlfcn.h>
 #include <string>
 #include <memory>
-#include <unordered_set>
+#include <unordered_map>
+#include <vector>
+#include <functional>
 
 namespace android {
-
-static std::unordered_set<std::string> create_dialog_cb_set;
 
 enum MessageType {
     kUndefined,
@@ -422,7 +423,6 @@ void create_dialog(const std::string& id)
         LOG(ERROR) << "create_dialog(): invalid JNIEnv.";
         return;
     }
-    create_dialog_cb_set.insert(id);
     auto jid = jmain_jni_env->NewStringUTF(id.c_str());
     jmain_jni_env->CallStaticVoidMethod(jclass_native, jmethod_create_dialog, jid);
     jmain_jni_env->DeleteLocalRef(jid);
@@ -470,6 +470,7 @@ void run_in_main_thread(std::function<void()>&& func)
         LOG(ERROR) << "run_in_main_thread(): invalid JApplication.";
     }
 }
+static void run_timer_funcs();
 int application_exec()
 {
     while (g_japp && g_japp->fRunning) {
@@ -481,9 +482,52 @@ int application_exec()
         if (ident == 1) {
             g_japp->message_callback(0, 0, g_japp);
         }
+        run_timer_funcs();
         //}
     }
     return 0;
 }
 
+struct TimerContext {
+    int64_t interval_ms;
+    absl::Time next_instant;
+    std::function<void()> func;
+};
+static int g_next_timer_id = 1;
+static std::unordered_map<int, TimerContext> g_timer_map;
+static std::vector<int> g_timeout_timer_ids;
+
+int start_timer(int64_t interval_ms, std::function<void()> timer_func)
+{
+    if (!gt_main_thread) {
+        LOG(ERROR) << "start_timer() in non-main thread not supported.";
+        return 0;
+    }
+    TimerContext ctx;
+    ctx.interval_ms = interval_ms;
+    ctx.next_instant = absl::Now();
+    ctx.func = timer_func;
+    int id = g_next_timer_id++;
+    g_timer_map[id] = ctx;
+    return id;
+}
+void stop_timer(int timer_id)
+{
+    if (!gt_main_thread) {
+        LOG(ERROR) << "stop_timer() in non-main thread not supported.";
+        return;
+    }
+    g_timer_map.erase(timer_id);
+}
+void run_timer_funcs()
+{
+    if (g_timer_map.empty())
+        return;
+    auto now = absl::Now();
+    for (auto& p : g_timer_map) {
+        if (now >= p.second.next_instant) {
+            g_timeout_timer_ids.push_back(p.first);
+        }
+    }
+}
 }

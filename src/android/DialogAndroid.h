@@ -4,6 +4,7 @@
 #include "xskia/PaintSurfaceX.h"
 #include "scene2d/geom_types.h"
 #include <android/native_window.h>
+#include <vector>
 
 namespace android {
 
@@ -35,6 +36,7 @@ public:
 private:
 	void paint();
 	void updateHoveredNode();
+	void handleAnimationFrameEvent();
 
 	std::string id_;
 	std::unique_ptr<xskia::PaintSurfaceX> surface_;
@@ -46,6 +48,8 @@ private:
 	base::object_weakptr<scene2d::Node> hovered_node_;
 	base::object_weakptr<scene2d::Node> active_node_;
 	base::object_weakptr<scene2d::Node> focused_node_;
+	std::vector<base::object_weakptr<scene2d::Node>> animating_nodes_;
+	int animation_timer_id_ = 0;
 };
 
 }

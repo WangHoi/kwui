@@ -632,6 +632,9 @@ JSValue app_close_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 		delete dialog;
 	}
 	return JS_UNDEFINED;
+#elif defined(__ANDROID__)
+	LOG(WARNING) << "TODO: app_close_dialog not implemented on Android.";
+	return JS_UNDEFINED;
 #else
 #pragma message("TODO: app_close_dialog not implemented.")
 	return JS_ThrowInternalError(ctx, "app_close_dialog not implemented.");
@@ -651,6 +654,9 @@ JSValue app_closing_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 		dialog->OnCloseSysCommand(*dialog);
 	}
 	return JS_UNDEFINED;
+#elif defined(__ANDROID__)
+	LOG(WARNING) << "TODO: app_closing_dialog not implemented on Android.";
+	return JS_UNDEFINED;
 #else
 #pragma message("TODO: app_closing_dialog not implemented.")
 	return JS_ThrowInternalError(ctx, "app_closing_dialog not implemented.");
@@ -658,7 +664,6 @@ JSValue app_closing_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 }
 JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
-#ifdef _WIN32
 	if (!JS_IsString(argv[0])) {
 		return JS_ThrowTypeError(ctx, "resizeDialog: expect id");
 	}
@@ -674,9 +679,13 @@ JSValue app_resize_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSVal
 	double width, height;
 	JS_ToFloat64(ctx, &width, argv[1]);
 	JS_ToFloat64(ctx, &height, argv[2]);
+#ifdef _WIN32
 	auto dialog = windows::DialogWin32::findDialogById(id);
 	if (dialog)
 		dialog->Resize((float)width, (float)height);
+	return JS_UNDEFINED;
+#elif defined(__ANDROID__)
+	LOG(WARNING) << "TODO: app_resize_dialog not implemented on Android.";
 	return JS_UNDEFINED;
 #else
 #pragma message("TODO: app_resize_dialog not implemented.")
@@ -697,6 +706,9 @@ JSValue app_get_dialog_hwnd(JSContext* ctx, JSValueConst this_val, int argc, JSV
 		return JS_NewString(ctx, absl::StrFormat("%p", dialog->GetHwnd()).c_str());
 	}
 	return JS_UNDEFINED;
+#elif defined(__ANDROID__)
+	LOG(WARNING) << "TODO: app_get_dialog_hwnd not implemented on Android.";
+	return JS_UNDEFINED;
 #else
 #pragma message("TODO: app_get_dialog_hwnd not implemented.")
 return JS_ThrowInternalError(ctx, "app_get_dialog_hwnd not implemented.");
@@ -715,6 +727,9 @@ JSValue app_get_dialog_dpi_scale(JSContext* ctx, JSValueConst this_val, int argc
 	if (dialog) {
 		return JS_NewFloat64(ctx, dialog->GetDpiScale());
 	}
+	return JS_NewFloat64(ctx, 1.0);
+#elif defined(__ANDROID__)
+	LOG(WARNING) << "TODO: app_get_dialog_dpi_scale not implemented on Android.";
 	return JS_NewFloat64(ctx, 1.0);
 #else
 #pragma message("TODO: app_get_dialog_dpi_scale not implemented.")
