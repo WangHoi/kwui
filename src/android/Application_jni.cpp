@@ -37,6 +37,7 @@ enum MessageType {
     kShowPressEvent,
     kLongPressEvent,
     kSingleTapConfirmedEvent,
+    kRunInMainThread,
 };
 
 struct Message {
@@ -46,6 +47,7 @@ struct Message {
     float fDensity = 1.0f;
     float x, y;
     float dx, dy;
+    std::function<void()> func;
     //SkPicture* fPicture = nullptr;
     //WindowSurface** fWindowSurface = nullptr;
 
@@ -176,6 +178,12 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
         auto dlg = android::DialogAndroid::firstDialog();
         if (dlg) {
             dlg->handleSingleTapConfirmedEvent(message.x, message.y);
+        }
+        break;
+    }
+    case kRunInMainThread: {
+        if (message.func) {
+            std::move(message.func)();
         }
         break;
     }
@@ -451,7 +459,15 @@ jobject get_asset_manager()
 }
 void run_in_main_thread(std::function<void()>&& func)
 {
-    LOG(ERROR) << "TODO: run in main thread";
+    if (gt_main_thread) {
+        func();
+    } else if (g_japp) {
+        Message msg(kRunInMainThread);
+        msg.func = std::move(func);
+        g_japp->postMessage(msg);
+    } else {
+        LOG(ERROR) << "run_in_main_thread(): invalid JApplication.";
+    }
 }
 int application_exec()
 {
