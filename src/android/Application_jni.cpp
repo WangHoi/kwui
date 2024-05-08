@@ -526,8 +526,16 @@ void run_timer_funcs()
     auto now = absl::Now();
     for (auto& p : g_timer_map) {
         if (now >= p.second.next_instant) {
+            p.second.next_instant += absl::Milliseconds(p.second.interval_ms);
             g_timeout_timer_ids.push_back(p.first);
         }
     }
+    for (auto id : g_timeout_timer_ids) {
+        auto it = g_timer_map.find(id);
+        if (it != g_timer_map.end()) {
+            it->second.func();
+        }
+    }
+    g_timeout_timer_ids.clear();
 }
 }
