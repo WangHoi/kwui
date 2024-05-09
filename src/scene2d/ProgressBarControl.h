@@ -2,7 +2,6 @@
 #include "scene2d/Control.h"
 #include "scene2d/geom_types.h"
 #include "style/StyleColor.h"
-#include "windows/graphics/TextLayout.h"
 
 namespace scene2d {
 

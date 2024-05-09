@@ -3,7 +3,6 @@
 #include "scene2d/Control.h"
 #include "scene2d/geom_types.h"
 #include "style/StyleColor.h"
-#include "windows/windows_header.h"
 
 namespace scene2d {
 
