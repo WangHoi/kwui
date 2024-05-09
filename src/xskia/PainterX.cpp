@@ -115,4 +115,62 @@ void PainterX::drawBitmap(const graph2d::BitmapInterface* image, const scene2d::
 	}
 }
 
+void PainterX::drawRoundedRect(const scene2d::RectF& rect,
+	const style::CornerRadiusF& border_radius,
+	const style::Color& background_color)
+{
+	SkPaint paint;
+	SkRRect rrect;
+	SkVector radii[4] = {
+		SkVector::Make(border_radius.top_left, border_radius.top_left),
+		SkVector::Make(border_radius.top_right, border_radius.top_right),
+		SkVector::Make(border_radius.bottom_right, border_radius.bottom_right),
+		SkVector::Make(border_radius.bottom_left, border_radius.bottom_left),
+	};
+	rrect.setRectRadii(rect, radii);
+	paint.setColor(background_color);
+	canvas_->drawRRect(rrect, paint);
+}
+void PainterX::drawCircle(const scene2d::PointF& center,
+	float radius,
+	const style::Color& background_color,
+	float border_width,
+	const style::Color& border_color)
+{
+	SkPaint paint;
+	paint.setColor(background_color);
+	canvas_->drawCircle(center, radius, paint);
+
+	if (border_width > 0.0f) {
+		paint.setStroke(true);
+		paint.setStrokeWidth(border_width);
+		paint.setColor(border_color);
+		canvas_->drawCircle(center, radius, paint);
+	}
+}
+void PainterX::drawArc(const scene2d::PointF& center,
+	float radius,
+	float start_angle,
+	float span_angle,
+	const style::Color& background_color,
+	float border_width,
+	const style::Color& border_color)
+{
+	SkPaint paint;
+	SkRect oval;
+	paint.setColor(background_color);
+	oval.setLTRB(center.x - radius,
+		center.y - radius,
+		center.x + radius,
+		center.y + radius);
+	canvas_->drawArc(oval, start_angle, span_angle, false, paint);
+
+	if (border_width > 0.0f) {
+		paint.setStroke(true);
+		paint.setStrokeWidth(border_width);
+		paint.setColor(border_color);
+		canvas_->drawArc(oval, start_angle, span_angle, false, paint);
+	}
+}
+
 }

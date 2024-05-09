@@ -1,16 +1,16 @@
 #include "Application.h"
 #include "ScriptEngine.h"
+#include "resources/resources.h"
 #include "scene2d/KmlControl.h"
 #include "scene2d/ButtonControl.h"
 #include "scene2d/ImageControl.h"
-#include "resources/resources.h"
+#include "scene2d/ProgressBarControl.h"
+#include "scene2d/SpinnerControl.h"
 #ifdef _WIN32
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/DialogWin32.h"
 #include "windows/control/Control.h"
 #include "windows/control/LineEditControl.h"
-#include "windows/control/ProgressBarControl.h"
-#include "windows/control/SpinnerControl.h"
 #include "windows/HiddenMsgWindow.h"
 #include <ConsoleApi2.h>
 #endif
@@ -116,10 +116,10 @@ public:
         scene2d::ControlRegistry::get()->registerControl<scene2d::KmlControl>();
         scene2d::ControlRegistry::get()->registerControl<scene2d::ImageControl>();
         scene2d::ControlRegistry::get()->registerControl<scene2d::ButtonControl>();
+        scene2d::ControlRegistry::get()->registerControl<scene2d::ProgressBarControl>();
+        scene2d::ControlRegistry::get()->registerControl<scene2d::SpinnerControl>();
 #if !WITH_SKIA && defined(_WIN32)
         scene2d::ControlRegistry::get()->registerControl<windows::control::LineEditControl>();
-        scene2d::ControlRegistry::get()->registerControl<windows::control::ProgressBarControl>();
-        scene2d::ControlRegistry::get()->registerControl<windows::control::SpinnerControl>();
 #endif
 
         LOG(INFO) << "Register builtin icon font...";

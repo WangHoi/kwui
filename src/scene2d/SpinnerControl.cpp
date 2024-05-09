@@ -1,9 +1,7 @@
 #include "SpinnerControl.h"
-#include "windows/graphics/GraphicDevice.h"
-#include "windows/graphics/PainterD2D.h"
+#include "graph2d/Painter.h"
 
-namespace windows {
-namespace control {
+namespace scene2d {
 
 const char* SpinnerControl::CONTROL_NAME = "spinner";
 
@@ -29,6 +27,7 @@ void SpinnerControl::onAttach(scene2d::Node* node)
 }
 void SpinnerControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect)
 {
+	/*
 	graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
 	double sec = fmod((double)absl::ToUnixMillis(timestamp_.value_or(absl::Time())) / 1000.0, 1.0);
 	p.SetStrokeColor(bg_color_);
@@ -38,6 +37,22 @@ void SpinnerControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF
 
 	p.SetStrokeColor(fg_color_);
 	p.DrawArc(rect.center(), radius, 360 * sec, 120);
+	*/
+	double sec = fmod((double)absl::ToUnixMillis(timestamp_.value_or(absl::Time())) / 1000.0, 1.0);
+	float radius = std::min(rect.width(), rect.height()) * 0.5f * 0.8f;
+	float border_width = std::max(1.0f, radius * 0.3f);
+	pi.drawCircle(rect.center(),
+		radius,
+		style::Color(),
+		border_width,
+		bg_color_);
+	pi.drawArc(rect.center(),
+		radius,
+		360 * sec,
+		120,
+		style::Color(),
+		border_width,
+		fg_color_);
 }
 void SpinnerControl::onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value)
 {
@@ -56,5 +71,4 @@ void SpinnerControl::setForegroundColor(const style::Color& color)
 	fg_color_ = color;
 }
 
-}
 }

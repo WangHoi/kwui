@@ -4,8 +4,7 @@
 #include "style/StyleColor.h"
 #include "windows/graphics/TextLayout.h"
 
-namespace windows {
-namespace control {
+namespace scene2d {
 
 class ProgressBarControl : public scene2d::Control {
 public:
@@ -14,18 +13,17 @@ public:
     base::string_atom name() override;
     void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
     void onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value) override;
-    inline float GetProgress() const { return _progress; }
+    inline float GetProgress() const { return progress_; }
     void SetProgress(float value);
-    inline void SetColor(const style::Color& c) { _color = c; }
-    inline void SetBackgroundColor(const style::Color& c) { _bg_color = c; }
-    void SetBorderRadius(float r) { _border_radius = r; }
+    inline void SetColor(const style::Color& c) { fg_color_ = c; }
+    inline void SetBackgroundColor(const style::Color& c) { bg_color_ = c; }
+    void SetBorderRadius(float r) { border_radius_ = r; }
 
 private:
-    float _progress;
-    style::Color _bg_color;
-    style::Color _color;
-    float _border_radius;
+    float progress_;
+    style::Color bg_color_;
+    style::Color fg_color_;
+    float border_radius_;
 };
 
-}
 }

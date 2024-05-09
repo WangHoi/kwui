@@ -5,8 +5,7 @@
 #include "style/StyleColor.h"
 #include "windows/windows_header.h"
 
-namespace windows {
-namespace control {
+namespace scene2d {
 
 class SpinnerControl : public scene2d::Control {
 public:
@@ -26,5 +25,4 @@ private:
     style::Color fg_color_;
 };
 
-}
 }

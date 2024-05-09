@@ -1,28 +1,26 @@
 #include "ProgressBarControl.h"
-#include "windows/graphics/PainterD2D.h"
 
-namespace windows {
-namespace control {
+namespace scene2d {
 
 const char* ProgressBarControl::CONTROL_NAME = "progress_bar";
 
 ProgressBarControl::ProgressBarControl()
-	: _progress(0.0f)
-	, _bg_color(style::named_color::white)
-	, _color(style::named_color::lightblue)
-	, _border_radius(0.0f) {}
+	: progress_(0.0f)
+	, bg_color_(style::named_color::white)
+	, fg_color_(style::named_color::lightblue)
+	, border_radius_(0.0f) {}
 base::string_atom ProgressBarControl::name()
 {
 	return base::string_intern(CONTROL_NAME);
 }
 void ProgressBarControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect) {
-	graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
-	p.SetColor(_bg_color);
-	p.DrawRoundedRect(rect.origin(), rect.size(), _border_radius);
+	style::CornerRadiusF radius({
+		border_radius_, border_radius_, border_radius_, border_radius_,
+	});
+	pi.drawRoundedRect(rect, radius, bg_color_);
 
-	scene2d::DimensionF bar_size = { rect.width() * _progress, rect.height() };
-	p.SetColor(_color);
-	p.DrawRoundedRect(rect.origin(), bar_size, _border_radius);
+	scene2d::DimensionF bar_size = { rect.width() * progress_, rect.height() };
+	pi.drawRoundedRect(scene2d::RectF::fromOriginSize(rect.origin(), bar_size) , radius, fg_color_);
 }
 void ProgressBarControl::onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value)
 {
@@ -41,8 +39,7 @@ void ProgressBarControl::onSetAttribute(base::string_atom name, const scene2d::N
 	}
 }
 void ProgressBarControl::SetProgress(float value) {
-	_progress = std::clamp(value, 0.0f, 1.0f);
+	progress_ = std::clamp(value, 0.0f, 1.0f);
 }
 
-}
 }

@@ -122,7 +122,7 @@ export function InstallDialog({
     displayName,
     version,
 }, kids) {
-    let current = "main";
+    let current = "progress";
     let pos = displayName.indexOf("(");
     let mainLabelText = (pos === -1) ? displayName : displayName.substring(0, pos);
     return (

@@ -238,6 +238,43 @@ public:
             p_.DrawBitmap(bitmap, origin, size);
         }
     }
+	void drawRoundedRect(const scene2d::RectF& rect,
+		const style::CornerRadiusF& border_radius,
+		const style::Color& background_color) override
+    {
+        float r = std::max({ border_radius.top_left,
+            border_radius.top_right,
+            border_radius.bottom_left,
+            border_radius.bottom_left
+        });
+        p_.SetColor(background_color);
+        p_.DrawRoundedRect(rect.origin(), rect.size(), r);
+    }
+	virtual void drawCircle(const scene2d::PointF& center,
+		float radius,
+		const style::Color& background_color,
+        float border_width,
+		const style::Color& border_color) override
+    {
+        p_.SetStrokeWidth(border_width);
+        p_.SetStrokeColor(border_color);
+        p_.SetColor(background_color);
+        p_.DrawCircle(center, radius);
+    }
+	virtual void drawArc(const scene2d::PointF& center,
+		float radius,
+		float start_angle,
+		float span_angle,
+		const style::Color& background_color,
+        float border_width,
+		const style::Color& border_color) override
+    {
+        p_.SetStrokeWidth(border_width);
+        p_.SetStrokeColor(border_color);
+        p_.SetColor(background_color);
+        p_.DrawArc(center, radius, start_angle, span_angle);
+    }
+
 private:
     graphics::Painter p_;
 };
