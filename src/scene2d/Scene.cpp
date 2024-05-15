@@ -219,7 +219,7 @@ void Scene::setStyleSheet(JSValue stylesheet)
 	if (JS_IsObject(stylesheet)) {
 		script::Context::eachObjectField(ctx, stylesheet, [&](const char* name, JSValue value) {
 			auto selectors_res = style::Selector::parseGroup(name);
-			auto style_spec = script::Context::parse<style::StyleSpec>(ctx, value);
+			auto style_spec = script::parse<style::StyleSpec>(ctx, value);
 			if (selectors_res.ok()) {
 				for (auto&& selector : *selectors_res) {
 					auto rule = std::make_unique<style::StyleRule>(std::move(selector), style_spec);
@@ -672,7 +672,7 @@ Scene::NodeCompareResult Scene::compareNode(Node* node, JSContext* ctx, JSValue 
 
 void Scene::updateTextNode(Node* node, JSContext* ctx, JSValue comp_data)
 {
-	node->text_ = script::Context::parse<std::string>(ctx, comp_data);
+	node->text_ = script::parse<std::string>(ctx, comp_data);
 }
 
 void Scene::updateElementNode(Node* node, JSContext* ctx, JSValue comp_data)

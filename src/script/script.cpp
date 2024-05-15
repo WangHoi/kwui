@@ -226,16 +226,16 @@ static JSValue css_func(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 	DCHECK(argc == len) << "css: mismatch args";
 
 	JSValue val = JS_GetPropertyUint32(ctx, argv[0], 0);
-	std::string text = Context::parse<std::string>(ctx, val);
+	std::string text = parse<std::string>(ctx, val);
 	JS_FreeValue(ctx, val);
 
 	for (int i = 1; i < (int)len; ++i) {
 		JSValue v = JS_ToString(ctx, argv[i]);
-		text += Context::parse<std::string>(ctx, v);
+		text += parse<std::string>(ctx, v);
 		JS_FreeValue(ctx, v);
 
 		v = JS_GetPropertyUint32(ctx, argv[0], i);
-		text += Context::parse<std::string>(ctx, v);
+		text += parse<std::string>(ctx, v);
 		JS_FreeValue(ctx, v);
 	}
 
@@ -455,7 +455,7 @@ static absl::StatusOr<ShowDialogConfig> parse_show_dialog_config(JSContext* ctx,
 	ShowDialogConfig cfg;
 	Context::eachObjectField(ctx, arg, [&](const char* name, JSValue value) {
 		if (!strcmp(name, "title") && JS_IsString(value)) {
-			cfg.title.emplace(Context::parse<std::string>(ctx, value));
+			cfg.title.emplace(parse<std::string>(ctx, value));
 		} else if (!strcmp(name, "width")) {
 			if (JS_IsNumber(value)) {
 				double f64;
@@ -463,7 +463,7 @@ static absl::StatusOr<ShowDialogConfig> parse_show_dialog_config(JSContext* ctx,
 				cfg.width.type = DialogLength::Fixed;
 				cfg.width.length = (float)f64;
 			} else if (JS_IsString(value)) {
-				auto sval = Context::parse<std::string>(ctx, value);
+				auto sval = parse<std::string>(ctx, value);
 				if (sval == "auto") {
 					cfg.width.type = DialogLength::Auto;
 				}
@@ -475,7 +475,7 @@ static absl::StatusOr<ShowDialogConfig> parse_show_dialog_config(JSContext* ctx,
 				cfg.height.type = DialogLength::Fixed;
 				cfg.height.length = (float)f64;
 			} else if (JS_IsString(value)) {
-				auto sval = Context::parse<std::string>(ctx, value);
+				auto sval = parse<std::string>(ctx, value);
 				if (sval == "auto") {
 					cfg.height.type = DialogLength::Auto;
 				}
@@ -538,7 +538,7 @@ static absl::StatusOr<ShowDialogConfig> parse_show_dialog_config(JSContext* ctx,
 		} else if (!strcmp(name, "moduleParams")) {
 			cfg.module_params = Value(ctx, value);
 		} else if (!strcmp(name, "parent")) {
-			cfg.parent_dialog_id = Context::parse<std::string>(ctx, value);
+			cfg.parent_dialog_id = parse<std::string>(ctx, value);
 		}
 		});
 	return cfg;
@@ -574,8 +574,8 @@ JSValue app_show_dialog(JSContext* ctx, JSValueConst this_val, int argc, JSValue
 			JS_FreeAtom(ctx, base_filename_atom);
 			JS_FreeValue(ctx, base_filename_value);
 			};
-		std::string base_filename = Context::parse<std::string>(ctx, base_filename_value);
-		std::string module_path = Context::parse<std::string>(ctx, cfg.module.jsValue());
+		std::string base_filename = parse<std::string>(ctx, base_filename_value);
+		std::string module_path = parse<std::string>(ctx, cfg.module.jsValue());
 		dialog->GetScene()->setScriptModule(base_filename, module_path, cfg.module_params);
 		dialog->GetScene()->reloadScriptModule();
 	}
@@ -811,6 +811,181 @@ JSValue unwrap(JSContext* ctx, const kwui::ScriptValue& c)
 	} else {
 		return JS_NULL;
 	}
+}
+
+template<> 
+bool parse<bool>(JSContext *ctx_, JSValue j)
+{
+	return !!JS_ToBool(ctx_, j);
+}
+
+template<>
+std::string parse<std::string>(JSContext *ctx_, JSValue j)
+{
+	const char* cstr = JS_ToCString(ctx_, j);
+	if (cstr) {
+		std::string s(cstr);
+		JS_FreeCString(ctx_, cstr);
+		return s;
+	} else {
+		return std::string();
+	}
+}
+
+template<>
+base::string_atom parse<base::string_atom>(JSContext* ctx_, JSValue j)
+{
+	const char* s = JS_ToCString(ctx_, j);
+	if (s) {
+		base::string_atom atom = base::string_intern(s);
+		JS_FreeCString(ctx_, s);
+		return atom;
+	} else {
+		return base::string_atom();
+	}
+}
+
+template<>
+style::StyleSpec parse<style::StyleSpec>(JSContext* ctx_, JSValue j)
+{
+	style::StyleSpec v;
+	Context::eachObjectField(ctx_, j, [&](const char* prop_name, JSValue jval) {
+		auto prop = base::string_intern(prop_name);
+		style::ValueSpec val = parse<style::ValueSpec>(ctx_, jval);
+#define CHECK_VALUE(x) if (prop == base::string_intern(#x)) { v.x = val; }
+#define CHECK_VALUE2(x, name) if (prop == base::string_intern(name)) { v.x = val; }
+		CHECK_VALUE(display);
+		CHECK_VALUE(position);
+
+		CHECK_VALUE2(margin_left, "margin-left");
+		CHECK_VALUE2(margin_top, "margin-top");
+		CHECK_VALUE2(margin_right, "margin-right");
+		CHECK_VALUE2(margin_bottom, "margin-bottom");
+		if (prop == base::string_intern("margin"))
+			v.margin_left = v.margin_top = v.margin_right = v.margin_bottom = val;
+
+		CHECK_VALUE2(border_left_width, "border-left-width");
+		CHECK_VALUE2(border_top_width, "border-top-width");
+		CHECK_VALUE2(border_right_width, "border-right-width");
+		CHECK_VALUE2(border_bottom_width, "border-bottom-width");
+		if (prop == base::string_intern("border-width"))
+			v.border_left_width = v.border_top_width = v.border_right_width = v.border_bottom_width = val;
+
+		CHECK_VALUE2(border_top_left_radius, "border-top-left-radius");
+		CHECK_VALUE2(border_top_right_radius, "border-top-right-radius");
+		CHECK_VALUE2(border_bottom_right_radius, "border-bottom-right-radius");
+		CHECK_VALUE2(border_bottom_left_radius, "border-bottom-left-radius");
+		if (prop == base::string_intern("border-radius"))
+			v.border_top_left_radius = v.border_top_right_radius = v.border_bottom_right_radius = v.border_bottom_left_radius = val;
+
+		CHECK_VALUE2(padding_left, "padding-left");
+		CHECK_VALUE2(padding_top, "padding-top");
+		CHECK_VALUE2(padding_right, "padding-right");
+		CHECK_VALUE2(padding_bottom, "padding-bottom");
+		if (prop == base::string_intern("padding"))
+			v.padding_left = v.padding_top = v.padding_right = v.padding_bottom = val;
+
+		CHECK_VALUE(left);
+		CHECK_VALUE(top);
+		CHECK_VALUE(right);
+		CHECK_VALUE(bottom);
+
+		CHECK_VALUE(width);
+		CHECK_VALUE(height);
+
+		CHECK_VALUE2(border_color, "border-color");
+		CHECK_VALUE2(background_color, "background-color");
+		CHECK_VALUE(color);
+
+		CHECK_VALUE2(line_height, "line-height");
+		CHECK_VALUE2(font_family, "font-family");
+		CHECK_VALUE2(font_size, "font-size");
+		CHECK_VALUE2(font_style, "font-style");
+		CHECK_VALUE2(font_weight, "font-weight");
+		CHECK_VALUE2(text_align, "text-align");
+
+		CHECK_VALUE2(overflow_x, "overflow-x");
+		CHECK_VALUE2(overflow_y, "overflow-y");
+#undef CHECK_VALUE
+#undef CHECK_VALUE2
+		});
+	return v;
+}
+
+template<>
+style::ValueSpec parse<style::ValueSpec>(JSContext* ctx_, JSValue j)
+{
+	style::ValueSpec v;
+	if (JS_IsNumber(j)) {
+		v.value = parse<style::Value>(ctx_, j);
+		v.type = style::ValueSpecType::Specified;
+	} else if (JS_IsString(j)) {
+		v.value = parse<style::Value>(ctx_, j);
+		if (v.value->unit != style::ValueUnit::Undefined) {
+			v.type = style::ValueSpecType::Specified;
+		}
+		if (v.value->unit == style::ValueUnit::Keyword) {
+			if (v.value->keyword_val == base::string_intern("initial")) {
+				v.type = style::ValueSpecType::Initial;
+			} else if (v.value->keyword_val == base::string_intern("inherit")) {
+				v.type = style::ValueSpecType::Inherit;
+			}
+		}
+	}
+	return v;
+}
+
+template<>
+style::Value parse<style::Value>(JSContext* ctx_, JSValue j)
+{
+	style::Value v;
+	if (JS_IsNumber(j)) {
+		double f64;
+		JS_ToFloat64(ctx_, &f64, j);
+		v.f32_val = (float)f64;
+		v.unit = style::ValueUnit::Raw;
+	} else if (JS_IsString(j)) {
+		std::string s = parse<std::string>(ctx_, j);
+		if (absl::StartsWith(s, "#")) {
+			v.string_val = s;
+			v.unit = style::ValueUnit::HexColor;
+		} else if (absl::StartsWith(s, "url(") && absl::EndsWith(s, ")")) {
+			s = s.substr(4, s.length() - 5);
+			if (s.length() >= 2 && absl::StartsWith(s, "\"") && absl::EndsWith(s, "\"")) {
+				v.string_val = s.substr(1, s.length() - 2);
+			} else {
+				v.string_val = s;
+			}
+			v.unit = style::ValueUnit::Url;
+		} else {
+			int ret;
+			float f32_val;
+			char dim[32] = {};
+			ret = sscanf(s.c_str(), "%f%31s", &f32_val, dim);
+			if (ret == 1) {
+				v.f32_val = f32_val;
+				v.unit = style::ValueUnit::Raw;
+			} else if (ret == 2) {
+				if (strcmp(dim, "px") == 0) {
+					v.f32_val = f32_val;
+					v.unit = style::ValueUnit::Pixel;
+				} else if (strcmp(dim, "pt") == 0) {
+					v.f32_val = f32_val;
+					v.unit = style::ValueUnit::Point;
+				} else if (strcmp(dim, "%") == 0) {
+					v.f32_val = f32_val;
+					v.unit = style::ValueUnit::Percent;
+				} else {
+					v.keyword_val = base::string_intern(dim);
+					v.unit = style::ValueUnit::Keyword;
+				}
+			} else {
+				v.keyword_val = base::string_intern(s);
+				v.unit = style::ValueUnit::Keyword;
+			}
+		}
+	}
+	return v;
 }
 
 }

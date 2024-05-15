@@ -2,7 +2,7 @@
 #include "graph2d/graph2d.h"
 #include "style/style.h"
 #include "script/Value.h"
-#include "control.h"
+#include "Control.h"
 #include "Scene.h"
 #include "style/BoxConstraintSolver.h"
 #include "base/scoped_setter.h"

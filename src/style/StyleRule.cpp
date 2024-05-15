@@ -781,8 +781,8 @@ absl::StatusOr<StyleSpec> parse_inline_style(absl::string_view input)
 	auto res = decls(input);
 	if (!res.ok())
 		return res.status();
-	auto&& [input1, decls] = res.value();
-	auto&& [output, _] = seq(opt(ws), opt(tag(";")), opt(ws))(input1).value();
+	auto [input1, decls] = res.value();
+	auto [output, _] = seq(opt(ws), opt(tag(";")), opt(ws))(input1).value();
 	if (output.length() > 0) {
 		return absl::InvalidArgumentError(output);
 	}

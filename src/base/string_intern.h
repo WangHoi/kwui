@@ -19,6 +19,15 @@ public:
 	inline bool operator==(const string_atom &o) const {
 		return atom_text_ == o.atom_text_;
 	}
+	inline bool operator!=(const string_atom &o) const {
+		return !(*this == o);
+	}
+	inline bool operator==(const char* s) const {
+		return (strcmp(atom_text_, s) == 0);
+	}
+	inline bool operator!=(const char* s) const {
+		return !(*this == 0);
+	}
 	inline const char* c_str() const { return atom_text_; }
 
 private:

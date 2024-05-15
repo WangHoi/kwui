@@ -311,7 +311,7 @@ JSValue ComponentState::useHookUpdater(JSContext* ctx, JSValueConst /*this_val*/
 						JS_FreeValue(ctx, old_state);
 
 						auto nj = JS_JSONStringify(ctx, new_state, JS_UNDEFINED, JS_UNDEFINED);
-						auto njs = Context::parse<std::string>(ctx, nj);
+						auto njs = parse<std::string>(ctx, nj);
 						//LOG(INFO) << "after update, new state " << njs;
 						JS_FreeValue(ctx, nj);
 

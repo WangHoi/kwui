@@ -256,7 +256,7 @@ void DialogAndroid::updateHoveredNode() {
 void DialogAndroid::handleAnimationFrameEvent()
 {
     absl::Time timestamp = absl::Now();
-    auto nodes = move(animating_nodes_);
+    auto nodes = std::move(animating_nodes_);
     animating_nodes_.clear();
     for (auto& link : nodes) {
         auto node = link.upgrade();
