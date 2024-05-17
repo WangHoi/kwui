@@ -17,18 +17,12 @@
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Windows" ]
-        }
       }
     },
     {
-      "name": "x86-debug",
-      "displayName": "x86 Debug",
-      "description": "x86 Debug MDd",
+      "name": "x86-base",
       "inherits": "windows-base",
+      "hidden": true,
       "architecture": {
         "value": "x86",
         "strategy": "external"
@@ -37,6 +31,19 @@
         "value": "host=x86",
         "strategy": "external"
       },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [ "Windows" ],
+          "intelliSenseMode": "windows-msvc-x86",
+          "intelliSenseOptions": { "useCompilerDefaults": true }
+        }
+      }
+    },
+    {
+      "name": "x86-debug",
+      "displayName": "x86 Debug",
+      "description": "x86 Debug MDd",
+      "inherits": "x86-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
@@ -45,15 +52,7 @@
       "name": "x86-release",
       "displayName": "x86 Release",
       "description": "x86 Release MD",
-      "inherits": "windows-base",
-      "architecture": {
-        "value": "x86",
-        "strategy": "external"
-      },
-      "toolset": {
-        "value": "host=x86",
-        "strategy": "external"
-      },
+      "inherits": "x86-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
@@ -83,7 +82,8 @@
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "intelliSenseMode": "android-clang-arm64"
+          "intelliSenseMode": "android-clang-arm64",
+          "intelliSenseOptions": { "useCompilerDefaults": true }
         }
       }
     },
@@ -122,6 +122,10 @@
     {
       "name": "x86-release",
       "configurePreset": "x86-release"
+    },
+    {
+      "name": "x86-debug-skia",
+      "configurePreset": "x86-debug-skia"
     },
     {
       "name": "android-debug",
