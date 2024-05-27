@@ -5,7 +5,7 @@
 #include "graph2d/Painter.h"
 #include "graph2d/Bitmap.h"
 #include "windows/windows_header.h"
-#include "TextLayout.h"
+#include "TextLayoutD2D.h"
 #include "TextFlowD2D.h"
 #include "GraphicDevice.h"
 #include <vector>

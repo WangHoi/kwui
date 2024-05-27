@@ -17,8 +17,8 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/BlockLayout.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/InlineLayout.h
   ${CMAKE_CURRENT_SOURCE_DIR}/InlineLayout.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/TextLayout.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/TextLayout.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TextFlow.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TextFlow.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/InlineBlockLayout.h
   ${CMAKE_CURRENT_SOURCE_DIR}/InlineBlockLayout.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/StylePaint.h

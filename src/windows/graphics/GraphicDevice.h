@@ -1,7 +1,7 @@
 #pragma once
 
 #include "windows/windows_header.h"
-#include "TextLayout.h"
+#include "TextLayoutD2D.h"
 #include "TextFlowD2D.h"
 #include "scene2d/geom_types.h"
 #include "absl/types/span.h"

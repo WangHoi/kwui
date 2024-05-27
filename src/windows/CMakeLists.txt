@@ -1,5 +1,4 @@
 add_subdirectory(graphics)
-add_subdirectory(control)
 
 list(APPEND kwui_pub_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/DialogWin32.h

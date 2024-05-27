@@ -1,0 +1,7 @@
+kwui_add_executable(test_line_edit)
+target_sources(test_line_edit PRIVATE line_edit.cpp)
+if(WIN32)
+  target_sources(test_line_edit PRIVATE dpi-aware.manifest)
+  target_include_directories(test_line_edit PRIVATE ${CMAKE_SOURCE_DIR}/src/api)
+  target_link_libraries(test_line_edit kwui_static)
+endif()

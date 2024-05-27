@@ -6,11 +6,10 @@
 #include "scene2d/ImageControl.h"
 #include "scene2d/ProgressBarControl.h"
 #include "scene2d/SpinnerControl.h"
+#include "scene2d/LineEditControl.h"
 #ifdef _WIN32
 #include "windows/graphics/GraphicDevice.h"
 #include "windows/DialogWin32.h"
-#include "windows/control/Control.h"
-#include "windows/control/LineEditControl.h"
 #include "windows/HiddenMsgWindow.h"
 #include <ConsoleApi2.h>
 #endif

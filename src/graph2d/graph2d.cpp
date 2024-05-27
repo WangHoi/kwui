@@ -1,7 +1,7 @@
 #include "graph2d.h"
 #ifdef _WIN32
 #include "windows/graphics/GraphicDevice.h"
-#include "windows/graphics/TextLayout.h"
+#include "windows/graphics/TextLayoutD2D.h"
 #include "windows/graphics/TextFlowD2D.h"
 #include "windows/graphics/PainterD2D.h"
 #include "windows/windows_header.h"

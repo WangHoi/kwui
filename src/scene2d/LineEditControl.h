@@ -3,7 +3,7 @@
 #include "scene2d/Control.h"
 #include "scene2d/geom_types.h"
 #include "style/StyleColor.h"
-#include "windows/graphics/TextLayout.h"
+#include "windows/graphics/TextLayoutD2D.h"
 #include <string>
 #include <deque>
 #include <memory>
