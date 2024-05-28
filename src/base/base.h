@@ -8,5 +8,6 @@
 #include "ResourceArchive.h"
 #include "PEG.h"
 #include "TaskQueue.h"
+#include "encoding_helpers.h"
 #include "EncodingManager.h"
 #include "ResourceManager.h"

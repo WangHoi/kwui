@@ -16,6 +16,8 @@ TextLayoutX::TextLayoutX(const std::wstring& text,
 
 	computeTextLayout(text);
 }
+TextLayoutX::~TextLayoutX()
+{}
 float TextLayoutX::lineHeight() const
 {
 	return -font_metrics_.fAscent + font_metrics_.fDescent + font_metrics_.fLeading;

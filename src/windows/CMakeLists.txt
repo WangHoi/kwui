@@ -3,12 +3,10 @@ add_subdirectory(graphics)
 list(APPEND kwui_pub_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/DialogWin32.h
   ${CMAKE_CURRENT_SOURCE_DIR}/PopupShadow.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/encoding_helpers.h
 )
 list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/DialogWin32.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/PopupShadow.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/encoding_helpers.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/theme.h
   ${CMAKE_CURRENT_SOURCE_DIR}/theme.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/HiddenMsgWindow.cpp

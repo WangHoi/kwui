@@ -1,10 +1,12 @@
 #include "LineEditControl.h"
 #include "scene2d/Scene.h"
-#include "windows/graphics/PainterD2D.h"
 #include "base/log.h"
 #include "base/EncodingManager.h"
-#include "windows/encoding_helpers.h"
+#include "base/encoding_helpers.h"
 #include "absl/time/clock.h"
+#ifdef _WIN32
+#include "windows/windows_header.h"
+#endif // _WIN32
 
 using base::EncodingManager;
 
@@ -53,7 +55,7 @@ public:
             state.text.erase(_sel_active, _text.length());
         }
     }
-    bool Merge(const Command& cmd_) {
+    bool Merge(const Command& cmd_) override {
         if (HasSelection())
             return false;
         auto cmd = dynamic_cast<const ReplaceSelectionCommand*>(&cmd_);
@@ -105,7 +107,7 @@ public:
         }
         _deleted_text.clear();
     }
-    bool Merge(const Command& cmd_) {
+    bool Merge(const Command& cmd_) override {
         auto cmd = dynamic_cast<const DeleteTextCommand*>(&cmd_);
         if (cmd && _n * cmd->_n > 0) {
             if (_n >= 0 && _sel_active == cmd->_sel_active) {
@@ -131,7 +133,11 @@ private:
 class LineEditControl::CaretBlinkHelper {
 public:
     CaretBlinkHelper() {
+#ifdef _WIN32
         _blink_time_ms = GetCaretBlinkTime();
+#else
+        _blink_time_ms = 500;
+#endif
         Reset();
     }
     void Reset() {
@@ -157,7 +163,7 @@ public:
 private:
     // The time required to invert the caret's pixels.
     // INFINITE indicates that the caret does not blink.
-    UINT _blink_time_ms;
+    unsigned _blink_time_ms;
     absl::Time _reset_time;
     absl::optional<bool> _visible;
 };
@@ -242,7 +248,7 @@ void TextEditModel::AddCommand(std::unique_ptr<TextEditModel::Command>&& cmd, bo
         }
     }
     _cmds.resize(_cmd_top);
-    _cmds.push_back(move(cmd));
+    _cmds.push_back(std::move(cmd));
     ++_cmd_top;
     if (_cmds.size() > MAX_UNDO_HISTORY) {
         _cmds.pop_front();
@@ -478,6 +484,7 @@ bool LineEditControl::QueryImeCaretRect(scene2d::PointF& origin, scene2d::Dimens
 }
 void LineEditControl::OnKeyDown(scene2d::Node* node, int key, int modifiers) {
     switch (key) {
+#ifdef _WIN32
     case VK_LEFT:
         if (modifiers) {
             if ((modifiers & scene2d::SHIFT_MODIFIER) == modifiers) {
@@ -520,6 +527,9 @@ void LineEditControl::OnKeyDown(scene2d::Node* node, int key, int modifiers) {
     case VK_DELETE:
         DeleteRightChar();
         break;
+#else
+#pragma message("WARN: VK_DELETE not available on non-Win32 platforms.")
+#endif
     case 'C':
         ClipboardCopy();
         break;

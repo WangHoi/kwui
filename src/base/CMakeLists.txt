@@ -19,6 +19,8 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/TaskQueue.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/algorithm/lzf.h
   ${CMAKE_CURRENT_SOURCE_DIR}/algorithm/lzf.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/encoding_helpers.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/encoding_helpers.cpp
   )
 if(ANDROID)
 list(APPEND kwui_priv_srcs

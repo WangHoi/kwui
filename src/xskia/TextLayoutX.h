@@ -10,6 +10,7 @@ public:
 	TextLayoutX(const std::wstring& text,
 		const std::string& font_family,
 		float font_size);
+	~TextLayoutX();
 
 	// 通过 TextLayoutInterface 继承
 	float lineHeight() const override;

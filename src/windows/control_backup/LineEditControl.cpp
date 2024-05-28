@@ -3,7 +3,7 @@
 #include "windows/graphics/PainterD2D.h"
 #include "base/log.h"
 #include "base/EncodingManager.h"
-#include "windows/encoding_helpers.h"
+#include "base/encoding_helpers.h"
 #include "absl/time/clock.h"
 
 using base::EncodingManager;
