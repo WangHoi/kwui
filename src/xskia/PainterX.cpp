@@ -1,5 +1,6 @@
 #include "PainterX.h"
 #include "TextFlowX.h"
+#include "TextLayoutX.h"
 #include "BitmapX.h"
 #include "style/Layout.h"
 #include "scene2d/Control.h"
@@ -86,7 +87,7 @@ void PainterX::drawBox(
 }
 void PainterX::drawGlyphRun(
 	const scene2d::PointF& pos,
-	const graph2d::GlyphRunInterface* text_flow,
+	const style::GlyphRunInterface* text_flow,
 	const style::Color& color)
 {
 	SkPaint paint;
@@ -130,6 +131,21 @@ void PainterX::drawRoundedRect(const scene2d::RectF& rect,
 	rrect.setRectRadii(rect, radii);
 	paint.setColor(background_color);
 	canvas_->drawRRect(rrect, paint);
+}
+void PainterX::drawRect(const scene2d::RectF& rect,
+	const style::Color& background_color)
+{
+	SkPaint paint;
+	paint.setColor(background_color);
+	canvas_->drawRect(rect, paint);
+}
+void PainterX::drawTextLayout(const scene2d::PointF& origin,
+	const scene2d::TextLayoutInterface& layout,
+	const style::Color& color)
+{
+	const xskia::TextLayoutX& l = (const xskia::TextLayoutX&)layout;
+	scene2d::PointF baseline_origin(origin.x, origin.y + layout.baseline());
+	drawGlyphRun(baseline_origin, l.glyphRun(), color);
 }
 void PainterX::drawCircle(const scene2d::PointF& center,
 	float radius,

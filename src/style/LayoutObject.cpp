@@ -126,7 +126,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		size_t n = tb.glyph_run_boxes.glyph_runs.size();
 		for (size_t i = 0; i < n; ++i) {
 			InlineBox* ibox = tb.glyph_run_boxes.inline_boxes[i].get();
-			graph2d::GlyphRunInterface* gr = tb.glyph_run_boxes.glyph_runs[i].get();
+			style::GlyphRunInterface* gr = tb.glyph_run_boxes.glyph_runs[i].get();
 			scene2d::PointF baseline_origin = ibox->pos;
 			baseline_origin.y += ibox->baseline;
 			painter->drawGlyphRun(baseline_origin, gr, st.color);
@@ -984,7 +984,7 @@ void LayoutObject::arrangeBfcBottom(LayoutObject* o, BlockFormatContext& bfc, Bl
 	}
 }
 
-class TextBoxFlow : public graph2d::TextFlowSourceInterface, public graph2d::TextFlowSinkInterface {
+class TextBoxFlow : public style::TextFlowSourceInterface, public style::TextFlowSinkInterface {
 public:
 	TextBoxFlow(LayoutObject* o, TextBox& tb, InlineFormatContext& ifc)
 		: layout_object_(o), text_box_(tb), ifc_(ifc)
@@ -1015,7 +1015,7 @@ public:
 		text_box_.glyph_run_boxes.inline_boxes.reserve(glyph_count);
 	}
 
-	void addGlyphRun(style::LineBox* line, const scene2d::PointF& pos, std::unique_ptr<graph2d::GlyphRunInterface> glyph_run) override
+	void addGlyphRun(style::LineBox* line, const scene2d::PointF& pos, std::unique_ptr<style::GlyphRunInterface> glyph_run) override
 	{
 		std::unique_ptr<InlineBox> inline_box = std::make_unique<InlineBox>();
 		auto fm = text_box_.text_flow->fontMetrics();

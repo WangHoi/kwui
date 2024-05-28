@@ -117,9 +117,7 @@ public:
         scene2d::ControlRegistry::get()->registerControl<scene2d::ButtonControl>();
         scene2d::ControlRegistry::get()->registerControl<scene2d::ProgressBarControl>();
         scene2d::ControlRegistry::get()->registerControl<scene2d::SpinnerControl>();
-#if !WITH_SKIA && defined(_WIN32)
-        scene2d::ControlRegistry::get()->registerControl<windows::control::LineEditControl>();
-#endif
+        scene2d::ControlRegistry::get()->registerControl<scene2d::control::LineEditControl>();
 
         LOG(INFO) << "Register builtin icon font...";
         auto icon_font = resources::get_icon_data();

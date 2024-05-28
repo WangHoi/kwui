@@ -21,7 +21,7 @@ public:
 		const style::Color& background_color,
 		const style::Color& border_color,
 		const graph2d::BitmapInterface* background_image) override;
-	void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* text_flow, const style::Color& color) override;
+	void drawGlyphRun(const scene2d::PointF& pos, const style::GlyphRunInterface* text_flow, const style::Color& color) override;
 	void drawControl(const scene2d::RectF& rect, scene2d::Control* control) override;
 	void drawBitmap(const graph2d::BitmapInterface* image,
 		const scene2d::PointF& origin,
@@ -29,6 +29,11 @@ public:
 	void drawRoundedRect(const scene2d::RectF& rect,
 		const style::CornerRadiusF& border_radius,
 		const style::Color& background_color) override;
+	void drawRect(const scene2d::RectF& rect,
+		const style::Color& background_color) override;
+	void drawTextLayout(const scene2d::PointF& origin,
+		const scene2d::TextLayoutInterface& layout,
+		const style::Color& color) override;
 	void drawCircle(const scene2d::PointF& center,
 		float radius,
 		const style::Color& background_color,

@@ -48,6 +48,10 @@ struct CornerRadiusF {
 	float bottom_right = 0;
 	float bottom_left = 0;
 
+	CornerRadiusF() = default;
+	explicit CornerRadiusF(float f)
+		: top_left(f), top_right(f), bottom_right(f), bottom_left(f) {}
+
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const CornerRadiusF& o) {
 		absl::Format(&sink, "CornerRadiusF { ");

@@ -8,7 +8,7 @@
 
 using base::EncodingManager;
 
-namespace windows {
+namespace scene2d {
 namespace control {
 
 static constexpr size_t MAX_UNDO_HISTORY = 20;
@@ -320,35 +320,32 @@ void LineEditControl::onLayout(scene2d::Node* node, const scene2d::RectF& rect)
     _rect = rect;
     UpdateCaretAndScroll();
 }
-void LineEditControl::onPaint(graph2d::PainterInterface &pi, const scene2d::RectF& rect) {
-    graphics::Painter& p = graphics::PainterImpl::unwrap(pi);
-    p.Save();
-    p.Translate(rect.origin());
-
-    scene2d::DimensionF node_size = rect.size();
-    p.SetColor(_bg_color);
-    p.DrawRoundedRect(scene2d::PointF(), node_size, _border_radius);
+void LineEditControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect) {
+    pi.setTranslation(rect.origin(), true);
+    pi.drawRoundedRect(RectF::fromOriginSize(PointF(), rect.size()), 
+        style::CornerRadiusF(_border_radius),
+        _bg_color);
 
     scene2d::PointF clip_origin(_padding, 0);
-    scene2d::DimensionF clip_size(node_size.width - 2 * _padding, node_size.height);
-    p.PushClipRect(clip_origin, clip_size);
+    scene2d::DimensionF clip_size(rect.width() - 2 * _padding, rect.height());
+    pi.pushClipRect(clip_origin, clip_size);
     {
         // Draw selection
         if (HasSelection() && !_composing.has_value()) {
-            p.SetColor(_selection_bg_color);
             scene2d::RectF rect = _layout->rangeRect(_sel_anchor.value(),
                 _caret_pos);
-            p.DrawRect(_scroll_offset.x + _padding + rect.left,
-                _scroll_offset.y + _padding + rect.top,
-                rect.width(),
-                rect.height());
+            pi.drawRect(
+                RectF::fromXYWH(_scroll_offset.x + _padding + rect.left,
+                    _scroll_offset.y + _padding + rect.top,
+                    rect.width(),
+                    rect.height()),
+                _selection_bg_color);
         }
 
         // Draw text
-        p.SetColor(_color);
-        p.DrawTextLayout(_scroll_offset + _padding, *_layout);
+        pi.drawTextLayout(_scroll_offset + _padding, *_layout, _color);
     }
-    p.PopClipRect();
+    pi.popClipRect();
 
     if (_composing.has_value()) {
         // Draw underline
@@ -358,18 +355,16 @@ void LineEditControl::onPaint(graph2d::PainterInterface &pi, const scene2d::Rect
             : _caret_pos;
         scene2d::RectF rect = _layout->rangeRect(pos,
             pos + _composing->text.length());
-        p.SetColor(_caret_color);
-        p.DrawRect(_scroll_offset.x + _padding + rect.left,
-            _scroll_offset.y + _padding + baseline - 0.5f,
-            rect.width(),
-            1.0f);
+        pi.drawRect(
+            RectF::fromXYWH(_scroll_offset.x + _padding + rect.left,
+                _scroll_offset.y + _padding + baseline - 0.5f,
+                rect.width(),
+                1.0f),
+            _caret_color);
     }
     if (_is_focused && _caret_blink_helper->IsCaretVisible()) {
-        p.SetColor(_caret_color);
-        p.DrawRect(_scroll_offset + _padding + _caret_rect.origin(), _caret_rect.size());
+        pi.drawRect(RectF::fromOriginSize(_scroll_offset + _padding + _caret_rect.origin(), _caret_rect.size()), _caret_color);
     }
-
-    p.Restore();
 }
 void LineEditControl::onFocusEvent(scene2d::Node* node, scene2d::FocusEvent& evt)
 {
@@ -425,7 +420,7 @@ void LineEditControl::onAnimationFrame(scene2d::Node* node, absl::Time timestamp
 }
 void LineEditControl::UpdateTextLayout() {
     std::wstring disp_text = GetDisplayText();
-    _layout = windows::graphics::TextLayoutBuilder(disp_text)
+    _layout = scene2d::TextLayoutBuilder(disp_text)
         .FontSize(_font_size)
         .Build();
 }
@@ -588,7 +583,7 @@ void LineEditControl::DeleteLeftChar() {
             if (_caret_pos > 1) {
                 wchar_t char_back_one = _text[_caret_pos - 1];
                 wchar_t char_back_two = _text[_caret_pos - 2];
-                if ((is_low_surrogate(char_back_one) && is_high_surrogate(char_back_two))
+                if ((windows::is_low_surrogate(char_back_one) && windows::is_high_surrogate(char_back_two))
                     || (char_back_one == '\n' && char_back_two == '\r')) {
                     n = 2;
                 }
@@ -610,7 +605,7 @@ void LineEditControl::DeleteRightChar() {
             if (_caret_pos + 1 < (int)_text.length()) {
                 wchar_t char_after_one = _text[_caret_pos];
                 wchar_t char_after_two = _text[_caret_pos + 1];
-                if ((is_high_surrogate(char_after_one) && is_low_surrogate(char_after_two))
+                if ((windows::is_high_surrogate(char_after_one) && windows::is_low_surrogate(char_after_two))
                     || (char_after_one == '\r' && char_after_two == '\n')) {
                     n = 2;
                 }
@@ -627,7 +622,7 @@ void LineEditControl::MoveCaretLeft(bool make_selection) {
     if (_caret_pos > 1) {
         wchar_t char_back_one = _text[_caret_pos - 1];
         wchar_t char_back_two = _text[_caret_pos - 2];
-        if ((is_low_surrogate(char_back_one) && is_high_surrogate(char_back_two))
+        if ((windows::is_low_surrogate(char_back_one) && windows::is_high_surrogate(char_back_two))
             || (char_back_one == '\n' && char_back_two == '\r')) {
             n = 2;
         }
@@ -644,7 +639,7 @@ void LineEditControl::MoveCaretRight(bool make_selection) {
     if (_caret_pos + 1 < (int)_text.length()) {
         wchar_t char_after_one = _text[_caret_pos];
         wchar_t char_after_two = _text[_caret_pos + 1];
-        if ((is_high_surrogate(char_after_one) && is_low_surrogate(char_after_two))
+        if ((windows::is_high_surrogate(char_after_one) && windows::is_low_surrogate(char_after_two))
             || (char_after_one == '\r' && char_after_two == '\n')) {
             n = 2;
         }

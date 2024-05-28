@@ -3,6 +3,12 @@
 
 namespace style {
 
+void GlyphRunBoxes::reset()
+{
+    glyph_runs.clear();
+    inline_boxes.clear();
+}
+
 TextFlowSource::TextFlowSource(LineBoxInterface* lbi)
     : lbi_(lbi)
 {}
@@ -35,7 +41,7 @@ void TextFlowSink::prepare(size_t glyph_count)
 
 void TextFlowSink::addGlyphRun(LineBox* line,
     const scene2d::PointF& pos,
-    std::unique_ptr<graph2d::GlyphRunInterface> glyph_run)
+    std::unique_ptr<style::GlyphRunInterface> glyph_run)
 {
     sink_->addGlyphRun(line, pos, std::move(glyph_run));
 }

@@ -174,7 +174,7 @@ std::tuple<float, float> TextFlowX::measureWidth()
 
 	return std::make_tuple(min_text_width, max_text_width);
 }
-void TextFlowX::flowText(graph2d::TextFlowSourceInterface* source, graph2d::TextFlowSinkInterface* sink)
+void TextFlowX::flowText(style::TextFlowSourceInterface* source, style::TextFlowSinkInterface* sink)
 {
 	bool first = true;
 	float line_height = -font_metrics_.fAscent + font_metrics_.fDescent + font_metrics_.fLeading;

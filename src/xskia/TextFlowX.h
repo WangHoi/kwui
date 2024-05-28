@@ -1,5 +1,5 @@
 #pragma once
-#include "graph2d/TextLayout.h"
+#include "style/TextFlow.h"
 #include "include/core/SkFont.h"
 #include "include/core/SkFontMetrics.h"
 #include <vector>
@@ -7,7 +7,7 @@
 namespace xskia {
 
 class PainterX;
-class GlyphRunX : public graph2d::GlyphRunInterface {
+class GlyphRunX : public style::GlyphRunInterface {
 public:
     GlyphRunX(SkFont font, const SkFontMetrics& fm, absl::Span<SkGlyphID> glyphs, absl::Span<SkScalar> advances);
     ~GlyphRunX() override {}
@@ -22,7 +22,7 @@ private:
     friend class PainterX;
 };
 
-class TextFlowX : public graph2d::TextFlowInterface {
+class TextFlowX : public style::TextFlowInterface {
 public:
     TextFlowX(const std::string& text,
         const char* font_family,
@@ -32,7 +32,7 @@ public:
     ~TextFlowX() override;
     style::FontMetrics fontMetrics() override;
     std::tuple<float, float> measureWidth() override;
-    void flowText(graph2d::TextFlowSourceInterface* source, graph2d::TextFlowSinkInterface* sink) override;
+    void flowText(style::TextFlowSourceInterface* source, style::TextFlowSinkInterface* sink) override;
 
 private:
     SkFont font_;

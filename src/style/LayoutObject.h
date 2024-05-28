@@ -21,7 +21,7 @@ namespace style {
 struct LayoutObject;
 
 struct TextBox {
-	graph2d::TextFlowInterface* text_flow = nullptr;
+	style::TextFlowInterface* text_flow = nullptr;
 	GlyphRunBoxes glyph_run_boxes;
 
 	template <typename Sink>

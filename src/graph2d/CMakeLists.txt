@@ -1,6 +1,5 @@
 list(APPEND kwui_pub_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/graph2d.h    
-    ${CMAKE_CURRENT_SOURCE_DIR}/TextLayout.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Bitmap.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Painter.h
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintSurface.h)

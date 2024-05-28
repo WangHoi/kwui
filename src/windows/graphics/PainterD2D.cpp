@@ -149,7 +149,7 @@ void Painter::DrawArc(float center_x, float center_y, float radius, float start_
 		_rt->DrawGeometry(geom.Get(), brush.Get(), _current.stroke_width);
 	}
 }
-void Painter::DrawTextLayout(float x, float y, const TextLayout& layout) {
+void Painter::DrawTextLayout(float x, float y, const TextLayoutD2D& layout) {
 	D2D1_POINT_2F origin = D2D1::Point2F(x, y);
 	if (_current.HasFill()) {
 		ComPtr<ID2D1Brush> brush = CreateBrush(_current.color);

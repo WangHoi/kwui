@@ -9,12 +9,7 @@
 #include <memory>
 #include <functional>
 
-namespace windows {
-
-namespace graphics {
-class Painter;
-}
-
+namespace scene2d {
 namespace control {
 
 class Command;
@@ -136,7 +131,7 @@ private:
     scene2d::RectF _rect;
     std::wstring _text;
     float _font_size;
-    std::unique_ptr<windows::graphics::TextLayout> _layout;
+    std::unique_ptr<scene2d::TextLayoutInterface> _layout;
     style::Color _color;
     style::Color _bg_color;
     style::Color _selection_bg_color;
@@ -162,5 +157,6 @@ private:
     script::Value onchange_func_;
 };
 
-}
-}
+} // namespace control
+} // namespace scene2d
+

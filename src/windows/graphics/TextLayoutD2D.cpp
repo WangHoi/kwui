@@ -6,54 +6,7 @@
 namespace windows {
 namespace graphics {
 
-#define DEFINE_FONT_WEIGHT(x) \
-    FontWeight FontWeight::x = { DWRITE_FONT_WEIGHT_##x };
-DEFINE_FONT_WEIGHT(THIN);
-DEFINE_FONT_WEIGHT(EXTRA_LIGHT);
-DEFINE_FONT_WEIGHT(LIGHT);
-DEFINE_FONT_WEIGHT(SEMI_LIGHT);
-DEFINE_FONT_WEIGHT(NORMAL);
-DEFINE_FONT_WEIGHT(MEDIUM);
-DEFINE_FONT_WEIGHT(SEMI_BOLD);
-DEFINE_FONT_WEIGHT(BOLD);
-DEFINE_FONT_WEIGHT(HEAVY);
-#undef DEFINE_FONT_WEIGHT
-
-const float DEFAULT_FONT_SIZE = 14;
-
-FontWeight::FontWeight() : _raw(DWRITE_FONT_WEIGHT_NORMAL) {}
-
-TextLayoutBuilder::TextLayoutBuilder(const std::string& text) {
-    std::wstring utf16_text = base::EncodingManager::UTF8ToWide(text);
-    Init(utf16_text);
-}
-TextLayoutBuilder::TextLayoutBuilder(const std::wstring& text) {
-    Init(text);
-}
-void TextLayoutBuilder::Init(const std::wstring& text) {
-    _text = text;
-    _max_width = std::numeric_limits<float>::max();
-    _font_family = GraphicDevice::instance()->getDefaultFontFamily();
-    _font_size = DEFAULT_FONT_SIZE;
-    _font_style = FontStyle::REGULAR;
-    _align = TEXT_ALIGN_TOP_LEFT;
-}
-
-std::unique_ptr<TextLayout> TextLayoutBuilder::Build() {
-    ComPtr<IDWriteTextLayout> layout = GraphicDevice::instance()
-        ->createTextLayout(_text, _font_family, _font_size, _font_weight, _font_style);
-    layout->SetMaxWidth(_max_width);
-    DWRITE_TEXT_ALIGNMENT align = DWRITE_TEXT_ALIGNMENT_LEADING;
-    if (_align & TEXT_ALIGN_LEFT)
-        align = DWRITE_TEXT_ALIGNMENT_LEADING;
-    else if (_align & TEXT_ALIGN_CENTER)
-        align = DWRITE_TEXT_ALIGNMENT_CENTER;
-    else if (_align & TEXT_ALIGN_RIGHT)
-        align = DWRITE_TEXT_ALIGNMENT_TRAILING;
-    layout->SetTextAlignment(align);
-    return std::make_unique<TextLayout>(_text, _font_family, _font_size, layout);
-}
-TextLayout::TextLayout(const std::wstring& text, const std::string& font_family,
+TextLayoutD2D::TextLayoutD2D(const std::wstring& text, const std::string& font_family,
     float font_size, ComPtr<IDWriteTextLayout> layout)
     : _text(text)
     , _font_family(font_family)
@@ -61,7 +14,7 @@ TextLayout::TextLayout(const std::wstring& text, const std::string& font_family,
     , _layout(layout) {
     UpdateTextMetrics();
 }
-void TextLayout::UpdateTextMetrics() {
+void TextLayoutD2D::UpdateTextMetrics() {
     DWRITE_FONT_METRICS fm;
     if (GraphicDevice::instance()->getFontMetrics(_font_family, fm)) {
         _line_height = (fm.ascent + fm.descent + fm.lineGap) * _font_size / fm.designUnitsPerEm;
@@ -80,7 +33,7 @@ void TextLayout::UpdateTextMetrics() {
         _rect = scene2d::RectF::fromZeros();
     }
 }
-scene2d::RectF TextLayout::caretRect(int idx) const {
+scene2d::RectF TextLayoutD2D::caretRect(int idx) const {
     UINT index;
     BOOL trailing_hit;
     if (idx == _text.length()) {
@@ -100,7 +53,7 @@ scene2d::RectF TextLayout::caretRect(int idx) const {
         return MakeCaretRect(nullptr);
     }
 }
-scene2d::RectF TextLayout::rangeRect(int start_idx, int end_idx) const {
+scene2d::RectF TextLayoutD2D::rangeRect(int start_idx, int end_idx) const {
     if (start_idx == end_idx)
         return scene2d::RectF::fromZeros();
     if (start_idx > end_idx)
@@ -109,7 +62,7 @@ scene2d::RectF TextLayout::rangeRect(int start_idx, int end_idx) const {
     scene2d::RectF r2 = caretRect(end_idx);
     return scene2d::RectF::fromLTRB(r1.left, r1.top, r2.right, r2.bottom);
 }
-int TextLayout::hitTest(const scene2d::PointF& pos, scene2d::RectF* out_caret_rect) const {
+int TextLayoutD2D::hitTest(const scene2d::PointF& pos, scene2d::RectF* out_caret_rect) const {
     BOOL trailing_hit = FALSE;
     BOOL inside = FALSE;
     DWRITE_HIT_TEST_METRICS htm;
@@ -122,7 +75,7 @@ int TextLayout::hitTest(const scene2d::PointF& pos, scene2d::RectF* out_caret_re
         return -1;
     }
 }
-scene2d::RectF TextLayout::MakeCaretRect(const DWRITE_HIT_TEST_METRICS* htm) const {
+scene2d::RectF TextLayoutD2D::MakeCaretRect(const DWRITE_HIT_TEST_METRICS* htm) const {
     if (htm)
         return scene2d::RectF::fromXYWH(htm->left - 0.5f, 0, 1, _line_height);
     else

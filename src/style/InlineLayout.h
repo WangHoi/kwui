@@ -7,7 +7,6 @@
 #include "base/log.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "graph2d/TextLayout.h"
 #include <vector>
 #include <memory>
 #include <string>

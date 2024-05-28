@@ -5,10 +5,12 @@
 
 namespace scene2d {
 class Control;
+class TextLayoutInterface;
 }
 namespace style {
 struct EdgeOffsetF;
 struct CornerRadiusF;
+class GlyphRunInterface;
 }
 
 namespace graph2d {
@@ -33,7 +35,7 @@ public:
 		const style::Color& border_color,
 		const BitmapInterface* background_image = nullptr) = 0;
 	virtual void drawGlyphRun(const scene2d::PointF& pos,
-		const GlyphRunInterface* text_flow,
+		const style::GlyphRunInterface* text_flow,
 		const style::Color& color) = 0;
 	virtual void drawControl(const scene2d::RectF& rect,
 		scene2d::Control* control) = 0;
@@ -44,6 +46,12 @@ public:
 	virtual void drawRoundedRect(const scene2d::RectF& rect,
 		const style::CornerRadiusF& border_radius,
 		const style::Color& background_color) = 0;
+	// TODO: drawRect(): support stroke
+	virtual void drawRect(const scene2d::RectF& rect,
+		const style::Color& background_color) = 0;
+	virtual void drawTextLayout(const scene2d::PointF& origin,
+		const scene2d::TextLayoutInterface& layout,
+		const style::Color& color) = 0;
 	virtual void drawCircle(const scene2d::PointF& center,
 		float radius,
 		const style::Color& background_color,

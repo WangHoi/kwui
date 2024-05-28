@@ -31,8 +31,8 @@ public:
     void DrawCircle(const scene2d::PointF& center, float radius) { DrawCircle(center.x, center.y, radius); }
     void DrawArc(float center_x, float center_y, float radius, float start_angle, float span_angle);
     void DrawArc(const scene2d::PointF& center, float radius, float start_angle, float span_angle) { DrawArc(center.x, center.y, radius, start_angle, span_angle); }
-    void DrawTextLayout(const scene2d::PointF& origin, const TextLayout& layout) { DrawTextLayout(origin.x, origin.y, layout); }
-    void DrawTextLayout(float x, float y, const TextLayout& layout);
+    void DrawTextLayout(const scene2d::PointF& origin, const TextLayoutD2D& layout) { DrawTextLayout(origin.x, origin.y, layout); }
+    void DrawTextLayout(float x, float y, const TextLayoutD2D& layout);
     void DrawGlyphRun(const scene2d::PointF& origin, const GlyphRun& gr) { DrawGlyphRun(origin.x, origin.y, gr); }
     void DrawGlyphRun(float x, float y, const GlyphRun& gr);
     void Translate(float x, float y) { Translate({ x, y }); }
@@ -219,7 +219,7 @@ public:
             }
         }
     }
-    void drawGlyphRun(const scene2d::PointF& pos, const graph2d::GlyphRunInterface* gr, const style::Color& color) override
+    void drawGlyphRun(const scene2d::PointF& pos, const style::GlyphRunInterface* gr, const style::Color& color) override
     {
         p_.SetColor(color);
         auto glyph_run = (graphics::GlyphRun*)gr;
@@ -250,7 +250,20 @@ public:
         p_.SetColor(background_color);
         p_.DrawRoundedRect(rect.origin(), rect.size(), r);
     }
-	virtual void drawCircle(const scene2d::PointF& center,
+    void drawRect(const scene2d::RectF& rect,
+        const style::Color& background_color) override
+    {
+        p_.SetColor(background_color);
+        p_.DrawRect(rect.origin(), rect.size());
+    }
+    void drawTextLayout(const scene2d::PointF& origin,
+        const scene2d::TextLayoutInterface& layout,
+        const style::Color& color) override
+    {
+        p_.SetColor(color);
+        p_.DrawTextLayout(origin, (const windows::graphics::TextLayoutD2D&)layout);
+    }
+    virtual void drawCircle(const scene2d::PointF& center,
 		float radius,
 		const style::Color& background_color,
         float border_width,

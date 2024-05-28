@@ -15,7 +15,6 @@ namespace windows {
 namespace graphics {
 
 static const wchar_t* DEFAULT_LOCALE = L"zh-CN";
-static const char* DEFAULT_FONT_FAMILY = "Microsoft YaHei";
 
 static GraphicDevice *gdev = nullptr;
 
@@ -153,19 +152,19 @@ ComPtr<IDWriteTextLayout> GraphicDevice::createTextLayout(
 	const std::wstring& text,
 	const std::string& font_family,
 	float font_size,
-	FontWeight font_weight,
-	FontStyle font_style) {
+	style::FontWeight font_weight,
+	style::FontStyle font_style) {
 
 	ComPtr<IDWriteTextLayout> layout;
 	ComPtr<IDWriteTextFormat> format;
 	HRESULT hr;
 	std::wstring utf16_font_family = EncodingManager::UTF8ToWide(font_family);
 	DWRITE_FONT_STYLE dwrite_font_style = DWRITE_FONT_STYLE_NORMAL;
-	if (font_style == FontStyle::ITALIC)
+	if (font_style == style::FontStyle::Italic)
 		dwrite_font_style = DWRITE_FONT_STYLE_ITALIC;
 	hr = dwrite_->CreateTextFormat(utf16_font_family.c_str(),
 		NULL,
-		(DWRITE_FONT_WEIGHT)font_weight.GetRaw(),
+		(DWRITE_FONT_WEIGHT)font_weight.raw(),
 		dwrite_font_style,
 		DWRITE_FONT_STRETCH_NORMAL,
 		font_size,
@@ -181,18 +180,18 @@ std::unique_ptr<TextFlowD2D> GraphicDevice::createTextFlow(
 	float line_height,
 	const std::string& font_family,
 	float font_size,
-	FontWeight font_weight,
-	FontStyle font_style)
+	style::FontWeight font_weight,
+	style::FontStyle font_style)
 {
 	ComPtr<IDWriteTextFormat> format;
 	HRESULT hr;
 	std::wstring utf16_font_family = EncodingManager::UTF8ToWide(font_family);
 	DWRITE_FONT_STYLE dwrite_font_style = DWRITE_FONT_STYLE_NORMAL;
-	if (font_style == FontStyle::ITALIC)
+	if (font_style == style::FontStyle::Italic)
 		dwrite_font_style = DWRITE_FONT_STYLE_ITALIC;
 	hr = dwrite_->CreateTextFormat(utf16_font_family.c_str(),
 		NULL,
-		(DWRITE_FONT_WEIGHT)font_weight.GetRaw(),
+		(DWRITE_FONT_WEIGHT)font_weight.raw(),
 		dwrite_font_style,
 		DWRITE_FONT_STRETCH_NORMAL,
 		font_size,
@@ -209,12 +208,12 @@ void GraphicDevice::updateTextFlow(TextFlowD2D* text_flow,
 	float line_height,
 	const std::string& font_family,
 	float font_size,
-	FontWeight font_weight,
-	FontStyle font_style)
+	style::FontWeight font_weight,
+	style::FontStyle font_style)
 {
 	std::wstring utf16_font_family = EncodingManager::UTF8ToWide(font_family);
 	DWRITE_FONT_STYLE dwrite_font_style = DWRITE_FONT_STYLE_NORMAL;
-	if (font_style == FontStyle::ITALIC)
+	if (font_style == style::FontStyle::Italic)
 		dwrite_font_style = DWRITE_FONT_STYLE_ITALIC;
 	ComPtr<IDWriteTextFormat> old_format = text_flow->textFormat();
 	WCHAR old_family[256] = {};
@@ -224,13 +223,13 @@ void GraphicDevice::updateTextFlow(TextFlowD2D* text_flow,
 	DWRITE_FONT_STYLE old_font_style = old_format->GetFontStyle();
 	if (utf16_font_family != old_family
 		|| font_size != old_font_size
-		|| font_weight.GetRaw() != old_font_weight
+		|| font_weight.raw() != old_font_weight
 		|| dwrite_font_style != old_font_style) {
 		ComPtr<IDWriteTextFormat> format;
 		HRESULT hr;
 		hr = dwrite_->CreateTextFormat(utf16_font_family.c_str(),
 			NULL,
-			(DWRITE_FONT_WEIGHT)font_weight.GetRaw(),
+			(DWRITE_FONT_WEIGHT)font_weight.raw(),
 			dwrite_font_style,
 			DWRITE_FONT_STRETCH_NORMAL,
 			font_size,
@@ -247,7 +246,7 @@ void GraphicDevice::updateTextFlow(TextFlowD2D* text_flow,
 
 std::string GraphicDevice::getDefaultFontFamily() const
 {
-	return DEFAULT_FONT_FAMILY;
+	return scene2d::DEFAULT_FONT_FAMILY;
 }
 
 bool GraphicDevice::getFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics) {

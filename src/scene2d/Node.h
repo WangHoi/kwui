@@ -227,7 +227,7 @@ protected:
 
 	// Text
 	std::string text_;
-	std::unique_ptr<graph2d::TextFlowInterface> text_flow_;
+	std::unique_ptr<style::TextFlowInterface> text_flow_;
 	style::GlyphRunBoxes text_boxes_; // Formatted text boxes
 
 	// Element

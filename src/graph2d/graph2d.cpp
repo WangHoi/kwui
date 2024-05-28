@@ -19,7 +19,7 @@
 
 namespace graph2d {
 
-std::unique_ptr<TextFlowInterface> createTextFlow(
+std::unique_ptr<style::TextFlowInterface> createTextFlow(
 	const std::string& text,
 	float line_height,
 	const char* font_family,
@@ -32,10 +32,8 @@ std::unique_ptr<TextFlowInterface> createTextFlow(
 #else
 #ifdef _WIN32
 	std::wstring u16_text = base::EncodingManager::UTF8ToWide(text);
-	windows::graphics::FontWeight win_font_weight(font_weight.raw());
-	windows::graphics::FontStyle win_font_style = (windows::graphics::FontStyle)font_style;
 	return windows::graphics::GraphicDevice::instance()
-		->createTextFlow(u16_text, line_height, font_family, font_size, win_font_weight, win_font_style);
+		->createTextFlow(u16_text, line_height, font_family, font_size, font_weight, font_style);
 #else
 #pragma message("TODO: implement graph2d::createTextFlow().")
 	return nullptr;
@@ -44,7 +42,7 @@ std::unique_ptr<TextFlowInterface> createTextFlow(
 }
 
 void updateTextFlow(
-	std::unique_ptr<TextFlowInterface>& text_flow,
+	std::unique_ptr<style::TextFlowInterface>& text_flow,
 	const std::string& text,
 	float line_height,
 	const char* font_family,
@@ -57,11 +55,9 @@ void updateTextFlow(
 #else
 #ifdef _WIN32
 	std::wstring u16_text = base::EncodingManager::UTF8ToWide(text);
-	windows::graphics::FontWeight win_font_weight(font_weight.raw());
-	windows::graphics::FontStyle win_font_style = (windows::graphics::FontStyle)font_style;
 	windows::graphics::TextFlowD2D* win_tf = static_cast<windows::graphics::TextFlowD2D*>(text_flow.get());
 	return windows::graphics::GraphicDevice::instance()
-		->updateTextFlow(win_tf, u16_text, line_height, font_family, font_size, win_font_weight, win_font_style);
+		->updateTextFlow(win_tf, u16_text, line_height, font_family, font_size, font_weight, font_style);
 #else
 	text_flow = createTextFlow(text, line_height, font_family, font_style, font_weight, font_size);
 #endif

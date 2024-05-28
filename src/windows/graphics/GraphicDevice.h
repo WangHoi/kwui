@@ -4,6 +4,7 @@
 #include "TextLayoutD2D.h"
 #include "TextFlowD2D.h"
 #include "scene2d/geom_types.h"
+#include "style/StyleFont.h"
 #include "absl/types/span.h"
 #include <unordered_map>
 
@@ -49,23 +50,23 @@ public:
 		const std::wstring& text,
 		const std::string& font_family,
 		float font_size,
-		FontWeight font_weight = FontWeight(),
-		FontStyle font_style = FontStyle());
+		style::FontWeight font_weight = style::FontWeight(),
+		style::FontStyle font_style = style::FontStyle::Normal);
 	std::unique_ptr<TextFlowD2D> createTextFlow(
 		const std::wstring& text,
 		float line_height,
 		const std::string& font_family,
 		float font_size,
-		FontWeight font_weight = FontWeight(),
-		FontStyle font_style = FontStyle());
+		style::FontWeight font_weight = style::FontWeight(),
+		style::FontStyle font_style = style::FontStyle::Normal);
 	void updateTextFlow(
 		TextFlowD2D* text_flow,
 		const std::wstring& text,
 		float line_height,
 		const std::string& font_family,
 		float font_size,
-		FontWeight font_weight = FontWeight(),
-		FontStyle font_style = FontStyle());
+		style::FontWeight font_weight = style::FontWeight(),
+		style::FontStyle font_style = style::FontStyle::Normal);
 	std::string getDefaultFontFamily() const;
 	bool getFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics);
 	void loadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1);

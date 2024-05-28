@@ -1,7 +1,7 @@
 #pragma once
 
 #include "TextAnalysis.h"
-#include "graph2d/TextLayout.h"
+#include "style/TextFlow.h"
 #include <string>
 
 namespace windows {
@@ -9,7 +9,7 @@ namespace graphics {
 
 class TextFlowD2D;
 
-class GlyphRun : public graph2d::GlyphRunInterface
+class GlyphRun : public style::GlyphRunInterface
 {
 public:
 	GlyphRun(const TextFlowD2D* flow,
@@ -30,7 +30,7 @@ private:
 	std::vector<float> glyph_advances_;
 };
 
-class TextFlowD2D : public graph2d::TextFlowInterface
+class TextFlowD2D : public style::TextFlowInterface
 {
 	// This custom layout processes layout in two stages.
 	//
@@ -99,8 +99,8 @@ public:
 
 	// Reflow the text analysis into 
 	void flowText(
-		graph2d::TextFlowSourceInterface* flowSource,
-		graph2d::TextFlowSinkInterface* flowSink
+		style::TextFlowSourceInterface* flowSource,
+		style::TextFlowSinkInterface* flowSink
 	) override;
 
 protected:
@@ -121,7 +121,7 @@ protected:
 	);
 
 	HRESULT ProduceGlyphRuns(
-		graph2d::TextFlowSinkInterface* flowSink,
+		style::TextFlowSinkInterface* flowSink,
 		style::LineBox* line,
 		const scene2d::RectF& rect,
 		const ClusterPosition& clusterStart,

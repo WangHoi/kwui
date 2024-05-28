@@ -11,6 +11,8 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/GraphicDeviceX.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/BitmapX.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BitmapX.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TextLayoutX.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TextLayoutX.cpp
   )
 
 set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)

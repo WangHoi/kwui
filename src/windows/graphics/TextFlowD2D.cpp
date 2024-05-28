@@ -390,7 +390,7 @@ std::tuple<float, float> TextFlowD2D::measureWidth()
 	// 	<< min_text_width << "/" << max_text_width;
 	return std::make_tuple(min_text_width, max_text_width);
 }
-void TextFlowD2D::flowText(graph2d::TextFlowSourceInterface* flowSource, graph2d::TextFlowSinkInterface* flowSink)
+void TextFlowD2D::flowText(style::TextFlowSourceInterface* flowSource, style::TextFlowSinkInterface* flowSink)
 {
 	// Reflow all the text, from source to sink.
 
@@ -538,7 +538,7 @@ bool TextFlowD2D::FitText(
 
 
 HRESULT TextFlowD2D::ProduceGlyphRuns(
-	graph2d::TextFlowSinkInterface* flowSink,
+	style::TextFlowSinkInterface* flowSink,
 	style::LineBox* line,
 	const scene2d::RectF& rect,
 	const ClusterPosition& clusterStart,

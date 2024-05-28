@@ -3,11 +3,11 @@
 #include "StyleValue.h"
 #include "InlineLayout.h"
 #include "BlockLayout.h"
+#include "TextFlow.h"
 #include "scene2d/geom_types.h"
 #include "base/log.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "graph2d/TextLayout.h"
 #include <vector>
 #include <memory>
 #include <string>
