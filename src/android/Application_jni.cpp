@@ -325,7 +325,28 @@ static void Application_HandleSingleTapConfirmedEvent(JNIEnv* env, jobject, jlon
     msg.y = y;
     me->postMessage(msg);
 }
+static void Application_KeyboardFocusLost(JNIEnv* env, jobject)
+{
 
+}
+static void Application_HandleKeyDown(JNIEnv* env, jobject, int key_code)
+{
+
+}
+static void Application_HandleKeyUp(JNIEnv* env, jobject, int key_code)
+{
+
+}
+static jboolean Application_SoftReturnKey(JNIEnv* env, jobject)
+{
+    return JNI_TRUE;
+}
+static void Application_CommitText(JNIEnv* env, jobject, jstring jtext, jint cursor_pos)
+{
+}
+static void Application_GenerateScancodeForUnichar(JNIEnv* env, jobject, jchar unichar)
+{
+}
 int kwui_jni_register_Application(JNIEnv* env)
 {
     const auto clazz = env->FindClass("prj/kwui/Native");
@@ -348,6 +369,12 @@ int kwui_jni_register_Application(JNIEnv* env)
         {"nHandleShowPressEvent", "(JLjava/lang/String;FF)V", reinterpret_cast<void*>(Application_HandleShowPressEvent)},
         {"nHandleLongPressEvent", "(JLjava/lang/String;FF)V", reinterpret_cast<void*>(Application_HandleLongPressEvent)},
         {"nHandleSingleTapConfirmedEvent", "(JLjava/lang/String;FF)V", reinterpret_cast<void*>(Application_HandleSingleTapConfirmedEvent)},
+        {"nKeyboardFocusLost", "()V", reinterpret_cast<void*>(Application_KeyboardFocusLost)},
+        {"nHandleKeyDown", "(I)V", reinterpret_cast<void*>(Application_HandleKeyDown)},
+        {"nHandleKeyUp", "(I)V", reinterpret_cast<void*>(Application_HandleKeyUp)},
+        {"nSoftReturnKey", "()Z", reinterpret_cast<void*>(Application_SoftReturnKey)},
+        {"nCommitText", "(Ljava/lang/String;I)V", reinterpret_cast<void*>(Application_CommitText)},
+        {"nGenerateScancodeForUnichar", "(C)V", reinterpret_cast<void*>(Application_GenerateScancodeForUnichar)},
     };
 
     return clazz

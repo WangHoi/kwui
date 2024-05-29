@@ -6,8 +6,11 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import android.annotation.SuppressLint;
 import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.view.InputDevice;
+import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.View;
+import android.view.inputmethod.InputConnection;
 
 import java.util.Objects;
 
@@ -20,6 +23,8 @@ public class KwuiActivity extends AppCompatActivity {
     public long aNative;
 
     private ActivityKwuiBinding binding;
+
+    static public KwuiDummyEdit mTextEdit;
 
     static public KwuiActivity instance;
 
@@ -78,6 +83,87 @@ public class KwuiActivity extends AppCompatActivity {
     protected String getMainFunction() {
         return "kwui_main";
     }
+
+    public static boolean isTextInputEvent(KeyEvent event) {
+
+        // Key pressed with Ctrl should be sent as SDL_KEYDOWN/SDL_KEYUP and not SDL_TEXTINPUT
+        if (event.isCtrlPressed()) {
+            return false;
+        }
+
+        return event.isPrintingKey() || event.getKeyCode() == KeyEvent.KEYCODE_SPACE;
+    }
+
+    public static boolean handleKeyEvent(View v, int keyCode, KeyEvent event, InputConnection ic) {
+        int deviceId = event.getDeviceId();
+        int source = event.getSource();
+
+        if (source == InputDevice.SOURCE_UNKNOWN) {
+            InputDevice device = InputDevice.getDevice(deviceId);
+            if (device != null) {
+                source = device.getSources();
+            }
+        }
+
+//        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+//            Log.v("SDL", "key down: " + keyCode + ", deviceId = " + deviceId + ", source = " + source);
+//        } else if (event.getAction() == KeyEvent.ACTION_UP) {
+//            Log.v("SDL", "key up: " + keyCode + ", deviceId = " + deviceId + ", source = " + source);
+//        }
+
+        // Dispatch the different events depending on where they come from
+        // Some SOURCE_JOYSTICK, SOURCE_DPAD or SOURCE_GAMEPAD are also SOURCE_KEYBOARD
+        // So, we try to process them as JOYSTICK/DPAD/GAMEPAD events first, if that fails we try them as KEYBOARD
+        //
+        // Furthermore, it's possible a game controller has SOURCE_KEYBOARD and
+        // SOURCE_JOYSTICK, while its key events arrive from the keyboard source
+        // So, retrieve the device itself and check all of its sources
+        /*
+        if (SDLControllerManager.isDeviceSDLJoystick(deviceId)) {
+            // Note that we process events with specific key codes here
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                if (SDLControllerManager.onNativePadDown(deviceId, keyCode) == 0) {
+                    return true;
+                }
+            } else if (event.getAction() == KeyEvent.ACTION_UP) {
+                if (SDLControllerManager.onNativePadUp(deviceId, keyCode) == 0) {
+                    return true;
+                }
+            }
+        }
+        */
+
+        if ((source & InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE) {
+            // on some devices key events are sent for mouse BUTTON_BACK/FORWARD presses
+            // they are ignored here because sending them as mouse input to SDL is messy
+            if ((keyCode == KeyEvent.KEYCODE_BACK) || (keyCode == KeyEvent.KEYCODE_FORWARD)) {
+                switch (event.getAction()) {
+                    case KeyEvent.ACTION_DOWN:
+                    case KeyEvent.ACTION_UP:
+                        // mark the event as handled or it will be handled by system
+                        // handling KEYCODE_BACK by system will call onBackPressed()
+                        return true;
+                }
+            }
+        }
+
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (isTextInputEvent(event)) {
+                if (ic != null) {
+                    ic.commitText(String.valueOf((char) event.getUnicodeChar()), 1);
+                } else {
+                    Native.nCommitText(String.valueOf((char) event.getUnicodeChar()), 1);
+                }
+            }
+            Native.nHandleKeyDown(keyCode);
+            return true;
+        } else if (event.getAction() == KeyEvent.ACTION_UP) {
+            Native.nHandleKeyUp(keyCode);
+            return true;
+        }
+
+        return false;
+    }
 }
 
 class Native {
@@ -106,6 +192,18 @@ class Native {
     static native void nHandleLongPressEvent(long obj, String id, float x, float y);
 
     static native void nHandleSingleTapConfirmedEvent(long obj, String id, float x, float y);
+
+    static native void nKeyboardFocusLost();
+
+    static native void nHandleKeyDown(int keyCode);
+
+    static native void nHandleKeyUp(int keyCode);
+
+    static native boolean nSoftReturnKey();
+
+    static native void nCommitText(String text, int newCursorPosition);
+
+    static native void nGenerateScancodeForUnichar(char c);
 
     public static void jCreateDialog(String id) {
         KwuiActivity.instance.createDialog(id);
