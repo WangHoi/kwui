@@ -7,6 +7,9 @@
 #ifdef _WIN32
 #include "windows/windows_header.h"
 #endif // _WIN32
+#ifdef __ANDROID__
+#include "android/Application_jni.h"
+#endif
 
 using base::EncodingManager;
 
@@ -435,10 +438,21 @@ void LineEditControl::OnFocusIn(scene2d::Node* node, scene2d::FocusEvent& evt) {
     ResetCaretBlink();
     node->requestAnimationFrame(node);
     node->requestPaint();
+#ifdef __ANDROID__
+    // TODO: refactor caret pos
+    scene2d::PointF o;
+    scene2d::DimensionF s;
+    QueryImeCaretRect(o, s);
+    o = node->scene()->mapPointToScene(node, o);
+    android::show_text_input(o.x, o.y, s.width, s.height);
+#endif
 }
 void LineEditControl::OnFocusOut(scene2d::Node* node, scene2d::FocusEvent& ctx) {
     _is_focused = false;
     node->requestPaint();
+#ifdef __ANDROID__
+    android::hide_text_input();
+#endif
 }
 void LineEditControl::OnCharacter(std::wstring ch) {
     InsertText(ch, false);

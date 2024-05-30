@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.view.InputDevice;
@@ -11,6 +12,8 @@ import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.RelativeLayout;
 
 import java.util.Objects;
 
@@ -27,6 +30,7 @@ public class KwuiActivity extends AppCompatActivity {
     static public KwuiDummyEdit mTextEdit;
 
     static public KwuiActivity instance;
+    static boolean mScreenKeyboardShown = false;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -164,6 +168,66 @@ public class KwuiActivity extends AppCompatActivity {
 
         return false;
     }
+    static class ShowTextInputTask implements Runnable {
+        /*
+         * This is used to regulate the pan&scan method to have some offset from
+         * the bottom edge of the input region and the top edge of an input
+         * method (soft keyboard)
+         */
+        static final int HEIGHT_PADDING = 15;
+
+        public int x, y, w, h;
+
+        public ShowTextInputTask(int x, int y, int w, int h) {
+            this.x = x;
+            this.y = y;
+            this.w = w;
+            this.h = h;
+
+            /* Minimum size of 1 pixel, so it takes focus. */
+            if (this.w <= 0) {
+                this.w = 1;
+            }
+            if (this.h + HEIGHT_PADDING <= 0) {
+                this.h = 1 - HEIGHT_PADDING;
+            }
+        }
+
+        @Override
+        public void run() {
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(w, h + HEIGHT_PADDING);
+            params.leftMargin = x;
+            params.topMargin = y;
+
+            if (mTextEdit == null) {
+                mTextEdit = new KwuiDummyEdit(instance);
+
+                final ConstraintLayout cl_main = instance.findViewById(R.id.cl_main);
+                cl_main.addView(mTextEdit, params);
+            } else {
+                mTextEdit.setLayoutParams(params);
+            }
+
+            mTextEdit.setVisibility(View.VISIBLE);
+            mTextEdit.requestFocus();
+
+            InputMethodManager imm = (InputMethodManager)instance.getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(mTextEdit, 0);
+
+            mScreenKeyboardShown = true;
+        }
+    }
+    static class HideTextInputTask implements Runnable {
+        @Override
+        public void run() {
+            if (mScreenKeyboardShown) {
+                mScreenKeyboardShown = false;
+                if (mTextEdit != null) {
+                    mTextEdit.setVisibility(View.INVISIBLE);
+                }
+            }
+        }
+    }
 }
 
 class Native {
@@ -219,5 +283,12 @@ class Native {
 
     public static String jGetMainFunction() {
         return KwuiActivity.instance.getMainFunction();
+    }
+    public static void jShowTextInput(int x, int y, int w, int h) {
+        // Transfer the task to the main thread as a Runnable
+        KwuiActivity.instance.runOnUiThread(new KwuiActivity.ShowTextInputTask(x, y, w, h));
+    }
+    public static void jHideTextInput() {
+        KwuiActivity.instance.runOnUiThread(new KwuiActivity.HideTextInputTask());
     }
 }

@@ -69,7 +69,7 @@ void DialogAndroid::RequestUpdate()
 	//	mouse_position_ = scene2d::PointF::fromAll(-1);
 	//}
 	updateHoveredNode();
-	//UpdateFocusedNode();
+	updateFocusedNode();
 }
 
 void DialogAndroid::RequestAnimationFrame(scene2d::Node* node)
@@ -233,7 +233,65 @@ void DialogAndroid::handleSingleTapConfirmedEvent(float x, float y)
 		LOG(INFO) << "mouse_up button=" << (int)mouse_up.button << ", buttons=" << mouse_up.buttons;
 		scene_->dispatchEvent(node, mouse_up, true);
 	}
+
+	node = scene_->pickNode(mouse_position_, scene2d::NODE_FLAG_FOCUSABLE);
+	base::object_refptr<scene2d::Node> old_focused = focused_node_.upgrade();
+	if (node) {
+		if (node != old_focused.get()) {
+			if (old_focused) {
+				old_focused->state_ &= ~scene2d::NODE_STATE_FOCUSED;
+				scene2d::FocusEvent focus_out(old_focused.get(), scene2d::FOCUS_OUT);
+				scene_->dispatchEvent(old_focused.get(), focus_out, true);
+			}
+		}
+		focused_node_ = node->weaken();
+		node->state_ |= scene2d::NODE_STATE_FOCUSED;
+		scene2d::FocusEvent focus_in(node, scene2d::FOCUS_IN);
+		scene_->dispatchEvent(focused_node_.get(), focus_in, true);
+	}
 }
+void DialogAndroid::handleImeComposition(const std::wstring& text, absl::optional<int> caret_pos) {
+	base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
+	if (node) {
+		scene2d::ImeEvent composing(node.get(), scene2d::COMPOSING, text, caret_pos);
+		scene_->dispatchEvent(node.get(), composing, true);
+	}
+}
+void DialogAndroid::handleImeCommit(const std::wstring& text) {
+	base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
+	if (node) {
+		scene2d::ImeEvent commit(node.get(), scene2d::COMMIT, text);
+		scene_->dispatchEvent(node.get(), commit, true);
+	}
+}
+void DialogAndroid::handleImeStartComposition() {
+	// Node2DRef node = _focused_node.lock();
+	// if (node) {
+	//     node->OnImeStartComposition(*this);
+	//     scene2d::PointF origin, size;
+	//     if (node->QueryImeCaretRect(origin, size))
+	//         UpdateCaretRect(node->MapPointToRoot(origin), size);
+	// }
+	base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
+	if (node) {
+		scene2d::ImeEvent start_compose(node.get(), scene2d::START_COMPOSE);
+		scene_->dispatchEvent(node.get(), start_compose, true);
+		if (start_compose.caret_rect_) {
+			scene2d::PointF caret_pos = scene_->mapPointToScene(node.get(), start_compose.caret_rect_->origin());
+			scene2d::DimensionF caret_size = start_compose.caret_rect_->size();
+			// UpdateCaretRect(scene_->mapPointToScene(node.get(), start_compose.caret_rect_->origin()),
+			// 	start_compose.caret_rect_->size());
+		}
+	}
+}
+void DialogAndroid::handleImeEndComposition() {
+	base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
+	if (node) {
+		scene2d::ImeEvent end_compose(node.get(), scene2d::END_COMPOSE);
+		scene_->dispatchEvent(node.get(), end_compose, true);
+	}
+}
+
 void DialogAndroid::updateHoveredNode() {
 	scene2d::PointF local_pos;
 	scene2d::Node* node = scene_->pickNode(mouse_position_, scene2d::NODE_FLAG_HOVERABLE, &local_pos);
@@ -251,6 +309,17 @@ void DialogAndroid::updateHoveredNode() {
 			scene_->dispatchEvent(node, hover_enter, true);
 		}
 		RequestPaint();
+	}
+}
+void DialogAndroid::updateFocusedNode() {
+	// Focused node become invisible
+	if (auto node = focused_node_.upgrade()) {
+		if (!node->visibleInHierarchy()) {
+			node->state_ &= ~scene2d::NODE_STATE_FOCUSED;
+			scene2d::FocusEvent focus_out(node.get(), scene2d::FOCUS_OUT);
+			scene_->dispatchEvent(node.get(), focus_out, true);
+			focused_node_ = nullptr;
+		}
 	}
 }
 void DialogAndroid::handleAnimationFrameEvent()

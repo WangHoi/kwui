@@ -3,6 +3,8 @@
 #include "xskia/PainterX.h"
 #include "xskia/PaintSurfaceX.h"
 #include "scene2d/geom_types.h"
+#include "absl/types/optional.h"
+#include <string>
 #include <android/native_window.h>
 #include <vector>
 
@@ -32,10 +34,15 @@ public:
 	void handleShowPressEvent(float x, float y);
 	void handleLongPressEvent(float x, float y);
 	void handleSingleTapConfirmedEvent(float x, float y);
+	void handleImeComposition(const std::wstring& text, absl::optional<int> caret_pos);
+	void handleImeCommit(const std::wstring& text);
+	void handleImeStartComposition();
+	void handleImeEndComposition();
 
 private:
 	void paint();
 	void updateHoveredNode();
+	void updateFocusedNode();
 	void handleAnimationFrameEvent();
 
 	std::string id_;

@@ -15,5 +15,7 @@ void run_in_main_thread(std::function<void()>&& func);
 int application_exec();
 int start_timer(int64_t interval_ms, std::function<void()> timer_func);
 void stop_timer(int timer_id);
+void show_text_input(float x, float y, float w, float h);
+void hide_text_input();
 
 }

@@ -66,6 +66,8 @@ static jmethodID jmethod_create_dialog = nullptr;
 static jmethodID jmethod_release_dialog = nullptr;
 static jmethodID jmethod_get_main_shared_object = nullptr;
 static jmethodID jmethod_get_main_function = nullptr;
+static jmethodID jmethod_show_text_input = nullptr;
+static jmethodID jmethod_hide_text_input = nullptr;
 
 static int start_logger(const char* app_name);
 static std::string string_from_jni(JNIEnv* env, jstring jstr);
@@ -327,25 +329,29 @@ static void Application_HandleSingleTapConfirmedEvent(JNIEnv* env, jobject, jlon
 }
 static void Application_KeyboardFocusLost(JNIEnv* env, jobject)
 {
-
+    LOG(INFO) << "KeyboardFocusLost() ";
 }
 static void Application_HandleKeyDown(JNIEnv* env, jobject, int key_code)
 {
-
+    LOG(INFO) << "HandleKeyDown() " << key_code;
 }
 static void Application_HandleKeyUp(JNIEnv* env, jobject, int key_code)
 {
-
+    LOG(INFO) << "HandleKeyUp() " << key_code;
 }
 static jboolean Application_SoftReturnKey(JNIEnv* env, jobject)
 {
+    LOG(INFO) << "SoftReturnKey() ";
     return JNI_TRUE;
 }
 static void Application_CommitText(JNIEnv* env, jobject, jstring jtext, jint cursor_pos)
 {
+    std::string text = string_from_jni(env, jtext);
+    LOG(INFO) << "CommitText() \"" << text << "\" cursor " << cursor_pos;
 }
 static void Application_GenerateScancodeForUnichar(JNIEnv* env, jobject, jchar unichar)
 {
+    LOG(INFO) << "GenerateScancodeForUnichar() " << unichar;
 }
 int kwui_jni_register_Application(JNIEnv* env)
 {
@@ -356,6 +362,8 @@ int kwui_jni_register_Application(JNIEnv* env)
         jmethod_release_dialog = env->GetStaticMethodID(jclass_native, "jReleaseDialog", "(Ljava/lang/String;)V");
         jmethod_get_main_shared_object = env->GetStaticMethodID(jclass_native, "jGetMainSharedObject", "()Ljava/lang/String;");
         jmethod_get_main_function = env->GetStaticMethodID(jclass_native, "jGetMainFunction", "()Ljava/lang/String;");
+        jmethod_show_text_input = env->GetStaticMethodID(jclass_native, "jShowTextInput", "(IIII)V");
+        jmethod_hide_text_input = env->GetStaticMethodID(jclass_native, "jHideTextInput", "()V");
     }
 
     static const JNINativeMethod methods[] = {
@@ -565,4 +573,27 @@ void run_timer_funcs()
     }
     g_timeout_timer_ids.clear();
 }
+void show_text_input(float x, float y, float w, float h)
+{
+    CHECK(gt_main_thread) << "expect show_text_input() from main thread";
+    if (!jmain_jni_env || !jclass_native || !jmethod_show_text_input) {
+        LOG(ERROR) << "show_text_input(): invalid JNIEnv.";
+        return;
+    }
+    LOG(INFO) << "start_text_input() " << scene2d::RectF::fromXYWH(x, y, w, h);
+    jmain_jni_env->CallStaticVoidMethod(jclass_native,
+        jmethod_show_text_input,
+        (jint)x, (jint)y, (jint)w, (jint)h);
+}
+void hide_text_input()
+{
+    CHECK(gt_main_thread) << "expect hide_text_input() from main thread";
+    if (!jmain_jni_env || !jclass_native || !jmethod_hide_text_input) {
+        LOG(ERROR) << "hide_text_input(): invalid JNIEnv.";
+        return;
+    }
+    LOG(INFO) << "hide_text_input() ";
+    jmain_jni_env->CallStaticVoidMethod(jclass_native, jmethod_hide_text_input);
+}
+
 }
