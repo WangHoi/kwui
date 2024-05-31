@@ -13,6 +13,7 @@
 #include "android/SurfaceAndroid.h"
 #include "android/DialogAndroid.h"
 #include "absl/base/internal/per_thread_tls.h"
+#include "absl/time/clock.h"
 #include <pthread.h>
 #include <unistd.h>
 #include <android/log.h>
@@ -39,11 +40,12 @@ enum MessageType {
     kLongPressEvent,
     kSingleTapConfirmedEvent,
     kRunInMainThread,
+    kCommitTextEvent,
 };
 
 struct Message {
     MessageType fType = kUndefined;
-    std::string id;
+    std::string* id = nullptr;
     ANativeWindow* fNativeWindow = nullptr;
     float fDensity = 1.0f;
     float x, y;
@@ -130,30 +132,33 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
         break;
     }
     case kSurfaceChanged: {
-        auto dlg = DialogAndroid::findDialogById(message.id);
+        auto dlg = DialogAndroid::findDialogById(*message.id);
         if (dlg) {
             dlg->handleSurfaceChanged(message.fNativeWindow, message.fDensity);
         } else {
-            LOG(ERROR) << "kSurfaceChanged: dialog " << message.id << " not found.";
+            LOG(ERROR) << "kSurfaceChanged: dialog " << *message.id << " not found.";
         }
+        delete message.id;
         break;
     }
     case kSurfaceDestroyed: {
-        auto dlg = DialogAndroid::findDialogById(message.id);
+        auto dlg = DialogAndroid::findDialogById(*message.id);
         if (dlg) {
             dlg->handleSurfaceDestroyed();
         } else {
-            LOG(ERROR) << "kSurfaceDestroyed: dialog " << message.id << " not found.";
+            LOG(ERROR) << "kSurfaceDestroyed: dialog " << *message.id << " not found.";
         }
+        delete message.id;
         break;
     }
     case kSurfaceRedrawNeeded: {
-        auto dlg = DialogAndroid::findDialogById(message.id);
+        auto dlg = DialogAndroid::findDialogById(*message.id);
         if (dlg) {
             dlg->handleSurfaceRedrawNeeded();
         } else {
-            LOG(ERROR) << "kSurfaceDestroyed: dialog " << message.id << " not found.";
+            LOG(ERROR) << "kSurfaceDestroyed: dialog " << *message.id << " not found.";
         }
+        delete message.id;
         break;
     }
     case kScrollEvent: {
@@ -189,6 +194,14 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
             (*message.func)();
             delete message.func;
         }
+        break;
+    }
+    case kCommitTextEvent: {
+        auto dlg = android::DialogAndroid::firstDialog();
+        if (dlg) {
+            dlg->handleImeCommit(base::EncodingManager::UTF8ToWide(*message.id));
+        }
+        delete message.id;
         break;
     }
     default: {
@@ -258,7 +271,7 @@ static void Application_SurfaceChanged(JNIEnv* env, jobject, jlong ptr, jstring 
     LOG(INFO) << "Application_SurfaceChanged";
     auto me = reinterpret_cast<JApplication*>(ptr);
     Message msg(kSurfaceChanged);
-    msg.id = string_from_jni(env, jid);
+    msg.id = new std::string(std::move(string_from_jni(env, jid)));
     msg.fNativeWindow = ANativeWindow_fromSurface(env, surface);
     msg.fDensity = density;
     me->postMessage(msg);
@@ -268,14 +281,14 @@ static void Application_SurfaceDestroyed(JNIEnv* env, jobject, jlong ptr, jstrin
 {
     auto me = reinterpret_cast<JApplication*>(ptr);
     Message msg(kSurfaceDestroyed);
-    msg.id = string_from_jni(env, jid);
+    msg.id = new std::string(std::move(string_from_jni(env, jid)));
     me->postMessage(msg);
 }
 static void Application_SurfaceRedrawNeeded(JNIEnv* env, jobject, jlong ptr, jstring jid)
 {
     auto me = reinterpret_cast<JApplication*>(ptr);
     Message msg(kSurfaceRedrawNeeded);
-    msg.id = string_from_jni(env, jid);
+    msg.id = new std::string(std::move(string_from_jni(env, jid)));
     me->postMessage(msg);
 }
 static void Application_HandleTouchEvent(JNIEnv* env, jobject, jlong ptr, jint action, jfloat x, jfloat y)
@@ -290,7 +303,7 @@ static void Application_HandleScrollEvent(JNIEnv* env, jobject, jlong ptr, jstri
     auto me = reinterpret_cast<JApplication*>(ptr);
     LOG(INFO) << "scroll event: " << dx << "," << dy;
     Message msg(kScrollEvent);
-    msg.id = string_from_jni(env, jid);
+    msg.id = new std::string(std::move(string_from_jni(env, jid)));
     msg.x = x;
     msg.y = y;
     msg.dx = dx;
@@ -302,7 +315,7 @@ static void Application_HandleShowPressEvent(JNIEnv* env, jobject, jlong ptr, js
     auto me = reinterpret_cast<JApplication*>(ptr);
     LOG(INFO) << "show press event: " << x << "," << y;
     Message msg(kShowPressEvent);
-    msg.id = string_from_jni(env, jid);
+    msg.id = new std::string(std::move(string_from_jni(env, jid)));
     msg.x = x;
     msg.y = y;
     me->postMessage(msg);
@@ -312,7 +325,7 @@ static void Application_HandleLongPressEvent(JNIEnv* env, jobject, jlong ptr, js
     auto me = reinterpret_cast<JApplication*>(ptr);
     LOG(INFO) << "long press event: " << x << "," << y;
     Message msg(kLongPressEvent);
-    msg.id = string_from_jni(env, jid);
+    msg.id = new std::string(std::move(string_from_jni(env, jid)));
     msg.x = x;
     msg.y = y;
     me->postMessage(msg);
@@ -322,7 +335,7 @@ static void Application_HandleSingleTapConfirmedEvent(JNIEnv* env, jobject, jlon
     auto me = reinterpret_cast<JApplication*>(ptr);
     LOG(INFO) << "single tap confirmed event: " << x << "," << y;
     Message msg(kSingleTapConfirmedEvent);
-    msg.id = string_from_jni(env, jid);
+    msg.id = new std::string(std::move(string_from_jni(env, jid)));
     msg.x = x;
     msg.y = y;
     me->postMessage(msg);
@@ -344,10 +357,15 @@ static jboolean Application_SoftReturnKey(JNIEnv* env, jobject)
     LOG(INFO) << "SoftReturnKey() ";
     return JNI_TRUE;
 }
-static void Application_CommitText(JNIEnv* env, jobject, jstring jtext, jint cursor_pos)
+static void Application_CommitText(JNIEnv* env, jobject, jlong ptr, jstring jtext, jint cursor_pos)
 {
     std::string text = string_from_jni(env, jtext);
     LOG(INFO) << "CommitText() \"" << text << "\" cursor " << cursor_pos;
+    // TODO(android): add |Message.text|
+    auto me = reinterpret_cast<JApplication*>(ptr);
+    Message msg(kCommitTextEvent);
+    msg.id = new std::string(std::move(text));
+    me->postMessage(msg);
 }
 static void Application_GenerateScancodeForUnichar(JNIEnv* env, jobject, jchar unichar)
 {
@@ -381,7 +399,7 @@ int kwui_jni_register_Application(JNIEnv* env)
         {"nHandleKeyDown", "(I)V", reinterpret_cast<void*>(Application_HandleKeyDown)},
         {"nHandleKeyUp", "(I)V", reinterpret_cast<void*>(Application_HandleKeyUp)},
         {"nSoftReturnKey", "()Z", reinterpret_cast<void*>(Application_SoftReturnKey)},
-        {"nCommitText", "(Ljava/lang/String;I)V", reinterpret_cast<void*>(Application_CommitText)},
+        {"nCommitText", "(JLjava/lang/String;I)V", reinterpret_cast<void*>(Application_CommitText)},
         {"nGenerateScancodeForUnichar", "(C)V", reinterpret_cast<void*>(Application_GenerateScancodeForUnichar)},
     };
 
@@ -477,9 +495,10 @@ void release_dialog(const std::string& id)
 std::string string_from_jni(JNIEnv* env, jstring jstr)
 {
     std::string s;
+    size_t len = env->GetStringUTFLength(jstr);
     const char* str = env->GetStringUTFChars(jstr, nullptr);
     if (str) {
-        s.assign(str);
+        s.assign(str, str + len);
         env->ReleaseStringUTFChars(jstr, str);
     }
     return s;

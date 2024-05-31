@@ -349,8 +349,10 @@ PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 		});
 	if (it != flow_roots_.end()) {
 		const style::FlowRoot& fl = *it;
-		if (it->positioned_parent)
+
+		if (it->positioned_parent) {
 			p += mapPointToScene(it->positioned_parent->node, PointF());
+		}
 
 		auto po = fl.positioned_parent;
 		while (po) {

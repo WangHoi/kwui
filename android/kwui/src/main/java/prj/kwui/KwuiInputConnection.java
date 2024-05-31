@@ -3,12 +3,14 @@ package prj.kwui;
 import android.content.*;
 import android.os.Build;
 import android.text.Editable;
+import android.util.Log;
 import android.view.*;
 import android.view.inputmethod.BaseInputConnection;
 import android.widget.EditText;
 
 public class KwuiInputConnection extends BaseInputConnection
 {
+    private static final String TAG = "InputConnection";
     protected EditText mEditText;
     protected String mCommittedText = "";
 
@@ -35,7 +37,7 @@ public class KwuiInputConnection extends BaseInputConnection
          * Return DOES still generate a key event, however.  So rather than using it as the 'click a button' key
          * as we do with physical keyboards, let's just use it to hide the keyboard.
          */
-
+        Log.i(TAG, String.format("sendKeyEvent %s %d", event.toString(), event.getKeyCode()));
         if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
             if (Native.nSoftReturnKey()) {
                 return true;
@@ -47,25 +49,30 @@ public class KwuiInputConnection extends BaseInputConnection
 
     @Override
     public boolean commitText(CharSequence text, int newCursorPosition) {
+        Log.i(TAG, String.format("commitText %s %d", text.toString(), newCursorPosition));
         if (!super.commitText(text, newCursorPosition)) {
             return false;
         }
-        updateText();
+        updateText(newCursorPosition);
         return true;
     }
 
     @Override
     public boolean setComposingText(CharSequence text, int newCursorPosition) {
+        Log.i(TAG, String.format("setComposingText %s %d", text.toString(), newCursorPosition));
         if (!super.setComposingText(text, newCursorPosition)) {
             return false;
         }
-        updateText();
+        updateText(newCursorPosition);
         return true;
     }
 
     @Override
     public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-        if (Build.VERSION.SDK_INT <= 29 /* Android 10.0 (Q) */) {
+        Log.i(TAG, String.format("TODO: deleteSurroundingText %d %d", beforeLength, afterLength));
+        return true;
+        /*
+        if (Build.VERSION.SDK_INT <= 29) { // Android 10.0 (Q)
             // Workaround to capture backspace key. Ref: http://stackoverflow.com/questions>/14560344/android-backspace-in-webview-baseinputconnection
             // and https://bugzilla.libsdl.org/show_bug.cgi?id=2265
             if (beforeLength > 0 && afterLength == 0) {
@@ -76,21 +83,25 @@ public class KwuiInputConnection extends BaseInputConnection
                 return true;
            }
         }
-
         if (!super.deleteSurroundingText(beforeLength, afterLength)) {
             return false;
         }
-        updateText();
+        updateText(0);
         return true;
+        */
     }
 
-    protected void updateText() {
+    protected void updateText(int newCursorPosition) {
         final Editable content = getEditable();
         if (content == null) {
             return;
         }
 
         String text = content.toString();
+        content.clear();
+        Native.nCommitText(KwuiActivity.instance.aNative, text, newCursorPosition);
+        mCommittedText = text;
+
         int compareLength = Math.min(text.length(), mCommittedText.length());
         int matchLength, offset;
 
@@ -124,7 +135,7 @@ public class KwuiInputConnection extends BaseInputConnection
                 }
                 offset += Character.charCount(codePoint);
             }
-            Native.nCommitText(pendingText, 0);
+            Native.nCommitText(KwuiActivity.instance.aNative, pendingText, 0);
         }
         mCommittedText = text;
     }

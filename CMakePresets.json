@@ -82,8 +82,7 @@
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "intelliSenseMode": "android-clang-arm64",
-          "intelliSenseOptions": { "useCompilerDefaults": true }
+          "intelliSenseMode": "android-clang-arm64"
         }
       }
     },

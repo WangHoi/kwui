@@ -156,7 +156,7 @@ public class KwuiActivity extends AppCompatActivity {
                 if (ic != null) {
                     ic.commitText(String.valueOf((char) event.getUnicodeChar()), 1);
                 } else {
-                    Native.nCommitText(String.valueOf((char) event.getUnicodeChar()), 1);
+                    Native.nCommitText(KwuiActivity.instance.aNative, String.valueOf((char) event.getUnicodeChar()), 1);
                 }
             }
             Native.nHandleKeyDown(keyCode);
@@ -265,7 +265,7 @@ class Native {
 
     static native boolean nSoftReturnKey();
 
-    static native void nCommitText(String text, int newCursorPosition);
+    static native void nCommitText(long obj, String text, int newCursorPosition);
 
     static native void nGenerateScancodeForUnichar(char c);
 
