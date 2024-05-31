@@ -61,7 +61,8 @@ public:
 	void requestUpdate();
 	void requestAnimationFrame(scene2d::Node* node);
 	// map from control coordinate to scene
-	PointF mapPointToScene(Node* node, const PointF& pos) const;
+	// FIXME: temp solution: include_flow_root when query ime caret_rect
+	PointF mapPointToScene(Node* node, const PointF& pos, bool include_flow_root = false) const;
 
 	script::Context& scriptContext() const
 	{

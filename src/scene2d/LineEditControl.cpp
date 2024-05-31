@@ -443,7 +443,7 @@ void LineEditControl::OnFocusIn(scene2d::Node* node, scene2d::FocusEvent& evt) {
     scene2d::PointF o;
     scene2d::DimensionF s;
     QueryImeCaretRect(o, s);
-    o = node->scene()->mapPointToScene(node, o);
+    o = node->scene()->mapPointToScene(node, o, true);
     android::show_text_input(o.x, o.y, s.width, s.height);
 #endif
 }

@@ -819,7 +819,11 @@ void DialogWin32::OnImeStartComposition() {
         scene2d::ImeEvent start_compose(node.get(), scene2d::START_COMPOSE);
         scene_->dispatchEvent(node.get(), start_compose, true);
         if (start_compose.caret_rect_) {
-            UpdateCaretRect(scene_->mapPointToScene(node.get(), start_compose.caret_rect_->origin()),
+            UpdateCaretRect(
+                scene_->mapPointToScene(
+                    node.get(),
+                    start_compose.caret_rect_->origin(),
+                    true),
                 start_compose.caret_rect_->size());
         }
     }

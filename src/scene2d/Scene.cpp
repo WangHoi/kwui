@@ -302,7 +302,7 @@ void Scene::paint(graph2d::PainterInterface* painter)
 {
 	for (auto& fl : flow_roots_) {
 		auto scene_pos = mapPointToScene(fl.root->node, PointF());
-		//LOG(INFO) << "Paint flow root " << *fl.root << ", scene_pos=" << scene_pos;
+		// LOG(INFO) << "Paint flow root " << *fl.root << ", scene_pos=" << scene_pos;
 		painter->setTranslation(scene_pos, false);
 		style::LayoutObject::paint(fl.root, painter);
 		painter->restore();
@@ -329,7 +329,7 @@ void Scene::requestAnimationFrame(scene2d::Node* node)
 	event_ctx_.RequestAnimationFrame(node);
 }
 
-PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
+PointF Scene::mapPointToScene(Node* node, const PointF& pos, bool include_flow_root) const
 {
 	// LOG(INFO) << "Scene::mapPointToScene";
 	style::LayoutObject* o = &node->layout_;
@@ -349,6 +349,11 @@ PointF Scene::mapPointToScene(Node* node, const PointF& pos) const
 		});
 	if (it != flow_roots_.end()) {
 		const style::FlowRoot& fl = *it;
+
+		if (include_flow_root) {
+			p += style::LayoutObject::contentRect(o).origin();
+			p += style::LayoutObject::pos(o);
+		}
 
 		if (it->positioned_parent) {
 			p += mapPointToScene(it->positioned_parent->node, PointF());

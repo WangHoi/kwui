@@ -10,7 +10,7 @@ button {
 #bottom {
 	position: absolute;
 	width: 100%;
-	top: 400;
+	bottom: 8;
 }
 `;
 function TestLineEdit(props, kids) {
