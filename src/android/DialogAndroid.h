@@ -38,6 +38,8 @@ public:
 	void handleImeCommit(const std::wstring& text);
 	void handleImeStartComposition();
 	void handleImeEndComposition();
+    void handleKeyDown(scene2d::VKey key);
+    void handleKeyUp(scene2d::VKey key);
 
 private:
 	void paint();

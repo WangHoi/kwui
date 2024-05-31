@@ -34,8 +34,7 @@
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
           "hostOS": [ "Windows" ],
-          "intelliSenseMode": "windows-msvc-x86",
-          "intelliSenseOptions": { "useCompilerDefaults": true }
+          "intelliSenseMode": "windows-msvc-x86"
         }
       }
     },
@@ -80,6 +79,14 @@
         "CMAKE_ANDROID_STL_TYPE": "c++_shared",
         "BUILD_SHARED_LIBS": "ON"
       },
+      "toolset": {
+        "value": "host=x64",
+        "strategy": "external"
+      },
+      "architecture": {
+        "value": "arm64",
+        "strategy": "external"
+      },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
           "intelliSenseMode": "android-clang-arm64"
@@ -93,10 +100,6 @@
       "inherits": "android-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
-      },
-      "architecture": {
-        "value": "arm64",
-        "strategy": "external"
       }
     },
     {
@@ -106,10 +109,6 @@
       "inherits": "android-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      },
-      "architecture": {
-        "value": "arm64",
-        "strategy": "external"
       }
     }
   ],

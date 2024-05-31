@@ -291,7 +291,20 @@ void DialogAndroid::handleImeEndComposition() {
 		scene_->dispatchEvent(node.get(), end_compose, true);
 	}
 }
-
+void DialogAndroid::handleKeyDown(scene2d::VKey key) {
+    base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
+    if (node) {
+        scene2d::KeyEvent key_down(node.get(), scene2d::KEY_DOWN, key, scene2d::NO_MODIFILER);
+        scene_->dispatchEvent(node.get(), key_down, true);
+    }
+}
+void DialogAndroid::handleKeyUp(scene2d::VKey key) {
+    base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
+    if (node) {
+        scene2d::KeyEvent key_up(node.get(), scene2d::KEY_UP, key, scene2d::NO_MODIFILER);
+        scene_->dispatchEvent(node.get(), key_up, true);
+    }
+}
 void DialogAndroid::updateHoveredNode() {
 	scene2d::PointF local_pos;
 	scene2d::Node* node = scene_->pickNode(mouse_position_, scene2d::NODE_FLAG_HOVERABLE, &local_pos);

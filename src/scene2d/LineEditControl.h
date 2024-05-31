@@ -96,8 +96,8 @@ private:
     void OnImeCommit(const std::wstring& text);
     bool QueryImeCaretRect(scene2d::PointF& origin, scene2d::DimensionF& size);
 
-    void OnKeyDown(scene2d::Node* node, int key, int modifiers);
-    void OnKeyUp(scene2d::Node* node, int key, int modifiers) {}
+    void OnKeyDown(scene2d::Node* node, VKey key, int modifiers);
+    void OnKeyUp(scene2d::Node* node, VKey key, int modifiers) {}
     void OnMouseDown(scene2d::Node* node, const scene2d::PointF& local_pos);
     void OnSizeChanged();
 

@@ -2,6 +2,7 @@
 #include "base/Object.h"
 #include "geom_types.h"
 #include "absl/types/optional.h"
+#include "VKey.h"
 #include <string>
 
 namespace scene2d {
@@ -114,10 +115,10 @@ enum KeyCommand {
 };
 
 struct KeyEvent : public Event {
-    int key;
+    VKey key;
     int modifiers;
 
-    KeyEvent(Node* t, int c, int k, int modi)
+    KeyEvent(Node* t, int c, VKey k, int modi)
         : Event(t, c)
         , key(k)
         , modifiers(modi) {}

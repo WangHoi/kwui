@@ -34,7 +34,7 @@ static ATOM RegisterWindowClass(HINSTANCE hInstance,
 static constexpr UINT_PTR ANIMATION_TIMER_EVENT = 0xFFFF00A0;
 static HCURSOR s_preloaded_cursors[NUM_CURSOR_TYPES] = {};
 
-typedef HRESULT (WINAPI* GETDPIFORMONITOR)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
+typedef HRESULT(WINAPI* GETDPIFORMONITOR)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
 
 typedef BOOL(WINAPI* ADJUSTWINDOWRECTEXFORDPI)(LPRECT, DWORD, BOOL, DWORD, UINT);
 
@@ -71,6 +71,44 @@ static void PreloadCursor() {
 }
 
 static std::unordered_map<std::string, DialogWin32*> g_dialog_map;
+
+static scene2d::VKey make_vkey(int vk) {
+    static const struct {
+        int      fVK;
+        scene2d::VKey fKey;
+    } gPair[] = {
+        { VK_RETURN,  scene2d::VKey::Return   },
+        { VK_ESCAPE,  scene2d::VKey::Escape   },
+        { VK_BACK,    scene2d::VKey::Back     },
+        { VK_DELETE,  scene2d::VKey::Delete   },
+        { VK_UP,      scene2d::VKey::Up       },
+        { VK_DOWN,    scene2d::VKey::Down     },
+        { VK_LEFT,    scene2d::VKey::Left     },
+        { VK_RIGHT,   scene2d::VKey::Right    },
+        { VK_TAB,     scene2d::VKey::Tab      },
+        { VK_PRIOR,   scene2d::VKey::PageUp   },
+        { VK_NEXT,    scene2d::VKey::PageDown },
+        { VK_HOME,    scene2d::VKey::Home     },
+        { VK_END,     scene2d::VKey::End      },
+        { VK_SPACE,   scene2d::VKey::Space    },
+        // { VK_SHIFT,   scene2d::VKey::Shift    },
+        // { VK_CONTROL, scene2d::VKey::Ctrl     },
+        // { VK_MENU,    scene2d::VKey::Option   },
+        { 'A',        scene2d::VKey::A        },
+        { 'B',        scene2d::VKey::B        },
+        { 'C',        scene2d::VKey::C        },
+        { 'V',        scene2d::VKey::V        },
+        { 'X',        scene2d::VKey::X        },
+        { 'Y',        scene2d::VKey::Y        },
+        { 'Z',        scene2d::VKey::Z        },
+    };
+    for (size_t i = 0; i < ABSL_ARRAYSIZE(gPair); i++) {
+        if (gPair[i].fVK == vk) {
+            return gPair[i].fKey;
+        }
+    }
+    return scene2d::VKey::Invalid;
+}
 
 DialogWin32::DialogWin32(const WCHAR* wnd_class_name,
     HICON icon, int flags,
@@ -374,10 +412,10 @@ LRESULT DialogWin32::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             return HTCAPTION;
         }
     }
-    //case WM_NCACTIVATE:
-        //c2_log("DialogWin32 HWND %p NCACTIVE wParam %d\n", hWnd, wParam);
-        //OnActivate(wParam);
-        //return FALSE;
+                     //case WM_NCACTIVATE:
+                         //c2_log("DialogWin32 HWND %p NCACTIVE wParam %d\n", hWnd, wParam);
+                         //OnActivate(wParam);
+                         //return FALSE;
     case WM_DISPLAYCHANGE:
         //c2_log("recv WM_DISPLAYCHANGE\n");
         DiscardDeviceResources();
@@ -731,7 +769,7 @@ void DialogWin32::OnKeyDown(int key, int modifiers, bool prev_down) {
 
     base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
     if (node) {
-        scene2d::KeyEvent key_down(node.get(), scene2d::KEY_DOWN, key, modifiers);
+        scene2d::KeyEvent key_down(node.get(), scene2d::KEY_DOWN, make_vkey(key), modifiers);
         scene_->dispatchEvent(node.get(), key_down, true);
     }
 }
@@ -743,7 +781,7 @@ void DialogWin32::OnKeyUp(int key, int modifiers) {
 
     base::object_refptr<scene2d::Node> node = focused_node_.upgrade();
     if (node) {
-        scene2d::KeyEvent key_up(node.get(), scene2d::KEY_UP, key, modifiers);
+        scene2d::KeyEvent key_up(node.get(), scene2d::KEY_UP, make_vkey(key), modifiers);
         scene_->dispatchEvent(node.get(), key_up, true);
     }
 }

@@ -20,6 +20,7 @@
 #include <android/looper.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+#include <android/keycodes.h>
 #include <dlfcn.h>
 #include <string>
 #include <memory>
@@ -41,6 +42,8 @@ enum MessageType {
     kSingleTapConfirmedEvent,
     kRunInMainThread,
     kCommitTextEvent,
+    kKeyDownEvent,
+    kKeyUpEvent,
 };
 
 struct Message {
@@ -75,6 +78,8 @@ static int start_logger(const char* app_name);
 static std::string string_from_jni(JNIEnv* env, jstring jstr);
 static std::string get_main_shared_object();
 static std::string get_main_function();
+
+static scene2d::VKey make_vkey(int vk);
 
 class JApplication {
 public:
@@ -200,6 +205,22 @@ int JApplication::message_callback(int /* fd */, int /* events */, void* data) {
         auto dlg = android::DialogAndroid::firstDialog();
         if (dlg) {
             dlg->handleImeCommit(base::EncodingManager::UTF8ToWide(*message.id));
+        }
+        delete message.id;
+        break;
+    }
+    case kKeyDownEvent: {
+        auto dlg = android::DialogAndroid::firstDialog();
+        if (dlg) {
+            dlg->handleKeyDown(make_vkey((int)message.x));
+        }
+        delete message.id;
+        break;
+    }
+    case kKeyUpEvent: {
+        auto dlg = android::DialogAndroid::firstDialog();
+        if (dlg) {
+            dlg->handleKeyUp(make_vkey((int)message.x));
         }
         delete message.id;
         break;
@@ -344,13 +365,23 @@ static void Application_KeyboardFocusLost(JNIEnv* env, jobject)
 {
     LOG(INFO) << "KeyboardFocusLost() ";
 }
-static void Application_HandleKeyDown(JNIEnv* env, jobject, int key_code)
+static void Application_HandleKeyDown(JNIEnv* env, jobject, jlong ptr, int key_code)
 {
     LOG(INFO) << "HandleKeyDown() " << key_code;
+    auto me = reinterpret_cast<JApplication*>(ptr);
+    Message msg(kKeyDownEvent);
+    // msg.id = new std::string(std::move(string_from_jni(env, jid)));
+    msg.x = key_code;
+    me->postMessage(msg);
 }
-static void Application_HandleKeyUp(JNIEnv* env, jobject, int key_code)
+static void Application_HandleKeyUp(JNIEnv* env, jobject, jlong ptr, int key_code)
 {
     LOG(INFO) << "HandleKeyUp() " << key_code;
+    auto me = reinterpret_cast<JApplication*>(ptr);
+    Message msg(kKeyUpEvent);
+    // msg.id = new std::string(std::move(string_from_jni(env, jid)));
+    msg.x = key_code;
+    me->postMessage(msg);
 }
 static jboolean Application_SoftReturnKey(JNIEnv* env, jobject)
 {
@@ -396,8 +427,8 @@ int kwui_jni_register_Application(JNIEnv* env)
         {"nHandleLongPressEvent", "(JLjava/lang/String;FF)V", reinterpret_cast<void*>(Application_HandleLongPressEvent)},
         {"nHandleSingleTapConfirmedEvent", "(JLjava/lang/String;FF)V", reinterpret_cast<void*>(Application_HandleSingleTapConfirmedEvent)},
         {"nKeyboardFocusLost", "()V", reinterpret_cast<void*>(Application_KeyboardFocusLost)},
-        {"nHandleKeyDown", "(I)V", reinterpret_cast<void*>(Application_HandleKeyDown)},
-        {"nHandleKeyUp", "(I)V", reinterpret_cast<void*>(Application_HandleKeyUp)},
+        {"nHandleKeyDown", "(JI)V", reinterpret_cast<void*>(Application_HandleKeyDown)},
+        {"nHandleKeyUp", "(JI)V", reinterpret_cast<void*>(Application_HandleKeyUp)},
         {"nSoftReturnKey", "()Z", reinterpret_cast<void*>(Application_SoftReturnKey)},
         {"nCommitText", "(JLjava/lang/String;I)V", reinterpret_cast<void*>(Application_CommitText)},
         {"nGenerateScancodeForUnichar", "(C)V", reinterpret_cast<void*>(Application_GenerateScancodeForUnichar)},
@@ -613,6 +644,45 @@ void hide_text_input()
     }
     LOG(INFO) << "hide_text_input() ";
     jmain_jni_env->CallStaticVoidMethod(jclass_native, jmethod_hide_text_input);
+}
+
+
+scene2d::VKey make_vkey(int vk) {
+    static const struct {
+        int      fVK;
+        scene2d::VKey fKey;
+    } gPair[] = {
+        { AKEYCODE_ENTER,  		scene2d::VKey::Return   },
+        { AKEYCODE_ESCAPE,  	scene2d::VKey::Escape   },
+        { AKEYCODE_DEL,			scene2d::VKey::Back     },
+        // { VK_DELETE,  scene2d::VKey::Delete   },
+        { AKEYCODE_DPAD_UP,     scene2d::VKey::Up       },
+        { AKEYCODE_DPAD_DOWN,   scene2d::VKey::Down     },
+        { AKEYCODE_DPAD_LEFT,   scene2d::VKey::Left     },
+        { AKEYCODE_DPAD_RIGHT,	scene2d::VKey::Right    },
+        { AKEYCODE_TAB,     	scene2d::VKey::Tab      },
+        { AKEYCODE_PAGE_UP,   	scene2d::VKey::PageUp   },
+        { AKEYCODE_PAGE_DOWN,   scene2d::VKey::PageDown },
+        { AKEYCODE_MOVE_HOME,   scene2d::VKey::Home     },
+        { AKEYCODE_MOVE_END,    scene2d::VKey::End      },
+        { AKEYCODE_SPACE,   	scene2d::VKey::Space    },
+        // { VK_SHIFT,   scene2d::VKey::Shift    },
+        // { VK_CONTROL, scene2d::VKey::Ctrl     },
+        // { VK_MENU,    scene2d::VKey::Option   },
+        { AKEYCODE_A,        	scene2d::VKey::A        },
+        { AKEYCODE_B,        	scene2d::VKey::B        },
+        { AKEYCODE_C,        	scene2d::VKey::C        },
+        { AKEYCODE_V,        	scene2d::VKey::V        },
+        { AKEYCODE_X,        	scene2d::VKey::X        },
+        { AKEYCODE_Y,        	scene2d::VKey::Y        },
+        { AKEYCODE_Z,        	scene2d::VKey::Z        },
+    };
+    for (size_t i = 0; i < ABSL_ARRAYSIZE(gPair); i++) {
+        if (gPair[i].fVK == vk) {
+            return gPair[i].fKey;
+        }
+    }
+    return scene2d::VKey::Invalid;
 }
 
 }

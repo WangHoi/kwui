@@ -496,10 +496,9 @@ bool LineEditControl::QueryImeCaretRect(scene2d::PointF& origin, scene2d::Dimens
     size = _caret_rect.size();
     return true;
 }
-void LineEditControl::OnKeyDown(scene2d::Node* node, int key, int modifiers) {
+void LineEditControl::OnKeyDown(scene2d::Node* node, VKey key, int modifiers) {
     switch (key) {
-#ifdef _WIN32
-    case VK_LEFT:
+    case VKey::Left:
         if (modifiers) {
             if ((modifiers & scene2d::SHIFT_MODIFIER) == modifiers) {
                 MoveCaretLeft(true);
@@ -508,7 +507,7 @@ void LineEditControl::OnKeyDown(scene2d::Node* node, int key, int modifiers) {
             MoveCaretLeft(false);
         }
         break;
-    case VK_RIGHT:
+    case VKey::Right:
         if (modifiers) {
             if ((modifiers & scene2d::SHIFT_MODIFIER) == modifiers) {
                 MoveCaretRight(true);
@@ -517,7 +516,7 @@ void LineEditControl::OnKeyDown(scene2d::Node* node, int key, int modifiers) {
             MoveCaretRight(false);
         }
         break;
-    case VK_HOME:
+    case VKey::Home:
         if (modifiers) {
             if ((modifiers & scene2d::SHIFT_MODIFIER) == modifiers) {
                 MoveCaretToStart(true);
@@ -526,7 +525,7 @@ void LineEditControl::OnKeyDown(scene2d::Node* node, int key, int modifiers) {
             MoveCaretToStart(false);
         }
         break;
-    case VK_END:
+    case VKey::End:
         if (modifiers) {
             if ((modifiers & scene2d::SHIFT_MODIFIER) == modifiers) {
                 MoveCaretToEnd(true);
@@ -535,32 +534,29 @@ void LineEditControl::OnKeyDown(scene2d::Node* node, int key, int modifiers) {
             MoveCaretToEnd(false);
         }
         break;
-    case VK_BACK:
+    case VKey::Back:
         DeleteLeftChar();
         break;
-    case VK_DELETE:
+    case VKey::Delete:
         DeleteRightChar();
         break;
-#else
-#pragma message("WARN: VK_DELETE not available on non-Win32 platforms.")
-#endif
-    case 'C':
+    case VKey::C:
         ClipboardCopy();
         break;
-    case 'X':
+    case VKey::X:
         ClipboardCut();
         break;
-    case 'V':
+    case VKey::V:
         ClipboardPaste();
         break;
-    case 'A':
+    case VKey::A:
         if (modifiers) {
             if ((modifiers & scene2d::CTRL_MODIFIER) == modifiers) {
                 SelectAll();
             }
         }
         break;
-    case 'Z':
+    case VKey::Z:
         if (modifiers) {
             if ((modifiers & scene2d::CTRL_MODIFIER) == modifiers) {
                 // Ctrl-Z
@@ -572,7 +568,7 @@ void LineEditControl::OnKeyDown(scene2d::Node* node, int key, int modifiers) {
             }
         }
         break;
-    case 'Y':
+    case VKey::Y:
         if (modifiers) {
             if ((modifiers & scene2d::CTRL_MODIFIER) == modifiers) {
                 // Ctrl-Y

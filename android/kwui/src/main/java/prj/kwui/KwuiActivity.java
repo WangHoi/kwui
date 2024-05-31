@@ -159,10 +159,10 @@ public class KwuiActivity extends AppCompatActivity {
                     Native.nCommitText(KwuiActivity.instance.aNative, String.valueOf((char) event.getUnicodeChar()), 1);
                 }
             }
-            Native.nHandleKeyDown(keyCode);
+            Native.nHandleKeyDown(KwuiActivity.instance.aNative, keyCode);
             return true;
         } else if (event.getAction() == KeyEvent.ACTION_UP) {
-            Native.nHandleKeyUp(keyCode);
+            Native.nHandleKeyUp(KwuiActivity.instance.aNative, keyCode);
             return true;
         }
 
@@ -259,9 +259,9 @@ class Native {
 
     static native void nKeyboardFocusLost();
 
-    static native void nHandleKeyDown(int keyCode);
+    static native void nHandleKeyDown(long obj, int keyCode);
 
-    static native void nHandleKeyUp(int keyCode);
+    static native void nHandleKeyUp(long obj, int keyCode);
 
     static native boolean nSoftReturnKey();
 
