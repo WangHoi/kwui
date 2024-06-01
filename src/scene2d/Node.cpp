@@ -633,7 +633,7 @@ void Node::onMouseEvent(MouseEvent& event)
 		base::scoped_setter<PointF> _(event.pos, pos);
 		handleScrollEvent(event);
 	}
-	LOG(INFO) << "Node::onMouseEvent tag_=" << tag_ << ", control=" << control_;
+	// LOG(INFO) << "Node::onMouseEvent tag_=" << tag_ << ", control=" << control_;
 	if (control_)
 		control_->onMouseEvent(this, event);
 }
