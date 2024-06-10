@@ -11,24 +11,24 @@ extern "C" {
 
 	typedef struct kwui_ScriptEngine kwui_ScriptEngine;
 
-	void KWUI_EXPORT kwui_ScriptEngine_addGlobalFunction(
+	KWUI_EXPORT void kwui_ScriptEngine_addGlobalFunction(
 		const char* name, kwui_ScriptFunction func, void* udata);
-	void KWUI_EXPORT kwui_ScriptEngine_removeGlobalFunction(const char* name);
-	void KWUI_EXPORT kwui_ScriptEngine_loadFile(const char* path);
-	kwui_ScriptValue* KWUI_EXPORT kwui_ScriptEngine_callGlobalFunction(
+	KWUI_EXPORT void kwui_ScriptEngine_removeGlobalFunction(const char* name);
+	KWUI_EXPORT void kwui_ScriptEngine_loadFile(const char* path);
+	KWUI_EXPORT kwui_ScriptValue* kwui_ScriptEngine_callGlobalFunction(
 		const char* name, int argc, kwui_ScriptValue* argv[]);
 	
-	void KWUI_EXPORT kwui_ScriptEngine_postEvent0(
+	KWUI_EXPORT void kwui_ScriptEngine_postEvent0(
 		const char* event);
-	void KWUI_EXPORT kwui_ScriptEngine_postEvent1(
+	KWUI_EXPORT void kwui_ScriptEngine_postEvent1(
 		const char* event, kwui_ScriptValue* arg);
-	kwui_ScriptValue* KWUI_EXPORT kwui_ScriptEngine_sendEvent0(
+	KWUI_EXPORT kwui_ScriptValue* kwui_ScriptEngine_sendEvent0(
 		const char* event);
-	kwui_ScriptValue* KWUI_EXPORT kwui_ScriptEngine_sendEvent1(
+	KWUI_EXPORT kwui_ScriptValue* kwui_ScriptEngine_sendEvent1(
 		const char* event, kwui_ScriptValue* arg);
-	void KWUI_EXPORT kwui_ScriptEngine_addEventListener(
+	KWUI_EXPORT void kwui_ScriptEngine_addEventListener(
 		const char* event, kwui_ScriptFunction func, void* udata);
-	void KWUI_EXPORT kwui_ScriptEngine_removeEventListener(
+	KWUI_EXPORT void kwui_ScriptEngine_removeEventListener(
 		const char* event, kwui_ScriptFunction func, void* udata);
 
 #ifdef __cplusplus

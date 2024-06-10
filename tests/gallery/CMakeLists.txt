@@ -1,3 +1,7 @@
-add_executable(gallery gallery_main.cpp dpi-aware.manifest)
+kwui_add_executable(gallery)
+target_sources(gallery PRIVATE gallery_main.cpp)
+if (WIN32)
+    target_sources(gallery PRIVATE dpi-aware.manifest)
+endif ()
 target_include_directories(gallery PRIVATE ${CMAKE_SOURCE_DIR}/src/api)
 target_link_libraries(gallery kwui_static)

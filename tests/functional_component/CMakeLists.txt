@@ -1,3 +1,6 @@
-add_executable(func_comp func_comp_main.cpp dpi-aware.manifest)
+kwui_add_executable(func_comp)
+target_sources(func_comp PRIVATE func_comp_main.cpp)
+if(WIN32)
+    target_sources(func_comp PRIVATE dpi-aware.manifest)
+endif()
 target_include_directories(func_comp PRIVATE ${CMAKE_SOURCE_DIR}/src/api)
-target_link_libraries(func_comp kwui_static)

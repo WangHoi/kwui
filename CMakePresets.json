@@ -35,6 +35,9 @@
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
           "hostOS": [ "Windows" ],
           "intelliSenseMode": "windows-msvc-x86"
+        },
+        "jetbrains.com/clion": {
+          "toolchain": "Visual Studio"
         }
       }
     },
