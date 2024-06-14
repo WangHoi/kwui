@@ -6,6 +6,12 @@ android {
     namespace '@ANDROID_PACKAGE_ID@'
     compileSdk 34
 
+    sourceSets {
+        main {
+            assets.srcDirs = ['@ANDROID_ASSETS_DIR@']
+        }
+    }
+
     defaultConfig {
         applicationId "@ANDROID_PACKAGE_ID@"
         minSdk 30
