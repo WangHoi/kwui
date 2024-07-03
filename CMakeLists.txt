@@ -98,19 +98,10 @@ endif()
 set(ABSL_PROPAGATE_CXX_STD ON)
 set(ABSL_ENABLE_INSTALL OFF)
 
-if(ANDROID)
-set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
-set(BUILD_SHARED_LIBS OFF)
-endif()
-
 set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
 set(BUILD_SHARED_LIBS OFF)
 add_subdirectory(3rdparty/abseil-cpp-20230802.1)
 set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
-
-if(ANDROID)
-set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
-endif()
 
 add_subdirectory(3rdparty/quickjspp)
 add_subdirectory(3rdparty/fifo_map)
