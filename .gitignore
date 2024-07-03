@@ -41,5 +41,7 @@
 
 /rust/target
 /rust/kwui-sys/target
+
 /android/.idea
 /android/local.properties
+/.idea
