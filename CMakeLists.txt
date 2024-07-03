@@ -38,6 +38,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 if (WIN32)
+
+# workaround std::mutex crash on VS2022 17.10 STL
+add_compile_definitions("$<$<COMPILE_LANGUAGE:C,CXX>:_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR=1>")
+
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 	# For memory leak detection (see https://github.com/MicrosoftDocs/visualstudio-docs/blob/master/docs/debugger/finding-memory-leaks-using-the-crt-library.md )
 	# add_definitions(-D "_CRTDBG_MAP_ALLOC")
