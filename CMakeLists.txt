@@ -11,7 +11,7 @@ include(FeatureSummary)
 
 option(CRT_STATIC "Link with static MSVC runtime" OFF)
 add_feature_info(CRT_STATIC CRT_STATIC "Link with static MSVC runtime")
-option(BUILD_SHARED_LIBS "Build shared kwui library" OFF)
+option(BUILD_SHARED_LIBS "Build shared kwui library" ON)
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build shared kwui library")
 option(BUILD_TESTS "Build kwui tests" ON)
 add_feature_info(BUILD_TESTS BUILD_TESTS "Build kwui tests")
