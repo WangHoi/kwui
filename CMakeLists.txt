@@ -116,6 +116,14 @@ add_subdirectory(3rdparty/skia)
 endif()
 add_subdirectory(3rdparty/utf)
 
+set(BUILD_SHARED_LIBS_SAVED "${BUILD_SHARED_LIBS}")
+set(BUILD_SHARED_LIBS ON)
+add_subdirectory(3rdparty/Catch2-3.6.0)
+set(BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS_SAVED}")
+list(APPEND CMAKE_MODULE_PATH 3rdparty/Catch2-3.6.0/extras)
+include(CTest)
+include(Catch)
+
 add_subdirectory(src)
 
 if(BUILD_TESTS)

@@ -12,6 +12,9 @@ spinner {
     height: 22px;
     vertical-align: -2px;
 }
+spinner + span {
+    color: blue;
+}
 button {
     font-size: 24px;
     cursor: pointer;

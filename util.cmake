@@ -161,11 +161,12 @@ macro(make_resource_header FILENAME VARNAME)
     set(infile "${CMAKE_SOURCE_DIR}/src/resources/${FILENAME}")
     set(outfile "${CMAKE_CURRENT_BINARY_DIR}/${VARNAME}.txt")
 
+    find_file(bin2h_script NAMES bin2h.script.cmake PATHS ${CMAKE_MODULE_PATH} REQUIRED)
     add_custom_command(OUTPUT "${outfile}"
             COMMAND ${CMAKE_COMMAND} -D "INPUT_FILE=${infile}" -D "OUTPUT_FILE=${outfile}"
-            -P "${CMAKE_MODULE_PATH}/bin2h.script.cmake"
+            -P "${bin2h_script}"
             WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-            DEPENDS "${infile}" "${CMAKE_MODULE_PATH}/bin2h.script.cmake"
+            DEPENDS "${infile}" "${bin2h_script}"
             VERBATIM
     )
     set(ALC_OBJS ${ALC_OBJS} "${outfile}")

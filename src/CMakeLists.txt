@@ -8,74 +8,90 @@ add_subdirectory(style)
 add_subdirectory(scene2d)
 add_subdirectory(graph2d)
 add_subdirectory(resources)
-if(WITH_SKIA)
-  add_subdirectory(xskia)
-endif()
-if(WIN32)
-  add_subdirectory(windows)
-endif()
-if(ANDROID)
-  add_subdirectory(android)
-endif()
+if (WITH_SKIA)
+    add_subdirectory(xskia)
+endif ()
+if (WIN32)
+    add_subdirectory(windows)
+endif ()
+if (ANDROID)
+    add_subdirectory(android)
+endif ()
 
 set(dep_libs
-    absl::base
-    absl::span
-    absl::time
-    absl::strings
-    absl::string_view
-    absl::optional
-    absl::log
-    absl::log_initialize
-    absl::synchronization
-    absl::variant
-    absl::statusor
-    absl::status
-    absl::bind_front
-    fifo_map
-    quickjs)
-if(WIN32)
+        absl::base
+        absl::span
+        absl::time
+        absl::strings
+        absl::string_view
+        absl::optional
+        absl::log
+        absl::log_initialize
+        absl::synchronization
+        absl::variant
+        absl::statusor
+        absl::status
+        absl::bind_front
+        fifo_map
+        quickjs)
+if (WIN32)
     list(APPEND dep_libs d2d1.lib dwrite.lib Windowscodecs.lib Imm32.lib)
-else()
+else ()
     list(APPEND dep_libs utf)
-endif()
-if(WITH_SKIA)
+endif ()
+if (WITH_SKIA)
     list(APPEND dep_libs skia)
-endif()
+endif ()
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/api/
-    DESTINATION include
-    FILES_MATCHING PATTERN "*.h*")
-if(NOT ANDROID)
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.h*")
+if (NOT ANDROID)
     install(TARGETS quickjs)
-endif()
+endif ()
 
 # Build shared library
 if (BUILD_SHARED_LIBS)
     add_library(kwui SHARED "")
     target_sources(kwui PUBLIC ${kwui_pub_srcs} PRIVATE ${kwui_priv_srcs})
-    if(WIN32)
+    if (WIN32)
         target_compile_options(kwui PUBLIC /utf-8)
-    endif()
+    endif ()
     target_compile_definitions(kwui PRIVATE -DKWUI_SHARED_LIBRARY)
     target_include_directories(kwui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(kwui PUBLIC ${dep_libs} PRIVATE kwui_resources)
     install(TARGETS kwui DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-    if(WIN32)
+    if (WIN32)
         install(FILES $<TARGET_PDB_FILE:kwui> DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-    endif()
+    endif ()
 else ()
     # Build static library
     add_library(c31 STATIC "")
     target_sources(c31 PUBLIC ${kwui_pub_srcs} PRIVATE ${kwui_priv_srcs})
-    if(WIN32)
-    target_compile_options(c31 PUBLIC /utf-8)
-    endif()
+    if (WIN32)
+        target_compile_options(c31 PUBLIC /utf-8)
+    endif ()
     target_compile_definitions(c31 PUBLIC -DKWUI_STATIC_LIBRARY INTERFACE -DKWUI_STATIC_LIBRARY)
     # To make msvc intellisense happy
     target_include_directories(c31 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(c31 PUBLIC ${dep_libs} PRIVATE kwui_resources)
-    if(WIN32)
+    if (WIN32)
         bundle_static_library(c31 kwui_static)
-    endif()
+    endif ()
+endif ()
+
+if (BUILD_TESTING)
+    add_executable(kwui_utests utest_main.cpp)
+    if (BUILD_SHARED_LIBS)
+        target_link_libraries(kwui PUBLIC Catch2::Catch2)
+        target_link_libraries(kwui_utests PUBLIC kwui Catch2::Catch2)
+    else ()
+        target_link_libraries(c32 PUBLIC Catch2::Catch2)
+        target_sources(kwui_utests PRIVATE c31)
+    endif ()
+    add_custom_command(TARGET kwui_utests PRE_LINK
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Catch2>
+            $<TARGET_FILE:Catch2WithMain> $<TARGET_FILE_DIR:kwui_utests>
+    )
+    catch_discover_tests(kwui_utests)
 endif ()

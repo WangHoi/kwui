@@ -7,7 +7,9 @@ using namespace kwui;
 int main(int argc, char* argv[])
 {
     Application app(argc, argv);
-    ScriptEngine::get()
-        ->loadFile("d:/projects/kwui/tests/gallery/assets/gallery.js");
+#if defined(_DEBUG) && !defined(__ANDROID__)
+    app.setResourceRootDir("d:/projects/kwui-rs/kwui-sys/deps/kwui/tests/gallery/assets");
+#endif
+    ScriptEngine::get()->loadFile(":/gallery.js");
     return app.exec();
 }
