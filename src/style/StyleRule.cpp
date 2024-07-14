@@ -131,7 +131,7 @@ IResult<std::unique_ptr<Selector>> selector_item(absl::string_view input)
 		return absl::InvalidArgumentError("parse Selector error");
 }
 
-// Syntax: (" " | ">") S*
+// Syntax: (S* ">" | S* "+" | S* "~" | " ") S*
 IResult<SelectorDependency> combinator(absl::string_view input)
 {
 	bool starts_with_space = absl::StartsWith(input, " ");
@@ -142,6 +142,12 @@ IResult<SelectorDependency> combinator(absl::string_view input)
 	if (absl::StartsWith(output1, ">")) {
 		output1 = output1.substr(1);
 		dep = SelectorDependency::DirectParent;
+	} else if (absl::StartsWith(output1, "+")) {
+		output1 = output1.substr(1);
+		dep = SelectorDependency::DirectPrecedent;
+	} else if (absl::StartsWith(output1, "~")) {
+		output1 = output1.substr(1);
+		dep = SelectorDependency::Precedent;
 	} else {
 		if (starts_with_space) {
 			dep = SelectorDependency::Ancestor;

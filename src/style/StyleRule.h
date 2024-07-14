@@ -11,6 +11,8 @@ enum class SelectorDependency {
     None,
     DirectParent,
     Ancestor,
+    DirectPrecedent,
+    Precedent,
 };
 
 class Selector {

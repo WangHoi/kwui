@@ -21,6 +21,7 @@ class PainterInterface;
 namespace scene2d {
 
 class Node;
+struct SceneStyleResolveContext;
 class Scene : public base::Object {
 public:
 	Scene(EventContext& ctx);
@@ -88,8 +89,8 @@ private:
 		PatchableComponentNode,
 	};
 	void setupProps(Node* node, JSValue props);
-	bool match(Node* node, style::Selector* selector);
-	void resolveNodeStyle(Node* node);
+	bool match(absl::Span<Node*> precedents, Node* node, style::Selector* selector);
+	void resolveNodeStyle(SceneStyleResolveContext& ctx, Node* node);
 	void paintNode(Node* node, graph2d::PainterInterface* painter);
 	void layoutComputed(Node* node);
 

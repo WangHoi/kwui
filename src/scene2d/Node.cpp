@@ -246,7 +246,7 @@ void Node::resolveDefaultStyle()
 	computed_style_.resolveDefault(parent_ ? &parent_->computed_style_ : nullptr);
 }
 
-void Node::resolveStyle(StyleResolveContext& ctx, const style::StyleSpec& spec)
+void Node::resolveStyle(NodeStyleResolveContext& ctx, const style::StyleSpec& spec)
 {
 	CHECK(type_ == NodeType::NODE_ELEMENT);
 #define RESOLVE_STYLE(x) \
@@ -304,7 +304,7 @@ void Node::resolveStyle(StyleResolveContext& ctx, const style::StyleSpec& spec)
 #undef RESOLVE_STYLE
 }
 
-void Node::resolveInlineStyle(StyleResolveContext& ctx)
+void Node::resolveInlineStyle(NodeStyleResolveContext& ctx)
 {
 	resolveStyle(ctx, specStyle_);
 	if (type_ == NodeType::NODE_ELEMENT && absolutelyPositioned()

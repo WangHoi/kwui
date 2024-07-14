@@ -12,6 +12,27 @@
 #include "absl/time/clock.h"
 namespace scene2d {
 
+struct SceneStyleResolveContext {
+	struct Scope {
+		absl::Span<std::unique_ptr<style::StyleRule>> rules;
+		Node* root;
+	};
+	absl::Span<std::unique_ptr<style::StyleRule>> global;
+	std::vector<Scope> scopes;
+	std::vector<NodeStyleResolveContext*> pelem_ctxs; // parent element node contexts
+
+	inline Node* currentScopedRoot() const {
+		return scopes.empty() ? nullptr : scopes.back().root;
+	}
+	inline absl::Span<Node*> currentPrecedents() const {
+		return pelem_ctxs.empty() ? absl::Span<Node*>() : absl::MakeSpan(pelem_ctxs.back()->prev_siblings);
+	}
+
+private:
+	SceneStyleResolveContext(const SceneStyleResolveContext&) = delete;
+	SceneStyleResolveContext& operator=(const SceneStyleResolveContext&) = delete;
+};
+
 Scene::Scene(EventContext& event_ctx)
 	: event_ctx_(event_ctx)
 {
@@ -60,7 +81,7 @@ Node* Scene::createComponentNode(Node* parent, JSValue comp_data)
 		Node* node = createElementNode(base::string_intern("fragment"));
 		if (parent)
 			parent->appendChild(node);
-		
+
 		int64_t length = 0;
 		JS_GetPropertyLength(jctx, &length, comp_data);
 		for (uint32_t i = 0; i < (uint32_t)length; ++i) {
@@ -139,7 +160,7 @@ void Scene::updateComponentNodeChildren(Node* node, JSValue comp_data)
 	JSValue arr = JS_NewFastArray(ctx, 1, &comp_data);
 	updateNodeChildren(node, ctx, arr);
 	JS_FreeValue(ctx, arr);
-	
+
 	requestUpdate();
 	requestPaint();
 }
@@ -214,7 +235,7 @@ void Scene::reloadScriptModule()
 void Scene::setStyleSheet(JSValue stylesheet)
 {
 	style_rules_.clear();
-	
+
 	auto ctx = script_ctx_->get();
 	if (JS_IsObject(stylesheet)) {
 		script::Context::eachObjectField(ctx, stylesheet, [&](const char* name, JSValue value) {
@@ -282,7 +303,9 @@ void Scene::appendStyleRule(std::unique_ptr<style::StyleRule>&& rule)
 
 void Scene::resolveStyle()
 {
-	resolveNodeStyle(root_);
+	SceneStyleResolveContext ctx = {};
+	ctx.global = absl::MakeSpan(style_rules_);
+	resolveNodeStyle(ctx, root_);
 }
 
 void Scene::computeLayout(float width, absl::optional<float> height)
@@ -488,43 +511,43 @@ void Scene::setupProps(Node* node, JSValue props)
 		}
 #endif
 		});
-	
-	// Check to clear style/id/class
-	if (!new_style)
-		node->setStyle(style::StyleSpec());
-	if (!new_id)
-		node->setId(base::string_atom());
-	if (!new_class)
-		node->setClass(style::Classes());
 
-	// Update attributes
-	std::set<base::string_atom> attrs_to_remove;
-	for (auto& p : node->attrs_) {
-		if (new_attrs.find(p.first) == new_attrs.end())
-			attrs_to_remove.insert(p.first);
-	}
-	for (auto& p : new_attrs) {
-		node->setAttribute(p.first, p.second);
-	}
-	for (auto& a : attrs_to_remove) {
-		node->setAttribute(a, NodeAttributeValue());
-	}
+// Check to clear style/id/class
+if (!new_style)
+node->setStyle(style::StyleSpec());
+if (!new_id)
+node->setId(base::string_atom());
+if (!new_class)
+node->setClass(style::Classes());
 
-	// Update event handlers
-	std::set<base::string_atom> ehandlers_to_remove;
-	for (auto& p : node->event_handlers_) {
-		if (new_ehandlers.find(p.first) == new_ehandlers.end())
-			ehandlers_to_remove.insert(p.first);
-	}
-	for (auto& p : new_ehandlers) {
-		node->setEventHandler(p.first, p.second);
-	}
-	for (auto& e : ehandlers_to_remove) {
-		node->setEventHandler(e, script::Value());
-	}
+// Update attributes
+std::set<base::string_atom> attrs_to_remove;
+for (auto& p : node->attrs_) {
+	if (new_attrs.find(p.first) == new_attrs.end())
+		attrs_to_remove.insert(p.first);
+}
+for (auto& p : new_attrs) {
+	node->setAttribute(p.first, p.second);
+}
+for (auto& a : attrs_to_remove) {
+	node->setAttribute(a, NodeAttributeValue());
 }
 
-bool Scene::match(Node* node, style::Selector* selector)
+// Update event handlers
+std::set<base::string_atom> ehandlers_to_remove;
+for (auto& p : node->event_handlers_) {
+	if (new_ehandlers.find(p.first) == new_ehandlers.end())
+		ehandlers_to_remove.insert(p.first);
+}
+for (auto& p : new_ehandlers) {
+	node->setEventHandler(p.first, p.second);
+}
+for (auto& e : ehandlers_to_remove) {
+	node->setEventHandler(e, script::Value());
+}
+}
+
+bool Scene::match(absl::Span<Node*> precedents, Node* node, style::Selector* selector)
 {
 	if (!node)
 		return false;
@@ -536,40 +559,87 @@ bool Scene::match(Node* node, style::Selector* selector)
 		return true;
 
 	if (selector->dep_type == style::SelectorDependency::DirectParent)
-		return match(node->parentElement(), selector->dep_selector.get());
+		return match(precedents, node->parentElement(), selector->dep_selector.get());
 
 	if (selector->dep_type == style::SelectorDependency::Ancestor) {
 		Node* pnode = node->parentElement();
 		style::Selector* psel = selector->dep_selector.get();
 		while (pnode) {
-			if (match(pnode, psel))
+			if (match(precedents, pnode, psel))
 				return true;
 			pnode = pnode->parentElement();
 		}
 		return false;
 	}
 
+	if (selector->dep_type == style::SelectorDependency::DirectPrecedent) {
+		if (precedents.empty())
+			return false;
+		return match(precedents.subspan(0, precedents.size() - 1),
+			precedents.back(),
+			selector->dep_selector.get());
+	}
+
+	if (selector->dep_type == style::SelectorDependency::Precedent) {
+		if (precedents.empty())
+			return false;
+		for (size_t idx = precedents.size() - 1; idx >= 0; --idx) {
+			if (match(precedents.subspan(0, idx),
+				precedents[idx],
+				selector->dep_selector.get())) {
+				return true;
+			}
+		}
+	}
+
 	return true;
 }
 
-void Scene::resolveNodeStyle(Node* node)
+void Scene::resolveNodeStyle(SceneStyleResolveContext& sctx, Node* node)
 {
+	// Handle scoped css
+	if (!node->style_rules_.empty()) {
+		sctx.scopes.push_back(SceneStyleResolveContext::Scope{
+			absl::MakeSpan(node->style_rules_), node
+			});
+	}
+
 	if (node->type() == NodeType::NODE_COMPONENT) {
 		node->computed_style_ = node->parent_->computed_style_;
-		node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
+		node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this, std::ref(sctx)));
 	} else if (node->type() == NodeType::NODE_ELEMENT) {
 		node->resolveDefaultStyle();
-		StyleResolveContext ctx;
-		for (auto& rule : style_rules_) {
-			if (match(node, rule->selector.get())) {
-				node->resolveStyle(ctx, rule->spec);
+		NodeStyleResolveContext nctx;
+		nctx.scoped_root = sctx.currentScopedRoot();
+		for (auto& rule : sctx.global) {
+			if (match(sctx.currentPrecedents(), node, rule->selector.get())) {
+				node->resolveStyle(nctx, rule->spec);
 			}
 		}
-		node->resolveInlineStyle(ctx);
-		node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this));
+		for (auto& scope : sctx.scopes) {
+			for (auto& rule : scope.rules) {
+				if (match(sctx.currentPrecedents(), node, rule->selector.get())) {
+					node->resolveStyle(nctx, rule->spec);
+				}
+			}
+		}
+		node->resolveInlineStyle(nctx);
+
+		if (!sctx.pelem_ctxs.empty()) {
+			sctx.pelem_ctxs.back()->prev_siblings.push_back(node);
+		}
+
+		sctx.pelem_ctxs.push_back(&nctx);
+		node->eachChild(absl::bind_front(&Scene::resolveNodeStyle, this, std::ref(sctx)));
+		sctx.pelem_ctxs.pop_back();
 	} else if (node->type() == NodeType::NODE_TEXT) {
 		node->resolveDefaultStyle();
 		node->updateTextLayout();
+	}
+
+	// Handle scoped css
+	if (!node->style_rules_.empty()) {
+		sctx.scopes.pop_back();
 	}
 }
 
@@ -590,7 +660,7 @@ void Scene::updateNodeChildren(Node* node, JSContext* ctx, JSValue comp_data)
 		LOG(WARNING) << "updateNodeChildren failed, comp_data not array";
 		return;
 	}
-	
+
 	size_t prev_child_count = node->children_.size();
 	int64_t len = 0;
 	JS_GetPropertyLength(ctx, &len, comp_data);

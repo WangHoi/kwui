@@ -76,7 +76,9 @@ enum NodeFlag {
 class Control;
 class Scene;
 class BlockWidthSolverInterface;
-struct StyleResolveContext {
+struct NodeStyleResolveContext {
+	Node* scoped_root = nullptr;
+	std::vector<Node*> prev_siblings;
 	std::unordered_set<std::string> key_set;
 	inline bool testAndUpdate(const std::string& key, bool important) {
 		bool found = (key_set.find(key) != key_set.end());
@@ -164,8 +166,8 @@ public:
 	void setEventHandler(base::string_atom name, const script::Value& func);
 	
 	void resolveDefaultStyle();
-	void resolveStyle(StyleResolveContext& ctx, const style::StyleSpec &style);
-	void resolveInlineStyle(StyleResolveContext& ctx);
+	void resolveStyle(NodeStyleResolveContext& ctx, const style::StyleSpec &style);
+	void resolveInlineStyle(NodeStyleResolveContext& ctx);
 	
 	inline const style::Style& computedStyle() const
 	{
@@ -248,6 +250,7 @@ protected:
 	std::unique_ptr<Control> control_;
 
 	// Style and layout
+	std::vector<std::unique_ptr<style::StyleRule>> style_rules_; // scoped styles
 	style::StyleSpec specStyle_;
 	style::Style computed_style_;
 
