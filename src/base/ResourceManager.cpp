@@ -111,6 +111,7 @@ absl::optional<base::ResourceArchive::ResourceItem> ResourceManager::loadResourc
 	fseek(f, 0, SEEK_SET);
 	auto data = (uint8_t*)malloc(size);
 	fread(data, 1, size, f);
+	fclose(f);
 	base::ResourceArchive::ResourceItem item;
 	item.size = size;
 	item.data = data;
