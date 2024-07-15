@@ -82,16 +82,11 @@ endif ()
 
 if (BUILD_TESTING)
     add_executable(kwui_utests utest_main.cpp)
+    target_link_libraries(kwui_utests PRIVATE Catch2::Catch2)
     if (BUILD_SHARED_LIBS)
-        target_link_libraries(kwui PUBLIC Catch2::Catch2)
-        target_link_libraries(kwui_utests PUBLIC kwui Catch2::Catch2)
+        target_link_libraries(kwui_utests PRIVATE kwui)
     else ()
-        target_link_libraries(c32 PUBLIC Catch2::Catch2)
         target_sources(kwui_utests PRIVATE c31)
     endif ()
-    add_custom_command(TARGET kwui_utests PRE_LINK
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Catch2>
-            $<TARGET_FILE:Catch2WithMain> $<TARGET_FILE_DIR:kwui_utests>
-    )
     catch_discover_tests(kwui_utests)
 endif ()

@@ -13,10 +13,6 @@ namespace Catch {
     CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION
 }
 
-TEST_CASE( "Factorials are computed2", "[factorial]" ) {
-    REQUIRE( 123 == 3628800 );
-}
-
 int main (int argc, char * argv[]) {
 
     // We want to force the linker not to discard the global variable
