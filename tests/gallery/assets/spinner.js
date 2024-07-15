@@ -1,12 +1,6 @@
-import { useState } from "Keact";
-
 function SpinnerExample() {
     return (<div>
-        <button><spinner foregroundColor="#4f4" /><span>Loading...</span></button>
-    </div>);
-}
-
-var style = css`
+        <style jsx>{`
 spinner {
     width: 22px;
     height: 22px;
@@ -23,11 +17,14 @@ button {
 button:checked {
     /* color: green; */
 }
-`;
+        `}</style>
+        <button><span>aaa</span><spinner foregroundColor="#4f4" /><span>Loading...</span></button>
+    </div>);
+}
 
 export function builder() {
     return {
         root: <SpinnerExample />,
-        stylesheet: style,
+        stylesheet: css`span { color: red; }`,
     }
 }

@@ -87,6 +87,7 @@ private:
 		PatchableElementNode,
 		PatchableFragmentElementNode,
 		PatchableComponentNode,
+		PatchableStyleSheet,
 	};
 	void setupProps(Node* node, JSValue props);
 	bool match(absl::Span<Node*> precedents, Node* node, style::Selector* selector);
@@ -99,6 +100,7 @@ private:
 	void updateTextNode(Node* node, JSContext* ctx, JSValue comp_data);
 	void updateElementNode(Node* node, JSContext* ctx, JSValue comp_data);
 	void updateComponentNode(Node* node, JSContext* ctx, JSValue comp_data);
+	void setStyleSheet(Node* node, JSValue stylesheet);
 
 	EventContext& event_ctx_;
 	std::unique_ptr<script::Context> script_ctx_;

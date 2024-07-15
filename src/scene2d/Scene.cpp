@@ -12,6 +12,46 @@
 #include "absl/time/clock.h"
 namespace scene2d {
 
+static std::vector<std::unique_ptr<style::StyleRule>> makeStyleRules(JSContext* ctx, JSValue stylesheet)
+{
+	std::vector<std::unique_ptr<style::StyleRule>> style_rules;
+
+	if (JS_IsObject(stylesheet)) {
+		script::Context::eachObjectField(ctx, stylesheet, [&](const char* name, JSValue value) {
+			auto selectors_res = style::Selector::parseGroup(name);
+			auto style_spec = script::parse<style::StyleSpec>(ctx, value);
+			if (selectors_res.ok()) {
+				for (auto&& selector : *selectors_res) {
+					auto rule = std::make_unique<style::StyleRule>(std::move(selector), style_spec);
+					style_rules.push_back(std::move(rule));
+				}
+			} else {
+				LOG(WARNING) << "parse selector '" << name << "' failed";
+			}
+			});
+	} else if (JS_IsString(stylesheet)) {
+		const char* s = JS_ToCString(ctx, stylesheet);
+		if (s) {
+			auto css_res = style::parse_css(s);
+			if (css_res.ok()) {
+				auto& stylesheet = css_res.value();
+				std::stable_sort(stylesheet.begin(), stylesheet.end(),
+					[](const std::unique_ptr<style::StyleRule>& a, const std::unique_ptr<style::StyleRule>& b) -> bool {
+						return a->specificity() < b->specificity();
+					});
+				for (auto&& rule : stylesheet) {
+					style_rules.push_back(std::move(rule));
+				}
+			} else {
+				LOG(ERROR) << "parse stylesheet [" << s << "] failed";
+			}
+		}
+		JS_FreeCString(ctx, s);
+	}
+
+	return style_rules;
+}
+
 struct SceneStyleResolveContext {
 	struct Scope {
 		absl::Span<std::unique_ptr<style::StyleRule>> rules;
@@ -117,23 +157,36 @@ Node* Scene::createComponentNode(Node* parent, JSValue comp_data)
 			if (JS_IsString(tag) && JS_IsObject(atts) && JS_IsArray(jctx, kids)) {
 				std::string tagName = script_ctx_->parse<std::string>(tag);
 				//LOG(INFO) << "createElementNode: " << tagName;
-				Node* node = createElementNode(base::string_intern(tagName));
-				if (parent)
-					parent->appendChild(node);
+				if (tagName == "style") {
+					int64_t length = 0;
+					JS_GetPropertyLength(jctx, &length, kids);
+					if (length == 1) {
+						JSValue jstyle = JS_GetPropertyUint32(jctx, kids, 0);
+						setStyleSheet(parent, jstyle);
+						JS_FreeValue(jctx, jstyle);
+					} else {
+						LOG(WARNING) << "parse <style> failed: invalid children count " << length;
+					}
+					return nullptr;
+				} else {
+					Node* node = createElementNode(base::string_intern(tagName));
+					if (parent)
+						parent->appendChild(node);
 
-				// Setup properties
-				setupProps(node, atts);
+					// Setup properties
+					setupProps(node, atts);
 
-				// Create children
-				int64_t length = 0;
-				JS_GetPropertyLength(jctx, &length, kids);
-				for (uint32_t i = 0; i < (uint32_t)length; ++i) {
-					JSValue child_comp_data = JS_GetPropertyUint32(jctx, kids, i);
-					createComponentNode(node, child_comp_data);
-					JS_FreeValue(jctx, child_comp_data);
+					// Create children
+					int64_t length = 0;
+					JS_GetPropertyLength(jctx, &length, kids);
+					for (uint32_t i = 0; i < (uint32_t)length; ++i) {
+						JSValue child_comp_data = JS_GetPropertyUint32(jctx, kids, i);
+						createComponentNode(node, child_comp_data);
+						JS_FreeValue(jctx, child_comp_data);
+					}
+
+					return node;
 				}
-
-				return node;
 			} else {
 				auto a = JS_JSONStringify(jctx, comp_data, JS_UNDEFINED, JS_UNDEFINED);
 				LOG(WARNING) << "Unknown: " << script_ctx_->parse<std::string>(a);
@@ -234,41 +287,7 @@ void Scene::reloadScriptModule()
 
 void Scene::setStyleSheet(JSValue stylesheet)
 {
-	style_rules_.clear();
-
-	auto ctx = script_ctx_->get();
-	if (JS_IsObject(stylesheet)) {
-		script::Context::eachObjectField(ctx, stylesheet, [&](const char* name, JSValue value) {
-			auto selectors_res = style::Selector::parseGroup(name);
-			auto style_spec = script::parse<style::StyleSpec>(ctx, value);
-			if (selectors_res.ok()) {
-				for (auto&& selector : *selectors_res) {
-					auto rule = std::make_unique<style::StyleRule>(std::move(selector), style_spec);
-					appendStyleRule(std::move(rule));
-				}
-			} else {
-				LOG(WARNING) << "parse selector '" << name << "' failed";
-			}
-			});
-	} else if (JS_IsString(stylesheet)) {
-		const char* s = JS_ToCString(ctx, stylesheet);
-		if (s) {
-			auto css_res = style::parse_css(s);
-			if (css_res.ok()) {
-				auto& stylesheet = css_res.value();
-				std::stable_sort(stylesheet.begin(), stylesheet.end(),
-					[](const std::unique_ptr<style::StyleRule>& a, const std::unique_ptr<style::StyleRule>& b) -> bool {
-						return a->specificity() < b->specificity();
-					});
-				for (auto&& rule : stylesheet) {
-					appendStyleRule(std::move(rule));
-				}
-			} else {
-				LOG(ERROR) << "parse stylesheet [" << s << "] failed";
-			}
-		}
-		JS_FreeCString(ctx, s);
-	}
+	style_rules_ = makeStyleRules(script_ctx_->get(), stylesheet);
 }
 
 Node* Scene::pickNode(const PointF& pos, int flag_mask, PointF* out_local_pos)
@@ -661,14 +680,14 @@ void Scene::updateNodeChildren(Node* node, JSContext* ctx, JSValue comp_data)
 		return;
 	}
 
-	size_t prev_child_count = node->children_.size();
+	int prev_child_count = (int)node->children_.size();
 	int64_t len = 0;
 	JS_GetPropertyLength(ctx, &len, comp_data);
-	size_t next_child_count = (size_t)std::max<int64_t>(0, len);
-	size_t patched;
-	for (patched = 0; patched < std::min(prev_child_count, next_child_count); ++patched) {
-		Node* old_child = node->children_[patched];
-		JSValue child_comp_data = JS_GetPropertyUint32(ctx, comp_data, (uint32_t)patched);
+	int next_child_count = (int)std::max<int64_t>(0, len);
+	int prev_patched = 0, next_patched = 0;
+	for (prev_patched = 0, next_patched = 0; prev_patched < prev_child_count && next_patched < next_child_count; ++prev_patched, ++next_patched) {
+		Node* old_child = node->children_[prev_patched];
+		JSValue child_comp_data = JS_GetPropertyUint32(ctx, comp_data, (uint32_t)next_patched);
 		absl::Cleanup _ = [&]() {
 			JS_FreeValue(ctx, child_comp_data);
 			};
@@ -681,19 +700,34 @@ void Scene::updateNodeChildren(Node* node, JSContext* ctx, JSValue comp_data)
 			updateNodeChildren(old_child, ctx, child_comp_data);
 		} else if (res == NodeCompareResult::PatchableComponentNode) {
 			updateComponentNode(old_child, ctx, child_comp_data);
+		} else if (res == NodeCompareResult::PatchableStyleSheet) {
+			JSValue kids = JS_GetPropertyStr(ctx, comp_data, "kids");
+			absl::Cleanup _ = [&]() {
+				JS_FreeValue(ctx, kids);
+			};
+			int64_t length = 0;
+			JS_GetPropertyLength(ctx, &length, kids);
+			if (length == 1) {
+				JSValue jstyle = JS_GetPropertyUint32(ctx, kids, 0);
+				setStyleSheet(node, jstyle);
+				JS_FreeValue(ctx, jstyle);
+			} else {
+				LOG(WARNING) << "parse <style> failed: invalid children count " << length;
+			}
+			--prev_patched;
 		} else {
 			break;
 		}
 	}
 
-	for (size_t i = patched; i < next_child_count; ++i) {
+	for (size_t i = next_patched; i < next_child_count; ++i) {
 		JSValue child_comp_data = JS_GetPropertyUint32(ctx, comp_data, (uint32_t)i);
 		createComponentNode(node, child_comp_data);
 		JS_FreeValue(ctx, child_comp_data);
 	}
 
-	for (size_t i = patched; i < prev_child_count; ++i) {
-		Node* old_child = node->removeChildAt(patched);
+	for (size_t i = prev_patched; i < prev_child_count; ++i) {
+		Node* old_child = node->removeChildAt(prev_patched);
 		old_child->release();
 	}
 }
@@ -738,8 +772,12 @@ Scene::NodeCompareResult Scene::compareNode(Node* node, JSContext* ctx, JSValue 
 				};
 			if (JS_IsString(tag) && JS_IsObject(atts) && JS_IsArray(ctx, kids)) {
 				std::string tagName = script_ctx_->parse<std::string>(tag);
-				if (node->type_ == NodeType::NODE_ELEMENT && node->tag_ == base::string_intern(tagName)) {
-					return NodeCompareResult::PatchableElementNode;
+				if (tagName == "style") {
+					return NodeCompareResult::PatchableStyleSheet;
+				} else {
+					if (node->type_ == NodeType::NODE_ELEMENT && node->tag_ == base::string_intern(tagName)) {
+						return NodeCompareResult::PatchableElementNode;
+					}
 				}
 			}
 		}
@@ -773,6 +811,13 @@ void Scene::updateComponentNode(Node* node, JSContext* ctx, JSValue comp_data)
 	updateComponentNodeChildren(node, child_comp_data);
 	JS_FreeValue(ctx, render);
 	JS_FreeValue(ctx, child_comp_data);
+}
+
+void Scene::setStyleSheet(Node* node, JSValue stylesheet)
+{
+	if (!node)
+		return setStyleSheet(stylesheet);
+	node->style_rules_ = makeStyleRules(script_ctx_->get(), stylesheet);
 }
 
 } // namespace scene2d
