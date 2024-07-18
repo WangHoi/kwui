@@ -1,0 +1,3 @@
+[submodule "3rdparty/quickjspp"]
+	path = 3rdparty/quickjspp
+	url = https://github.com/WangHoi/quickjspp.git
