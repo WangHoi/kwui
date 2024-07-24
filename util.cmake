@@ -157,20 +157,22 @@ macro(unrimp_replace_cmake_cxx_flags from to)
     endforeach ()
 endmacro()
 
-macro(make_resource_header FILENAME VARNAME)
-    set(infile "${CMAKE_SOURCE_DIR}/src/resources/${FILENAME}")
+function(make_resource_header FILENAME VARNAME)
+    set(infile "${CMAKE_CURRENT_LIST_DIR}/${FILENAME}")
     set(outfile "${CMAKE_CURRENT_BINARY_DIR}/${VARNAME}.txt")
 
-    find_file(bin2h_script NAMES bin2h.script.cmake PATHS ${CMAKE_MODULE_PATH} REQUIRED)
+    find_file(bin2h_script NAMES bin2h.script.cmake
+            PATHS ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake
+            REQUIRED)
     add_custom_command(OUTPUT "${outfile}"
             COMMAND ${CMAKE_COMMAND} -D "INPUT_FILE=${infile}" -D "OUTPUT_FILE=${outfile}"
             -P "${bin2h_script}"
-            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
             DEPENDS "${infile}" "${bin2h_script}"
             VERBATIM
     )
     set(ALC_OBJS ${ALC_OBJS} "${outfile}")
-endmacro()
+endfunction()
 
 function(kwui_add_executable tgt_name)
     if (ANDROID)
