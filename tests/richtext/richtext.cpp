@@ -8,7 +8,8 @@ KWUI_MAIN()
 {
     Application app(argc, argv);
 #ifdef _WIN32
-    app.setResourceRootDir("d:/projects/kwui/tests/richtext/assets");
+    //app.setResourceRootDir("d:/projects/kwui/tests/richtext/assets");
+    app.setResourceRootDir("C:/Users/kai/Desktop/kwui/assets");
 #endif
     ScriptEngine::get()
         ->loadFile(":/entry.js");

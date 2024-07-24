@@ -1,6 +1,6 @@
 #include "graph2d.h"
 #ifdef _WIN32
-#include "windows/graphics/GraphicDevice.h"
+#include "windows/graphics/GraphicDeviceD2D.h"
 #include "windows/graphics/TextLayoutD2D.h"
 #include "windows/graphics/TextFlowD2D.h"
 #include "windows/graphics/PainterD2D.h"
@@ -32,7 +32,7 @@ std::unique_ptr<style::TextFlowInterface> createTextFlow(
 #else
 #ifdef _WIN32
 	std::wstring u16_text = base::EncodingManager::UTF8ToWide(text);
-	return windows::graphics::GraphicDevice::instance()
+	return windows::graphics::GraphicDeviceD2D::instance()
 		->createTextFlow(u16_text, line_height, font_family, font_size, font_weight, font_style);
 #else
 #pragma message("TODO: implement graph2d::createTextFlow().")
@@ -56,7 +56,7 @@ void updateTextFlow(
 #ifdef _WIN32
 	std::wstring u16_text = base::EncodingManager::UTF8ToWide(text);
 	windows::graphics::TextFlowD2D* win_tf = static_cast<windows::graphics::TextFlowD2D*>(text_flow.get());
-	return windows::graphics::GraphicDevice::instance()
+	return windows::graphics::GraphicDeviceD2D::instance()
 		->updateTextFlow(win_tf, u16_text, line_height, font_family, font_size, font_weight, font_style);
 #else
 	text_flow = createTextFlow(text, line_height, font_family, font_style, font_weight, font_size);
@@ -87,7 +87,7 @@ style::FontMetrics getFontMetrics(const char* font_family, float font_size)
 #ifdef _WIN32
 	style::FontMetrics fm;
 	DWRITE_FONT_METRICS dwrite_fm;
-	auto GD = windows::graphics::GraphicDevice::instance();
+	auto GD = windows::graphics::GraphicDeviceD2D::instance();
 	bool ok = GD->getFontMetrics(font_family, dwrite_fm);
 	if (!ok) {
 		std::string default_font = GD->getDefaultFontFamily();
@@ -117,7 +117,7 @@ void addFont(const char* family_name, const void* data, size_t size)
 		->addFont(family_name, data, size);
 #else
 #ifdef _WIN32
-	windows::graphics::GraphicDevice::instance()
+	windows::graphics::GraphicDeviceD2D::instance()
 		->addFont(family_name, (const uint8_t*)data, size);
 #else
 #pragma message("TODO: implement graph2d::addFont().")

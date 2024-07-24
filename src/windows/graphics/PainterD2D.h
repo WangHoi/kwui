@@ -7,7 +7,7 @@
 #include "windows/windows_header.h"
 #include "TextLayoutD2D.h"
 #include "TextFlowD2D.h"
-#include "GraphicDevice.h"
+#include "GraphicDeviceD2D.h"
 #include <vector>
 
 namespace windows {
@@ -116,7 +116,7 @@ public:
     scene2d::DimensionF size() override
     {
         if (!bitmap_) {
-            BitmapSubItem item = GraphicDevice::instance()
+            BitmapSubItem item = GraphicDeviceD2D::instance()
                 ->getBitmap(url_, 1.0f);
             if (item) {
                 UINT w, h;
@@ -132,7 +132,7 @@ public:
     ID2D1Bitmap* d2dBitmap(Painter& p) const
     {
         if (!bitmap_) {
-            BitmapSubItem item = GraphicDevice::instance()
+            BitmapSubItem item = GraphicDeviceD2D::instance()
                 ->getBitmap(url_, p.GetDpiScale());
             if (item)
                 bitmap_ = p.CreateBitmap(item);

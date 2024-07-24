@@ -3,7 +3,7 @@
 #include "graph2d/graph2d.h"
 #include "base/log.h"
 #include "base/EncodingManager.h"
-#include "windows/graphics/GraphicDevice.h"
+#include "windows/graphics/GraphicDeviceD2D.h"
 #include <numeric>
 
 namespace windows {
@@ -71,7 +71,7 @@ HRESULT TextFlowD2D::setTextFormat(ComPtr<IDWriteTextFormat> textFormat)
 	hr = textFormat->GetLocaleName(localeName_, ARRAYSIZE(localeName_));
 	hr = textFormat->GetFontFamilyName(fontFamilyName, ARRAYSIZE(fontFamilyName));
 	
-	fontFace_ = GraphicDevice::instance()->getFirstMatchingFontFace(
+	fontFace_ = GraphicDeviceD2D::instance()->getFirstMatchingFontFace(
 		fontFamilyName,
 		textFormat->GetFontWeight(),
 		textFormat->GetFontStretch(),

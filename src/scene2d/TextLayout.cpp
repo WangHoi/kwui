@@ -4,7 +4,7 @@
 #include "xskia/TextLayoutX.h"
 #endif
 #ifdef _WIN32
-#include "windows/graphics/GraphicDevice.h"
+#include "windows/graphics/GraphicDeviceD2D.h"
 #include "windows/graphics/TextLayoutD2D.h"
 #endif
 #include <limits>
@@ -34,7 +34,7 @@ std::unique_ptr<TextLayoutInterface> TextLayoutBuilder::Build() {
 #if WITH_SKIA
     return std::make_unique<::xskia::TextLayoutX>(_text, _font_family, _font_size);
 #elif defined(_WIN32)
-    ComPtr<IDWriteTextLayout> layout = windows::graphics::GraphicDevice::instance()
+    ComPtr<IDWriteTextLayout> layout = windows::graphics::GraphicDeviceD2D::instance()
         ->createTextLayout(_text, _font_family, _font_size, _font_weight, _font_style);
     layout->SetMaxWidth(_max_width);
     DWRITE_TEXT_ALIGNMENT align = DWRITE_TEXT_ALIGNMENT_LEADING;

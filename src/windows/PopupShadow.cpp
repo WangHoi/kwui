@@ -1,6 +1,6 @@
 #include "PopupShadow.h"
 #include "base/EncodingManager.h"
-#include "graphics/GraphicDevice.h"
+#include "graphics/GraphicDeviceD2D.h"
 #include "graphics/PainterD2D.h"
 #include "style/StyleColor.h"
 #include "DialogWin32.h"
@@ -200,7 +200,7 @@ void PopupShadow::OnPaint() {
 	graphics::Painter p(_rt.target.Get(), scene2d::PointF::fromAll(-1));
 	p.Clear(style::Color());
 	if (!_bitmap) {
-		graphics::BitmapSubItem item = graphics::GraphicDevice::instance()
+		graphics::BitmapSubItem item = graphics::GraphicDeviceD2D::instance()
 			->getBitmap(_data.image_name, _render_dpi_scale);
 		if (item)
 			_bitmap = p.CreateBitmap(item);
@@ -254,7 +254,7 @@ void PopupShadow::Close() {
 	SendMessageW(_hwnd, WM_CLOSE, 0, 0);
 }
 void PopupShadow::RecreateRenderTarget() {
-	_rt = graphics::GraphicDevice::instance()
+	_rt = graphics::GraphicDeviceD2D::instance()
 		->createWicBitmapRenderTarget(_pixel_size.width, _pixel_size.height, 1.0f);
 }
 void PopupShadow::OnDestroy() {

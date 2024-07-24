@@ -182,6 +182,7 @@ function(kwui_add_executable tgt_name)
         add_custom_command(TARGET ${tgt_name} PRE_LINK
                 COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:${tgt_name}> $<TARGET_FILE_DIR:${tgt_name}>
                 DEPENDS $<TARGET_RUNTIME_DLLS:${tgt_name}>
+                BYPRODUCTS kwui
                 COMMAND_EXPAND_LISTS
         )
     endif ()

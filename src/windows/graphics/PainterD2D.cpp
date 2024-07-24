@@ -127,7 +127,7 @@ void Painter::DrawCircle(float center_x, float center_y, float radius)
 }
 void Painter::DrawArc(float center_x, float center_y, float radius, float start_angle, float span_angle)
 {
-	auto geom = GraphicDevice::instance()->createPathGeometry();
+	auto geom = GraphicDeviceD2D::instance()->createPathGeometry();
 	if (!geom)
 		return;
 	start_angle -= 90.0f;

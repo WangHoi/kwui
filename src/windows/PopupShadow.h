@@ -1,7 +1,7 @@
 #pragma once
 
 #include "windows_header.h"
-#include "graphics/GraphicDevice.h"
+#include "graphics/GraphicDeviceD2D.h"
 #include "scene2d/geom_types.h"
 
 namespace windows {

@@ -35,7 +35,7 @@ set(dep_libs
         fifo_map
         quickjs)
 if (WIN32)
-    list(APPEND dep_libs d2d1.lib dwrite.lib Windowscodecs.lib Imm32.lib)
+    list(APPEND dep_libs d3d11.lib d2d1.lib dwrite.lib Windowscodecs.lib Imm32.lib)
 else ()
     list(APPEND dep_libs utf)
 endif ()

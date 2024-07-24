@@ -2,7 +2,7 @@
 #include "base/log.h"
 #include "scene2d/scene2d.h"
 #include "base/EncodingManager.h"
-#include "graphics/GraphicDevice.h"
+#include "graphics/GraphicDeviceD2D.h"
 #include "graphics/PainterD2D.h"
 #include "theme.h"
 #include "absl/strings/str_format.h"

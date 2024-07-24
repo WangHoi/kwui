@@ -1,5 +1,5 @@
 #include "TextLayoutD2D.h"
-#include "GraphicDevice.h"
+#include "GraphicDeviceD2D.h"
 #include "base/EncodingManager.h"
 #include <limits>
 
@@ -16,7 +16,7 @@ TextLayoutD2D::TextLayoutD2D(const std::wstring& text, const std::string& font_f
 }
 void TextLayoutD2D::UpdateTextMetrics() {
     DWRITE_FONT_METRICS fm;
-    if (GraphicDevice::instance()->getFontMetrics(_font_family, fm)) {
+    if (GraphicDeviceD2D::instance()->getFontMetrics(_font_family, fm)) {
         _line_height = (fm.ascent + fm.descent + fm.lineGap) * _font_size / fm.designUnitsPerEm;
         _baseline = fm.ascent * _font_size / fm.designUnitsPerEm;
     } else {

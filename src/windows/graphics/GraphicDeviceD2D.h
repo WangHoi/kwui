@@ -8,8 +8,7 @@
 #include "absl/types/span.h"
 #include <unordered_map>
 
-namespace windows {
-namespace graphics {
+namespace windows::graphics {
 
 struct BitmapSubItem {
 	ComPtr<IWICBitmapFrameDecode> frame;
@@ -33,14 +32,24 @@ struct WicBitmapRenderTarget {
 	ComPtr<ID2D1BitmapRenderTarget> target;
 	ComPtr<ID2D1GdiInteropRenderTarget> interop_target;
 };
-class GraphicDevice {
+struct HwndRenderTarget {
+	ComPtr<ID2D1DeviceContext> d2d1_ctx;
+	ComPtr<IDXGISwapChain1> d2d1_swap_chain;
+	ComPtr<ID2D1Bitmap1> d2d1_back_buffer;
+	ComPtr<ID2D1HwndRenderTarget> hwnd_rt; // Direct2D 1.0 fallback
+
+	explicit operator bool() const {
+		return (hwnd_rt || d2d1_swap_chain);
+	}
+};
+class GraphicDeviceD2D {
 public:
-	~GraphicDevice();
-	static GraphicDevice* createInstance();
+	~GraphicDeviceD2D();
+	static GraphicDeviceD2D* createInstance();
 	static void releaseInstance();
-	static GraphicDevice* instance();
-	bool Init();
-	ComPtr<ID2D1HwndRenderTarget> createHwndRenderTarget(
+	static GraphicDeviceD2D* instance();
+	bool init();
+	HwndRenderTarget createHwndRenderTarget(
 		HWND hwnd, const scene2d::DimensionF& size, float dpi_scale);
 	WicBitmapRenderTarget createWicBitmapRenderTarget(
 		float width, float height, float dpi_scale);
@@ -84,12 +93,24 @@ public:
 		DWRITE_FONT_STYLE   style);
 
 private:
-	BitmapSubItem LoadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF& dpi_scale);
+	BitmapSubItem loadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF& dpi_scale);
 	BitmapSubItem loadBitmapFromFilename(const std::wstring& filename, const scene2d::PointF& dpi_scale);
 	BitmapSubItem loadBitmapFromStream(ComPtr<IWICStream> stream, const scene2d::PointF& dpi_scale);
 	void loadBitmapToCache(const std::string& name);
 
-	ComPtr<ID2D1Factory> factory_;
+	bool use_d2d1_ = false;
+	struct {
+		ComPtr<ID2D1Factory> factory;
+	} d2d0_;
+	struct {
+		D3D_FEATURE_LEVEL feature_level;
+		ComPtr<IDXGIDevice> devdx;
+		ComPtr<ID3D11Device1> dev3d;
+		ComPtr<ID3D11DeviceContext1> ctx3d;
+		ComPtr<ID2D1Device> dev2d;
+		ComPtr<ID2D1DeviceContext> ctx2d;
+		ComPtr<ID2D1Factory1> factory;
+	} d2d1_;
 	ComPtr<IDWriteFactory> dwrite_;
 	ComPtr<IDWriteFontCollection> font_collection_;
 	ComPtr<IWICImagingFactory> wic_factory_;
@@ -97,5 +118,4 @@ private:
 	std::unordered_map<std::wstring, ComPtr<IDWriteFontFace>> font_cache_;
 };
 
-} // namespace graphics
-} // namespace windows
+} // namespace windows::graphics

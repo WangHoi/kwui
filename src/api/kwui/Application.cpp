@@ -8,7 +8,7 @@
 #include "scene2d/SpinnerControl.h"
 #include "scene2d/LineEditControl.h"
 #ifdef _WIN32
-#include "windows/graphics/GraphicDevice.h"
+#include "windows/graphics/GraphicDeviceD2D.h"
 #include "windows/DialogWin32.h"
 #include "windows/HiddenMsgWindow.h"
 #include <ConsoleApi2.h>
@@ -105,7 +105,7 @@ public:
 #else
 #ifdef _WIN32
         LOG(INFO) << "Init GraphicDevice...";
-        windows::graphics::GraphicDevice::createInstance()->Init();
+        windows::graphics::GraphicDeviceD2D::createInstance()->init();
 #else
 #pragma message("TODO: Application::Private::init().")
 #endif
@@ -154,7 +154,7 @@ Application::~Application()
     xskia::GraphicDeviceX::releaseInstance();
 #else
 #ifdef _WIN32
-    windows::graphics::GraphicDevice::releaseInstance();
+    windows::graphics::GraphicDeviceD2D::releaseInstance();
 #else
 #pragma message("TODO: GraphicDevice::releaseInstance().")
 #endif

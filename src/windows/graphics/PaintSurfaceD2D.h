@@ -1,10 +1,9 @@
+#include "GraphicDeviceD2D.h"
 #include "graph2d/PaintSurface.h"
 #include "scene2d/geom_types.h"
 #include "windows/windows_header.h"
 
-namespace windows
-{
-namespace graphics
+namespace windows::graphics
 {
 
 class PaintSurfaceD2D : public graph2d::PaintSurfaceInterface {
@@ -26,9 +25,7 @@ private:
     void recreateRenderTarget();
 
     Configuration config_;
-    ComPtr<ID2D1HwndRenderTarget> rt_;
+    HwndRenderTarget rt_;
 };
 
-} // namespace graphics
-
-} // namespace windows
+} // namespace windows::graphics
