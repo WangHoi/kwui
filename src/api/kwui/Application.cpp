@@ -24,8 +24,8 @@
 #include "xskia/GraphicDeviceX.h"
 #endif
 
-namespace kwui {
-
+namespace kwui
+{
 static Application* g_app = nullptr;
 static LogCallback g_log_callback = nullptr;
 #ifdef NDEBUG
@@ -43,7 +43,7 @@ class Application::Private
 #endif
 {
 public:
-    Private(Application * q)
+    Private(Application* q)
         : q_(q)
     {
         g_app = q;
@@ -56,6 +56,7 @@ public:
 #pragma message("TODO: GetCurrentThreadID().")
 #endif
     }
+
     ~Private()
     {
 #ifdef _WIN32
@@ -69,7 +70,8 @@ public:
     void onAppMessage(WPARAM wParam, LPARAM lParam) override
     {
         auto f = (std::function<void()>*)((void*)wParam);
-        if (f) {
+        if (f)
+        {
             (*f)();
             delete f;
         }
@@ -124,7 +126,7 @@ public:
         graph2d::addFont("kwui", icon_font.data(), icon_font.size());
     }
 
-    Application * q_;
+    Application* q_;
 #ifdef _WIN32
     windows::HiddenMsgWindow msg_window_;
 #else
@@ -193,6 +195,7 @@ bool Application::isMainThread()
     return true;
 #endif
 }
+
 void Application::runInMainThread(std::function<void()>&& func)
 {
     if (!g_app)
@@ -209,6 +212,7 @@ void Application::runInMainThread(std::function<void()>&& func)
 #pragma message("TODO: implement platform specific HiddenMsgWindow.")
 #endif
 }
+
 bool Application::preloadResourceArchive(int id)
 {
 #ifdef _WIN32
@@ -223,28 +227,34 @@ void Application::setResourceRootDir(const char* dir)
 {
     base::ResourceManager::instance()->setResourceRootDir(dir);
 }
+
 void Application::setResourceRootData(const uint8_t* data, size_t len)
 {
     base::ResourceManager::instance()->setResourceRootData(data, len);
 }
+
 void Application::addFont(const char* family_name, const char* font_path)
 {
     std::wstring u16_font_path
         = base::EncodingManager::UTF8ToWide(font_path);
     auto res = base::ResourceManager::instance()
         ->loadResource(u16_font_path.c_str());
-    if (res.has_value()) {
+    if (res.has_value())
+    {
         graph2d::addFont(family_name, res.value().data, res.value().size);
-    } else {
+    }
+    else
+    {
         LOG(ERROR) << "addFont: failed to load resource [" << font_path << "]";
     }
 }
 
 int Application::exec()
 {
-#ifdef _WIN32    
+#ifdef _WIN32
     MSG msg;
-    while (GetMessageW(&msg, NULL, 0, 0)) {
+    while (GetMessageW(&msg, NULL, 0, 0))
+    {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
@@ -268,4 +278,18 @@ void Application::quit()
 #endif
 }
 
+void* Application::getNativeViewData(NativeViewType& type)
+{
+#if WITH_SKIA
+#elif defined(_WIN32)
+    type = NATIVE_VIEW_D3D11;
+    return windows::graphics::GraphicDeviceD2D::instance()->getD3DDevice1();
+#endif
+    type = NATIVE_VIEW_UNSUPPORTED;
+    return nullptr;
+}
+
+void Application::setNativeViewHandler(NativeViewHandler* handler)
+{
+}
 }

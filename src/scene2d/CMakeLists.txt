@@ -1,7 +1,7 @@
 list(APPEND kwui_pub_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/scene2d.h
 )
-list(APPEND kwui_priv_srcs 
+list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/geom_types.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Node.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Node.cpp
@@ -25,6 +25,8 @@ list(APPEND kwui_priv_srcs
   ${CMAKE_CURRENT_SOURCE_DIR}/SpinnerControl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/LineEditControl.h
   ${CMAKE_CURRENT_SOURCE_DIR}/LineEditControl.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/NativeViewControl.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/NativeViewControl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/TextLayout.h
   ${CMAKE_CURRENT_SOURCE_DIR}/TextLayout.cpp
 )

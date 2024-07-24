@@ -3,8 +3,7 @@
 #define _USE_MATH_DEFINES 1
 #include <math.h>
 
-namespace windows {
-namespace graphics {
+namespace windows::graphics {
 
 Painter::Painter(ID2D1RenderTarget* rt, const scene2d::PointF& mouse_pos)
 	: _rt(rt), _mouse_position(mouse_pos) {
@@ -429,5 +428,11 @@ void Painter::SetBrush(ComPtr<ID2D1Brush> brush) {
 	_current.gradient_brush = brush;
 }
 
-} // namespace graphics
-} // namespace windows
+NativeBitmap Painter::createNativeBitmap(float width, float height)
+{
+	auto GD = GraphicDeviceD2D::instance();
+	HRESULT hr;
+	hr = GD->createNativeBitmap(width, height);
+}
+
+} // namespace windows::graphics

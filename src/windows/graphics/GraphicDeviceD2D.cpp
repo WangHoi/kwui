@@ -409,6 +409,35 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string &name, const std::wst
     bitmap_cache_[name] = bitmap;
 }
 
+HRESULT GraphicDeviceD2D::createNativeBitmap(float width, float height)
+{
+    HRESULT hr = E_FAIL;
+    if (use_d2d1_)
+    {
+        D3D11_TEXTURE2D_DESC tex_desc = {};
+        tex_desc.Width = (UINT)width;
+        tex_desc.Height = (UINT)height;
+        tex_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        tex_desc.SampleDesc.Count = 1;
+        tex_desc.Usage = D3D11_USAGE_DEFAULT;
+        tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+
+        ComPtr<ID3D11Texture2D> tex;
+        hr = d2d1_.dev3d->CreateTexture2D(&tex_desc, nullptr, tex.GetAddressOf());
+        if (FAILED(hr)) return hr;
+
+        ComPtr<IDXGISurface> surface;
+        hr = tex->QueryInterface<IDXGISurface>(surface.GetAddressOf());
+        if (FAILED(hr)) return hr;
+
+        ComPtr<ID2D1Bitmap1> bitmap;
+        D2D1_BITMAP_PROPERTIES1 props = {};
+        hr = d2d1_.ctx2d->CreateBitmapFromDxgiSurface(surface.Get(), props, bitmap.GetAddressOf());
+        if (FAILED(hr)) return hr;
+    }
+    return hr;
+}
+
 BitmapSubItem
 GraphicDeviceD2D::loadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF &dpi_scale) {
     HRESULT hr;
