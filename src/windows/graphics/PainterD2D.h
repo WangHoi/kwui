@@ -14,6 +14,15 @@ namespace windows::graphics
 {
 struct NativeBitmap
 {
+    float width;
+    float height;
+    ComPtr<ID3D11Texture2D> d3d_tex;
+    ComPtr<ID2D1Bitmap1> d2d_bitmap;
+
+    operator bool() const
+    {
+        return d3d_tex != nullptr && d2d_bitmap != nullptr;
+    }
 };
 
 class Painter

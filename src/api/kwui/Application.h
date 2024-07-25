@@ -3,7 +3,6 @@
 #include "kwui_main.h"
 #include <functional>
 
-#include "scene2d/geom_types.h"
 #ifdef __ANDROID__
 #include <jni.h>
 #endif
@@ -22,7 +21,7 @@ class KWUI_EXPORT NativeViewHandler
 {
 public:
     virtual ~NativeViewHandler() {}
-    virtual void onPaint(float width, float height) {}
+    virtual void onPaint(void* surface, float width, float height) {}
 };
 
 class KWUI_EXPORT Application

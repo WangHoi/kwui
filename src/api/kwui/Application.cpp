@@ -20,6 +20,7 @@
 #include "base/EncodingManager.h"
 #include "base/ResourceManager.h"
 #include "graph2d/graph2d.h"
+#include "scene2d/NativeViewControl.h"
 #if WITH_SKIA
 #include "xskia/GraphicDeviceX.h"
 #endif
@@ -120,6 +121,7 @@ public:
         scene2d::ControlRegistry::get()->registerControl<scene2d::ProgressBarControl>();
         scene2d::ControlRegistry::get()->registerControl<scene2d::SpinnerControl>();
         scene2d::ControlRegistry::get()->registerControl<scene2d::control::LineEditControl>();
+        scene2d::ControlRegistry::get()->registerControl<scene2d::control::NativeViewControl>();
 
         LOG(INFO) << "Register builtin icon font...";
         auto icon_font = resources::get_icon_data();
@@ -291,5 +293,6 @@ void* Application::getNativeViewData(NativeViewType& type)
 
 void Application::setNativeViewHandler(NativeViewHandler* handler)
 {
+    scene2d::control::NativeViewControl::setNativeViewHandler(handler);
 }
 }

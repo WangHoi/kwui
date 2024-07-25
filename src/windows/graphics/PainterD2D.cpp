@@ -432,7 +432,17 @@ NativeBitmap Painter::createNativeBitmap(float width, float height)
 {
 	auto GD = GraphicDeviceD2D::instance();
 	HRESULT hr;
-	hr = GD->createNativeBitmap(width, height);
+	ComPtr<ID3D11Texture2D> tex;
+	ComPtr<ID2D1Bitmap1> bitmap;
+	hr = GD->createNativeBitmap(width, height, tex, bitmap);
+	if (FAILED(hr)) return NativeBitmap();
+
+	NativeBitmap b;
+	b.width = width;
+	b.height = height;
+	b.d3d_tex = tex;
+	b.d2d_bitmap = bitmap;
+	return b;
 }
 
 } // namespace windows::graphics

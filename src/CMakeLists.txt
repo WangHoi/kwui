@@ -80,7 +80,7 @@ else ()
     endif ()
 endif ()
 
-if (BUILD_TESTING)
+if (BUILD_TESTS)
     add_executable(kwui_utests utest_main.cpp)
     target_link_libraries(kwui_utests PRIVATE Catch2::Catch2)
     if (BUILD_SHARED_LIBS)

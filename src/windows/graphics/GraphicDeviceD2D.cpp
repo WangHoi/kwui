@@ -44,6 +44,9 @@ bool GraphicDeviceD2D::init() {
     // Try Direct2D 1.1
     do {
         D2D1_FACTORY_OPTIONS options = {};
+#if defined(_DEBUG)
+        options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+#endif
         hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &options,
                                reinterpret_cast<void **>(d2d1_.factory.GetAddressOf()));
         if (FAILED(hr)) break;
@@ -59,6 +62,10 @@ bool GraphicDeviceD2D::init() {
             D3D_FEATURE_LEVEL_9_1
         };
         UINT creation_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+#if defined(_DEBUG)
+        // If the project is in a debug build, enable the debug layer.
+        creation_flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
 
         // Create Direct3D device and context
         ID3D11Device *device;
@@ -409,33 +416,61 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string &name, const std::wst
     bitmap_cache_[name] = bitmap;
 }
 
-HRESULT GraphicDeviceD2D::createNativeBitmap(float width, float height)
+HRESULT GraphicDeviceD2D::createNativeBitmap(float width, float height, ComPtr<ID3D11Texture2D>& out_tex, ComPtr<ID2D1Bitmap1>& out_bitmap)
 {
     HRESULT hr = E_FAIL;
+    return hr;
+    /*
     if (use_d2d1_)
     {
         D3D11_TEXTURE2D_DESC tex_desc = {};
         tex_desc.Width = (UINT)width;
         tex_desc.Height = (UINT)height;
         tex_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        tex_desc.MipLevels = 1;
+        tex_desc.ArraySize = 1;
         tex_desc.SampleDesc.Count = 1;
         tex_desc.Usage = D3D11_USAGE_DEFAULT;
         tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 
+        // Create Texture and get IDXGISurface
         ComPtr<ID3D11Texture2D> tex;
         hr = d2d1_.dev3d->CreateTexture2D(&tex_desc, nullptr, tex.GetAddressOf());
         if (FAILED(hr)) return hr;
-
         ComPtr<IDXGISurface> surface;
         hr = tex->QueryInterface<IDXGISurface>(surface.GetAddressOf());
         if (FAILED(hr)) return hr;
 
+        // Create ID2D1Bitmap1 from IDXGISurface
         ComPtr<ID2D1Bitmap1> bitmap;
         D2D1_BITMAP_PROPERTIES1 props = {};
-        hr = d2d1_.ctx2d->CreateBitmapFromDxgiSurface(surface.Get(), props, bitmap.GetAddressOf());
+        props.pixelFormat.format = tex_desc.Format;
+        props.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
+        hr = d2d1_.ctx2d->CreateBitmap(surface.Get(), props, bitmap.GetAddressOf());
         if (FAILED(hr)) return hr;
+
+        out_tex = tex;
+        out_bitmap = bitmap;
     }
     return hr;
+    */
+}
+
+ComPtr<ID2D1Bitmap1> GraphicDeviceD2D::createBitmap(float width, float height) {
+    HRESULT hr = E_FAIL;
+    if (use_d2d1_)
+    {
+        const D2D1_SIZE_U size = { (UINT32)width, (UINT32)height };
+        ComPtr<ID2D1Bitmap1> bitmap;
+        D2D1_BITMAP_PROPERTIES1 props = {};
+        props.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        props.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
+        hr = d2d1_.ctx2d->CreateBitmap(size, nullptr, 0, props, bitmap.GetAddressOf());
+        if (FAILED(hr)) return nullptr;
+
+        return bitmap;
+    }
+    return nullptr;
 }
 
 BitmapSubItem

@@ -2,10 +2,6 @@
   <code_scheme name="Project" version="173">
     <RiderCodeStyleSettings>
       <option name="/Default/CodeStyle/CodeFormatting/CppFormatting/NAMESPACE_INDENTATION/@EntryValue" value="Inner" type="string" />
-      <option name="/Default/CodeStyle/CodeFormatting/CppFormatting/CONTINUOUS_LINE_INDENT/@EntryValue" />
-      <option name="/Default/CodeStyle/CodeFormatting/CppFormatting/ALIGN_FIRST_ARG_BY_PAREN/@EntryValue" />
-      <option name="/Default/CodeStyle/CodeFormatting/CppFormatting/ALIGN_MULTILINE_EXPRESSION_BRACES/@EntryValue" />
-      <option name="/Default/CodeStyle/CodeFormatting/CppFormatting/INT_ALIGN_EQ/@EntryValue" />
     </RiderCodeStyleSettings>
     <codeStyleSettings language="CMake">
       <indentOptions>

@@ -106,7 +106,8 @@ public:
         DWRITE_FONT_STYLE style);
 
     ID3D11Device1* getD3DDevice1() const { return d2d1_.dev3d.Get(); }
-    HRESULT createNativeBitmap(float width, float height);
+    HRESULT createNativeBitmap(float width, float height, ComPtr<ID3D11Texture2D>& out_tex, ComPtr<ID2D1Bitmap1>& out_bitmap);
+    ComPtr<ID2D1Bitmap1> createBitmap(float width, float height);
 
 private:
     BitmapSubItem loadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF& dpi_scale);
