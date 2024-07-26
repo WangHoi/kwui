@@ -10,6 +10,7 @@ public:
 	// 通过 PainterInterface 继承
 	void save() override;
 	void restore() override;
+	float getDpiScale() override;
 	void setTranslation(const scene2d::PointF& offset, bool combine) override;
 	void setRotation(float degrees, const scene2d::PointF& center, bool combine) override;
 	void pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) override;

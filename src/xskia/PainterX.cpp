@@ -23,6 +23,11 @@ void PainterX::restore()
 	canvas_->restore();
 }
 
+float PainterX::getDpiScale()
+{
+	return dpi_scale_;
+}
+
 void PainterX::setTranslation(const scene2d::PointF& offset, bool combine)
 {
 	canvas_->translate(offset.x, offset.y);

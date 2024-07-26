@@ -16,6 +16,7 @@ struct NativeBitmap
 {
     float width;
     float height;
+    float dpi_scale;
     ComPtr<ID3D11Texture2D> d3d_tex;
     ComPtr<ID2D1Bitmap1> d2d_bitmap;
 
@@ -226,6 +227,11 @@ public:
     void restore() override
     {
         p_.Restore();
+    }
+
+    float getDpiScale() override
+    {
+        return p_.GetDpiScale();
     }
 
     void setTranslation(const scene2d::PointF& offset, bool combine) override

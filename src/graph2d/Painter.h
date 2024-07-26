@@ -23,6 +23,7 @@ public:
 	virtual ~PainterInterface() = default;
 	virtual void save() = 0;
 	virtual void restore() = 0;
+	virtual float getDpiScale() = 0;
 	virtual void setTranslation(const scene2d::PointF& offset, bool combine) = 0;
 	virtual void setRotation(float degrees, const scene2d::PointF& center, bool combine) = 0;
 	virtual void pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) = 0;

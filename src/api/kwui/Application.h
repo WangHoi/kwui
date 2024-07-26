@@ -2,6 +2,7 @@
 #include "kwui_export.h"
 #include "kwui_main.h"
 #include <functional>
+#include <string>
 
 #ifdef __ANDROID__
 #include <jni.h>
@@ -21,7 +22,7 @@ class KWUI_EXPORT NativeViewHandler
 {
 public:
     virtual ~NativeViewHandler() {}
-    virtual void onPaint(void* surface, float width, float height) {}
+    virtual void onPaint(void* surface, float width, float height, float dpi_scale) {}
     virtual void onSetAttribute(const char* name, const std::string* value) {}
 };
 

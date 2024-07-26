@@ -57,11 +57,12 @@ void NativeViewControl::onPaint(graph2d::PainterInterface& p, const scene2d::Rec
 
     if (g_native_view_handler) {
         auto& wp = windows::graphics::PainterImpl::unwrap(p);
-        if (native_.width != rect.width() || native_.height != rect.height()) {
+        if (native_.width != rect.width() || native_.height != rect.height() || native_.dpi_scale != p.getDpiScale()) {
             native_.width = rect.width();
             native_.height = rect.height();
+            native_.dpi_scale = p.getDpiScale();
             native_.d2d_bitmap = windows::graphics::GraphicDeviceD2D::instance()->createBitmap(
-                rect.width(), rect.height());
+                rect.width() * native_.dpi_scale, rect.height() * native_.dpi_scale);
         }
         if (native_.d2d_bitmap) {
             ComPtr<IDXGISurface> surface;
@@ -69,7 +70,7 @@ void NativeViewControl::onPaint(graph2d::PainterInterface& p, const scene2d::Rec
             ComPtr<ID3D11Texture2D> tex;
             surface.As(&tex);
             if (tex) {
-                g_native_view_handler->onPaint(tex.Get(), native_.width, native_.height);
+                g_native_view_handler->onPaint(tex.Get(), native_.width, native_.height, native_.dpi_scale);
                 wp.DrawBitmap(native_.d2d_bitmap.Get(), rect.origin(), rect.size());
             }
         }
