@@ -20,6 +20,8 @@ public:
     base::string_atom name() override;
 
     void onAttach(scene2d::Node *node) override;
+    void onDetach(Node* node) override;
+    void onSetAttribute(base::string_atom name, const NodeAttributeValue& value) override;
     void onAnimationFrame(Node* node, absl::Time timestamp) override;
     void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
 

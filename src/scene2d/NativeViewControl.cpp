@@ -22,6 +22,23 @@ void NativeViewControl::onAttach(scene2d::Node* node)
 {
     node->requestAnimationFrame(node);
 }
+
+void NativeViewControl::onDetach(Node* node)
+{
+}
+
+void NativeViewControl::onSetAttribute(base::string_atom name, const NodeAttributeValue& value)
+{
+    if (g_native_view_handler) {
+        if (value.isNull()) {
+            g_native_view_handler->onSetAttribute(name.c_str(), nullptr);
+        } else {
+            std::string str = value.toString();
+            g_native_view_handler->onSetAttribute(name.c_str(), &str);
+        }
+    }
+}
+
 void NativeViewControl::onAnimationFrame(Node* node, absl::Time timestamp)
 {
     // const std::string id = node->scene()->eventContextId();
@@ -38,17 +55,15 @@ void NativeViewControl::onPaint(graph2d::PainterInterface& p, const scene2d::Rec
     if (rect.width() <= 0 && rect.height() <= 0)
         return;
 
-    if (g_native_view_handler)
-    {
+    if (g_native_view_handler) {
         auto& wp = windows::graphics::PainterImpl::unwrap(p);
-        if (native_.width != rect.width() || native_.height != rect.height())
-        {
+        if (native_.width != rect.width() || native_.height != rect.height()) {
             native_.width = rect.width();
             native_.height = rect.height();
-            native_.d2d_bitmap = windows::graphics::GraphicDeviceD2D::instance()->createBitmap(rect.width(), rect.height());
+            native_.d2d_bitmap = windows::graphics::GraphicDeviceD2D::instance()->createBitmap(
+                rect.width(), rect.height());
         }
-        if (native_.d2d_bitmap)
-        {
+        if (native_.d2d_bitmap) {
             ComPtr<IDXGISurface> surface;
             native_.d2d_bitmap->GetSurface(surface.GetAddressOf());
             ComPtr<ID3D11Texture2D> tex;

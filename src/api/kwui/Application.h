@@ -22,6 +22,7 @@ class KWUI_EXPORT NativeViewHandler
 public:
     virtual ~NativeViewHandler() {}
     virtual void onPaint(void* surface, float width, float height) {}
+    virtual void onSetAttribute(const char* name, const std::string* value) {}
 };
 
 class KWUI_EXPORT Application
