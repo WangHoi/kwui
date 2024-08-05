@@ -14,9 +14,9 @@ namespace windows::graphics
 {
 struct NativeBitmap
 {
-    float width;
-    float height;
-    float dpi_scale;
+    float width = 0;
+    float height = 0;
+    float dpi_scale = 1;
     ComPtr<ID3D11Texture2D> d3d_tex;
     ComPtr<ID2D1Bitmap1> d2d_bitmap;
 
@@ -90,6 +90,7 @@ public:
                           float src_margin, float dst_margin);
     ComPtr<ID2D1LinearGradientBrush> CreateLinearGradientBrush_Logo();
     ComPtr<ID2D1RadialGradientBrush> CreateRadialGradientBrush_Highlight();
+    ComPtr<ID2D1BitmapBrush> CreateBitmapBrush(ID2D1Bitmap1* bitmap);
     void SetBrush(ComPtr<ID2D1Brush> brush);
 
     NativeBitmap createNativeBitmap(float width, float height);

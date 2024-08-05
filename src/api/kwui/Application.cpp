@@ -7,6 +7,7 @@
 #include "scene2d/ProgressBarControl.h"
 #include "scene2d/SpinnerControl.h"
 #include "scene2d/LineEditControl.h"
+#include "scene2d/CustomElementControl.h"
 #ifdef _WIN32
 #include "windows/graphics/GraphicDeviceD2D.h"
 #include "windows/DialogWin32.h"
@@ -295,4 +296,12 @@ void Application::setNativeViewHandler(NativeViewHandler* handler)
 {
     scene2d::control::NativeViewControl::setNativeViewHandler(handler);
 }
+
+void Application::registerCustomElement(const char* name, CustomElementFactoryFn factory_fn)
+{
+    auto atom = base::string_intern(name);
+    scene2d::ControlRegistry::get()
+        ->registerControl(atom, scene2d::control::CustomElementContrlFactory(atom, factory_fn));
+}
+
 }

@@ -53,3 +53,12 @@ inline string_atom string_intern(absl::string_view s)
 }
 
 }
+
+template<>
+struct std::hash<base::string_atom>
+{
+	std::size_t operator()(const base::string_atom& s) const noexcept
+	{
+		return std::hash<std::string>{}(s.c_str());
+	}
+};

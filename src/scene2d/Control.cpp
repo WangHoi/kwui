@@ -22,7 +22,7 @@ Control* ControlRegistry::createControl(base::string_atom name)
     auto it = control_factories_.find(name);
     if (it == control_factories_.end())
         return nullptr;
-    return (it->second)();
+    return (it->second)(name);
 }
 
 }

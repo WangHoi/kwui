@@ -1,6 +1,6 @@
 #pragma once
 #include "kwui_export.h"
-#include "kwui_main.h"
+#include "CustomElement.h"
 #include <functional>
 #include <string>
 
@@ -46,6 +46,8 @@ public:
 
     void* getNativeViewData(NativeViewType& out_type);
     void setNativeViewHandler(NativeViewHandler* handler);
+
+    void registerCustomElement(const char* name, CustomElementFactoryFn factory_fn);
 
 private:
     class Private;

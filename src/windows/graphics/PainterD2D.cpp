@@ -424,6 +424,21 @@ ComPtr<ID2D1RadialGradientBrush> Painter::CreateRadialGradientBrush_Highlight() 
 	}
 	return brush;
 }
+
+ComPtr<ID2D1BitmapBrush> Painter::CreateBitmapBrush(ID2D1Bitmap1* bitmap)
+{
+	if (!bitmap)
+		return nullptr;
+
+	HRESULT hr;
+	ComPtr<ID2D1BitmapBrush> brush;
+	hr = _rt->CreateBitmapBrush(bitmap, brush.GetAddressOf());
+	if (FAILED(hr)) {
+		LOG(ERROR) << "Create BitmapBrush failed, hr=" << std::hex << hr;
+	}
+	return brush;
+}
+
 void Painter::SetBrush(ComPtr<ID2D1Brush> brush) {
 	_current.gradient_brush = brush;
 }
