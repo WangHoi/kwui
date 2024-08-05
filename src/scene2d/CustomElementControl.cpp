@@ -48,7 +48,7 @@ void CustomElementControl::onAnimationFrame(Node* node, absl::Time timestamp)
 
 void CustomElementControl::onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect)
 {
-    if (rect.width() <= 0 && rect.height() <= 0)
+    if (rect.width() <= 0 || rect.height() <= 0)
         return;
 
     base::scoped_setter _1(cur_painter_, &p);

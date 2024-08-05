@@ -281,6 +281,21 @@ void Application::quit()
 #endif
 }
 
+bool Application::loadResource(const char* path, ResourceItem* resource_item)
+{
+    auto RM = base::ResourceManager::instance();
+    if (!RM)
+        return false;
+    auto u16_path = base::EncodingManager::UTF8ToWide(path);
+    auto item = RM->loadResource(u16_path.c_str());
+    if (item.has_value()) {
+        resource_item->data = item->data;
+        resource_item->size = item->size;
+        return true;
+    }
+    return false;
+}
+
 void* Application::getNativeViewData(NativeViewType& type)
 {
 #if WITH_SKIA
@@ -303,5 +318,4 @@ void Application::registerCustomElement(const char* name, CustomElementFactoryFn
     scene2d::ControlRegistry::get()
         ->registerControl(atom, scene2d::control::CustomElementContrlFactory(atom, factory_fn));
 }
-
 }

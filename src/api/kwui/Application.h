@@ -26,6 +26,11 @@ public:
     virtual void onSetAttribute(const char* name, const std::string* value) {}
 };
 
+struct KWUI_EXPORT ResourceItem {
+    const uint8_t* data = nullptr;
+    size_t size = 0;
+};
+
 class KWUI_EXPORT Application
 {
 public:
@@ -43,6 +48,8 @@ public:
     void addFont(const char* family_name, const char* font_path);
     int exec();
     static void quit();
+
+    static bool loadResource(const char* path, ResourceItem* resource_item);
 
     void* getNativeViewData(NativeViewType& out_type);
     void setNativeViewHandler(NativeViewHandler* handler);
