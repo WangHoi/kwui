@@ -32,16 +32,16 @@ void ButtonControl::onPaint(graph2d::PainterInterface& p, const scene2d::RectF& 
 
 void ButtonControl::onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt)
 {
-	LOG(INFO) << "ButtonControl::onMouseEvent isHandled=" << evt.isHandled()
-		<< ", cmd=" << evt.cmd
-		<< ", button=" << evt.button
-		<< ", buttons=" << evt.buttons;
+	// LOG(INFO) << "ButtonControl::onMouseEvent isHandled=" << evt.isHandled()
+	// 	<< ", cmd=" << evt.cmd
+	// 	<< ", button=" << evt.button
+	// 	<< ", buttons=" << evt.buttons;
 	if (evt.isHandled())
 		return;
 	evt.setHandled();
 	node->requestPaint();
 	if ((evt.cmd == scene2d::MOUSE_UP) && (evt.button & scene2d::LEFT_BUTTON) && (evt.buttons == 0)) {
-		LOG(INFO) << "button click";
+		// LOG(INFO) << "button click";
 		JSContext* jctx = node->scene()->scriptContext().get();
 		if (JS_IsFunction(jctx, onclick_func_.jsValue())) {
 			auto func = onclick_func_;
