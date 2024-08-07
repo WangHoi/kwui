@@ -21,7 +21,6 @@
 #include "base/EncodingManager.h"
 #include "base/ResourceManager.h"
 #include "graph2d/graph2d.h"
-#include "scene2d/NativeViewControl.h"
 #if WITH_SKIA
 #include "xskia/GraphicDeviceX.h"
 #endif
@@ -72,8 +71,7 @@ public:
     void onAppMessage(WPARAM wParam, LPARAM lParam) override
     {
         auto f = (std::function<void()>*)((void*)wParam);
-        if (f)
-        {
+        if (f) {
             (*f)();
             delete f;
         }
@@ -110,6 +108,11 @@ public:
 #ifdef _WIN32
         LOG(INFO) << "Init GraphicDevice...";
         windows::graphics::GraphicDeviceD2D::createInstance()->init();
+        auto dev = windows::graphics::GraphicDeviceD2D::instance()->getD3DDevice1();
+        if (dev) {
+            internal_data_.renderer_type = INTERNAL_RENDERER_D3D11_1;
+            internal_data_.context = dev;
+        }
 #else
 #pragma message("TODO: Application::Private::init().")
 #endif
@@ -122,7 +125,6 @@ public:
         scene2d::ControlRegistry::get()->registerControl<scene2d::ProgressBarControl>();
         scene2d::ControlRegistry::get()->registerControl<scene2d::SpinnerControl>();
         scene2d::ControlRegistry::get()->registerControl<scene2d::control::LineEditControl>();
-        scene2d::ControlRegistry::get()->registerControl<scene2d::control::NativeViewControl>();
 
         LOG(INFO) << "Register builtin icon font...";
         auto icon_font = resources::get_icon_data();
@@ -130,6 +132,7 @@ public:
     }
 
     Application* q_;
+    InternalData internal_data_ = {INTERNAL_RENDERER_UNKNOWN, nullptr};
 #ifdef _WIN32
     windows::HiddenMsgWindow msg_window_;
 #else
@@ -242,12 +245,9 @@ void Application::addFont(const char* family_name, const char* font_path)
         = base::EncodingManager::UTF8ToWide(font_path);
     auto res = base::ResourceManager::instance()
         ->loadResource(u16_font_path.c_str());
-    if (res.has_value())
-    {
+    if (res.has_value()) {
         graph2d::addFont(family_name, res.value().data, res.value().size);
-    }
-    else
-    {
+    } else {
         LOG(ERROR) << "addFont: failed to load resource [" << font_path << "]";
     }
 }
@@ -256,8 +256,7 @@ int Application::exec()
 {
 #ifdef _WIN32
     MSG msg;
-    while (GetMessageW(&msg, NULL, 0, 0))
-    {
+    while (GetMessageW(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
@@ -296,20 +295,9 @@ bool Application::loadResource(const char* path, ResourceItem* resource_item)
     return false;
 }
 
-void* Application::getNativeViewData(NativeViewType& type)
+const InternalData* Application::internalData()
 {
-#if WITH_SKIA
-#elif defined(_WIN32)
-    type = NATIVE_VIEW_D3D11;
-    return windows::graphics::GraphicDeviceD2D::instance()->getD3DDevice1();
-#endif
-    type = NATIVE_VIEW_UNSUPPORTED;
-    return nullptr;
-}
-
-void Application::setNativeViewHandler(NativeViewHandler* handler)
-{
-    scene2d::control::NativeViewControl::setNativeViewHandler(handler);
+    return &d->internal_data_;
 }
 
 void Application::registerCustomElement(const char* name, CustomElementFactoryFn factory_fn)

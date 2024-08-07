@@ -12,18 +12,17 @@ namespace kwui
 {
 typedef void (*LogCallback)(const char* msg);
 
-enum NativeViewType
+enum InternalRendererType
 {
-    NATIVE_VIEW_UNSUPPORTED,
-    NATIVE_VIEW_D3D11,
+    INTERNAL_RENDERER_UNKNOWN,
+    INTERNAL_RENDERER_D3D11_1,
 };
 
-class KWUI_EXPORT NativeViewHandler
-{
-public:
-    virtual ~NativeViewHandler() {}
-    virtual void onPaint(void* surface, float width, float height, float dpi_scale) {}
-    virtual void onSetAttribute(const char* name, const std::string* value) {}
+struct KWUI_EXPORT InternalData {
+    InternalRendererType renderer_type;
+
+    /// GL context, or D3D device
+    void* context;
 };
 
 struct KWUI_EXPORT ResourceItem {
@@ -51,9 +50,7 @@ public:
 
     static bool loadResource(const char* path, ResourceItem* resource_item);
 
-    void* getNativeViewData(NativeViewType& out_type);
-    void setNativeViewHandler(NativeViewHandler* handler);
-
+    const InternalData* internalData();
     void registerCustomElement(const char* name, CustomElementFactoryFn factory_fn);
 
 private:

@@ -25,8 +25,6 @@ list(APPEND kwui_priv_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/SpinnerControl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/LineEditControl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/LineEditControl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/NativeViewControl.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/NativeViewControl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/CustomElementControl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/CustomElementControl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/TextLayout.h
