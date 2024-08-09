@@ -86,7 +86,7 @@ absl::optional<ScrollObject::SubControl> ScrollObject::subControlHitTest(const S
 	return absl::nullopt;
 }
 
-void ScrollObject::paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintVScrollbar(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect)
 {
 	if (sd->viewport_size.height >= sd->content_size.height) {
 		paintScrollbarBackground(sd, painter, rect);
@@ -99,7 +99,7 @@ void ScrollObject::paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* 
 	paintVScrollbarEndButton(sd, painter, rect);
 }
 
-void ScrollObject::paintHScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintHScrollbar(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect)
 {
 	if (sd->viewport_size.width >= sd->content_size.width) {
 		paintScrollbarBackground(sd, painter, rect);
@@ -112,70 +112,70 @@ void ScrollObject::paintHScrollbar(ScrollObject* sd, graph2d::PainterInterface* 
 	paintHScrollbarEndButton(sd, painter, rect);
 }
 
-void ScrollObject::paintScrollbarBackground(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintScrollbarBackground(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect)
 {
 	Color color(0xf0, 0xf0, 0xf0);
-	painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), color, color);
+	painter->drawBox(rect, EdgeOffsetF(), scene2d::CornerRadiusF(), color, color);
 }
 
-void ScrollObject::paintVScrollbarStartButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintVScrollbarStartButton(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect)
 {
 	if (!sd->vtop_button_bitmap_) {
 		sd->vtop_button_bitmap_ = graph2d::createBitmap(VSCROLL_TOP_BUTTON_PNG);
 	}
 	const auto& color = subControlColorForFlags(SubControl::VStartButton, sd->scrollbar_flags);
 	auto brect = scene2d::RectF::fromLTRB(rect.left, rect.top, rect.right, rect.top + rect.width());
-	painter->drawBox(brect, EdgeOffsetF(), CornerRadiusF(), color, color, sd->vtop_button_bitmap_.get());
+	painter->drawBox(brect, EdgeOffsetF(), scene2d::CornerRadiusF(), color, color, sd->vtop_button_bitmap_.get());
 }
 
-void ScrollObject::paintVScrollbarEndButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintVScrollbarEndButton(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect)
 {
 	if (!sd->vbottom_button_bitmap_) {
 		sd->vbottom_button_bitmap_ = graph2d::createBitmap(VSCROLL_BOTTOM_BUTTON_PNG);
 	}
 	const auto& color = subControlColorForFlags(SubControl::VEndButton, sd->scrollbar_flags);
 	auto brect = scene2d::RectF::fromLTRB(rect.left, rect.bottom - rect.width(), rect.right, rect.bottom);
-	painter->drawBox(brect, EdgeOffsetF(), CornerRadiusF(), color, color, sd->vbottom_button_bitmap_.get());
+	painter->drawBox(brect, EdgeOffsetF(), scene2d::CornerRadiusF(), color, color, sd->vbottom_button_bitmap_.get());
 }
 
-void ScrollObject::paintVScrollbarThumb(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintVScrollbarThumb(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect)
 {
 	const auto& color = subControlColorForFlags(SubControl::VThumb, sd->scrollbar_flags);
 	float factor = (rect.height() - 2.0f * SCROLLBAR_GUTTER_WIDTH) / sd->content_size.height;
 	float y1 = SCROLLBAR_GUTTER_WIDTH + sd->scroll_offset.y * factor;
 	float y2 = SCROLLBAR_GUTTER_WIDTH + (sd->scroll_offset.y + sd->viewport_size.height) * factor;
 	painter->drawBox(scene2d::RectF::fromLTRB(rect.left + 1, rect.top + y1, rect.right - 1, rect.top + y2),
-		EdgeOffsetF(), CornerRadiusF(), color, color);
+		EdgeOffsetF(), scene2d::CornerRadiusF(), color, color);
 }
 
-void ScrollObject::paintHScrollbarStartButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintHScrollbarStartButton(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect)
 {
 	if (!sd->hleft_button_bitmap_) {
 		sd->hleft_button_bitmap_ = graph2d::createBitmap(HSCROLL_LEFT_BUTTON_PNG);
 	}
 	const auto& color = subControlColorForFlags(SubControl::HStartButton, sd->scrollbar_flags);
 	auto brect = scene2d::RectF::fromLTRB(rect.left, rect.top, rect.left + rect.height(), rect.bottom);
-	painter->drawBox(brect, EdgeOffsetF(), CornerRadiusF(), color, color, sd->hleft_button_bitmap_.get());
+	painter->drawBox(brect, EdgeOffsetF(), scene2d::CornerRadiusF(), color, color, sd->hleft_button_bitmap_.get());
 }
 
-void ScrollObject::paintHScrollbarEndButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintHScrollbarEndButton(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect)
 {
 	if (!sd->hright_button_bitmap_) {
 		sd->hright_button_bitmap_ = graph2d::createBitmap(HSCROLL_RIGHT_BUTTON_PNG);
 	}
 	const auto& color = subControlColorForFlags(SubControl::HEndButton, sd->scrollbar_flags);
 	auto brect = scene2d::RectF::fromLTRB(rect.right - rect.height(), rect.top, rect.right, rect.bottom);
-	painter->drawBox(brect, EdgeOffsetF(), CornerRadiusF(), color, color, sd->hright_button_bitmap_.get());
+	painter->drawBox(brect, EdgeOffsetF(), scene2d::CornerRadiusF(), color, color, sd->hright_button_bitmap_.get());
 }
 
-void ScrollObject::paintHScrollbarThumb(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect)
+void ScrollObject::paintHScrollbarThumb(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect)
 {
 	const auto& color = subControlColorForFlags(SubControl::HThumb, sd->scrollbar_flags);
 	float factor = (rect.width() - 2.0f * SCROLLBAR_GUTTER_WIDTH) / sd->content_size.width;
 	float x1 = SCROLLBAR_GUTTER_WIDTH + sd->scroll_offset.x * factor;
 	float x2 = SCROLLBAR_GUTTER_WIDTH + (sd->scroll_offset.x + sd->viewport_size.width) * factor;
 	painter->drawBox(scene2d::RectF::fromLTRB(rect.left + x1, rect.top + 1, rect.left + x2, rect.bottom - 1),
-		EdgeOffsetF(), CornerRadiusF(), color, color);
+		EdgeOffsetF(), scene2d::CornerRadiusF(), color, color);
 }
 
 const Color& ScrollObject::subControlColorForFlags(SubControl sc, uint32_t flags_)

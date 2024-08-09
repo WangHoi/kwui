@@ -13,8 +13,8 @@ base::string_atom ProgressBarControl::name()
 {
 	return base::string_intern(CONTROL_NAME);
 }
-void ProgressBarControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect) {
-	style::CornerRadiusF radius(border_radius_);
+void ProgressBarControl::onPaint(graph2d::PaintContextInterface& pi, const scene2d::RectF& rect) {
+	scene2d::CornerRadiusF radius(border_radius_);
 	pi.drawRoundedRect(rect, radius, bg_color_);
 
 	scene2d::DimensionF bar_size = { rect.width() * progress_, rect.height() };

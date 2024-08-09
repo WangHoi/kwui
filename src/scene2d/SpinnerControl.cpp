@@ -1,5 +1,5 @@
 #include "SpinnerControl.h"
-#include "graph2d/Painter.h"
+#include "graph2d/PaintContextInterface.h"
 
 namespace scene2d {
 
@@ -25,7 +25,7 @@ void SpinnerControl::onAttach(scene2d::Node* node)
 {
 	node->requestAnimationFrame(node);
 }
-void SpinnerControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect)
+void SpinnerControl::onPaint(graph2d::PaintContextInterface& pi, const scene2d::RectF& rect)
 {
 	/*
 	graphics::Painter& p = graphics::PainterImpl::unwrap(pi);

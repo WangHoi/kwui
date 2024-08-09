@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Bitmap.h"
-#include "Painter.h"
+#include "PaintContextInterface.h"
 #include "PaintSurface.h"
 #include "style/StyleFont.h"
 #include "style/TextFlow.h"

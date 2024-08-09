@@ -1,7 +1,7 @@
 #include "LayoutObject.h"
 #include "BoxConstraintSolver.h"
 #include "scene2d/Node.h"
-#include "graph2d/Painter.h"
+#include "graph2d/PaintContextInterface.h"
 #include "absl/functional/bind_front.h"
 #include "base/log.h"
 #include "graph2d/graph2d.h"
@@ -68,7 +68,7 @@ void LayoutObject::reflow(FlowRoot fl, float viewport_width, absl::optional<floa
 	arrangeBlock(fl.root, bfc, viewport_width, viewport_height);
 }
 
-void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
+void LayoutObject::paint(LayoutObject* o, graph2d::PaintContextInterface* painter)
 {
 	const Style& st = *o->style;
 
@@ -81,7 +81,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 	if (absl::holds_alternative<BlockBox>(o->box)) {
 		const BlockBox& b = absl::get<BlockBox>(o->box);
 		content_rect.emplace(b.contentRect().translated(b.pos));
-		CornerRadiusF border_radius;
+		scene2d::CornerRadiusF border_radius;
 		border_radius.top_left = st.border_top_left_radius.pixelOrZero();
 		border_radius.top_right = st.border_top_right_radius.pixelOrZero();
 		border_radius.bottom_right = st.border_bottom_right_radius.pixelOrZero();
@@ -98,7 +98,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
 		for (auto& ib : ibs) {
 			auto rect = scene2d::RectF::fromOriginSize(ib->pos, ib->size);
-			painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), st.background_color, st.border_color, nullptr);
+			painter->drawBox(rect, EdgeOffsetF(), scene2d::CornerRadiusF(), st.background_color, st.border_color, nullptr);
 			if (st.text_decoration_line != TextDecorationLineType::None) {
 				paintTextDecoration(o, painter, ib.get());
 			}
@@ -108,7 +108,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 		const InlineBox& ib = *ibb.inline_box;
 		const BlockBox& b = ibb.block_box;
 		content_rect.emplace(b.contentRect().translated(ib.pos));
-		CornerRadiusF border_radius;
+		scene2d::CornerRadiusF border_radius;
 		border_radius.top_left = st.border_top_left_radius.pixelOrZero();
 		border_radius.top_right = st.border_top_right_radius.pixelOrZero();
 		border_radius.bottom_right = st.border_bottom_right_radius.pixelOrZero();
@@ -185,11 +185,11 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			ScrollObject::paintHScrollbar(&so, painter, h_scrollbar_rect.value());
 		}
 
-		painter->pushClipRect(ipad_origin, so.viewport_size);
+		painter->clipRect(ipad_origin, so.viewport_size);
 	}
 
 	painter->save();
-	painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
+	painter->translate(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset);
 
 	if (o->node && o->node->control_ && content_rect.has_value()) {
 		painter->drawControl(scene2d::RectF::fromOriginSize(scene2d::PointF(), content_rect.value().size()), o->node->control_.get());
@@ -208,13 +208,13 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PainterInterface* painter)
 			continue;
 			//painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
 		}
-		painter->setTranslation(containingRectForPositionedChildren(o).value_or(scene2d::RectF()).origin() + scroll_offset, true);
+		painter->translate(containingRectForPositionedChildren(o).value_or(scene2d::RectF()).origin() + scroll_offset);
 		paint(child, painter);
 		painter->restore();
 	}
 
 	if (o->scroll_object.has_value()) {
-		painter->popClipRect();
+		// painter->popClipRect();
 	}
 }
 
@@ -1623,7 +1623,7 @@ void LayoutObject::arrangePositionedChildren(LayoutObject* o, float viewport_wid
 	}
 }
 
-void LayoutObject::paintTextDecoration(LayoutObject* o, graph2d::PainterInterface* painter, const InlineBox* ib)
+void LayoutObject::paintTextDecoration(LayoutObject* o, graph2d::PaintContextInterface* painter, const InlineBox* ib)
 {
 	const Style& st = *o->style;
 	auto fm = graph2d::getFontMetrics(st.fontFamily().c_str(), st.fontSizeInPixels());
@@ -1633,21 +1633,21 @@ void LayoutObject::paintTextDecoration(LayoutObject* o, graph2d::PainterInterfac
 			ib->pos.y + ib->baseline - fm.underline_offset - 0.5f * fm.underline_thickness,
 			ib->size.width,
 			fm.underline_thickness);
-		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), st.color, Color(), nullptr);
+		painter->drawBox(rect, EdgeOffsetF(), scene2d::CornerRadiusF(), st.color, Color(), nullptr);
 	} else if (st.text_decoration_line == TextDecorationLineType::Overline) {
 		auto rect = scene2d::RectF::fromXYWH(
 			ib->pos.x,
 			ib->pos.y + ib->baseline - fm.ascent,
 			ib->size.width,
 			fm.underline_thickness);
-		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), st.color, Color(), nullptr);
+		painter->drawBox(rect, EdgeOffsetF(), scene2d::CornerRadiusF(), st.color, Color(), nullptr);
 	} else if (st.text_decoration_line == TextDecorationLineType::LineThrough) {
 		auto rect = scene2d::RectF::fromXYWH(
 			ib->pos.x,
 			ib->pos.y + ib->baseline - fm.line_through_offset - 0.5f * fm.line_through_thickness,
 			ib->size.width,
 			fm.line_through_thickness);
-		painter->drawBox(rect, EdgeOffsetF(), CornerRadiusF(), st.color, Color(), nullptr);
+		painter->drawBox(rect, EdgeOffsetF(), scene2d::CornerRadiusF(), st.color, Color(), nullptr);
 	}
 }
 

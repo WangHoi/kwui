@@ -62,7 +62,7 @@ public:
     void onSetEventHandler(base::string_atom name, const script::Value& func) override;
     bool hitTest(const scene2d::PointF& pos, int flags) const override;
     void onLayout(scene2d::Node* node, const scene2d::RectF& rect) override;
-    void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
+    void onPaint(graph2d::PaintContextInterface& p, const scene2d::RectF& rect) override;
     void onFocusEvent(scene2d::Node* node, scene2d::FocusEvent& evt) override;
     void onMouseEvent(scene2d::Node* node, scene2d::MouseEvent& evt) override;
     void onKeyEvent(scene2d::Node* node, scene2d::KeyEvent& evt) override;

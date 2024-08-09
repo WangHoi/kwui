@@ -10,7 +10,7 @@ public:
     static const char* CONTROL_NAME;
     ProgressBarControl();
     base::string_atom name() override;
-    void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
+    void onPaint(graph2d::PaintContextInterface& p, const scene2d::RectF& rect) override;
     void onSetAttribute(base::string_atom name, const scene2d::NodeAttributeValue& value) override;
     inline float GetProgress() const { return progress_; }
     void SetProgress(float value);

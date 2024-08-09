@@ -12,7 +12,7 @@ base::string_atom ImageControl::name()
 {
 	return base::string_intern(CONTROL_NAME);
 }
-void ImageControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect)
+void ImageControl::onPaint(graph2d::PaintContextInterface& pi, const scene2d::RectF& rect)
 {
 	// TODO: bitmap DPI support
 	if (!bitmap_) {

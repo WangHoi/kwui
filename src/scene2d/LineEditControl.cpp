@@ -329,15 +329,15 @@ void LineEditControl::onLayout(scene2d::Node* node, const scene2d::RectF& rect)
     _rect = rect;
     UpdateCaretAndScroll();
 }
-void LineEditControl::onPaint(graph2d::PainterInterface& pi, const scene2d::RectF& rect) {
-    pi.setTranslation(rect.origin(), true);
+void LineEditControl::onPaint(graph2d::PaintContextInterface& pi, const scene2d::RectF& rect) {
+    pi.translate(rect.origin());
     pi.drawRoundedRect(RectF::fromOriginSize(PointF(), rect.size()), 
-        style::CornerRadiusF(_border_radius),
+        scene2d::CornerRadiusF(_border_radius),
         _bg_color);
 
     scene2d::PointF clip_origin(_padding, 0);
     scene2d::DimensionF clip_size(rect.width() - 2 * _padding, rect.height());
-    pi.pushClipRect(clip_origin, clip_size);
+    pi.clipRect(clip_origin, clip_size);
     {
         // Draw selection
         if (HasSelection() && !_composing.has_value()) {
@@ -354,7 +354,7 @@ void LineEditControl::onPaint(graph2d::PainterInterface& pi, const scene2d::Rect
         // Draw text
         pi.drawTextLayout(_scroll_offset + _padding, *_layout, _color);
     }
-    pi.popClipRect();
+    // pi.popClipRect();
 
     if (_composing.has_value()) {
         // Draw underline

@@ -1,9 +1,9 @@
-#include "graph2d/Painter.h"
+#include "graph2d/PaintContextInterface.h"
 #include "include/core/SkCanvas.h"
 
 namespace xskia {
 
-class PainterX : public graph2d::PainterInterface {
+class PainterX : public graph2d::PaintContextInterface {
 public:
 	PainterX(SkCanvas* canvas, float dpi_scale);
 
@@ -11,14 +11,14 @@ public:
 	void save() override;
 	void restore() override;
 	float getDpiScale() override;
-	void setTranslation(const scene2d::PointF& offset, bool combine) override;
-	void setRotation(float degrees, const scene2d::PointF& center, bool combine) override;
-	void pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) override;
+	void translate(const scene2d::PointF& offset) override;
+	void rotate(float radians, const scene2d::PointF& center) override;
+	void clipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) override;
 	void popClipRect() override;
 	void clear(const style::Color& c) override;
 	void drawBox(const scene2d::RectF& border_rect,
 		const style::EdgeOffsetF& inset_border_width,
-		const style::CornerRadiusF& border_radius,
+		const scene2d::CornerRadiusF& border_radius,
 		const style::Color& background_color,
 		const style::Color& border_color,
 		const graph2d::BitmapInterface* background_image) override;
@@ -28,7 +28,7 @@ public:
 		const scene2d::PointF& origin,
 		const scene2d::DimensionF& size) override;
 	void drawRoundedRect(const scene2d::RectF& rect,
-		const style::CornerRadiusF& border_radius,
+		const scene2d::CornerRadiusF& border_radius,
 		const style::Color& background_color) override;
 	void drawRect(const scene2d::RectF& rect,
 		const style::Color& background_color) override;

@@ -8,7 +8,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/cleanup/cleanup.h"
 #include "base/log.h"
-#include "graph2d/Painter.h"
+#include "graph2d/PaintContextInterface.h"
 #include "absl/time/clock.h"
 namespace scene2d {
 
@@ -340,12 +340,12 @@ void Scene::computeLayout(float width, absl::optional<float> height)
 	layoutComputed(root_);
 }
 
-void Scene::paint(graph2d::PainterInterface* painter)
+void Scene::paint(graph2d::PaintContextInterface* painter)
 {
 	for (auto& fl : flow_roots_) {
 		auto scene_pos = mapPointToScene(fl.root->node, PointF());
 		// LOG(INFO) << "Paint flow root " << *fl.root << ", scene_pos=" << scene_pos;
-		painter->setTranslation(scene_pos, false);
+		painter->translate(scene_pos);
 		style::LayoutObject::paint(fl.root, painter);
 		painter->restore();
 	}
@@ -662,7 +662,7 @@ void Scene::resolveNodeStyle(SceneStyleResolveContext& sctx, Node* node)
 	}
 }
 
-void Scene::paintNode(Node* node, graph2d::PainterInterface* painter)
+void Scene::paintNode(Node* node, graph2d::PaintContextInterface* painter)
 {
 	style::LayoutObject::paint(&node->layout_, painter);
 }

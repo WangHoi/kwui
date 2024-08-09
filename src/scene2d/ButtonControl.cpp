@@ -24,7 +24,7 @@ bool ButtonControl::hitTest(const scene2d::PointF& pos, int flags) const
 	return (scene2d::NODE_FLAG_CLICKABLE | scene2d::NODE_FLAG_HOVERABLE) & flags;
 }
 
-void ButtonControl::onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect)
+void ButtonControl::onPaint(graph2d::PaintContextInterface& p, const scene2d::RectF& rect)
 {
 	//p.SetColor(BLUE.MakeAlpha(0.2f));
 	//p.DrawRect(rect.origin(), rect.size());

@@ -22,7 +22,7 @@ public:
     void onAttach(scene2d::Node* node) override;
     void onDetach(Node* node) override;
     void onAnimationFrame(Node* node, absl::Time timestamp) override;
-    void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect) override;
+    void onPaint(graph2d::PaintContextInterface& p, const scene2d::RectF& rect) override;
 
     // Implements `CustomElementPaintContext`
     void* getNativeBitmap(float& out_pixel_width, float& out_pixel_height) override;
@@ -34,7 +34,7 @@ private:
     std::unique_ptr<kwui::CustomElement> custom_ = nullptr;
     windows::graphics::NativeBitmap native_;
     ComPtr<ID2D1Bitmap1> bitmap_;
-    graph2d::PainterInterface* cur_painter_ = nullptr;
+    graph2d::PaintContextInterface* cur_painter_ = nullptr;
     RectF cur_rect_;
 };
 

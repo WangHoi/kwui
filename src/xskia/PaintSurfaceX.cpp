@@ -67,7 +67,7 @@ void PaintSurfaceX::resize(int pixel_width, int pixel_height, float dpi_scale)
 	createSurface();
 }
 
-std::unique_ptr<graph2d::PainterInterface> PaintSurfaceX::beginPaint()
+std::unique_ptr<graph2d::PaintContextInterface> PaintSurfaceX::beginPaint()
 {
 #ifdef __ANDROID__
 	if (!wnd_surface_)

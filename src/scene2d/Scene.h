@@ -15,7 +15,7 @@ namespace script {
 class Context;
 }
 namespace graph2d {
-class PainterInterface;
+class PaintContextInterface;
 }
 
 namespace scene2d {
@@ -55,7 +55,7 @@ public:
 	void resolveStyle();
 	void computeLayout(float width, absl::optional<float> height);
 
-	void paint(graph2d::PainterInterface* painter);
+	void paint(graph2d::PaintContextInterface* painter);
 
 	scene2d::PointF getMousePosition() const;
 	void requestPaint();
@@ -92,7 +92,7 @@ private:
 	void setupProps(Node* node, JSValue props);
 	bool match(absl::Span<Node*> precedents, Node* node, style::Selector* selector);
 	void resolveNodeStyle(SceneStyleResolveContext& ctx, Node* node);
-	void paintNode(Node* node, graph2d::PainterInterface* painter);
+	void paintNode(Node* node, graph2d::PaintContextInterface* painter);
 	void layoutComputed(Node* node);
 
 	void updateNodeChildren(Node* node, JSContext* ctx, JSValue comp_data);

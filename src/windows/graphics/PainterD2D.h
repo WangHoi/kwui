@@ -2,7 +2,7 @@
 
 #include "scene2d/geom_types.h"
 #include "scene2d/Control.h"
-#include "graph2d/Painter.h"
+#include "graph2d/PaintContextInterface.h"
 #include "graph2d/Bitmap.h"
 #include "windows/windows_header.h"
 #include "TextLayoutD2D.h"
@@ -207,7 +207,7 @@ private:
     mutable ComPtr<ID2D1Bitmap> bitmap_;
 };
 
-class PainterImpl : public graph2d::PainterInterface
+class PainterImpl : public graph2d::PaintContextInterface
 {
 public:
     PainterImpl(ID2D1RenderTarget* rt, const scene2d::PointF& mouse_pos)
@@ -215,7 +215,7 @@ public:
     {
     }
 
-    static inline graphics::Painter& unwrap(graph2d::PainterInterface& pi)
+    static inline graphics::Painter& unwrap(graph2d::PaintContextInterface& pi)
     {
         return ((PainterImpl&)pi).p_;
     }
@@ -235,30 +235,19 @@ public:
         return p_.GetDpiScale();
     }
 
-    void setTranslation(const scene2d::PointF& offset, bool combine) override
+    void translate(const scene2d::PointF& offset) override
     {
-        if (combine)
-            p_.Translate(offset);
-        else
-            p_.SetTranslation(offset);
+        p_.Translate(offset);
     }
 
-    void setRotation(float degrees, const scene2d::PointF& center, bool combine) override
-    {
-        if (combine)
-            p_.Rotate(degrees, center);
-        else
-            p_.SetRotation(degrees, center);
-    }
+    // void rotate(float radians, const scene2d::PointF& center) override
+    // {
+    //     p_.Rotate(radians, center);
+    // }
 
-    void pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) override
+    void clipRect(const scene2d::RectF& rect) override
     {
-        p_.PushClipRect(origin, size);
-    }
-
-    void popClipRect() override
-    {
-        p_.PopClipRect();
+        p_.PushClipRect(rect.origin(), rect.size());
     }
 
     void clear(const style::Color& c) override
@@ -268,7 +257,7 @@ public:
 
     void drawBox(const scene2d::RectF& padding_rect,
                  const style::EdgeOffsetF& border_width,
-                 const style::CornerRadiusF& border_radius,
+                 const scene2d::CornerRadiusF& border_radius,
                  const style::Color& background_color,
                  const style::Color& border_color,
                  const graph2d::BitmapInterface* background_image) override
@@ -328,7 +317,7 @@ public:
     }
 
     void drawRoundedRect(const scene2d::RectF& rect,
-                         const style::CornerRadiusF& border_radius,
+                         const scene2d::CornerRadiusF& border_radius,
                          const style::Color& background_color) override
     {
         float r = std::max({
@@ -381,6 +370,10 @@ public:
         p_.SetColor(background_color);
         p_.DrawArc(center, radius, start_angle, span_angle);
     }
+
+    // void scale(const scene2d::PointF& s) override;
+    void drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush& brush) override;
+    void drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBrush& brush) override;
 
 private:
     graphics::Painter p_;

@@ -1,7 +1,7 @@
 #pragma once
 #include "scene2d/geom_types.h"
 #include "scene2d/Event.h"
-#include "graph2d/Painter.h"
+#include "graph2d/PaintContextInterface.h"
 
 namespace style {
 
@@ -48,17 +48,17 @@ struct ScrollObject {
 
 	static bool hitTest(const ScrollObject* sd, const scene2d::PointF& pos, int flags);
 	static absl::optional<SubControl> subControlHitTest(const ScrollObject* sd, const scene2d::PointF& pos);
-	static void paintVScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
-	static void paintHScrollbar(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
+	static void paintVScrollbar(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect);
+	static void paintHScrollbar(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect);
 
 private:
-	static void paintScrollbarBackground(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
-	static void paintVScrollbarStartButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
-	static void paintVScrollbarEndButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
-	static void paintVScrollbarThumb(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
-	static void paintHScrollbarStartButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
-	static void paintHScrollbarEndButton(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
-	static void paintHScrollbarThumb(ScrollObject* sd, graph2d::PainterInterface* painter, const scene2d::RectF& rect);
+	static void paintScrollbarBackground(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect);
+	static void paintVScrollbarStartButton(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect);
+	static void paintVScrollbarEndButton(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect);
+	static void paintVScrollbarThumb(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect);
+	static void paintHScrollbarStartButton(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect);
+	static void paintHScrollbarEndButton(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect);
+	static void paintHScrollbarThumb(ScrollObject* sd, graph2d::PaintContextInterface* painter, const scene2d::RectF& rect);
 	static uint32_t subControlFlags(SubControl sc, uint32_t flags);
 	static const Color& subControlColorForFlags(SubControl sc, uint32_t flags);
 

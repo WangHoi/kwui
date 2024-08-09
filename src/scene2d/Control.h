@@ -6,7 +6,7 @@
 
 namespace graph2d
 {
-class PainterInterface;
+class PaintContextInterface;
 }
 
 namespace script
@@ -50,7 +50,7 @@ public:
     {
     }
 
-    virtual void onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect)
+    virtual void onPaint(graph2d::PaintContextInterface& p, const scene2d::RectF& rect)
     {
     }
 

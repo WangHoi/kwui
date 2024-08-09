@@ -46,7 +46,7 @@ void CustomElementControl::onAnimationFrame(Node* node, absl::Time timestamp)
     node->requestAnimationFrame(node);
 }
 
-void CustomElementControl::onPaint(graph2d::PainterInterface& p, const scene2d::RectF& rect)
+void CustomElementControl::onPaint(graph2d::PaintContextInterface& p, const scene2d::RectF& rect)
 {
     if (rect.width() <= 0 || rect.height() <= 0)
         return;

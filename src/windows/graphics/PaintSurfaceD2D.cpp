@@ -46,7 +46,7 @@ void PaintSurfaceD2D::resize(int pixel_width, int pixel_height, float dpi_scale)
     if (hr == D2DERR_RECREATE_TARGET)
         recreateRenderTarget();
 }
-std::unique_ptr<graph2d::PainterInterface> PaintSurfaceD2D::beginPaint() {
+std::unique_ptr<graph2d::PaintContextInterface> PaintSurfaceD2D::beginPaint() {
     if (!rt_)
         recreateRenderTarget();
     if (!rt_)

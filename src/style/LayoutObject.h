@@ -13,7 +13,7 @@ struct MouseEvent;
 }
 
 namespace graph2d {
-class PainterInterface;
+class PaintContextInterface;
 }
 
 namespace style {
@@ -84,7 +84,7 @@ struct LayoutObject {
 
 	static void measure(LayoutObject* o);
 	static void reflow(FlowRoot root, float viewport_width, absl::optional<float> viewport_height);
-	static void paint(LayoutObject* o, graph2d::PainterInterface* painter);
+	static void paint(LayoutObject* o, graph2d::PaintContextInterface* painter);
 	static LayoutObject* pick(LayoutObject* o, scene2d::PointF pos, int flag_mask, scene2d::PointF* out_local_pos);
 	static scene2d::PointF getOffset(LayoutObject* o);
 
@@ -155,7 +155,7 @@ private:
 	 * used by reflow() and getChildrenBoundingRect() */
 	static absl::optional<scene2d::RectF> containingRectForPositionedChildren(LayoutObject* o);
 	static void arrangePositionedChildren(LayoutObject* o, float viewport_width, absl::optional<float> viewport_height);
-	static void paintTextDecoration(LayoutObject* o, graph2d::PainterInterface* painter, const InlineBox* ib);
+	static void paintTextDecoration(LayoutObject* o, graph2d::PaintContextInterface* painter, const InlineBox* ib);
 
 	template <typename Sink>
 	friend void AbslStringify(Sink& sink, const LayoutObject& o) {

@@ -9,7 +9,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/functional/bind_front.h"
 #include "absl/time/clock.h"
-#include "graph2d/Painter.h"
+#include "graph2d/PaintContextInterface.h"
 #include "api/kwui/ScriptEngine.h"
 #include "api/kwui/Application.h"
 #include "base/ResourceManager.h"

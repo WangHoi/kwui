@@ -28,17 +28,17 @@ float PainterX::getDpiScale()
 	return dpi_scale_;
 }
 
-void PainterX::setTranslation(const scene2d::PointF& offset, bool combine)
+void PainterX::translate(const scene2d::PointF& offset)
 {
 	canvas_->translate(offset.x, offset.y);
 }
 
-void PainterX::setRotation(float degrees, const scene2d::PointF& center, bool combine)
+void PainterX::rotate(float radians, const scene2d::PointF& center)
 {
-	canvas_->rotate(degrees, center.x, center.y);
+	canvas_->rotate(radians, center.x, center.y);
 }
 
-void PainterX::pushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size)
+void PainterX::clipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size)
 {
 	canvas_->save();
 	canvas_->clipIRect(SkIRect::MakeLTRB(floor(origin.x), floor(origin.y),
@@ -56,7 +56,7 @@ void PainterX::clear(const style::Color& c)
 void PainterX::drawBox(
 	const scene2d::RectF& padding_rect,
 	const style::EdgeOffsetF& border_width,
-	const style::CornerRadiusF& border_radius,
+	const scene2d::CornerRadiusF& border_radius,
 	const style::Color& background_color,
 	const style::Color& border_color,
 	const graph2d::BitmapInterface* background_image)
@@ -122,7 +122,7 @@ void PainterX::drawBitmap(const graph2d::BitmapInterface* image, const scene2d::
 }
 
 void PainterX::drawRoundedRect(const scene2d::RectF& rect,
-	const style::CornerRadiusF& border_radius,
+	const scene2d::CornerRadiusF& border_radius,
 	const style::Color& background_color)
 {
 	SkPaint paint;
