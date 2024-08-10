@@ -2,6 +2,18 @@
 
 namespace graph2d
 {
+enum SweepDirection
+{
+    SWEEP_DIRECTION_CLOCKWISE,
+    SWEEP_DIRECTION_COUNTER_CLOCKWISE,
+};
+
+enum ArcSize
+{
+    ARC_SIZE_SMALL,
+    ARC_SIZE_LARGE,
+};
+
 /**
  * A complex, one-dimensional subset of a plane.
  * A path consists of a number of sub-paths, and a current point.
@@ -13,9 +25,11 @@ namespace graph2d
 class PaintPathInterface
 {
 public:
+    virtual ~PaintPathInterface() = default;
     virtual void moveTo(float x, float y) = 0;
     virtual void lineTo(float x, float y) = 0;
+    virtual void arcTo(float radius_x, float radius_y, float rotation_degress,
+                       SweepDirection sweep_dir, ArcSize arc_size, float x, float y) = 0;
     virtual void close() = 0;
 };
-
 }

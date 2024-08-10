@@ -343,6 +343,7 @@ void Scene::computeLayout(float width, absl::optional<float> height)
 void Scene::paint(graph2d::PaintContextInterface* painter)
 {
 	for (auto& fl : flow_roots_) {
+		painter->save();
 		auto scene_pos = mapPointToScene(fl.root->node, PointF());
 		// LOG(INFO) << "Paint flow root " << *fl.root << ", scene_pos=" << scene_pos;
 		painter->translate(scene_pos);
@@ -662,10 +663,10 @@ void Scene::resolveNodeStyle(SceneStyleResolveContext& sctx, Node* node)
 	}
 }
 
-void Scene::paintNode(Node* node, graph2d::PaintContextInterface* painter)
-{
-	style::LayoutObject::paint(&node->layout_, painter);
-}
+// void Scene::paintNode(Node* node, graph2d::PaintContextInterface* painter)
+// {
+// 	style::LayoutObject::paint(&node->layout_, painter);
+// }
 
 void Scene::layoutComputed(Node* node)
 {

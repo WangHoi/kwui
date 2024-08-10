@@ -47,8 +47,8 @@ public:
     void setStrokeJoin(StrokeJoin join) { stroke_join_ = join; }
     float strokeMiterLimit() const { return stroke_miter_limit_; }
     void setStrokeMiterLimit(float limit) { stroke_miter_limit_ = limit; }
-    BitmapInterface* shader() const { return shader_; }
-    void setShader(BitmapInterface* shader) { shader_ = shader; }
+    const BitmapInterface* shader() const { return shader_; }
+    void setShader(const BitmapInterface* shader) { shader_ = shader; }
 
 private:
     PaintStyle style_ = PAINT_STYLE_FILL;
@@ -57,6 +57,6 @@ private:
     StrokeCap stroke_cap_ = STROKE_CAP_BUTT;
     StrokeJoin stroke_join_ = STROKE_JOIN_MITER;
     float stroke_miter_limit_ = 4.0f;
-    BitmapInterface* shader_ = nullptr;
+    const BitmapInterface* shader_ = nullptr;
 };
 }

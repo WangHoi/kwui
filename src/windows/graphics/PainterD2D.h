@@ -10,6 +10,8 @@
 #include "GraphicDeviceD2D.h"
 #include <vector>
 
+#include "graph2d/PaintPathInterface.h"
+
 namespace windows::graphics
 {
 struct NativeBitmap
@@ -26,6 +28,7 @@ struct NativeBitmap
     }
 };
 
+class PainterImpl;
 class Painter
 {
 public:
@@ -74,8 +77,7 @@ public:
     void Rotate(float degrees, const scene2d::PointF& center);
     void SetRotation(float degrees, const scene2d::PointF& center);
     //const scene2d::PointF& GetAccumTranslate() const { return _current.offset; }
-    void PushClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size);
-    void PopClipRect();
+    void ClipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size);
     void Save();
     void Restore();
     ComPtr<ID2D1Bitmap> CreateBitmap(const BitmapSubItem& item);
@@ -120,6 +122,7 @@ private:
         float stroke_width;
         bool pixel_snap;
         ComPtr<ID2D1Brush> gradient_brush;
+        int push_clip_rect_count;
 
         State()
         {
@@ -135,6 +138,7 @@ private:
             stroke_width = 0.0f;
             pixel_snap = true;
             gradient_brush = nullptr;
+            push_clip_rect_count = 0;
         }
 
         inline bool HasFill() const
@@ -153,6 +157,8 @@ private:
     float _dpi_scale;
     State _current;
     std::vector<State> _state_stack;
+
+    friend class PainterImpl;
 };
 
 class BitmapImpl : public graph2d::BitmapInterface
@@ -207,6 +213,26 @@ private:
     mutable ComPtr<ID2D1Bitmap> bitmap_;
 };
 
+class PaintPathD2D : public graph2d::PaintPathInterface
+{
+public:
+    void moveTo(float x, float y) override;
+    void lineTo(float x, float y) override;
+    void arcTo(float radius_x, float radius_y, float rotation_degress,
+               graph2d::SweepDirection sweep_dir, graph2d::ArcSize arc_size,
+               float x, float y) override;
+    void close() override;
+
+private:
+    void updateCheck();
+    void reset();
+
+    bool finalized_ = false;
+    ComPtr<ID2D1PathGeometry> geometry_;
+    ComPtr<ID2D1GeometrySink> gsink_;
+    absl::optional<scene2d::PointF> firstp_, lastp_;
+};
+
 class PainterImpl : public graph2d::PaintContextInterface
 {
 public:
@@ -247,7 +273,7 @@ public:
 
     void clipRect(const scene2d::RectF& rect) override
     {
-        p_.PushClipRect(rect.origin(), rect.size());
+        p_.ClipRect(rect.origin(), rect.size());
     }
 
     void clear(const style::Color& c) override
@@ -260,37 +286,7 @@ public:
                  const scene2d::CornerRadiusF& border_radius,
                  const style::Color& background_color,
                  const style::Color& border_color,
-                 const graph2d::BitmapInterface* background_image) override
-    {
-        auto rect1 = scene2d::RectF::fromLTRB(
-            padding_rect.left - border_width.left,
-            padding_rect.top - border_width.top,
-            padding_rect.right + border_width.right,
-            padding_rect.bottom + border_width.bottom);
-        float max_border_width = std::max(
-            {border_width.left, border_width.top, border_width.right, border_width.bottom});
-        p_.SetStrokeWidth(max_border_width);
-        p_.SetStrokeColor(border_color);
-        p_.SetColor(background_color);
-        float max_border_raidus = std::max(
-            {border_radius.top_left, border_radius.top_right, border_radius.bottom_right, border_radius.bottom_left});
-        if (max_border_raidus > 0.0f)
-        {
-            p_.DrawRoundedRect(rect1.origin(), rect1.size(), max_border_raidus);
-        }
-        else
-        {
-            p_.DrawRect(rect1.origin(), rect1.size());
-        }
-        if (background_image)
-        {
-            auto bitmap = static_cast<const BitmapImpl*>(background_image)->d2dBitmap(p_);
-            if (bitmap)
-            {
-                p_.DrawBitmap(bitmap, padding_rect.origin(), padding_rect.size());
-            }
-        }
-    }
+                 const graph2d::BitmapInterface* background_image) override;
 
     void drawGlyphRun(const scene2d::PointF& pos, const style::GlyphRunInterface* gr,
                       const style::Color& color) override
@@ -321,10 +317,14 @@ public:
                          const style::Color& background_color) override
     {
         float r = std::max({
-            border_radius.top_left,
-            border_radius.top_right,
-            border_radius.bottom_left,
-            border_radius.bottom_left
+            border_radius.top_left.width,
+            border_radius.top_left.height,
+            border_radius.top_right.width,
+            border_radius.top_right.height,
+            border_radius.bottom_right.width,
+            border_radius.bottom_right.height,
+            border_radius.bottom_left.width,
+            border_radius.bottom_left.height,
         });
         p_.SetColor(background_color);
         p_.DrawRoundedRect(rect.origin(), rect.size(), r);

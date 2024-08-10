@@ -329,6 +329,23 @@ struct RectF
                      std::max(bottom, r.bottom));
     }
 
+    RectF& intersect(const RectF& r)
+    {
+        left = std::min(std::max(left, r.left), right);
+        top = std::min(std::max(top, r.top), bottom);
+        right = std::max(std::min(right, r.right), left);
+        bottom = std::max(std::min(bottom, r.bottom), top);
+        return *this;
+    }
+
+    RectF intersected(const RectF& r) const
+    {
+        return RectF(std::min(std::max(left, r.left), right)/* left */,
+                     std::min(std::max(top, r.top), bottom)/* top */,
+                     std::max(std::min(right, r.right), left)/* right */,
+                     std::max(std::min(bottom, r.bottom), top) /* bottom */);
+    }
+
     RectF& moveTo(float x, float y)
     {
         right = x + (right - left);
@@ -379,15 +396,15 @@ private:
 
 struct CornerRadiusF
 {
-    float top_left = 0;
-    float top_right = 0;
-    float bottom_right = 0;
-    float bottom_left = 0;
+    DimensionF top_left;
+    DimensionF top_right;
+    DimensionF bottom_right;
+    DimensionF bottom_left;
 
     CornerRadiusF() = default;
 
     explicit CornerRadiusF(float f)
-        : top_left(f), top_right(f), bottom_right(f), bottom_left(f)
+        : top_left(f, f), top_right(f, f), bottom_right(f, f), bottom_left(f, f)
     {
     }
 
@@ -395,14 +412,14 @@ struct CornerRadiusF
     friend void AbslStringify(Sink& sink, const CornerRadiusF& o)
     {
         absl::Format(&sink, "CornerRadiusF { ");
-        if (o.top_left != 0.0f)
-            absl::Format(&sink, "top_left=%.0f, ", o.top_left);
-        if (o.top_right != 0.0f)
-            absl::Format(&sink, "top_right=%.0f, ", o.top_right);
-        if (o.bottom_right != 0.0f)
-            absl::Format(&sink, "bottom_right=%.0f, ", o.bottom_right);
-        if (o.bottom_left != 0.0f)
-            absl::Format(&sink, "bottom_left=%.0f, ", o.bottom_left);
+        if (o.top_left.x != 0.0f || o.top_left.y != 0.0f)
+            absl::Format(&sink, "top_left=%v, ", o.top_left);
+        if (o.top_right.x != 0.0f || o.top_right.y != 0.0f)
+            absl::Format(&sink, "top_right=%v, ", o.top_right);
+        if (o.bottom_right.x != 0.0f || o.bottom_right.y != 0.0f)
+            absl::Format(&sink, "bottom_right=%v, ", o.bottom_right);
+        if (o.bottom_left.x != 0.0f || o.bottom_left.y != 0.0f)
+            absl::Format(&sink, "bottom_left=%v, ", o.bottom_left);
         absl::Format(&sink, "}");
     }
 };
@@ -439,6 +456,14 @@ struct RRectF
     inline PointF center() const { return rect.center(); }
     inline float width() const { return rect.width(); }
     inline float height() const { return rect.height(); }
+
+    bool isRect() const
+    {
+        return !(std::min(corner_radius.top_left.width, corner_radius.top_left.height) > 0
+            || std::min(corner_radius.top_right.width, corner_radius.top_right.height) > 0
+            || std::min(corner_radius.bottom_right.width, corner_radius.bottom_right.height) > 0
+            || std::min(corner_radius.bottom_left.width, corner_radius.bottom_left.height) > 0);
+    }
 
     bool contains(const PointF& pos) const
     {
@@ -483,7 +508,9 @@ struct RRectF
 
 private:
     RRectF(const RectF& rc, const CornerRadiusF& radius)
-        : rect(rc), corner_radius(radius) {}
+        : rect(rc), corner_radius(radius)
+    {
+    }
 
     template <typename Sink>
     friend void AbslStringify(Sink& sink, const RRectF& p)
