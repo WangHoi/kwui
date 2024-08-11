@@ -225,6 +225,11 @@ struct DimensionF
         return DimensionF(width / f, height / f);
     }
 
+    bool isZeros() const
+    {
+        return width == 0 && height == 0;
+    }
+
     inline DimensionF makeRound() const
     {
         return DimensionF(roundf(width), roundf(height));
@@ -421,6 +426,16 @@ struct CornerRadiusF
         if (o.bottom_left.x != 0.0f || o.bottom_left.y != 0.0f)
             absl::Format(&sink, "bottom_left=%v, ", o.bottom_left);
         absl::Format(&sink, "}");
+    }
+
+    bool isSymmetric() const
+    {
+        return (top_left.width == top_right.width
+            && top_left.width == bottom_left.width
+            && bottom_left.width == bottom_right.width
+            && top_left.height == bottom_left.height
+            && top_right.height == bottom_right.height
+            && top_left.height == top_right.height);
     }
 };
 

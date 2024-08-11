@@ -29,6 +29,7 @@ struct NativeBitmap
 };
 
 class PainterImpl;
+
 class Painter
 {
 public:
@@ -92,7 +93,7 @@ public:
                           float src_margin, float dst_margin);
     ComPtr<ID2D1LinearGradientBrush> CreateLinearGradientBrush_Logo();
     ComPtr<ID2D1RadialGradientBrush> CreateRadialGradientBrush_Highlight();
-    ComPtr<ID2D1BitmapBrush> CreateBitmapBrush(ID2D1Bitmap1* bitmap);
+    ComPtr<ID2D1BitmapBrush> CreateBitmapBrush(ID2D1Bitmap* bitmap);
     void SetBrush(ComPtr<ID2D1Brush> brush);
 
     NativeBitmap createNativeBitmap(float width, float height);
@@ -176,18 +177,14 @@ public:
 
     scene2d::DimensionF size() override
     {
-        if (!bitmap_)
-        {
+        if (!bitmap_) {
             BitmapSubItem item = GraphicDeviceD2D::instance()
                 ->getBitmap(url_, 1.0f);
-            if (item)
-            {
+            if (item) {
                 UINT w, h;
                 item.frame->GetSize(&w, &h);
                 return scene2d::DimensionF((float)w, (float)h);
-            }
-            else
-            {
+            } else {
                 return scene2d::DimensionF();
             }
         }
@@ -197,8 +194,7 @@ public:
 
     ID2D1Bitmap* d2dBitmap(Painter& p) const
     {
-        if (!bitmap_)
-        {
+        if (!bitmap_) {
             BitmapSubItem item = GraphicDeviceD2D::instance()
                 ->getBitmap(url_, p.GetDpiScale());
             if (item)
@@ -222,10 +218,18 @@ public:
                graph2d::SweepDirection sweep_dir, graph2d::ArcSize arc_size,
                float x, float y) override;
     void close() override;
+    void addRRect(const scene2d::RRectF& r);
+
+    ABSL_MUST_USE_RESULT ID2D1PathGeometry* getD2D1PathGeometry() const
+    {
+        const_cast<PaintPathD2D*>(this)->finalize();
+        return geometry_.Get();
+    }
 
 private:
     void updateCheck();
     void reset();
+    void finalize();
 
     bool finalized_ = false;
     ComPtr<ID2D1PathGeometry> geometry_;
@@ -306,8 +310,7 @@ public:
                     const scene2d::DimensionF& size) override
     {
         auto bitmap = static_cast<const BitmapImpl*>(image)->d2dBitmap(p_);
-        if (bitmap)
-        {
+        if (bitmap) {
             p_.DrawBitmap(bitmap, origin, size);
         }
     }
@@ -374,6 +377,9 @@ public:
     // void scale(const scene2d::PointF& s) override;
     void drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush& brush) override;
     void drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBrush& brush) override;
+    void drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner,
+                    const graph2d::PaintBrush& brush) override;
+    void drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush) override;
 
 private:
     graphics::Painter p_;

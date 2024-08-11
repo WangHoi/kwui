@@ -256,7 +256,7 @@ D2D1_RECT_F Painter::PixelSnapConservative(const D2D1_RECT_F& rect)
 // {
 // }
 
-#if 0
+/*
 void PainterImpl::drawBox(const scene2d::RectF& padding_rect, const style::EdgeOffsetF& border_width,
 	const scene2d::CornerRadiusF& border_radius, const style::Color& background_color, const style::Color& border_color,
 	const graph2d::BitmapInterface* background_image)
@@ -290,7 +290,7 @@ void PainterImpl::drawBox(const scene2d::RectF& padding_rect, const style::EdgeO
 		}
 	}
 }
-#endif
+*/
 
 void PaintPathD2D::moveTo(float x, float y)
 {
@@ -332,6 +332,68 @@ void PaintPathD2D::close()
     firstp_ = absl::nullopt;
 }
 
+void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
+{
+    // TopLeft
+    if (const auto& c = rrect.corner_radius.top_left; !c.isZeros()) {
+        moveTo(rrect.rect.left, rrect.rect.top + c.height);
+        arcTo(c.width,
+                    c.height,
+                    90.0f,
+                    graph2d::SWEEP_DIRECTION_CLOCKWISE,
+                    graph2d::ARC_SIZE_SMALL,
+                    rrect.rect.left + c.width,
+                    rrect.rect.top);
+    } else {
+        moveTo(rrect.rect.left, rrect.rect.top);
+    }
+
+    // Top
+    lineTo(rrect.rect.right - rrect.corner_radius.top_right.width, rrect.rect.top);
+
+    // TopRight
+    if (const auto& c = rrect.corner_radius.top_right; !c.isZeros()) {
+        arcTo(c.width,
+                    c.height,
+                    90.0f,
+                    graph2d::SWEEP_DIRECTION_CLOCKWISE,
+                    graph2d::ARC_SIZE_SMALL,
+                    rrect.rect.right,
+                    rrect.rect.top + c.height);
+    }
+
+    // Right
+    lineTo(rrect.rect.right, rrect.rect.bottom - rrect.corner_radius.bottom_right.height);
+
+    // BottomRight
+    if (const auto& c = rrect.corner_radius.bottom_right; !c.isZeros()) {
+        arcTo(c.width,
+                    c.height,
+                    90.0f,
+                    graph2d::SWEEP_DIRECTION_CLOCKWISE,
+                    graph2d::ARC_SIZE_SMALL,
+                    rrect.rect.right - c.width,
+                    rrect.rect.bottom);
+    }
+
+    // Bottom
+    lineTo(rrect.rect.left + rrect.corner_radius.bottom_left.width, rrect.rect.bottom);
+
+    // Bottom-Left
+    if (const auto& c = rrect.corner_radius.bottom_left; !c.isZeros()) {
+        arcTo(c.width,
+                    c.height,
+                    90.0f,
+                    graph2d::SWEEP_DIRECTION_CLOCKWISE,
+                    graph2d::ARC_SIZE_SMALL,
+                    rrect.rect.left,
+                    rrect.rect.bottom - c.height);
+    }
+
+    // Left
+    close();
+}
+
 void PaintPathD2D::updateCheck()
 {
     if (!geometry_) reset();
@@ -371,29 +433,44 @@ void PaintPathD2D::reset()
     CHECK(geometry_ != nullptr);
 }
 
+void PaintPathD2D::finalize()
+{
+    if (!finalized_) {
+        if (gsink_) {
+            if (firstp_.has_value()) {
+                gsink_->EndFigure(D2D1_FIGURE_END_OPEN);
+                firstp_ = absl::nullopt;
+            }
+            (void)gsink_->Close();
+            gsink_ = nullptr;
+        }
+        finalized_ = true;
+    }
+}
+
 void PainterImpl::drawBox(const scene2d::RectF& padding_rect, const style::EdgeOffsetF& border_width,
                           const scene2d::CornerRadiusF& border_radius, const style::Color& background_color,
                           const style::Color& border_color,
                           const graph2d::BitmapInterface* background_image)
 {
     // Expand padding_rect to get the border-box
-    auto outer_rrect = scene2d::RRectF::fromRectRadius(padding_rect, border_radius);
-    outer_rrect.rect.adjust(-border_width.left, -border_width.top, border_width.right, border_width.bottom);
-    outer_rrect.corner_radius.top_left.width += border_width.left;
-    outer_rrect.corner_radius.top_left.height += border_width.top;
-    outer_rrect.corner_radius.top_right.width += border_width.right;
-    outer_rrect.corner_radius.top_right.height += border_width.top;
-    outer_rrect.corner_radius.bottom_right.width += border_width.right;
-    outer_rrect.corner_radius.bottom_right.height += border_width.bottom;
-    outer_rrect.corner_radius.bottom_left.width += border_width.left;
-    outer_rrect.corner_radius.bottom_left.height += border_width.bottom;
+    auto outer = scene2d::RRectF::fromRectRadius(padding_rect, border_radius);
+    outer.rect.adjust(-border_width.left, -border_width.top, border_width.right, border_width.bottom);
+    outer.corner_radius.top_left.width += border_width.left;
+    outer.corner_radius.top_left.height += border_width.top;
+    outer.corner_radius.top_right.width += border_width.right;
+    outer.corner_radius.top_right.height += border_width.top;
+    outer.corner_radius.bottom_right.width += border_width.right;
+    outer.corner_radius.bottom_right.height += border_width.bottom;
+    outer.corner_radius.bottom_left.width += border_width.left;
+    outer.corner_radius.bottom_left.height += border_width.bottom;
 
     // Fill
     if (background_color.getAlpha() > 0 || background_image) {
         graph2d::PaintBrush brush;
         brush.setColor(background_color);
         brush.setShader(background_image);
-        drawRRect(outer_rrect, brush);
+        drawRRect(outer, brush);
     }
 
     // Check stroke width
@@ -403,7 +480,7 @@ void PainterImpl::drawBox(const scene2d::RectF& padding_rect, const style::EdgeO
             && border_width.left == border_width.right
             && border_width.left == border_width.bottom);
         if (equal_border_width) {
-            scene2d::RRectF border_rrect = outer_rrect;
+            scene2d::RRectF border_rrect = outer;
             border_rrect.rect.adjust(0.5f * max_border_width, 0.5f * max_border_width,
                                      -0.5f * max_border_width, -0.5f * max_border_width);
             graph2d::PaintBrush brush;
@@ -412,19 +489,172 @@ void PainterImpl::drawBox(const scene2d::RectF& padding_rect, const style::EdgeO
             brush.setColor(border_color);
             drawRRect(border_rrect, brush);
         } else {
-            LOG(WARNING) << "TODO: drawBox(): draw complex border with drawPath() or drawDRRect()";
+            auto inner = scene2d::RRectF::fromRectRadius(padding_rect, border_radius);
+            graph2d::PaintBrush brush;
+            brush.setColor(border_color);
+            drawDRRect(outer, inner, brush);
         }
     }
 }
 
 void PainterImpl::drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush& brush)
 {
+    D2D1_RECT_F rc(rect);
+    if (brush.style() == graph2d::PAINT_STYLE_FILL) {
+        if (brush.color().getAlpha() > 0) {
+            ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
+            p_._rt->FillRectangle(rc, d2d_brush.Get());
+        }
+        if (brush.shader()) {
+            const auto* bitmap = (const BitmapImpl*)brush.shader();
+            auto* d2d_bitmap = bitmap->d2dBitmap(p_);
+            ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
+            p_._rt->FillRectangle(rc, d2d_brush.Get());
+        }
+    } else {
+        if (brush.color().getAlpha() > 0) {
+            ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
+            p_._rt->DrawRectangle(rc, d2d_brush.Get(), brush.strokeWidth());
+        }
+    }
 }
 
 void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBrush& brush)
 {
+    // Draw rect
     if (rrect.isRect())
         return drawRect(rrect.rect, brush);
+
+    // All corners' radius have same width and height
+    if (rrect.corner_radius.isSymmetric()) {
+        const auto& radius = rrect.corner_radius.top_left;
+
+        D2D1_ROUNDED_RECT rc{
+            rrect.rect,
+            radius.width,
+            radius.height,
+        };
+        if (brush.style() == graph2d::PAINT_STYLE_FILL) {
+            if (brush.color().getAlpha() > 0) {
+                ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
+                p_._rt->FillRoundedRectangle(rc, d2d_brush.Get());
+            }
+            if (brush.shader()) {
+                const auto* bitmap = (const BitmapImpl*)brush.shader();
+                auto* d2d_bitmap = bitmap->d2dBitmap(p_);
+                ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
+                p_._rt->FillRoundedRectangle(rc, d2d_brush.Get());
+            }
+        } else {
+            if (brush.color().getAlpha() > 0) {
+                ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
+                p_._rt->DrawRoundedRectangle(rc, d2d_brush.Get(), brush.strokeWidth());
+            }
+        }
+        return;
+    }
+
+    // Generate rrect path
+    auto path = std::make_unique<PaintPathD2D>();
+    {
+        // TopLeft
+        if (const auto& c = rrect.corner_radius.top_left; !c.isZeros()) {
+            path->moveTo(rrect.rect.left, rrect.rect.top + c.height);
+            path->arcTo(c.width,
+                        c.height,
+                        90.0f,
+                        graph2d::SWEEP_DIRECTION_CLOCKWISE,
+                        graph2d::ARC_SIZE_SMALL,
+                        rrect.rect.left + c.width,
+                        rrect.rect.top);
+        } else {
+            path->moveTo(rrect.rect.left, rrect.rect.top);
+        }
+
+        // Top
+        path->lineTo(rrect.rect.right - rrect.corner_radius.top_right.width, rrect.rect.top);
+
+        // TopRight
+        if (const auto& c = rrect.corner_radius.top_right; !c.isZeros()) {
+            path->arcTo(c.width,
+                        c.height,
+                        90.0f,
+                        graph2d::SWEEP_DIRECTION_CLOCKWISE,
+                        graph2d::ARC_SIZE_SMALL,
+                        rrect.rect.right,
+                        rrect.rect.top + c.height);
+        }
+
+        // Right
+        path->lineTo(rrect.rect.right, rrect.rect.bottom - rrect.corner_radius.bottom_right.height);
+
+        // BottomRight
+        if (const auto& c = rrect.corner_radius.bottom_right; !c.isZeros()) {
+            path->arcTo(c.width,
+                        c.height,
+                        90.0f,
+                        graph2d::SWEEP_DIRECTION_CLOCKWISE,
+                        graph2d::ARC_SIZE_SMALL,
+                        rrect.rect.right - c.width,
+                        rrect.rect.bottom);
+        }
+
+        // Bottom
+        path->lineTo(rrect.rect.left + rrect.corner_radius.bottom_left.width, rrect.rect.bottom);
+
+        // Bottom-Left
+        if (const auto& c = rrect.corner_radius.bottom_left; !c.isZeros()) {
+            path->arcTo(c.width,
+                        c.height,
+                        90.0f,
+                        graph2d::SWEEP_DIRECTION_CLOCKWISE,
+                        graph2d::ARC_SIZE_SMALL,
+                        rrect.rect.left,
+                        rrect.rect.bottom - c.height);
+        }
+
+        // Left
+        path->close();
+    }
+
+    drawPath(path.get(), brush);
+}
+
+void PainterImpl::drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner,
+                             const graph2d::PaintBrush& brush)
+{
+    if (brush.style() == graph2d::PAINT_STYLE_STROKE) {
+        drawRRect(outer, brush);
+        drawRRect(inner, brush);
+        return;
+    }
+
+    auto path = std::make_unique<PaintPathD2D>();
+    path->addRRect(outer);
+    path->addRRect(inner);
+    drawPath(path.get(), brush);
+}
+
+void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush)
+{
+    auto* d2d_path = dynamic_cast<const PaintPathD2D*>(path)->getD2D1PathGeometry();
+    if (brush.style() == graph2d::PAINT_STYLE_FILL) {
+        if (brush.color().getAlpha() > 0) {
+            ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
+            p_._rt->FillGeometry(d2d_path, d2d_brush.Get());
+        }
+        if (brush.shader()) {
+            const auto* bitmap = (const BitmapImpl*)brush.shader();
+            auto* d2d_bitmap = bitmap->d2dBitmap(p_);
+            ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
+            p_._rt->FillGeometry(d2d_path, d2d_brush.Get());
+        }
+    } else {
+        if (brush.color().getAlpha() > 0) {
+            ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
+            p_._rt->DrawGeometry(d2d_path, d2d_brush.Get(), brush.strokeWidth());
+        }
+    }
 }
 
 void Painter::Translate(const scene2d::PointF& offset)
@@ -653,7 +883,7 @@ ComPtr<ID2D1RadialGradientBrush> Painter::CreateRadialGradientBrush_Highlight()
     return brush;
 }
 
-ComPtr<ID2D1BitmapBrush> Painter::CreateBitmapBrush(ID2D1Bitmap1* bitmap)
+ComPtr<ID2D1BitmapBrush> Painter::CreateBitmapBrush(ID2D1Bitmap* bitmap)
 {
     if (!bitmap)
         return nullptr;

@@ -23,7 +23,6 @@ function NoRightBorder({label}) {
                 border-bottom-width: 1px;
                 border-color: black;
                 border-bottom-left-radius: 8px;
-                border-bottom-right-radius: 8px;
             }
         `}</style>
         <span>{label}</span>

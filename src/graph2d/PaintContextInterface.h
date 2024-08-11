@@ -15,6 +15,7 @@ class GlyphRunInterface;
 }
 
 namespace graph2d {
+class PaintPathInterface;
 
 class GlyphRunInterface;
 class BitmapInterface;
@@ -39,6 +40,8 @@ public:
 	}
 	virtual void drawRect(const scene2d::RectF& rect, const PaintBrush& brush) = 0;
 	virtual void drawRRect(const scene2d::RRectF& rrect, const PaintBrush& brush) = 0;
+	virtual void drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner, const PaintBrush& brush) = 0;
+	virtual void drawPath(const PaintPathInterface* path, const PaintBrush& brush) = 0;
 	virtual void drawBox(const scene2d::RectF& padding_rect,
 		const style::EdgeOffsetF& inset_border_width,
 		const scene2d::CornerRadiusF& border_radius,
