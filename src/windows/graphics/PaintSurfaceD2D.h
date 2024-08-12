@@ -6,7 +6,7 @@
 namespace windows::graphics
 {
 
-class PaintSurfaceD2D : public graph2d::PaintSurfaceInterface {
+class PaintSurfaceWindowD2D : public graph2d::PaintSurfaceInterface {
 public:
     struct Configuration {
         HWND hwnd = NULL;
@@ -14,18 +14,43 @@ public:
         float dpi_scale = 1.0f;
     };
 
-    static std::unique_ptr<PaintSurfaceD2D> create(const Configuration& config);
+    static std::unique_ptr<PaintSurfaceWindowD2D> create(const Configuration& config);
     void resize(int pixel_width, int pixel_height, float dpi_scale) override;
     std::unique_ptr<graph2d::PaintContextInterface> beginPaint() override;
     bool endPaint() override;
     void swapBuffers() override;
 
 private:
-    PaintSurfaceD2D(const Configuration& config);
+    PaintSurfaceWindowD2D(const Configuration& config);
     void recreateRenderTarget();
 
     Configuration config_;
-    HwndRenderTarget rt_;
+    HwndRenderTarget hwnd_rt_;
+};
+
+class PaintSurfaceBitmapD2D : public graph2d::PaintSurfaceInterface {
+public:
+    struct Configuration {
+        DXGI_FORMAT format;
+        scene2d::DimensionF pixel_size;
+        float dpi_scale = 1.0f;
+    };
+
+    static std::unique_ptr<PaintSurfaceBitmapD2D> create(const Configuration& config);
+    void resize(int pixel_width, int pixel_height, float dpi_scale) override;
+    std::unique_ptr<graph2d::PaintContextInterface> beginPaint() override;
+    bool endPaint() override;
+    void swapBuffers() override;
+
+    ComPtr<IWICBitmapLock> map();
+    IWICBitmap* getWicBitmap() const;
+
+private:
+    PaintSurfaceBitmapD2D(const Configuration& config);
+    void recreateRenderTarget();
+
+    Configuration config_;
+    WicBitmapRenderTarget wic_rt_;
 };
 
 } // namespace windows::graphics

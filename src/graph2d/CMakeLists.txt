@@ -9,7 +9,7 @@ list(APPEND kwui_pub_srcs
 list(APPEND kwui_priv_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/graph2d.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintBrush.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/fast_blur.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/fast_blur.cpp)
 
 set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)
 set(kwui_priv_srcs ${kwui_priv_srcs} PARENT_SCOPE)

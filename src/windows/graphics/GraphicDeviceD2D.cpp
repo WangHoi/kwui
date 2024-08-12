@@ -11,34 +11,40 @@
 
 using base::EncodingManager;
 
-namespace windows::graphics {
-static const wchar_t *DEFAULT_LOCALE = L"zh-CN";
+namespace windows::graphics
+{
+static const wchar_t* DEFAULT_LOCALE = L"zh-CN";
 
-static GraphicDeviceD2D *gdev = nullptr;
+static GraphicDeviceD2D* gdev = nullptr;
 
-GraphicDeviceD2D::~GraphicDeviceD2D() {
+GraphicDeviceD2D::~GraphicDeviceD2D()
+{
     dwrite_->UnregisterFontFileLoader(CDwFontFileLoader::getLoader());
 }
 
-GraphicDeviceD2D *GraphicDeviceD2D::createInstance() {
+GraphicDeviceD2D* GraphicDeviceD2D::createInstance()
+{
     if (!gdev) {
         gdev = new GraphicDeviceD2D();
     }
     return gdev;
 }
 
-void GraphicDeviceD2D::releaseInstance() {
+void GraphicDeviceD2D::releaseInstance()
+{
     if (gdev) {
         delete gdev;
         gdev = nullptr;
     }
 }
 
-GraphicDeviceD2D *GraphicDeviceD2D::instance() {
+GraphicDeviceD2D* GraphicDeviceD2D::instance()
+{
     return gdev;
 }
 
-bool GraphicDeviceD2D::init() {
+bool GraphicDeviceD2D::init()
+{
     HRESULT hr = S_OK;
 
     // Try Direct2D 1.1
@@ -48,7 +54,7 @@ bool GraphicDeviceD2D::init() {
         options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
 #endif
         hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &options,
-                               reinterpret_cast<void **>(d2d1_.factory.GetAddressOf()));
+                               reinterpret_cast<void**>(d2d1_.factory.GetAddressOf()));
         if (FAILED(hr)) break;
 
         D3D_FEATURE_LEVEL feature_levels[] =
@@ -68,8 +74,8 @@ bool GraphicDeviceD2D::init() {
 #endif
 
         // Create Direct3D device and context
-        ID3D11Device *device;
-        ID3D11DeviceContext *context;
+        ID3D11Device* device;
+        ID3D11DeviceContext* context;
 
         hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creation_flags, feature_levels,
                                ARRAYSIZE(feature_levels), D3D11_SDK_VERSION,
@@ -104,7 +110,7 @@ bool GraphicDeviceD2D::init() {
 
     hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED,
                              __uuidof(IDWriteFactory),
-                             reinterpret_cast<IUnknown **>(dwrite_.GetAddressOf()));
+                             reinterpret_cast<IUnknown**>(dwrite_.GetAddressOf()));
     if (FAILED(hr)) {
         LOG(ERROR) << "DWriteCreateFactory failed hr=" << std::hex << hr;
         return false;
@@ -121,7 +127,7 @@ bool GraphicDeviceD2D::init() {
                           NULL,
                           CLSCTX_INPROC_SERVER,
                           IID_IWICImagingFactory,
-                          (LPVOID *) wic_factory_.GetAddressOf());
+                          (LPVOID*)wic_factory_.GetAddressOf());
     if (FAILED(hr)) {
         LOG(ERROR) << "CoCreateInstance(CLSID_WICImagingFactory1) failed hr=" << std::hex << hr;
         return false;
@@ -130,8 +136,9 @@ bool GraphicDeviceD2D::init() {
     return true;
 }
 
-HwndRenderTarget GraphicDeviceD2D::createHwndRenderTarget(HWND hwnd, const scene2d::DimensionF &size,
-                                                          float dpi_scale) {
+HwndRenderTarget GraphicDeviceD2D::createHwndRenderTarget(HWND hwnd, const scene2d::DimensionF& size,
+                                                          float dpi_scale)
+{
     HRESULT hr = S_OK;
     if (use_d2d1_) {
         // Get DXGI Adapter and Factory
@@ -139,7 +146,7 @@ HwndRenderTarget GraphicDeviceD2D::createHwndRenderTarget(HWND hwnd, const scene
         ComPtr<IDXGIFactory2> factorydx;
         hr = d2d1_.devdx->GetAdapter(adapterdx.GetAddressOf());
         if (FAILED(hr)) return HwndRenderTarget();
-        hr = adapterdx->GetParent(__uuidof(factorydx), reinterpret_cast<void **>(factorydx.GetAddressOf()));
+        hr = adapterdx->GetParent(__uuidof(factorydx), reinterpret_cast<void**>(factorydx.GetAddressOf()));
         if (FAILED(hr)) return HwndRenderTarget();
 
         // Create SwapChain
@@ -166,9 +173,9 @@ HwndRenderTarget GraphicDeviceD2D::createHwndRenderTarget(HWND hwnd, const scene
         // Create a Direct2D surface (bitmap) linked to the Direct3D texture back buffer via the DXGI back buffer
         const FLOAT dpi = dpi_scale * USER_DEFAULT_SCREEN_DPI;
         D2D1_BITMAP_PROPERTIES1 bitmapProperties =
-                D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-                                        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), dpi,
-                                        dpi);
+            D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+                                    D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), dpi,
+                                    dpi);
         ComPtr<ID2D1Bitmap1> back_buffer;
         hr = d2d1_.ctx2d->CreateBitmapFromDxgiSurface(dxgi_back_buffer.Get(), &bitmapProperties,
                                                       back_buffer.GetAddressOf());
@@ -182,16 +189,16 @@ HwndRenderTarget GraphicDeviceD2D::createHwndRenderTarget(HWND hwnd, const scene
     } else {
         ComPtr<ID2D1HwndRenderTarget> hwnd_rt;
         D2D1_RENDER_TARGET_PROPERTIES rt_props
-                = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT,
-                                               D2D1::PixelFormat(),
-                                               dpi_scale * USER_DEFAULT_SCREEN_DPI,
-                                               dpi_scale * USER_DEFAULT_SCREEN_DPI);
+            = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT,
+                                           D2D1::PixelFormat(),
+                                           dpi_scale * USER_DEFAULT_SCREEN_DPI,
+                                           dpi_scale * USER_DEFAULT_SCREEN_DPI);
         scene2d::DimensionF pixel_size = (size * dpi_scale).makeRound();
         D2D1_HWND_RENDER_TARGET_PROPERTIES hwnd_rt_props
-                = D2D1::HwndRenderTargetProperties(
-                    hwnd,
-                    D2D1::SizeU((UINT) pixel_size.width, (UINT) pixel_size.height),
-                    D2D1_PRESENT_OPTIONS_RETAIN_CONTENTS | D2D1_PRESENT_OPTIONS_IMMEDIATELY);
+            = D2D1::HwndRenderTargetProperties(
+                hwnd,
+                D2D1::SizeU((UINT)pixel_size.width, (UINT)pixel_size.height),
+                D2D1_PRESENT_OPTIONS_RETAIN_CONTENTS | D2D1_PRESENT_OPTIONS_IMMEDIATELY);
         HRESULT hr = d2d0_.factory->CreateHwndRenderTarget(rt_props,
                                                            hwnd_rt_props,
                                                            hwnd_rt.GetAddressOf());
@@ -203,38 +210,48 @@ HwndRenderTarget GraphicDeviceD2D::createHwndRenderTarget(HWND hwnd, const scene
     }
 }
 
-WicBitmapRenderTarget GraphicDeviceD2D::createWicBitmapRenderTarget(
-    float width, float height, float dpi_scale) {
+static absl::optional<GUID> wic_rt_format_from_dxgi(DXGI_FORMAT dxgi_format)
+{
+    switch (dxgi_format) {
+    case DXGI_FORMAT_B8G8R8A8_UNORM: return GUID_WICPixelFormat32bppPBGRA;
+    case DXGI_FORMAT_A8_UNORM: return GUID_WICPixelFormat8bppAlpha;
+    default: return absl::nullopt;
+    }
+}
+
+WicBitmapRenderTarget GraphicDeviceD2D::createWicBitmapRenderTarget(DXGI_FORMAT dxgi_format,
+                                                                    float width, float height, float dpi_scale)
+{
+    auto wic_format = wic_rt_format_from_dxgi(dxgi_format);
+    if (!wic_format.has_value()) return WicBitmapRenderTarget();
+
     scene2d::DimensionF pixel_size = (scene2d::DimensionF(width, height) * dpi_scale).makeRound();
     WicBitmapRenderTarget rt;
     HRESULT hr;
-    hr = wic_factory_->CreateBitmap((UINT) pixel_size.width,
-                                    (UINT) pixel_size.height,
-                                    GUID_WICPixelFormat32bppPBGRA,
+    hr = wic_factory_->CreateBitmap((UINT)pixel_size.width,
+                                    (UINT)pixel_size.height,
+                                    wic_format.value(),
                                     WICBitmapCacheOnLoad,
                                     rt.bitmap.GetAddressOf());
     if (!SUCCEEDED(hr))
         return WicBitmapRenderTarget();
 
-    const D2D1_PIXEL_FORMAT format =
-            D2D1::PixelFormat(
-                DXGI_FORMAT_B8G8R8A8_UNORM,
-                D2D1_ALPHA_MODE_PREMULTIPLIED);
+    const D2D1_PIXEL_FORMAT format = D2D1::PixelFormat(dxgi_format, D2D1_ALPHA_MODE_PREMULTIPLIED);
     const D2D1_RENDER_TARGET_PROPERTIES properties =
-            D2D1::RenderTargetProperties(
-                D2D1_RENDER_TARGET_TYPE_DEFAULT,
-                format,
-                dpi_scale * USER_DEFAULT_SCREEN_DPI,
-                dpi_scale * USER_DEFAULT_SCREEN_DPI,
-                D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE);
+        D2D1::RenderTargetProperties(
+            D2D1_RENDER_TARGET_TYPE_SOFTWARE,
+            format,
+            dpi_scale * USER_DEFAULT_SCREEN_DPI,
+            dpi_scale * USER_DEFAULT_SCREEN_DPI,
+            D2D1_RENDER_TARGET_USAGE_NONE /* D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE */);
     if (use_d2d1_) {
         hr = d2d1_.factory->CreateWicBitmapRenderTarget(rt.bitmap.Get(),
                                                         properties,
-                                                        (ID2D1RenderTarget **) rt.target.GetAddressOf());
+                                                        (ID2D1RenderTarget**)rt.target.GetAddressOf());
     } else {
         hr = d2d0_.factory->CreateWicBitmapRenderTarget(rt.bitmap.Get(),
                                                         properties,
-                                                        (ID2D1RenderTarget **) rt.target.GetAddressOf());
+                                                        (ID2D1RenderTarget**)rt.target.GetAddressOf());
     }
     if (FAILED(hr)) return WicBitmapRenderTarget();
 
@@ -244,7 +261,8 @@ WicBitmapRenderTarget GraphicDeviceD2D::createWicBitmapRenderTarget(
     return rt;
 }
 
-ComPtr<ID2D1PathGeometry> GraphicDeviceD2D::createPathGeometry() {
+ComPtr<ID2D1PathGeometry> GraphicDeviceD2D::createPathGeometry()
+{
     HRESULT hr;
     ComPtr<ID2D1PathGeometry> geom;
     if (use_d2d1_) {
@@ -257,7 +275,8 @@ ComPtr<ID2D1PathGeometry> GraphicDeviceD2D::createPathGeometry() {
 }
 
 ComPtr<ID2D1EllipseGeometry> GraphicDeviceD2D::createEllipseGeometry(float center_x, float center_y, float radius_x,
-                                                                     float radius_y) {
+                                                                     float radius_y)
+{
     HRESULT hr;
     ComPtr<ID2D1EllipseGeometry> ellipse;
     if (use_d2d1_) {
@@ -271,12 +290,26 @@ ComPtr<ID2D1EllipseGeometry> GraphicDeviceD2D::createEllipseGeometry(float cente
     return ellipse;
 }
 
+ComPtr<ID2D1RectangleGeometry> GraphicDeviceD2D::createRectangleGeometry(const scene2d::RectF& rect)
+{
+    HRESULT hr;
+    ComPtr<ID2D1RectangleGeometry> grect;
+    if (use_d2d1_) {
+        hr = d2d1_.factory->CreateRectangleGeometry(rect, grect.GetAddressOf());
+    } else {
+        hr = d2d0_.factory->CreateRectangleGeometry(rect, grect.GetAddressOf());
+    }
+    if (FAILED(hr)) return nullptr;
+    return grect;
+}
+
 ComPtr<IDWriteTextLayout> GraphicDeviceD2D::createTextLayout(
-    const std::wstring &text,
-    const std::string &font_family,
+    const std::wstring& text,
+    const std::string& font_family,
     float font_size,
     style::FontWeight font_weight,
-    style::FontStyle font_style) {
+    style::FontStyle font_style)
+{
     ComPtr<IDWriteTextLayout> layout;
     ComPtr<IDWriteTextFormat> format;
     HRESULT hr;
@@ -286,7 +319,7 @@ ComPtr<IDWriteTextLayout> GraphicDeviceD2D::createTextLayout(
         dwrite_font_style = DWRITE_FONT_STYLE_ITALIC;
     hr = dwrite_->CreateTextFormat(utf16_font_family.c_str(),
                                    NULL,
-                                   (DWRITE_FONT_WEIGHT) font_weight.raw(),
+                                   (DWRITE_FONT_WEIGHT)font_weight.raw(),
                                    dwrite_font_style,
                                    DWRITE_FONT_STRETCH_NORMAL,
                                    font_size,
@@ -299,12 +332,13 @@ ComPtr<IDWriteTextLayout> GraphicDeviceD2D::createTextLayout(
 }
 
 std::unique_ptr<TextFlowD2D> GraphicDeviceD2D::createTextFlow(
-    const std::wstring &text,
+    const std::wstring& text,
     float line_height,
-    const std::string &font_family,
+    const std::string& font_family,
     float font_size,
     style::FontWeight font_weight,
-    style::FontStyle font_style) {
+    style::FontStyle font_style)
+{
     ComPtr<IDWriteTextFormat> format;
     HRESULT hr;
     std::wstring utf16_font_family = EncodingManager::UTF8ToWide(font_family);
@@ -313,7 +347,7 @@ std::unique_ptr<TextFlowD2D> GraphicDeviceD2D::createTextFlow(
         dwrite_font_style = DWRITE_FONT_STYLE_ITALIC;
     hr = dwrite_->CreateTextFormat(utf16_font_family.c_str(),
                                    NULL,
-                                   (DWRITE_FONT_WEIGHT) font_weight.raw(),
+                                   (DWRITE_FONT_WEIGHT)font_weight.raw(),
                                    dwrite_font_style,
                                    DWRITE_FONT_STRETCH_NORMAL,
                                    font_size,
@@ -325,13 +359,14 @@ std::unique_ptr<TextFlowD2D> GraphicDeviceD2D::createTextFlow(
     return flow;
 }
 
-void GraphicDeviceD2D::updateTextFlow(TextFlowD2D *text_flow,
-                                      const std::wstring &text,
+void GraphicDeviceD2D::updateTextFlow(TextFlowD2D* text_flow,
+                                      const std::wstring& text,
                                       float line_height,
-                                      const std::string &font_family,
+                                      const std::string& font_family,
                                       float font_size,
                                       style::FontWeight font_weight,
-                                      style::FontStyle font_style) {
+                                      style::FontStyle font_style)
+{
     std::wstring utf16_font_family = EncodingManager::UTF8ToWide(font_family);
     DWRITE_FONT_STYLE dwrite_font_style = DWRITE_FONT_STYLE_NORMAL;
     if (font_style == style::FontStyle::Italic)
@@ -350,7 +385,7 @@ void GraphicDeviceD2D::updateTextFlow(TextFlowD2D *text_flow,
         HRESULT hr;
         hr = dwrite_->CreateTextFormat(utf16_font_family.c_str(),
                                        NULL,
-                                       (DWRITE_FONT_WEIGHT) font_weight.raw(),
+                                       (DWRITE_FONT_WEIGHT)font_weight.raw(),
                                        dwrite_font_style,
                                        DWRITE_FONT_STRETCH_NORMAL,
                                        font_size,
@@ -365,11 +400,13 @@ void GraphicDeviceD2D::updateTextFlow(TextFlowD2D *text_flow,
     }
 }
 
-std::string GraphicDeviceD2D::getDefaultFontFamily() const {
+std::string GraphicDeviceD2D::getDefaultFontFamily() const
+{
     return scene2d::DEFAULT_FONT_FAMILY;
 }
 
-bool GraphicDeviceD2D::getFontMetrics(const std::string &font_family, DWRITE_FONT_METRICS &out_metrics) {
+bool GraphicDeviceD2D::getFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics)
+{
     std::wstring utf16_font_family = EncodingManager::UTF8ToWide(font_family);
     HRESULT hr;
     UINT index;
@@ -391,7 +428,8 @@ bool GraphicDeviceD2D::getFontMetrics(const std::string &font_family, DWRITE_FON
     return false;
 }
 
-void GraphicDeviceD2D::loadBitmapToCache(const std::string &name, absl::Span<const uint8_t> res_x1) {
+void GraphicDeviceD2D::loadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1)
+{
     BitmapItem bitmap;
     bitmap.x1 = loadBitmapFromResource(res_x1, scene2d::PointF::fromAll(1.0f));
     bitmap.x1_5 = bitmap.x1;
@@ -399,8 +437,9 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string &name, absl::Span<con
     bitmap_cache_[name] = bitmap;
 }
 
-void GraphicDeviceD2D::loadBitmapToCache(const std::string &name, absl::Span<const uint8_t> res_x1,
-                                         absl::Span<const uint8_t> res_x1_5, absl::Span<const uint8_t> res_x2) {
+void GraphicDeviceD2D::loadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1,
+                                         absl::Span<const uint8_t> res_x1_5, absl::Span<const uint8_t> res_x2)
+{
     BitmapItem bitmap;
     bitmap.x1 = loadBitmapFromResource(res_x1, scene2d::PointF::fromAll(1.0f));
     bitmap.x1_5 = loadBitmapFromResource(res_x1_5, scene2d::PointF::fromAll(1.5f));
@@ -408,7 +447,8 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string &name, absl::Span<con
     bitmap_cache_[name] = bitmap;
 }
 
-void GraphicDeviceD2D::loadBitmapToCache(const std::string &name, const std::wstring &filename) {
+void GraphicDeviceD2D::loadBitmapToCache(const std::string& name, const std::wstring& filename)
+{
     BitmapItem bitmap;
     bitmap.x1 = loadBitmapFromFilename(filename, scene2d::PointF::fromAll(1.0f));
     bitmap.x1_5 = bitmap.x1;
@@ -416,7 +456,8 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string &name, const std::wst
     bitmap_cache_[name] = bitmap;
 }
 
-HRESULT GraphicDeviceD2D::createNativeBitmap(float width, float height, ComPtr<ID3D11Texture2D>& out_tex, ComPtr<ID2D1Bitmap1>& out_bitmap)
+HRESULT GraphicDeviceD2D::createNativeBitmap(float width, float height, ComPtr<ID3D11Texture2D>& out_tex,
+                                             ComPtr<ID2D1Bitmap1>& out_bitmap)
 {
     HRESULT hr = E_FAIL;
     return hr;
@@ -456,11 +497,11 @@ HRESULT GraphicDeviceD2D::createNativeBitmap(float width, float height, ComPtr<I
     */
 }
 
-ComPtr<ID2D1Bitmap1> GraphicDeviceD2D::createBitmap(float width, float height) {
+ComPtr<ID2D1Bitmap1> GraphicDeviceD2D::createBitmap(float width, float height)
+{
     HRESULT hr = E_FAIL;
-    if (use_d2d1_)
-    {
-        const D2D1_SIZE_U size = { (UINT32)width, (UINT32)height };
+    if (use_d2d1_) {
+        const D2D1_SIZE_U size = {(UINT32)width, (UINT32)height};
         ComPtr<ID2D1Bitmap1> bitmap;
         D2D1_BITMAP_PROPERTIES1 props = {};
         props.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -474,7 +515,8 @@ ComPtr<ID2D1Bitmap1> GraphicDeviceD2D::createBitmap(float width, float height) {
 }
 
 BitmapSubItem
-GraphicDeviceD2D::loadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF &dpi_scale) {
+GraphicDeviceD2D::loadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF& dpi_scale)
+{
     HRESULT hr;
     ComPtr<IWICStream> stream;
 
@@ -482,14 +524,15 @@ GraphicDeviceD2D::loadBitmapFromResource(absl::Span<const uint8_t> res, const sc
     if (FAILED(hr)) {
         return BitmapSubItem();
     }
-    hr = stream->InitializeFromMemory((WICInProcPointer) res.data(), res.size());
+    hr = stream->InitializeFromMemory((WICInProcPointer)res.data(), res.size());
     if (FAILED(hr)) {
         return BitmapSubItem();
     }
     return loadBitmapFromStream(stream, dpi_scale);
 }
 
-BitmapSubItem GraphicDeviceD2D::loadBitmapFromFilename(const std::wstring &filename, const scene2d::PointF &dpi_scale) {
+BitmapSubItem GraphicDeviceD2D::loadBitmapFromFilename(const std::wstring& filename, const scene2d::PointF& dpi_scale)
+{
     HRESULT hr;
     ComPtr<IWICStream> stream;
 
@@ -504,7 +547,8 @@ BitmapSubItem GraphicDeviceD2D::loadBitmapFromFilename(const std::wstring &filen
     return loadBitmapFromStream(stream, dpi_scale);
 }
 
-BitmapSubItem GraphicDeviceD2D::loadBitmapFromStream(ComPtr<IWICStream> stream, const scene2d::PointF &dpi_scale) {
+BitmapSubItem GraphicDeviceD2D::loadBitmapFromStream(ComPtr<IWICStream> stream, const scene2d::PointF& dpi_scale)
+{
     if (!stream)
         return BitmapSubItem();
 
@@ -537,10 +581,11 @@ BitmapSubItem GraphicDeviceD2D::loadBitmapFromStream(ComPtr<IWICStream> stream, 
     return item;
 }
 
-void GraphicDeviceD2D::loadBitmapToCache(const std::string &name) {
+void GraphicDeviceD2D::loadBitmapToCache(const std::string& name)
+{
     if (absl::StartsWith(name, "kwui::")) {
         std::string name_res = name.substr(6);
-        absl::optional<absl::Span<const uint8_t> > x1, x1_5, x2;
+        absl::optional<absl::Span<const uint8_t>> x1, x1_5, x2;
         x1 = resources::get_image_data(name_res);
         int idx = name_res.rfind('.');
         if (idx != std::string::npos) {
@@ -600,7 +645,8 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string &name) {
     }
 }
 
-BitmapSubItem GraphicDeviceD2D::getBitmap(const std::string &name, float dpi_scale) {
+BitmapSubItem GraphicDeviceD2D::getBitmap(const std::string& name, float dpi_scale)
+{
     auto it = bitmap_cache_.find(name);
     if (it == bitmap_cache_.end()) {
         loadBitmapToCache(name);
@@ -616,7 +662,8 @@ BitmapSubItem GraphicDeviceD2D::getBitmap(const std::string &name, float dpi_sca
         return it->second.x1;
 }
 
-float GraphicDeviceD2D::getInitialDesktopDpiScale() const {
+float GraphicDeviceD2D::getInitialDesktopDpiScale() const
+{
     FLOAT x = USER_DEFAULT_SCREEN_DPI;
     if (use_d2d1_) {
         d2d1_.factory->GetDesktopDpi(&x, &x);
@@ -626,16 +673,18 @@ float GraphicDeviceD2D::getInitialDesktopDpiScale() const {
     return x / USER_DEFAULT_SCREEN_DPI;
 }
 
-void GraphicDeviceD2D::addFont(const char *family_name, const uint8_t *data, size_t size) {
+void GraphicDeviceD2D::addFont(const char* family_name, const uint8_t* data, size_t size)
+{
     std::wstring u16_family_name = EncodingManager::UTF8ToWide(family_name);
     font_cache_[u16_family_name] = CDWriteExt::DwCreateFontFaceFromStream(
         dwrite_.Get(), data, size, DWRITE_FONT_SIMULATIONS_NONE);
 }
 
-ComPtr<IDWriteFontFace> GraphicDeviceD2D::getFirstMatchingFontFace(const wchar_t *family_name,
+ComPtr<IDWriteFontFace> GraphicDeviceD2D::getFirstMatchingFontFace(const wchar_t* family_name,
                                                                    DWRITE_FONT_WEIGHT weight,
                                                                    DWRITE_FONT_STRETCH stretch,
-                                                                   DWRITE_FONT_STYLE style) {
+                                                                   DWRITE_FONT_STYLE style)
+{
     auto it = font_cache_.find(family_name);
     if (it != font_cache_.end()) {
         return it->second;

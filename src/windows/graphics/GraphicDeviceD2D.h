@@ -39,6 +39,11 @@ struct WicBitmapRenderTarget
     ComPtr<IWICBitmap> bitmap;
     ComPtr<ID2D1BitmapRenderTarget> target;
     ComPtr<ID2D1GdiInteropRenderTarget> interop_target;
+
+    operator bool() const
+    {
+        return (bool)target;
+    }
 };
 
 struct HwndRenderTarget
@@ -64,10 +69,12 @@ public:
     bool init();
     HwndRenderTarget createHwndRenderTarget(
         HWND hwnd, const scene2d::DimensionF& size, float dpi_scale);
-    WicBitmapRenderTarget createWicBitmapRenderTarget(
-        float width, float height, float dpi_scale);
+    // Alpha premultiplied
+    WicBitmapRenderTarget createWicBitmapRenderTarget(DXGI_FORMAT format,
+                                                      float width, float height, float dpi_scale);
     ComPtr<ID2D1PathGeometry> createPathGeometry();
     ComPtr<ID2D1EllipseGeometry> createEllipseGeometry(float center_x, float center_y, float radius_x, float radius_y);
+    ComPtr<ID2D1RectangleGeometry> createRectangleGeometry(const scene2d::RectF& rect);
     ComPtr<IDWriteTextLayout> createTextLayout(
         const std::wstring& text,
         const std::string& font_family,
@@ -106,7 +113,8 @@ public:
         DWRITE_FONT_STYLE style);
 
     ID3D11Device1* getD3DDevice1() const { return d2d1_.dev3d.Get(); }
-    HRESULT createNativeBitmap(float width, float height, ComPtr<ID3D11Texture2D>& out_tex, ComPtr<ID2D1Bitmap1>& out_bitmap);
+    HRESULT createNativeBitmap(float width, float height, ComPtr<ID3D11Texture2D>& out_tex,
+                               ComPtr<ID2D1Bitmap1>& out_bitmap);
     ComPtr<ID2D1Bitmap1> createBitmap(float width, float height);
 
 private:

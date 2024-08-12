@@ -255,7 +255,7 @@ void PopupShadow::Close() {
 }
 void PopupShadow::RecreateRenderTarget() {
 	_rt = graphics::GraphicDeviceD2D::instance()
-		->createWicBitmapRenderTarget(_pixel_size.width, _pixel_size.height, 1.0f);
+		->createWicBitmapRenderTarget(DXGI_FORMAT_B8G8R8A8_UNORM, _pixel_size.width, _pixel_size.height, 1.0f);
 }
 void PopupShadow::OnDestroy() {
 	_bitmap = nullptr;

@@ -955,11 +955,11 @@ void DialogWin32::recreateSurface() {
         << " dpi_scale=" << dpi_scale_
         << " surface=" << std::hex << surface_.get();
 #else
-    graphics::PaintSurfaceD2D::Configuration config;
+    graphics::PaintSurfaceWindowD2D::Configuration config;
     config.hwnd = hwnd_;
     config.size = size_;
     config.dpi_scale = dpi_scale_;
-    surface_ = graphics::PaintSurfaceD2D::create(config);
+    surface_ = graphics::PaintSurfaceWindowD2D::create(config);
     LOG(INFO) << "DialogWin32::recreateSurface() hwnd=" << std::hex << hwnd_
         << " size=(" << size_.width << "x" << size_.height << ")"
         << " dpi_scale=" << dpi_scale_

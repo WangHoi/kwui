@@ -1,11 +1,29 @@
 #pragma once
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-void fast_blur_gray(unsigned char *pix, unsigned int w, unsigned int h, int radius);
-void fast_blur_rgb(unsigned char *pix, unsigned int w, unsigned int h, unsigned int comp, int radius);
+class JuceImage
+{
+public:
+    enum Format
+    {
+        ARGB,
+        RGB,
+        SingleChannel,
+    };
+    int pixelStride;
+    int lineStride;
 
-#ifdef __cplusplus
-}
-#endif
+    static JuceImage fromSingleChannel(int w, int h, void* data, int stride);
+    unsigned char* getLinePointer(int row) const { return data + lineStride * row; }
+    int getWidth() const { return width; }
+    int getHeight() const { return height; }
+    int getFormat() const { return format; }
+
+private:
+    int width;
+    int height;
+    Format format;
+
+    unsigned char* data;
+};
+
+void applyStackBlur(JuceImage& img, int radius);
