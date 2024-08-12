@@ -29,13 +29,17 @@ enum class ValueUnit {
 	Url,
 
 	Keyword,
+
+	BoxShadow,
 };
 
+struct BoxShadowSpec;
 struct Value {
 	float f32_val = 0.0f;
 	base::string_atom keyword_val;
 	ValueUnit unit = ValueUnit::Undefined;
 	std::string string_val; // HexColor or Url value
+	std::shared_ptr<std::vector<BoxShadowSpec>> box_shadow_val;
 
 	static Value auto_();
 	static Value fromKeyword(base::string_atom k);
@@ -43,6 +47,7 @@ struct Value {
 	static Value fromUnit(float val, ValueUnit u);
 	static Value fromHexColor(const std::string& s);
 	static Value fromUrl(const std::string& url);
+	static Value fromBoxShadow(std::vector<BoxShadowSpec>&& box_shadows);
 
 	inline bool isPixel() const
 	{
@@ -69,6 +74,34 @@ struct Value {
 		return (unit == ValueUnit::Pixel || unit == ValueUnit::Raw)
 			? f32_val : 0.0f;
 	}
+};
+
+enum class BoxShadowSpecType
+{
+	None,
+	Inherit,
+	Initial,
+	Specified,
+};
+struct BoxShadowSpec
+{
+	BoxShadowSpecType type = BoxShadowSpecType::Specified;
+	std::optional<bool> inset;
+	std::optional<Value> color;
+	std::optional<Value> offset_x;
+	std::optional<Value> offset_y;
+	std::optional<Value> blur_radius;
+	std::optional<Value> spread_x;
+	std::optional<Value> spread_y;
+};
+
+struct BoxShadowValue
+{
+	bool inset;
+	Color color;
+	Value offset_x, offset_y;
+	Value blur_radius;
+	Value spread_x, spread_y;
 };
 
 enum class ValueSpecType {
@@ -137,6 +170,8 @@ struct StyleSpec {
 
 	ValueSpec box_sizing;
 	ValueSpec cursor;
+
+	ValueSpec box_shadow;
 
 	void set(base::string_atom name, const ValueSpec& spec);
 };
@@ -283,6 +318,8 @@ struct Style {
 
 	BoxSizingType box_sizing = BoxSizingType::ContentBox;
 	CursorType cursor = CursorType::Auto;
+
+	std::shared_ptr<std::vector<BoxShadowValue>> box_shadow;
 
 	void resolveDefault(const Style* parent = nullptr);
 	float fontSizeInPixels() const;

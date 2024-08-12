@@ -338,12 +338,12 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
     if (const auto& c = rrect.corner_radius.top_left; !c.isZeros()) {
         moveTo(rrect.rect.left, rrect.rect.top + c.height);
         arcTo(c.width,
-                    c.height,
-                    90.0f,
-                    graph2d::SWEEP_DIRECTION_CLOCKWISE,
-                    graph2d::ARC_SIZE_SMALL,
-                    rrect.rect.left + c.width,
-                    rrect.rect.top);
+              c.height,
+              90.0f,
+              graph2d::SWEEP_DIRECTION_CLOCKWISE,
+              graph2d::ARC_SIZE_SMALL,
+              rrect.rect.left + c.width,
+              rrect.rect.top);
     } else {
         moveTo(rrect.rect.left, rrect.rect.top);
     }
@@ -354,12 +354,12 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
     // TopRight
     if (const auto& c = rrect.corner_radius.top_right; !c.isZeros()) {
         arcTo(c.width,
-                    c.height,
-                    90.0f,
-                    graph2d::SWEEP_DIRECTION_CLOCKWISE,
-                    graph2d::ARC_SIZE_SMALL,
-                    rrect.rect.right,
-                    rrect.rect.top + c.height);
+              c.height,
+              90.0f,
+              graph2d::SWEEP_DIRECTION_CLOCKWISE,
+              graph2d::ARC_SIZE_SMALL,
+              rrect.rect.right,
+              rrect.rect.top + c.height);
     }
 
     // Right
@@ -368,12 +368,12 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
     // BottomRight
     if (const auto& c = rrect.corner_radius.bottom_right; !c.isZeros()) {
         arcTo(c.width,
-                    c.height,
-                    90.0f,
-                    graph2d::SWEEP_DIRECTION_CLOCKWISE,
-                    graph2d::ARC_SIZE_SMALL,
-                    rrect.rect.right - c.width,
-                    rrect.rect.bottom);
+              c.height,
+              90.0f,
+              graph2d::SWEEP_DIRECTION_CLOCKWISE,
+              graph2d::ARC_SIZE_SMALL,
+              rrect.rect.right - c.width,
+              rrect.rect.bottom);
     }
 
     // Bottom
@@ -382,12 +382,12 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
     // Bottom-Left
     if (const auto& c = rrect.corner_radius.bottom_left; !c.isZeros()) {
         arcTo(c.width,
-                    c.height,
-                    90.0f,
-                    graph2d::SWEEP_DIRECTION_CLOCKWISE,
-                    graph2d::ARC_SIZE_SMALL,
-                    rrect.rect.left,
-                    rrect.rect.bottom - c.height);
+              c.height,
+              90.0f,
+              graph2d::SWEEP_DIRECTION_CLOCKWISE,
+              graph2d::ARC_SIZE_SMALL,
+              rrect.rect.left,
+              rrect.rect.bottom - c.height);
     }
 
     // Left
@@ -494,6 +494,15 @@ void PainterImpl::drawBox(const scene2d::RectF& padding_rect, const style::EdgeO
             brush.setColor(border_color);
             drawDRRect(outer, inner, brush);
         }
+    }
+}
+
+void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style::EdgeOffsetF& inset_border_width,
+                                const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow)
+{
+    if (box_shadow.inset) {
+
+    } else {
     }
 }
 

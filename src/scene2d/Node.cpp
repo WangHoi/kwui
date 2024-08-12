@@ -47,6 +47,8 @@ static void resolve_style(style::CursorType& style, const style::CursorType* par
 	const style::ValueSpec& spec);
 static void resolve_style(std::shared_ptr<graph2d::BitmapInterface>& style, const std::shared_ptr<graph2d::BitmapInterface>* parent,
 	const style::ValueSpec& spec);
+static void resolve_style(std::shared_ptr<std::vector<style::BoxShadowValue>>& style, const std::shared_ptr<std::vector<style::BoxShadowValue>>* parent,
+	const style::ValueSpec& spec);
 
 Node::Node(Scene* scene, NodeType type)
 	: scene_(scene)
@@ -301,6 +303,7 @@ void Node::resolveStyle(NodeStyleResolveContext& ctx, const style::StyleSpec& sp
 	RESOLVE_STYLE(overflow_y);
 	RESOLVE_STYLE(box_sizing);
 	RESOLVE_STYLE(cursor);
+	RESOLVE_STYLE(box_shadow);
 #undef RESOLVE_STYLE
 }
 
@@ -904,6 +907,45 @@ static void resolve_style(std::shared_ptr<graph2d::BitmapInterface>& style, cons
 	} else if (spec.type == style::ValueSpecType::Specified) {
 		if (spec.value->unit == style::ValueUnit::Url) {
 			style = graph2d::createBitmap(spec.value->string_val);
+		}
+	}
+}
+
+static void resolve_style(std::shared_ptr<std::vector<style::BoxShadowValue>>& style, const std::shared_ptr<std::vector<style::BoxShadowValue>>* parent,
+	const style::ValueSpec& spec)
+{
+	if (spec.type == style::ValueSpecType::Inherit) {
+		if (parent)
+			style = *parent;
+	} else if (spec.type == style::ValueSpecType::Specified) {
+		if (spec.value->unit == style::ValueUnit::BoxShadow) {
+			std::vector<style::BoxShadowValue> box_shadows;
+			auto& specs = *spec.value->box_shadow_val;
+			for (auto& spec : specs) {
+				if (spec.type == style::BoxShadowSpecType::Specified) {
+					style::BoxShadowValue b;
+					b.inset = spec.inset.value_or(false);
+					if (spec.color.has_value()) {
+						auto& v = spec.color.value();
+						if (v.unit == style::ValueUnit::Keyword) {
+							b.color = style::Color::fromString(v.keyword_val.c_str());
+						} else if (v.unit == style::ValueUnit::HexColor) {
+							b.color = style::Color::fromString(v.string_val);
+						} else {
+							b.color = style::Color(0, 0, 0);
+						}
+					}
+					b.offset_x = spec.offset_x.value_or(style::Value::fromPixel(0));
+					b.offset_y = spec.offset_y.value_or(style::Value::fromPixel(0));
+					b.blur_radius = spec.blur_radius.value_or(style::Value::fromPixel(0));
+					b.spread_x = spec.spread_x.value_or(style::Value::fromPixel(0));
+					b.spread_y = spec.spread_y.value_or(style::Value::fromPixel(0));
+					box_shadows.push_back(b);
+				} else {
+					LOG(WARNING) << "Unhandled BoxShadowSpecType " << (int)spec.type;
+				}
+			}
+			style = std::make_shared<std::vector<style::BoxShadowValue>>(std::move(box_shadows));
 		}
 	}
 }

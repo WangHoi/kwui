@@ -291,7 +291,10 @@ public:
                  const style::Color& background_color,
                  const style::Color& border_color,
                  const graph2d::BitmapInterface* background_image) override;
-
+    void drawBoxShadow(const scene2d::RectF& padding_rect,
+                       const style::EdgeOffsetF& inset_border_width,
+                       const scene2d::CornerRadiusF& border_radius,
+                       const graph2d::BoxShadow& box_shadow) override;
     void drawGlyphRun(const scene2d::PointF& pos, const style::GlyphRunInterface* gr,
                       const style::Color& color) override
     {

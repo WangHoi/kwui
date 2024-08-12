@@ -43,6 +43,14 @@ Value Value::fromUrl(const std::string& url)
 	return v;
 }
 
+Value Value::fromBoxShadow(std::vector<BoxShadowSpec>&& box_shadows)
+{
+	Value v;
+	v.box_shadow_val = std::make_shared<std::vector<BoxShadowSpec>>(box_shadows);
+	v.unit = ValueUnit::BoxShadow;
+	return v;
+}
+
 void StyleSpec::set(base::string_atom prop, const ValueSpec& val)
 {
 #define CHECK_VALUE(x) if (prop == base::string_intern(#x)) { this->x = val; }
