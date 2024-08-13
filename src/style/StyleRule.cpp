@@ -648,19 +648,19 @@ namespace
         }
         if (lengths.size() == 1) {
             decl.offset_x = decl.offset_y = lengths[0];
-        } else if (list.size() == 2) {
+        } else if (lengths.size() == 2) {
             decl.offset_x = lengths[0];
             decl.offset_y = lengths[1];
-        } else if (list.size() == 3) {
+        } else if (lengths.size() == 3) {
             decl.offset_x = lengths[0];
             decl.offset_y = lengths[1];
             decl.blur_radius = lengths[2];
-        } else if (list.size() == 4) {
+        } else if (lengths.size() == 4) {
             decl.offset_x = lengths[0];
             decl.offset_y = lengths[1];
             decl.blur_radius = lengths[2];
             decl.spread_x = decl.spread_y = lengths[3];
-        } else if (list.size() >= 5) {
+        } else if (lengths.size() >= 5) {
             decl.offset_x = lengths[0];
             decl.offset_y = lengths[1];
             decl.blur_radius = lengths[2];

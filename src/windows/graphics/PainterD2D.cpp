@@ -524,7 +524,7 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
             border_radius.bottom_right.height,
             border_radius.bottom_left.height,
         }));
-        auto rect = p_.PixelSnapConservative(
+        D2D1_RECT_F rect = p_.PixelSnapConservative(
             scene2d::RectF::fromXYWH(blur_radius,
                                      blur_radius,
                                      padding_rect.width() + inset_border_width.left +
@@ -567,12 +567,17 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
         }
 
         // Blit the bitmap
-        if (auto grect = GraphicDeviceD2D::instance()->createRectangleGeometry(rrect.rect)) {
+        auto dst_rect = scene2d::RectF::fromXYWH(
+            padding_rect.left - inset_border_width.left - blur_radius,
+            padding_rect.top - inset_border_width.top - blur_radius,
+            ci.pixel_size.width / dpi_scale,
+            ci.pixel_size.height / dpi_scale);
+        if (auto grect = GraphicDeviceD2D::instance()->createRectangleGeometry(dst_rect)) {
             auto color_brush = p_.CreateBrush(box_shadow.color);
             ComPtr<ID2D1Bitmap> opacity_bitmap;
             p_._rt->CreateBitmapFromWicBitmap(bmp->getWicBitmap(), opacity_bitmap.GetAddressOf());
             auto opacity_brush = p_.CreateBitmapBrush(opacity_bitmap.Get());
-            opacity_brush->SetTransform(D2D1::Matrix3x2F::Translation(rrect.rect.left, rrect.rect.top));
+            opacity_brush->SetTransform(D2D1::Matrix3x2F::Translation(dst_rect.left, dst_rect.top));
             p_._rt->FillGeometry(grect.Get(), color_brush.Get(), opacity_brush.Get());
         }
     }
