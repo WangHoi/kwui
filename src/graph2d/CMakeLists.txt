@@ -5,11 +5,11 @@ list(APPEND kwui_pub_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintContextInterface.h
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintSurface.h
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintPathInterface.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/fast_blur.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/image_blur.h)
 list(APPEND kwui_priv_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/graph2d.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintBrush.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/fast_blur.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/image_blur.cpp)
 
 set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)
 set(kwui_priv_srcs ${kwui_priv_srcs} PARENT_SCOPE)

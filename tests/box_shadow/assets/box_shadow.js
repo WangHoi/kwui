@@ -4,7 +4,9 @@ function BoxShadowExample() {
 
 var stylesheet = css`
     kml {
-        background: #add8e6;
+        width: 100%;
+        height: 100%;
+        background-color: #add8e6;
     }
 
     div.inner {

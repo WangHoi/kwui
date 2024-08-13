@@ -1,4 +1,4 @@
-#include "fast_blur.h"
+#include "image_blur.h"
 
 #include <algorithm>
 
@@ -691,6 +691,18 @@ JuceImage JuceImage::fromSingleChannel(int w, int h, void* data, int stride)
     img.format = SingleChannel;
     img.data = (unsigned char*)data;
     img.pixelStride = 1;
+    img.lineStride = stride;
+    return img;
+}
+
+JuceImage JuceImage::fromARGB(int w, int h, void* data, int stride)
+{
+    JuceImage img;
+    img.width = w;
+    img.height = h;
+    img.format = ARGB;
+    img.data = (unsigned char*)data;
+    img.pixelStride = 4;
     img.lineStride = stride;
     return img;
 }

@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include "PaintSurfaceD2D.h"
-#include "graph2d/fast_blur.h"
+#include "graph2d/image_blur.h"
 
 namespace windows::graphics
 {
@@ -504,26 +504,9 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
                                 const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow)
 {
     const float dpi_scale = p_.GetDpiScale();;
-    auto dpi_ceil = [&](float x) -> float
-    {
-        return ceilf(x * dpi_scale) / dpi_scale;
-    };
     if (box_shadow.inset) {
-    } else {
         // Compute extra padding
         float blur_radius = roundf(box_shadow.blur_radius * dpi_scale) / dpi_scale;
-        float corner_width = dpi_ceil(std::max({
-            border_radius.top_left.width,
-            border_radius.top_right.width,
-            border_radius.bottom_right.width,
-            border_radius.bottom_left.width,
-        }));
-        float corner_height = dpi_ceil(std::max({
-            border_radius.top_left.height,
-            border_radius.top_right.height,
-            border_radius.bottom_right.height,
-            border_radius.bottom_left.height,
-        }));
         D2D1_RECT_F rect = p_.PixelSnapConservative(
             scene2d::RectF::fromXYWH(blur_radius,
                                      blur_radius,
@@ -537,16 +520,19 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
 
         // Create shadow bitmap
         PaintSurfaceBitmapD2D::Configuration ci;
-        ci.format = DXGI_FORMAT_A8_UNORM;
+        ci.format = DXGI_FORMAT_B8G8R8A8_UNORM;
         ci.pixel_size.width = (blur_radius + rrect.width() + blur_radius) * dpi_scale;
         ci.pixel_size.height = (blur_radius + rrect.height() + blur_radius) * dpi_scale;
-        ci.dpi_scale = dpi_scale;
+        ci.dpi_scale = 2.0f; //dpi_scale;
         auto bmp = PaintSurfaceBitmapD2D::create(ci);
         if (auto bp = bmp->beginPaint()) {
             bp->clear(style::Color());
             graph2d::PaintBrush brush;
-            brush.setColor(style::named_color::white);
-            bp->drawRRect(rrect, brush);
+            brush.setColor(box_shadow.color);
+            auto outer = scene2d::RRectF::fromRectRadius(
+                scene2d::RectF::fromOriginSize(scene2d::PointF(), ci.pixel_size / dpi_scale),
+                scene2d::CornerRadiusF());
+            bp->drawDRRect(outer, rrect, brush);
             bmp->endPaint();
         }
 
@@ -558,28 +544,67 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
             mapped->GetStride(&stride);
             mapped->GetDataPointer(&bmp_size, &bmp_data);
             if (bmp_data) {
-                JuceImage jimg = JuceImage::fromSingleChannel(ci.pixel_size.width,
-                                                              ci.pixel_size.height,
-                                                              bmp_data,
-                                                              stride);
+                JuceImage jimg = JuceImage::fromARGB(ci.pixel_size.width,
+                                                     ci.pixel_size.height,
+                                                     bmp_data,
+                                                     stride);
                 applyStackBlur(jimg, blur_radius * dpi_scale);
             }
         }
 
         // Blit the bitmap
-        auto dst_rect = scene2d::RectF::fromXYWH(
-            padding_rect.left - inset_border_width.left - blur_radius,
-            padding_rect.top - inset_border_width.top - blur_radius,
+        auto dst_rrect = scene2d::RRectF::fromRectRadius(padding_rect, border_radius);
+        auto src_rect = scene2d::RectF::fromXYWH(
+            padding_rect.left - inset_border_width.left - blur_radius + box_shadow.offset_x,
+            padding_rect.top - inset_border_width.top - blur_radius + box_shadow.offset_y,
             ci.pixel_size.width / dpi_scale,
             ci.pixel_size.height / dpi_scale);
-        if (auto grect = GraphicDeviceD2D::instance()->createRectangleGeometry(dst_rect)) {
-            auto color_brush = p_.CreateBrush(box_shadow.color);
-            ComPtr<ID2D1Bitmap> opacity_bitmap;
-            p_._rt->CreateBitmapFromWicBitmap(bmp->getWicBitmap(), opacity_bitmap.GetAddressOf());
-            auto opacity_brush = p_.CreateBitmapBrush(opacity_bitmap.Get());
-            opacity_brush->SetTransform(D2D1::Matrix3x2F::Translation(dst_rect.left, dst_rect.top));
-            p_._rt->FillGeometry(grect.Get(), color_brush.Get(), opacity_brush.Get());
-        }
+        auto color_brush = p_.CreateBrush(box_shadow.color);
+        ComPtr<ID2D1Bitmap> shadow_bitmap;
+        p_._rt->CreateBitmapFromWicBitmap(bmp->getWicBitmap(),
+                                          D2D1::BitmapProperties(
+                                              D2D1::PixelFormat(ci.format, D2D1_ALPHA_MODE_PREMULTIPLIED),
+                                              dpi_scale * USER_DEFAULT_SCREEN_DPI,
+                                              dpi_scale * USER_DEFAULT_SCREEN_DPI),
+                                          shadow_bitmap.GetAddressOf());
+        ComPtr<ID2D1BitmapBrush> shadow_brush;
+        p_._rt->CreateBitmapBrush(shadow_bitmap.Get(), shadow_brush.GetAddressOf());
+        shadow_brush->SetTransform(D2D1::Matrix3x2F::Translation(src_rect.left, src_rect.top));
+        auto path = std::make_unique<PaintPathD2D>();
+        path->addRRect(dst_rrect);
+        p_._rt->FillGeometry(path->getD2D1PathGeometry(), shadow_brush.Get());
+    } else {
+        // Compute extra padding
+        float blur_radius = roundf(box_shadow.blur_radius * dpi_scale) / dpi_scale;
+        D2D1_RECT_F rect = p_.PixelSnapConservative(
+            scene2d::RectF::fromXYWH(blur_radius,
+                                     blur_radius,
+                                     padding_rect.width() + inset_border_width.left +
+                                     inset_border_width.right,
+                                     padding_rect.height() + inset_border_width.top +
+                                     inset_border_width.bottom));
+        scene2d::RRectF rrect = scene2d::RRectF::fromRectRadius(
+            scene2d::RectF::fromLTRB(rect.left, rect.top, rect.right, rect.bottom),
+            border_radius);
+
+        // Blit the bitmap
+        auto dst_rect = (D2D1_RECT_F)scene2d::RectF::fromXYWH(
+            padding_rect.left - inset_border_width.left - blur_radius + box_shadow.offset_x,
+            padding_rect.top - inset_border_width.top - blur_radius + box_shadow.offset_y,
+            blur_radius + rrect.width() + blur_radius,
+            blur_radius + rrect.height() + blur_radius);
+        auto color_brush = p_.CreateBrush(box_shadow.color);
+        ComPtr<ID2D1Bitmap> opacity_bitmap = makeOutsetShadowBitmap(padding_rect,
+                                                                    inset_border_width,
+                                                                    border_radius,
+                                                                    box_shadow);
+        auto aa_mode = p_._rt->GetAntialiasMode();
+        p_._rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+        p_._rt->FillOpacityMask(opacity_bitmap.Get(),
+                                color_brush.Get(),
+                                D2D1_OPACITY_MASK_CONTENT_GRAPHICS,
+                                &dst_rect);
+        p_._rt->SetAntialiasMode(aa_mode);
     }
 }
 
@@ -741,6 +766,84 @@ void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2
             p_._rt->DrawGeometry(d2d_path, d2d_brush.Get(), brush.strokeWidth());
         }
     }
+}
+
+ComPtr<ID2D1Bitmap> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
+                                                        const style::EdgeOffsetF& inset_border_width,
+                                                        const scene2d::CornerRadiusF& border_radius,
+                                                        const graph2d::BoxShadow& box_shadow)
+{
+    // Compute extra padding
+    const float dpi_scale = p_.GetDpiScale();
+    const float blur_radius = roundf(box_shadow.blur_radius * dpi_scale) / dpi_scale;
+    D2D1_RECT_F rect = p_.PixelSnapConservative(
+        scene2d::RectF::fromXYWH(blur_radius,
+                                 blur_radius,
+                                 padding_rect.width() + inset_border_width.left +
+                                 inset_border_width.right,
+                                 padding_rect.height() + inset_border_width.top +
+                                 inset_border_width.bottom));
+    scene2d::RRectF rrect = scene2d::RRectF::fromRectRadius(
+        scene2d::RectF::fromLTRB(rect.left, rect.top, rect.right, rect.bottom),
+        border_radius);
+
+    std::string cache_key = absl::StrFormat("box-shadow: outset, blur=%.2f, pixel_size=%.0fx%.0f",
+                                            blur_radius,
+                                            (blur_radius + rrect.width() + blur_radius) * dpi_scale,
+                                            (blur_radius + rrect.height() + blur_radius) * dpi_scale);
+
+    if (surface_) {
+        auto b = surface_->getCachedetBitmap(cache_key);
+        if (b)
+            return b;
+    }
+
+    // Create shadow bitmap
+    PaintSurfaceBitmapD2D::Configuration ci;
+    ci.format = DXGI_FORMAT_A8_UNORM;
+    ci.pixel_size.width = (blur_radius + rrect.width() + blur_radius) * dpi_scale;
+    ci.pixel_size.height = (blur_radius + rrect.height() + blur_radius) * dpi_scale;
+    ci.dpi_scale = dpi_scale;
+    auto bmp = PaintSurfaceBitmapD2D::create(ci);
+    if (auto bp = bmp->beginPaint()) {
+        bp->clear(style::Color());
+        graph2d::PaintBrush brush;
+        brush.setColor(style::named_color::white);
+        bp->drawRRect(rrect, brush);
+        bmp->endPaint();
+    }
+
+    // Blur the bitmap
+    if (auto mapped = bmp->map()) {
+        UINT stride;
+        UINT bmp_size;
+        BYTE* bmp_data = nullptr;
+        mapped->GetStride(&stride);
+        mapped->GetDataPointer(&bmp_size, &bmp_data);
+        if (bmp_data) {
+            JuceImage jimg = JuceImage::fromSingleChannel(ci.pixel_size.width,
+                                                          ci.pixel_size.height,
+                                                          bmp_data,
+                                                          stride);
+            applyStackBlur(jimg, blur_radius * dpi_scale);
+        }
+    }
+
+    // Blit the bitmap
+    auto dst_rect = (D2D1_RECT_F)scene2d::RectF::fromXYWH(
+        padding_rect.left - inset_border_width.left - blur_radius + box_shadow.offset_x,
+        padding_rect.top - inset_border_width.top - blur_radius + box_shadow.offset_y,
+        ci.pixel_size.width / dpi_scale,
+        ci.pixel_size.height / dpi_scale);
+    auto color_brush = p_.CreateBrush(box_shadow.color);
+
+    ComPtr<ID2D1Bitmap> opacity_bitmap;
+    p_._rt->CreateBitmapFromWicBitmap(bmp->getWicBitmap(), opacity_bitmap.GetAddressOf());
+
+    if (surface_ && opacity_bitmap)
+        surface_->updateCachedBitmap(cache_key, opacity_bitmap);
+
+    return opacity_bitmap;
 }
 
 void Painter::Translate(const scene2d::PointF& offset)

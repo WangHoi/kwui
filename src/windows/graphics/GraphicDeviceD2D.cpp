@@ -236,6 +236,9 @@ WicBitmapRenderTarget GraphicDeviceD2D::createWicBitmapRenderTarget(DXGI_FORMAT 
     if (!SUCCEEDED(hr))
         return WicBitmapRenderTarget();
 
+    double dpi = (double)dpi_scale * USER_DEFAULT_SCREEN_DPI;
+    rt.bitmap->SetResolution(dpi, dpi);
+
     const D2D1_PIXEL_FORMAT format = D2D1::PixelFormat(dxgi_format, D2D1_ALPHA_MODE_PREMULTIPLIED);
     const D2D1_RENDER_TARGET_PROPERTIES properties =
         D2D1::RenderTargetProperties(

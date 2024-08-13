@@ -671,11 +671,12 @@ namespace
     }
 
     /**
-     * box-shadows := box-shadow (',' box-shadow)*
+     * box-shadows := box-shadow (',' SP* box-shadow)*
      */
     IResult<SingleDeclaration> box_shadow_decl(absl::string_view input)
     {
-        IResult<BoxShadowDeclarations> res1 = separated_list1(tag(","), box_shadow_item)(input);
+        auto decl = map(seq(opt(ws), box_shadow_item), [](auto&& t) { return absl::get<1>(t); });
+        IResult<BoxShadowDeclarations> res1 = separated_list1(tag(","), decl)(input);
         if (!res1.ok())
             return res1.status();
 

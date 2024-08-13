@@ -15,10 +15,14 @@ public:
     };
 
     static std::unique_ptr<PaintSurfaceWindowD2D> create(const Configuration& config);
+    void discardDeviceResources() override;
     void resize(int pixel_width, int pixel_height, float dpi_scale) override;
     std::unique_ptr<graph2d::PaintContextInterface> beginPaint() override;
     bool endPaint() override;
     void swapBuffers() override;
+
+    ComPtr<ID2D1Bitmap> getCachedetBitmap(const std::string& key) const;
+    void updateCachedBitmap(const std::string& key, ComPtr<ID2D1Bitmap> bitmap);
 
 private:
     PaintSurfaceWindowD2D(const Configuration& config);
@@ -26,6 +30,7 @@ private:
 
     Configuration config_;
     HwndRenderTarget hwnd_rt_;
+    std::unordered_map<std::string, ComPtr<ID2D1Bitmap>> bitmap_cache_;
 };
 
 class PaintSurfaceBitmapD2D : public graph2d::PaintSurfaceInterface {
@@ -37,6 +42,7 @@ public:
     };
 
     static std::unique_ptr<PaintSurfaceBitmapD2D> create(const Configuration& config);
+    void discardDeviceResources() override {}
     void resize(int pixel_width, int pixel_height, float dpi_scale) override;
     std::unique_ptr<graph2d::PaintContextInterface> beginPaint() override;
     bool endPaint() override;

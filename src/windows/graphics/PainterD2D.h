@@ -14,6 +14,8 @@
 
 namespace windows::graphics
 {
+class PaintSurfaceWindowD2D;
+
 struct NativeBitmap
 {
     float width = 0;
@@ -240,8 +242,8 @@ private:
 class PainterImpl : public graph2d::PaintContextInterface
 {
 public:
-    PainterImpl(ID2D1RenderTarget* rt, const scene2d::PointF& mouse_pos)
-        : p_(rt, mouse_pos)
+    PainterImpl(PaintSurfaceWindowD2D* surface, ID2D1RenderTarget* rt, const scene2d::PointF& mouse_pos)
+        : surface_(surface), p_(rt, mouse_pos)
     {
     }
 
@@ -295,6 +297,7 @@ public:
                        const style::EdgeOffsetF& inset_border_width,
                        const scene2d::CornerRadiusF& border_radius,
                        const graph2d::BoxShadow& box_shadow) override;
+
     void drawGlyphRun(const scene2d::PointF& pos, const style::GlyphRunInterface* gr,
                       const style::Color& color) override
     {
@@ -385,6 +388,12 @@ public:
     void drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush) override;
 
 private:
-    graphics::Painter p_;
+    ComPtr<ID2D1Bitmap> makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
+                                               const style::EdgeOffsetF& inset_border_width,
+                                               const scene2d::CornerRadiusF& border_radius,
+                                               const graph2d::BoxShadow& box_shadow);
+
+    PaintSurfaceWindowD2D* surface_;
+    Painter p_;
 };
 } // namespace windows::graphics

@@ -469,6 +469,11 @@ float Scene::intrinsicHeight(float width)
 	}
 }
 
+void Scene::discardDeviceResources()
+{
+	// TODO: see also `DialogWin32::DiscardNodeDeviceResources()`;
+}
+
 void Scene::setupProps(Node* node, JSValue props)
 {
 	JSContext* ctx = script_ctx_->get();

@@ -13,9 +13,15 @@ public:
     int lineStride;
 
     static JuceImage fromSingleChannel(int w, int h, void* data, int stride);
+
+    static JuceImage fromARGB(int w, int h, void* data, int stride);
+
     unsigned char* getLinePointer(int row) const { return data + lineStride * row; }
+
     int getWidth() const { return width; }
+
     int getHeight() const { return height; }
+
     int getFormat() const { return format; }
 
 private:

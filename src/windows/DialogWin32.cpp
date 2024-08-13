@@ -1086,6 +1086,8 @@ void DialogWin32::OnWindowPosChanged(WINDOWPOS* wnd_pos) {
 }
 void DialogWin32::DiscardDeviceResources() {
     // DiscardNodeDeviceResources(_root.get());
+    scene_->discardDeviceResources();
+    if (surface_) surface_->discardDeviceResources();
 }
 void DialogWin32::OnEnterKeyDown(EventContext& ctx)
 {

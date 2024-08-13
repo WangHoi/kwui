@@ -80,6 +80,8 @@ public:
 	std::tuple<float, float> intrinsicWidth();
 	float intrinsicHeight(float width);
 
+	void discardDeviceResources();
+
 private:
 	enum class NodeCompareResult {
 		Unpatchable,

@@ -9,6 +9,11 @@ std::unique_ptr<PaintSurfaceWindowD2D> PaintSurfaceWindowD2D::create(const Confi
     return std::unique_ptr<PaintSurfaceWindowD2D>(new PaintSurfaceWindowD2D(config));
 }
 
+void PaintSurfaceWindowD2D::discardDeviceResources()
+{
+    bitmap_cache_.clear();
+}
+
 void PaintSurfaceWindowD2D::resize(int pixel_width, int pixel_height, float dpi_scale)
 {
     config_.size.width = pixel_width;
@@ -66,7 +71,7 @@ std::unique_ptr<graph2d::PaintContextInterface> PaintSurfaceWindowD2D::beginPain
         hwnd_rt_.hwnd_rt->BeginDraw();
         d2d_rt = hwnd_rt_.hwnd_rt.Get();
     }
-    return std::make_unique<PainterImpl>(d2d_rt, scene2d::PointF());
+    return std::make_unique<PainterImpl>(this, d2d_rt, scene2d::PointF());
 }
 
 bool PaintSurfaceWindowD2D::endPaint()
@@ -98,6 +103,17 @@ void PaintSurfaceWindowD2D::swapBuffers()
 
         (void)hwnd_rt_.d2d1_swap_chain->Present1(1, 0, &parameters);
     }
+}
+
+ComPtr<ID2D1Bitmap> PaintSurfaceWindowD2D::getCachedetBitmap(const std::string& key) const
+{
+    const auto it = bitmap_cache_.find(key);
+    return (it == bitmap_cache_.end()) ? nullptr : it->second;
+}
+
+void PaintSurfaceWindowD2D::updateCachedBitmap(const std::string& key, ComPtr<ID2D1Bitmap> bitmap)
+{
+    bitmap_cache_[key] = bitmap;
 }
 
 PaintSurfaceWindowD2D::PaintSurfaceWindowD2D(const Configuration& config)
@@ -139,7 +155,8 @@ std::unique_ptr<graph2d::PaintContextInterface> PaintSurfaceBitmapD2D::beginPain
         recreateRenderTarget();
     if (!wic_rt_)
         return nullptr;
-    return std::make_unique<PainterImpl>(wic_rt_.target.Get(), scene2d::PointF());
+    wic_rt_.target->BeginDraw();
+    return std::make_unique<PainterImpl>(nullptr, wic_rt_.target.Get(), scene2d::PointF());
 }
 
 bool PaintSurfaceBitmapD2D::endPaint()
@@ -191,8 +208,11 @@ void PaintSurfaceBitmapD2D::recreateRenderTarget()
     // Release resources first
     wic_rt_ = WicBitmapRenderTarget();
 
-    wic_rt_ = GraphicDeviceD2D::instance()->createWicBitmapRenderTarget(
-        config_.format, config_.pixel_size.width, config_.pixel_size.height, config_.dpi_scale);
+    wic_rt_ = GraphicDeviceD2D::instance()
+        ->createWicBitmapRenderTarget(config_.format,
+                                      config_.pixel_size.width / config_.dpi_scale,
+                                      config_.pixel_size.height / config_.dpi_scale,
+                                      config_.dpi_scale);
     LOG(INFO) << "PaintSurfaceBitmapD2D::recreateRenderTarget() hwnd=" << std::hex << config_.format
         << " pixel_size=" << config_.pixel_size
         << " dpi_scale=" << config_.dpi_scale;
