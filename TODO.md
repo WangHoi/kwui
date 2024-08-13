@@ -4,7 +4,8 @@
 - AbsoluteBlockHeightSolver
 
 ### CSS:
-- font-size 支持更多单位
+- font-size: 支持更多单位
+- box-shadow: inset遮罩缓存，支持spread属性
 
 ### DOM:
 - fragment 处理有问题，没有跳过
