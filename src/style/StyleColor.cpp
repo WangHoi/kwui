@@ -31,11 +31,6 @@ Color Color::fromString(std::string_view str) {
 	return Color();
 }
 
-uint32_t Color::getGdiRgb() const {
-	return (uint32_t(_c[0] * 255.0f) & 0xff)
-		| ((uint32_t(_c[1] * 255.0f) & 0xff) << 8)
-		| ((uint32_t(_c[2] * 255.0f) & 0xff) << 16);
-}
 #if WITH_SKIA
 Color::operator SkColor4f() const
 {

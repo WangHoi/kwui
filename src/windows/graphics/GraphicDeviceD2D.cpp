@@ -240,13 +240,15 @@ WicBitmapRenderTarget GraphicDeviceD2D::createWicBitmapRenderTarget(DXGI_FORMAT 
     rt.bitmap->SetResolution(dpi, dpi);
 
     const D2D1_PIXEL_FORMAT format = D2D1::PixelFormat(dxgi_format, D2D1_ALPHA_MODE_PREMULTIPLIED);
+    const D2D1_RENDER_TARGET_USAGE usage = (dxgi_format == DXGI_FORMAT_B8G8R8A8_UNORM)
+        ? D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE : D2D1_RENDER_TARGET_USAGE_NONE;
     const D2D1_RENDER_TARGET_PROPERTIES properties =
         D2D1::RenderTargetProperties(
             D2D1_RENDER_TARGET_TYPE_SOFTWARE,
             format,
             dpi_scale * USER_DEFAULT_SCREEN_DPI,
             dpi_scale * USER_DEFAULT_SCREEN_DPI,
-            D2D1_RENDER_TARGET_USAGE_NONE /* D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE */);
+            usage);
     if (use_d2d1_) {
         hr = d2d1_.factory->CreateWicBitmapRenderTarget(rt.bitmap.Get(),
                                                         properties,
@@ -517,16 +519,19 @@ HRESULT GraphicDeviceD2D::createNativeBitmap(float width, float height, ComPtr<I
     */
 }
 
-ComPtr<ID2D1Bitmap1> GraphicDeviceD2D::createBitmap(float width, float height)
+ComPtr<ID2D1Bitmap1> GraphicDeviceD2D::createBitmap(float width, float height, float dpi_scale,
+                                                    const void* data, size_t stride,
+                                                    DXGI_FORMAT format, D2D1_ALPHA_MODE alpha_mode)
 {
     HRESULT hr = E_FAIL;
     if (use_d2d1_) {
         const D2D1_SIZE_U size = {(UINT32)width, (UINT32)height};
         ComPtr<ID2D1Bitmap1> bitmap;
         D2D1_BITMAP_PROPERTIES1 props = {};
-        props.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        props.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
-        hr = d2d1_.ctx2d->CreateBitmap(size, nullptr, 0, props, bitmap.GetAddressOf());
+        props.pixelFormat.format = format;
+        props.pixelFormat.alphaMode = alpha_mode;
+        props.dpiX = props.dpiY = USER_DEFAULT_SCREEN_DPI * dpi_scale;
+        hr = d2d1_.ctx2d->CreateBitmap(size, data, (UINT)stride, props, bitmap.GetAddressOf());
         if (FAILED(hr)) return nullptr;
 
         return bitmap;

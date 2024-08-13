@@ -76,8 +76,10 @@ void* CustomElementControl::getNativeBitmap(float& out_pixel_width, float& out_p
         native_.width = cur_rect_.width();
         native_.height = cur_rect_.height();
         native_.dpi_scale = wp.GetDpiScale();
-        native_.d2d_bitmap = windows::graphics::GraphicDeviceD2D::instance()->createBitmap(
-            cur_rect_.width() * native_.dpi_scale, cur_rect_.height() * native_.dpi_scale);
+        native_.d2d_bitmap = windows::graphics::GraphicDeviceD2D::instance()
+            ->createBitmap(cur_rect_.width() * native_.dpi_scale,
+                           cur_rect_.height() * native_.dpi_scale,
+                           native_.dpi_scale);
         ComPtr<IDXGISurface> surface;
         native_.d2d_bitmap->GetSurface(surface.GetAddressOf());
         surface.As(&native_.d3d_tex);

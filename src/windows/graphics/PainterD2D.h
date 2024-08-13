@@ -392,6 +392,10 @@ private:
                                                const style::EdgeOffsetF& inset_border_width,
                                                const scene2d::CornerRadiusF& border_radius,
                                                const graph2d::BoxShadow& box_shadow);
+    ComPtr<ID2D1Bitmap> makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
+                                              const style::EdgeOffsetF& inset_border_width,
+                                              const scene2d::CornerRadiusF& border_radius,
+                                              const graph2d::BoxShadow& box_shadow);
 
     PaintSurfaceWindowD2D* surface_;
     Painter p_;

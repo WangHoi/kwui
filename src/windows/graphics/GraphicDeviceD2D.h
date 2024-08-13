@@ -74,7 +74,8 @@ public:
     // Alpha premultiplied
     WicBitmapRenderTarget createWicBitmapRenderTarget(DXGI_FORMAT format,
                                                       float width, float height, float dpi_scale);
-    ComPtr<ID2D1StrokeStyle> createStrokeStyle(graph2d::StrokeCap line_cap, graph2d::StrokeJoin line_join, float miter_limit);
+    ComPtr<ID2D1StrokeStyle> createStrokeStyle(graph2d::StrokeCap line_cap, graph2d::StrokeJoin line_join,
+                                               float miter_limit);
     ComPtr<ID2D1PathGeometry> createPathGeometry();
     ComPtr<ID2D1EllipseGeometry> createEllipseGeometry(float center_x, float center_y, float radius_x, float radius_y);
     ComPtr<ID2D1RectangleGeometry> createRectangleGeometry(const scene2d::RectF& rect);
@@ -118,7 +119,19 @@ public:
     ID3D11Device1* getD3DDevice1() const { return d2d1_.dev3d.Get(); }
     HRESULT createNativeBitmap(float width, float height, ComPtr<ID3D11Texture2D>& out_tex,
                                ComPtr<ID2D1Bitmap1>& out_bitmap);
-    ComPtr<ID2D1Bitmap1> createBitmap(float width, float height);
+
+    ComPtr<ID2D1Bitmap1> createBitmap(float pixel_width, float pixel_height, float dpi_scale,
+                                      DXGI_FORMAT format = DXGI_FORMAT_B8G8R8A8_UNORM,
+                                      D2D1_ALPHA_MODE alpha_mode = D2D1_ALPHA_MODE_IGNORE)
+    {
+        return createBitmap(pixel_width, pixel_height, dpi_scale,
+                            nullptr, 0, format, alpha_mode);
+    }
+
+    ComPtr<ID2D1Bitmap1> createBitmap(float pixel_width, float pixel_height, float dpi_scale,
+                                      const void* data, size_t stride,
+                                      DXGI_FORMAT format = DXGI_FORMAT_B8G8R8A8_UNORM,
+                                      D2D1_ALPHA_MODE alpha_mode = D2D1_ALPHA_MODE_IGNORE);
 
 private:
     BitmapSubItem loadBitmapFromResource(absl::Span<const uint8_t> res, const scene2d::PointF& dpi_scale);
