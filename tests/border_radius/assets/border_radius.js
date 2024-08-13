@@ -3,7 +3,7 @@ function NotEqualCornerRadius({label}) {
         <style jsx>{`
             div {
                 border-style: solid;
-                border-width: 1px;
+                border-width: 4px;
                 border-color: black;
                 border-bottom-left-radius: 8px;
                 border-bottom-right-radius: 8px;

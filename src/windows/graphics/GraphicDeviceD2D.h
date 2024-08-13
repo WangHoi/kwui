@@ -8,6 +8,8 @@
 #include "absl/types/span.h"
 #include <unordered_map>
 
+#include "graph2d/PaintBrush.h"
+
 namespace windows::graphics
 {
 struct BitmapSubItem
@@ -72,6 +74,7 @@ public:
     // Alpha premultiplied
     WicBitmapRenderTarget createWicBitmapRenderTarget(DXGI_FORMAT format,
                                                       float width, float height, float dpi_scale);
+    ComPtr<ID2D1StrokeStyle> createStrokeStyle(graph2d::StrokeCap line_cap, graph2d::StrokeJoin line_join, float miter_limit);
     ComPtr<ID2D1PathGeometry> createPathGeometry();
     ComPtr<ID2D1EllipseGeometry> createEllipseGeometry(float center_x, float center_y, float radius_x, float radius_y);
     ComPtr<ID2D1RectangleGeometry> createRectangleGeometry(const scene2d::RectF& rect);

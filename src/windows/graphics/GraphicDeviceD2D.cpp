@@ -264,6 +264,23 @@ WicBitmapRenderTarget GraphicDeviceD2D::createWicBitmapRenderTarget(DXGI_FORMAT 
     return rt;
 }
 
+ComPtr<ID2D1StrokeStyle> GraphicDeviceD2D::createStrokeStyle(graph2d::StrokeCap line_cap,
+                                                             graph2d::StrokeJoin line_join,
+                                                             float miter_limit)
+{
+    ComPtr<ID2D1StrokeStyle> style;
+    HRESULT hr;
+    if (use_d2d1_) {
+        hr = d2d1_.factory->CreateStrokeStyle(D2D1::StrokeStyleProperties(), nullptr, 0, style.GetAddressOf());
+    } else {
+        hr = d2d0_.factory->CreateStrokeStyle(D2D1::StrokeStyleProperties(), nullptr, 0, style.GetAddressOf());
+    }
+    if (FAILED(hr))
+        LOG(ERROR) << "CreateStrokeStyle failed hr=" << std::hex << hr;
+
+    return style;
+}
+
 ComPtr<ID2D1PathGeometry> GraphicDeviceD2D::createPathGeometry()
 {
     HRESULT hr;
