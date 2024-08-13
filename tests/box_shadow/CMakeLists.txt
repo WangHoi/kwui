@@ -1,0 +1,6 @@
+kwui_add_executable(test_box_shadow)
+target_sources(test_box_shadow PRIVATE box_shadow.cpp)
+if(WIN32)
+  target_sources(test_box_shadow PRIVATE dpi-aware.manifest)
+endif()
+target_include_directories(test_box_shadow PRIVATE ${CMAKE_SOURCE_DIR}/src/api)
