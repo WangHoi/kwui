@@ -139,6 +139,11 @@ void PaintSurfaceX::swapBuffers()
 #endif
 #endif
 }
+
+void PaintSurfaceX::discardDeviceResources()
+{
+}
+
 PaintSurfaceX::PaintSurfaceX(const Configuration& config)
 	: config_(config)
 {

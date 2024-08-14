@@ -12,9 +12,8 @@ public:
 	void restore() override;
 	float getDpiScale() override;
 	void translate(const scene2d::PointF& offset) override;
-	void rotate(float radians, const scene2d::PointF& center) override;
-	void clipRect(const scene2d::PointF& origin, const scene2d::DimensionF& size) override;
-	void popClipRect() override;
+	// void rotate(float radians, const scene2d::PointF& center) override;
+	void clipRect(const scene2d::RectF& rect) override;
 	void clear(const style::Color& c) override;
 	void drawBox(const scene2d::RectF& border_rect,
 		const style::EdgeOffsetF& inset_border_width,
@@ -47,6 +46,13 @@ public:
 		const style::Color& background_color,
 		float border_width,
 		const style::Color& border_color) override;
+	void drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush& brush) override;
+	void drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBrush& brush) override;
+	void drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner,
+		const graph2d::PaintBrush& brush) override;
+	void drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush) override;
+	void drawBoxShadow(const scene2d::RectF& padding_rect, const style::EdgeOffsetF& inset_border_width,
+		const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow) override;
 
 private:
 	SkCanvas* canvas_;

@@ -30,6 +30,7 @@ public:
 	std::unique_ptr<graph2d::PaintContextInterface> beginPaint() override;
 	bool endPaint() override;
     void swapBuffers() override;
+    void discardDeviceResources() override;
 
 private:
     PaintSurfaceX(const Configuration& config);
