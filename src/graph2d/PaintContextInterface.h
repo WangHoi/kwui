@@ -58,12 +58,12 @@ public:
     virtual void drawRRect(const scene2d::RRectF& rrect, const PaintBrush& brush) = 0;
     virtual void drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner, const PaintBrush& brush) = 0;
     virtual void drawPath(const PaintPathInterface* path, const PaintBrush& brush) = 0;
-    virtual void drawBox(const scene2d::RectF& padding_rect,
-                         const style::EdgeOffsetF& inset_border_width,
-                         const scene2d::CornerRadiusF& border_radius,
-                         const style::Color& background_color,
-                         const style::Color& border_color,
-                         const BitmapInterface* background_image = nullptr) = 0;
+    void drawBox(const scene2d::RectF& padding_rect,
+                 const style::EdgeOffsetF& inset_border_width,
+                 const scene2d::CornerRadiusF& border_radius,
+                 const style::Color& background_color,
+                 const style::Color& border_color,
+                 const BitmapInterface* background_image = nullptr);
     virtual void drawBoxShadow(const scene2d::RectF& padding_rect,
                                const style::EdgeOffsetF& inset_border_width,
                                const scene2d::CornerRadiusF& border_radius,

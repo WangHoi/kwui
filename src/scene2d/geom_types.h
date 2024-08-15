@@ -7,6 +7,7 @@
 #endif
 #if WITH_SKIA
 #include "include/core/SkRect.h"
+#include "include/core/SkRRect.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkSize.h"
 #endif
@@ -451,12 +452,20 @@ struct RRectF
         return RRectF(RectF{}, CornerRadiusF{});
     }
 
-    // #if WITH_SKIA
-    //     inline operator SkRRect() const
-    //     {
-    //         return SkRRect::MakeLTRB(left, top, right, bottom);
-    //     }
-    // #endif
+#if WITH_SKIA
+    inline operator SkRRect() const
+    {
+        SkRRect rr;
+        SkVector radii[4] = {
+            {corner_radius.top_left.width, corner_radius.top_left.height},
+            {corner_radius.top_right.width, corner_radius.top_right.height},
+            {corner_radius.bottom_right.width, corner_radius.bottom_right.height},
+            {corner_radius.bottom_left.width, corner_radius.bottom_left.height},
+        };
+        rr.setRectRadii(rect, radii);
+        return rr;
+    }
+#endif
 
     inline PointF origin() const
     {

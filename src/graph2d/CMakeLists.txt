@@ -8,6 +8,7 @@ list(APPEND kwui_pub_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/image_blur.h)
 list(APPEND kwui_priv_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/graph2d.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PaintContextInterface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintBrush.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/image_blur.cpp)
 

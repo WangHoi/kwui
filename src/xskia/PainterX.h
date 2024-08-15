@@ -15,12 +15,6 @@ public:
 	// void rotate(float radians, const scene2d::PointF& center) override;
 	void clipRect(const scene2d::RectF& rect) override;
 	void clear(const style::Color& c) override;
-	void drawBox(const scene2d::RectF& border_rect,
-		const style::EdgeOffsetF& inset_border_width,
-		const scene2d::CornerRadiusF& border_radius,
-		const style::Color& background_color,
-		const style::Color& border_color,
-		const graph2d::BitmapInterface* background_image) override;
 	void drawGlyphRun(const scene2d::PointF& pos, const style::GlyphRunInterface* text_flow, const style::Color& color) override;
 	void drawControl(const scene2d::RectF& rect, scene2d::Control* control) override;
 	void drawBitmap(const graph2d::BitmapInterface* image,
@@ -55,6 +49,8 @@ public:
 		const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow) override;
 
 private:
+	SkPaint makeSkPaint(const graph2d::PaintBrush& brush) const;
+
 	SkCanvas* canvas_;
 	float dpi_scale_;
 };

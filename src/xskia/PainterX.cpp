@@ -1,4 +1,7 @@
 #include "PainterX.h"
+
+#include <src/shaders/SkImageShader.h>
+
 #include "TextFlowX.h"
 #include "TextLayoutX.h"
 #include "BitmapX.h"
@@ -49,44 +52,6 @@ void PainterX::clipRect(const scene2d::RectF& rect)
 void PainterX::clear(const style::Color& c)
 {
     canvas_->clear(c);
-}
-
-void PainterX::drawBox(
-    const scene2d::RectF& padding_rect,
-    const style::EdgeOffsetF& border_width,
-    const scene2d::CornerRadiusF& border_radius,
-    const style::Color& background_color,
-    const style::Color& border_color,
-    const graph2d::BitmapInterface* background_image)
-{
-    SkPaint paint;
-    SkRRect rrect;
-    SkVector radii[4] = {
-        SkVector::Make(border_radius.top_left.width, border_radius.top_left.height),
-        SkVector::Make(border_radius.top_right.width, border_radius.top_right.height),
-        SkVector::Make(border_radius.bottom_right.width, border_radius.bottom_right.height),
-        SkVector::Make(border_radius.bottom_left.width, border_radius.bottom_left.height),
-    };
-    rrect.setRectRadii(padding_rect, radii);
-    float max_border_width = std::max(
-        {border_width.left, border_width.top, border_width.right, border_width.bottom});
-    rrect.outset(max_border_width * 0.5f, max_border_width * 0.5f);
-    paint.setColor(background_color);
-    canvas_->drawRRect(rrect, paint);
-
-    auto image = (const BitmapX*)background_image;
-    if (image && image->skImage()) {
-        canvas_->drawImageRect(image->skImage(),
-                               padding_rect,
-                               SkSamplingOptions(SkFilterMode::kLinear));
-    }
-
-    if (max_border_width > 0.0f) {
-        paint.setStroke(true);
-        paint.setStrokeWidth(max_border_width);
-        paint.setColor(border_color);
-        canvas_->drawRRect(rrect, paint);
-    }
 }
 
 void PainterX::drawGlyphRun(
@@ -200,14 +165,17 @@ void PainterX::drawArc(const scene2d::PointF& center,
 
 void PainterX::drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush& brush)
 {
+    canvas_->drawRect(rect, makeSkPaint(brush));
 }
 
 void PainterX::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBrush& brush)
 {
+    canvas_->drawRRect(rrect, makeSkPaint(brush));
 }
 
 void PainterX::drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner, const graph2d::PaintBrush& brush)
 {
+    canvas_->drawDRRect(outer, inner, makeSkPaint(brush));
 }
 
 void PainterX::drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush)
@@ -215,7 +183,42 @@ void PainterX::drawPath(const graph2d::PaintPathInterface* path, const graph2d::
 }
 
 void PainterX::drawBoxShadow(const scene2d::RectF& padding_rect, const style::EdgeOffsetF& inset_border_width,
-    const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow)
+                             const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow)
 {
+}
+
+SkPaint PainterX::makeSkPaint(const graph2d::PaintBrush& brush) const
+{
+    SkPaint p;
+    p.setAntiAlias(true);
+    p.setColor(brush.color());
+    if (auto img = brush.shader()) {
+        p.setShader(SkImageShader::Make(static_cast<const BitmapX*>(img)->skImage(), SkTileMode::kClamp,
+                                        SkTileMode::kClamp, SkSamplingOptions(), nullptr));
+    }
+    if (brush.style() == graph2d::PAINT_STYLE_STROKE) {
+        p.setStroke(true);
+        p.setStrokeWidth(brush.strokeWidth());
+        switch (brush.strokeCap()) {
+        case graph2d::STROKE_CAP_BUTT: p.setStrokeCap(SkPaint::kButt_Cap);
+            break;
+        case graph2d::STROKE_CAP_ROUND: p.setStrokeCap(SkPaint::kRound_Cap);
+            break;
+        case graph2d::STROKE_CAP_SQUARE: p.setStrokeCap(SkPaint::kSquare_Cap);
+            break;
+        default: ;
+        }
+        switch (brush.strokeJoin()) {
+        case graph2d::STROKE_JOIN_MITER: p.setStrokeJoin(SkPaint::kMiter_Join);
+            break;
+        case graph2d::STROKE_JOIN_ROUND: p.setStrokeJoin(SkPaint::kRound_Join);
+            break;
+        case graph2d::STROKE_JOIN_BEVEL: p.setStrokeJoin(SkPaint::kBevel_Join);
+            break;
+        default: ;
+        }
+        p.setStrokeMiter(brush.strokeMiterLimit());
+    }
+    return p;
 }
 }

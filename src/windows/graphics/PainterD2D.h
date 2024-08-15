@@ -287,12 +287,6 @@ public:
         p_.Clear(c);
     }
 
-    void drawBox(const scene2d::RectF& padding_rect,
-                 const style::EdgeOffsetF& border_width,
-                 const scene2d::CornerRadiusF& border_radius,
-                 const style::Color& background_color,
-                 const style::Color& border_color,
-                 const graph2d::BitmapInterface* background_image) override;
     void drawBoxShadow(const scene2d::RectF& padding_rect,
                        const style::EdgeOffsetF& inset_border_width,
                        const scene2d::CornerRadiusF& border_radius,
