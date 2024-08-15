@@ -320,10 +320,10 @@ void PaintPathD2D::arcTo(float radius_x, float radius_y, float rotation_degress,
         {x, y},
         {radius_x, radius_y},
         rotation_degress,
-        (sweep_dir == graph2d::SWEEP_DIRECTION_CLOCKWISE)
+        (sweep_dir == graph2d::SweepDirection::SWEEP_DIRECTION_CLOCKWISE)
             ? D2D1_SWEEP_DIRECTION_CLOCKWISE
             : D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE,
-        (arc_size == graph2d::ARC_SIZE_SMALL)
+        (arc_size == graph2d::ArcSize::ARC_SIZE_SMALL)
             ? D2D1_ARC_SIZE_SMALL
             : D2D1_ARC_SIZE_LARGE
     });
@@ -343,8 +343,8 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
         arcTo(c.width,
               c.height,
               90.0f,
-              graph2d::SWEEP_DIRECTION_CLOCKWISE,
-              graph2d::ARC_SIZE_SMALL,
+              graph2d::SweepDirection::SWEEP_DIRECTION_CLOCKWISE,
+              graph2d::ArcSize::ARC_SIZE_SMALL,
               rrect.rect.left + c.width,
               rrect.rect.top);
     } else {
@@ -359,8 +359,8 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
         arcTo(c.width,
               c.height,
               90.0f,
-              graph2d::SWEEP_DIRECTION_CLOCKWISE,
-              graph2d::ARC_SIZE_SMALL,
+              graph2d::SweepDirection::SWEEP_DIRECTION_CLOCKWISE,
+              graph2d::ArcSize::ARC_SIZE_SMALL,
               rrect.rect.right,
               rrect.rect.top + c.height);
     }
@@ -373,8 +373,8 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
         arcTo(c.width,
               c.height,
               90.0f,
-              graph2d::SWEEP_DIRECTION_CLOCKWISE,
-              graph2d::ARC_SIZE_SMALL,
+              graph2d::SweepDirection::SWEEP_DIRECTION_CLOCKWISE,
+              graph2d::ArcSize::ARC_SIZE_SMALL,
               rrect.rect.right - c.width,
               rrect.rect.bottom);
     }
@@ -387,8 +387,8 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
         arcTo(c.width,
               c.height,
               90.0f,
-              graph2d::SWEEP_DIRECTION_CLOCKWISE,
-              graph2d::ARC_SIZE_SMALL,
+              graph2d::SweepDirection::SWEEP_DIRECTION_CLOCKWISE,
+              graph2d::ArcSize::ARC_SIZE_SMALL,
               rrect.rect.left,
               rrect.rect.bottom - c.height);
     }
@@ -597,8 +597,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
             path->arcTo(c.width,
                         c.height,
                         90.0f,
-                        graph2d::SWEEP_DIRECTION_CLOCKWISE,
-                        graph2d::ARC_SIZE_SMALL,
+                        graph2d::SweepDirection::SWEEP_DIRECTION_CLOCKWISE,
+                        graph2d::ArcSize::ARC_SIZE_SMALL,
                         rrect.rect.left + c.width,
                         rrect.rect.top);
         } else {
@@ -613,8 +613,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
             path->arcTo(c.width,
                         c.height,
                         90.0f,
-                        graph2d::SWEEP_DIRECTION_CLOCKWISE,
-                        graph2d::ARC_SIZE_SMALL,
+                        graph2d::SweepDirection::SWEEP_DIRECTION_CLOCKWISE,
+                        graph2d::ArcSize::ARC_SIZE_SMALL,
                         rrect.rect.right,
                         rrect.rect.top + c.height);
         }
@@ -627,8 +627,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
             path->arcTo(c.width,
                         c.height,
                         90.0f,
-                        graph2d::SWEEP_DIRECTION_CLOCKWISE,
-                        graph2d::ARC_SIZE_SMALL,
+                        graph2d::SweepDirection::SWEEP_DIRECTION_CLOCKWISE,
+                        graph2d::ArcSize::ARC_SIZE_SMALL,
                         rrect.rect.right - c.width,
                         rrect.rect.bottom);
         }
@@ -641,8 +641,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
             path->arcTo(c.width,
                         c.height,
                         90.0f,
-                        graph2d::SWEEP_DIRECTION_CLOCKWISE,
-                        graph2d::ARC_SIZE_SMALL,
+                        graph2d::SweepDirection::SWEEP_DIRECTION_CLOCKWISE,
+                        graph2d::ArcSize::ARC_SIZE_SMALL,
                         rrect.rect.left,
                         rrect.rect.bottom - c.height);
         }

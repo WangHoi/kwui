@@ -150,4 +150,17 @@ std::shared_ptr<BitmapInterface> createBitmap(const std::string& url)
 #endif
 }
 
+std::unique_ptr<PaintPathInterface> createPath()
+{
+#if WITH_SKIA
+	return nullptr;
+#else
+#ifdef _WIN32
+	return std::unique_ptr<PaintPathInterface>(new windows::graphics::PaintPathD2D());
+#else
+#pragma message("TODO: implement graph2d::createPath().")
+	return nullptr;
+#endif
+#endif
+}
 }

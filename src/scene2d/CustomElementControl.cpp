@@ -1,6 +1,8 @@
 #include "CustomElementControl.h"
 #include "Scene.h"
 #include "graph2d/graph2d.h"
+#include "api/kwui/CustomElementPaint.h"
+#include "api/kwui/CustomElementPaint_private.h"
 
 namespace scene2d::control
 {
@@ -108,6 +110,17 @@ void CustomElementControl::drawRoundedRect(float left, float top, float width, f
 
     auto& wp = windows::graphics::PainterImpl::unwrap(*cur_painter_);
     wp.DrawRoundedRect(left, top, width, height, radius);
+}
+
+void CustomElementControl::drawPath(const kwui::CustomElementPaintPath* path)
+{
+    if (!cur_painter_)
+        return;
+    graph2d::PaintBrush brush;
+    brush.setStyle(graph2d::PAINT_STYLE_STROKE);
+    brush.setColor(style::named_color::blue);
+    brush.setStrokeWidth(2.0f);
+    cur_painter_->drawPath(path->d->path.get(), brush);
 }
 
 ControlFactoryFn CustomElementContrlFactory(base::string_atom name, kwui::CustomElementFactoryFn factory_fn)

@@ -12,7 +12,7 @@
 
 namespace scene2d::control
 {
-class CustomElementControl : public Control, public ::kwui::CustomElementPaintContext
+class CustomElementControl : public Control, public ::kwui::CustomElementPaintContextInterface
 {
 public:
     explicit CustomElementControl(base::string_atom name);
@@ -28,6 +28,7 @@ public:
     void* getNativeBitmap(float& out_pixel_width, float& out_pixel_height) override;
     void setFillBitmap(void* native_bitmap) override;
     void drawRoundedRect(float left, float top, float width, float height, float radius) override;
+    void drawPath(const kwui::CustomElementPaintPath* path) override;
 
 private:
     base::string_atom name_;

@@ -6,6 +6,7 @@ list(APPEND kwui_pub_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptEngine.h
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptValue.h
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/CustomElement.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/kwui/CustomElementPaint.h
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui_capi.h
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/Application_capi.h
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptEngine_capi.h
@@ -15,6 +16,7 @@ list(APPEND kwui_priv_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/Application.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptEngine.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptValue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/kwui/CustomElementPaint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/Application_capi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptEngine_capi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/kwui/ScriptValue_capi.cpp

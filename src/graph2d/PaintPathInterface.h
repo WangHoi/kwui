@@ -1,18 +1,10 @@
 #pragma once
+#include "api/kwui/CustomElementPaint.h"
 
 namespace graph2d
 {
-enum SweepDirection
-{
-    SWEEP_DIRECTION_CLOCKWISE,
-    SWEEP_DIRECTION_COUNTER_CLOCKWISE,
-};
-
-enum ArcSize
-{
-    ARC_SIZE_SMALL,
-    ARC_SIZE_LARGE,
-};
+using SweepDirection = kwui::SweepDirection;
+using ArcSize = kwui::ArcSize;
 
 /**
  * A complex, one-dimensional subset of a plane.
