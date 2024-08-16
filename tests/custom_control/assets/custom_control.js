@@ -1,5 +1,5 @@
-function BoxShadowExample() {
-    return <div class="inner" />;
+function PlotExample() {
+    return <plot></plot>;
 }
 
 var stylesheet = css`
@@ -7,6 +7,12 @@ var stylesheet = css`
         width: 100%;
         height: 100%;
         background-color: #add8e6;
+    }
+    
+    plot {
+        position: absolute;
+        inset: 20%;
+        background-color: cyan;
     }
 
     div.inner {
@@ -26,6 +32,6 @@ var stylesheet = css`
 
 export function builder() {
     return {
-        root: <BoxShadowExample />, stylesheet,
+        root: <PlotExample />, stylesheet,
     }
 }

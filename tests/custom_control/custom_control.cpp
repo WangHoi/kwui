@@ -1,5 +1,7 @@
 #include "kwui.h"
 #include <string.h>
+
+#include "PlotElement.h"
 using namespace kwui;
 
 KWUI_MAIN()
@@ -11,6 +13,8 @@ KWUI_MAIN()
     std::string dir(__FILE__, sep);
     app.setResourceRootDir((dir + "\\assets").c_str());
 #endif
+
+    app.registerCustomElement("plot", &PlotElementFactory);
 
     ScriptEngine::get()
         ->loadFile(":/entry.js");

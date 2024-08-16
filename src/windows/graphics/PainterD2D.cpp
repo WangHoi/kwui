@@ -686,7 +686,9 @@ void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2
     } else {
         if (brush.color().getAlpha() > 0) {
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
-            p_._rt->DrawGeometry(d2d_path, d2d_brush.Get(), brush.strokeWidth());
+            ComPtr<ID2D1StrokeStyle> stroke_style = GraphicDeviceD2D::instance()
+                ->createStrokeStyle(brush.strokeCap(), brush.strokeJoin(), brush.strokeMiterLimit());
+            p_._rt->DrawGeometry(d2d_path, d2d_brush.Get(), brush.strokeWidth(), stroke_style.Get());
         }
     }
 }

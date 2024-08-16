@@ -119,7 +119,8 @@ void CustomElementControl::drawPath(const kwui::CustomElementPaintPath* path)
     graph2d::PaintBrush brush;
     brush.setStyle(graph2d::PAINT_STYLE_STROKE);
     brush.setColor(style::named_color::blue);
-    brush.setStrokeWidth(2.0f);
+    brush.setStrokeJoin(graph2d::STROKE_JOIN_BEVEL);
+    brush.setStrokeWidth(2.0f / cur_painter_->getDpiScale());
     cur_painter_->drawPath(path->d->path.get(), brush);
 }
 

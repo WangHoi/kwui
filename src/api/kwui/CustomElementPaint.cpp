@@ -29,9 +29,9 @@ void CustomElementPaintPath::close()
     d->path->close();
 }
 
-CustomElementPaintPath CustomElementPaintPath::create()
+std::unique_ptr<CustomElementPaintPath> CustomElementPaintPath::create()
 {
-    return CustomElementPaintPath();
+    return std::unique_ptr<CustomElementPaintPath>(new CustomElementPaintPath);
 }
 
 CustomElementPaintPath::CustomElementPaintPath()

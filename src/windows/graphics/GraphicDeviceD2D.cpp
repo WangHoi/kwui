@@ -241,7 +241,8 @@ WicBitmapRenderTarget GraphicDeviceD2D::createWicBitmapRenderTarget(DXGI_FORMAT 
 
     const D2D1_PIXEL_FORMAT format = D2D1::PixelFormat(dxgi_format, D2D1_ALPHA_MODE_PREMULTIPLIED);
     const D2D1_RENDER_TARGET_USAGE usage = (dxgi_format == DXGI_FORMAT_B8G8R8A8_UNORM)
-        ? D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE : D2D1_RENDER_TARGET_USAGE_NONE;
+                                               ? D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE
+                                               : D2D1_RENDER_TARGET_USAGE_NONE;
     const D2D1_RENDER_TARGET_PROPERTIES properties =
         D2D1::RenderTargetProperties(
             D2D1_RENDER_TARGET_TYPE_SOFTWARE,
@@ -270,12 +271,24 @@ ComPtr<ID2D1StrokeStyle> GraphicDeviceD2D::createStrokeStyle(graph2d::StrokeCap 
                                                              graph2d::StrokeJoin line_join,
                                                              float miter_limit)
 {
+    D2D1_CAP_STYLE cap;
+    if (line_cap == graph2d::StrokeCap::STROKE_CAP_SQUARE) cap = D2D1_CAP_STYLE_SQUARE;
+    else if (line_cap == graph2d::StrokeCap::STROKE_CAP_ROUND) cap = D2D1_CAP_STYLE_ROUND;
+    else cap = D2D1_CAP_STYLE_FLAT;
+
+    D2D1_LINE_JOIN join;
+    if (line_join == graph2d::StrokeJoin::STROKE_JOIN_BEVEL) join = D2D1_LINE_JOIN_BEVEL;
+    else if (line_join == graph2d::StrokeJoin::STROKE_JOIN_ROUND) join = D2D1_LINE_JOIN_ROUND;
+    else join = D2D1_LINE_JOIN_MITER_OR_BEVEL;
+
+    auto props = D2D1::StrokeStyleProperties(
+        cap, cap, cap, join);
     ComPtr<ID2D1StrokeStyle> style;
     HRESULT hr;
     if (use_d2d1_) {
-        hr = d2d1_.factory->CreateStrokeStyle(D2D1::StrokeStyleProperties(), nullptr, 0, style.GetAddressOf());
+        hr = d2d1_.factory->CreateStrokeStyle(props, nullptr, 0, style.GetAddressOf());
     } else {
-        hr = d2d0_.factory->CreateStrokeStyle(D2D1::StrokeStyleProperties(), nullptr, 0, style.GetAddressOf());
+        hr = d2d0_.factory->CreateStrokeStyle(props, nullptr, 0, style.GetAddressOf());
     }
     if (FAILED(hr))
         LOG(ERROR) << "CreateStrokeStyle failed hr=" << std::hex << hr;
