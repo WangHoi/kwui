@@ -65,9 +65,19 @@ std::unique_ptr<FormulaInterface> SimpleFormula::create()
     return std::make_unique<SimpleFormula>();
 }
 
+float MultiSineWaveFormula::evaluate(float x, float t)
+{
+    return -4.0f + 2.0f * noise(3.0f * x + t) + 3.0f * sinc(x);
+}
+
+std::unique_ptr<FormulaInterface> MultiSineWaveFormula::create()
+{
+    return std::make_unique<MultiSineWaveFormula>();
+}
+
 float SineWaveFormula::evaluate(float x, float t)
 {
-    return 2.0f * noise(3.0f * x + t) + 3.0f * sinc(x);
+    return -4.0f + 3.0f * sinc(x);
 }
 
 std::unique_ptr<FormulaInterface> SineWaveFormula::create()

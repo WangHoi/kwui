@@ -34,6 +34,7 @@ public:
     void drawText(const std::string& text, float x, float y,
                   const kwui::CustomElementPaintBrush& brush,
                   const kwui::CustomElementPaintFont& font) override;
+    float getDpiScale() const override;
 
 private:
     base::string_atom name_;

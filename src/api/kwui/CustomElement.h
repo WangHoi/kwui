@@ -55,5 +55,6 @@ public:
     virtual void drawPath(const CustomElementPaintPath& path, const CustomElementPaintBrush& brush) = 0;
     virtual void drawText(const std::string& text, float x, float y, const CustomElementPaintBrush& brush,
                           const CustomElementPaintFont& font) = 0;
+    virtual float getDpiScale() const = 0;
 };
 }

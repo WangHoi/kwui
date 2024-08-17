@@ -6,10 +6,16 @@
 
 static std::chrono::time_point<std::chrono::system_clock> g_start_time_point = std::chrono::system_clock::now();
 
+static const uint32_t BACKGROUND_COLOR = 0x202020;
+static const uint32_t GRID_COLOR = 0x606060;
+static const uint32_t GRID_THIN_COLOR = 0x404040;
+static const uint32_t FORMULAR_COLORS[] = {0xffc040, 0xffffa0, 0xa0ffc0, 0x40c0ff, 0xd0a0ff, 0xff80b0};
+
 PlotElement::PlotElement()
 {
+    formulas_.push_back(SquareWaveFormula::create());
     formulas_.push_back(SineWaveFormula::create());
-    // formulas_.push_back(SquareWaveFormula::create());
+    formulas_.push_back(MultiSineWaveFormula::create());
 }
 
 void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwui::CustomElementPaintOption& po)
@@ -36,12 +42,13 @@ void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwu
         auto brush = kwui::CustomElementPaintBrush::create();
         brush->setStroke();
         brush->setStrokeWidth(2);
-        brush->setColor(0xa0, 0xa0, 0xe0);
+        size_t i = 0;
+        float xstep = 1.0f / p.getDpiScale();
         for (const auto& formula : formulas_) {
             auto path = kwui::CustomElementPaintPath::create();
             bool first = true;
             int kk = 0;
-            for (float x = sx; x <= ex; x += 0.5f) {
+            for (float x = sx; x <= ex; x += xstep) {
                 float y1 = formula->evaluate(coord_.mapXFromScene(x), time);
                 float y = coord_.mapYToScene(y1);
                 if (first) {
@@ -51,6 +58,7 @@ void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwu
                     path->lineTo(x, y);
                 }
             }
+            brush->setColor(FORMULAR_COLORS[i++]);
             p.drawPath(*path, *brush);
         }
     }
@@ -65,10 +73,11 @@ void PlotElement::drawAxis(kwui::CustomElementPaintContextInterface& p, float of
     auto brush = kwui::CustomElementPaintBrush::create();
     brush->setStroke();
     brush->setStrokeWidth(2 + offset);
-    brush->setColor(0x80, 0x80, 0x80);
+
+    brush->setColor(offset == 0 ? GRID_COLOR : GRID_THIN_COLOR);
 
     auto text_brush = kwui::CustomElementPaintBrush::create();
-    text_brush->setColor(0xf0, 0xf0, 0xf0);
+    text_brush->setColor(GRID_COLOR);
 
     auto path = kwui::CustomElementPaintPath::create();
 
@@ -130,7 +139,6 @@ void PlotElement::drawAxis(kwui::CustomElementPaintContextInterface& p, float of
     for (auto& [x, y, text] : y_axis_labels) {
         p.drawText(text, x, y, *text_brush, *font);
     }
-
 }
 
 void PlotElement::onWheel(float wheel_delta)
@@ -143,7 +151,7 @@ void PlotElement::onWheel(float wheel_delta)
 
 void PlotElement::onMouseDown(kwui::ButtonState button, int buttons, float x, float y)
 {
-    mouse_down_pos_= Point{x, y};
+    mouse_down_pos_ = Point{x, y};
 }
 
 void PlotElement::onMouseMove(kwui::ButtonState button, int buttons, float x, float y)
@@ -151,7 +159,7 @@ void PlotElement::onMouseMove(kwui::ButtonState button, int buttons, float x, fl
     if (mouse_down_pos_.has_value()) {
         auto [ox, oy] = mouse_down_pos_.value();
         coord_.pan(x - ox, y - oy);
-        mouse_down_pos_= Point{x, y};
+        mouse_down_pos_ = Point{x, y};
     }
 }
 

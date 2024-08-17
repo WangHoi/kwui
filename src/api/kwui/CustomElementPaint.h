@@ -52,6 +52,7 @@ public:
 
     void setStroke(bool stroke = true);
     void setColor(int red, int green, int blue, int alpha = 0xff);
+    void setColor(uint32_t rgb, int alpha = 0xff);
     void setStrokeWidth(float stroke_width);
 
     static std::unique_ptr<CustomElementPaintBrush> create();

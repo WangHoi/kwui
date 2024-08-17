@@ -6,13 +6,15 @@ var stylesheet = css`
     kml {
         width: 100%;
         height: 100%;
-        background-color: #add8e6;
+        background-color: darkgray;
     }
     
     plot {
         position: absolute;
-        inset: 20%;
-        background-color: #222;
+        inset: 20px;
+        background-color: #202020;
+        border-radius: 16px;
+        box-shadow: lemonchiffon 0px 0px 16px;
     }
 
     div.inner {

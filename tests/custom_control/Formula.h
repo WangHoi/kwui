@@ -16,6 +16,14 @@ public:
     static std::unique_ptr<FormulaInterface> create();
 };
 
+class MultiSineWaveFormula : public FormulaInterface
+{
+public:
+    float evaluate(float x, float t) override;
+
+    static std::unique_ptr<FormulaInterface> create();
+};
+
 class SineWaveFormula : public FormulaInterface
 {
 public:

@@ -57,6 +57,11 @@ void CustomElementPaintBrush::setColor(int red, int green, int blue, int alpha)
     d->brush.setColor(color);
 }
 
+void CustomElementPaintBrush::setColor(uint32_t rgb, int alpha)
+{
+    setColor((rgb & 0xff0000) >> 16, (rgb & 0xff00) >> 8, rgb & 0xff, alpha);
+}
+
 void CustomElementPaintBrush::setStrokeWidth(float stroke_width)
 {
     d->brush.setStrokeWidth(stroke_width);

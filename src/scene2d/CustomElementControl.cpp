@@ -156,6 +156,11 @@ void CustomElementControl::drawText(const std::string& text, float x, float y,
     cur_painter_->drawTextLayout({x, y}, *layout, brush.d->brush.color());
 }
 
+float CustomElementControl::getDpiScale() const
+{
+    return cur_painter_ ? cur_painter_->getDpiScale() : 1.0f;
+}
+
 ControlFactoryFn CustomElementContrlFactory(base::string_atom name, kwui::CustomElementFactoryFn factory_fn)
 {
     g_factory_map[name] = factory_fn;
