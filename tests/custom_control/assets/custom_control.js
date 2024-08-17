@@ -12,7 +12,7 @@ var stylesheet = css`
     plot {
         position: absolute;
         inset: 20%;
-        background-color: cyan;
+        background-color: #222;
     }
 
     div.inner {

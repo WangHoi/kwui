@@ -511,7 +511,7 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 		}
 	} else if (event.cmd == scene2d::MOUSE_DOWN) {
 		event.setHandled();
-		if (event.button & scene2d::LEFT_BUTTON) {
+		if (event.button & scene2d::ButtonState::LEFT_BUTTON) {
 			scroll_data_.active_sub_control = style::ScrollObject::subControlHitTest(&so, event.pos);
 			if (scroll_data_.active_sub_control.has_value()) {
 				scroll_data_.active_pos.emplace(std::make_pair(event.pos, scroll_data_.offset));
@@ -619,7 +619,7 @@ void Node::handleScrollEvent(scene2d::MouseEvent& event)
 		requestPaint();
 	} else if (event.cmd == scene2d::MOUSE_UP) {
 		event.setHandled();
-		if (event.button == scene2d::LEFT_BUTTON) {
+		if (event.button == scene2d::ButtonState::LEFT_BUTTON) {
 			scroll_data_.active_sub_control = absl::nullopt;
 			scroll_data_.active_pos = absl::nullopt;
 			//LOG(INFO) << "cleanup active_pos";

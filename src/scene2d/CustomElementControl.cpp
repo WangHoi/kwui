@@ -20,6 +20,11 @@ base::string_atom CustomElementControl::name()
     return name_;
 }
 
+bool CustomElementControl::hitTest(const scene2d::PointF& pos, int flags) const
+{
+    return (NODE_FLAG_CLICKABLE | NODE_FLAG_HOVERABLE | NODE_FLAG_SCROLLABLE) & flags;
+}
+
 void CustomElementControl::onAttach(scene2d::Node* node)
 {
     auto it = g_factory_map.find(name_);
@@ -57,12 +62,30 @@ void CustomElementControl::onPaint(graph2d::PaintContextInterface& p, const scen
     base::scoped_setter _2(cur_rect_, rect);
 
     if (custom_) {
+        p.save();
+        p.clipRect(rect);
         kwui::CustomElementPaintOption po;
         po.left = rect.left;
         po.top = rect.top;
         po.width = rect.width();
         po.height = rect.height();
         custom_->onPaint(*this, po);
+        p.restore();
+    }
+}
+
+void CustomElementControl::onMouseEvent(Node* node, MouseEvent& evt)
+{
+    if (custom_) {
+        if (evt.cmd == MouseCommand::MOUSE_WHEEL) {
+            custom_->onWheel(evt.wheel_delta);
+        } else if (evt.cmd == MouseCommand::MOUSE_DOWN) {
+            custom_->onMouseDown(evt.button, evt.buttons, evt.pos.x, evt.pos.y);
+        } else if (evt.cmd == MouseCommand::MOUSE_MOVE) {
+            custom_->onMouseMove(evt.button, evt.buttons, evt.pos.x, evt.pos.y);
+        } else if (evt.cmd == MouseCommand::MOUSE_UP) {
+            custom_->onMouseUp(evt.button, evt.buttons, evt.pos.x, evt.pos.y);
+        }
     }
 }
 
@@ -112,16 +135,25 @@ void CustomElementControl::drawRoundedRect(float left, float top, float width, f
     wp.DrawRoundedRect(left, top, width, height, radius);
 }
 
-void CustomElementControl::drawPath(const kwui::CustomElementPaintPath* path)
+void CustomElementControl::drawPath(const kwui::CustomElementPaintPath& path,
+                                    const kwui::CustomElementPaintBrush& brush)
 {
     if (!cur_painter_)
         return;
-    graph2d::PaintBrush brush;
-    brush.setStyle(graph2d::PAINT_STYLE_STROKE);
-    brush.setColor(style::named_color::blue);
-    brush.setStrokeJoin(graph2d::STROKE_JOIN_BEVEL);
-    brush.setStrokeWidth(2.0f / cur_painter_->getDpiScale());
-    cur_painter_->drawPath(path->d->path.get(), brush);
+    cur_painter_->drawPath(path.d->path.get(), brush.d->brush);
+}
+
+void CustomElementControl::drawText(const std::string& text, float x, float y,
+                                    const kwui::CustomElementPaintBrush& brush,
+                                    const kwui::CustomElementPaintFont& font)
+{
+    if (!cur_painter_)
+        return;
+    auto layout = TextLayoutBuilder(text)
+                  .SetFontFamily(font.d->font_name)
+                  .FontSize(font.d->point_size)
+                  .Build();
+    cur_painter_->drawTextLayout({x, y}, *layout, brush.d->brush.color());
 }
 
 ControlFactoryFn CustomElementContrlFactory(base::string_atom name, kwui::CustomElementFactoryFn factory_fn)

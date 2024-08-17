@@ -1,9 +1,11 @@
 #pragma once
-#include "base/Object.h"
 #include "geom_types.h"
 #include "absl/types/optional.h"
-#include "VKey.h"
+#include "api/kwui/VKey.h"
+#include "api/kwui/CustomElement.h"
 #include <string>
+
+#include "api/kwui/CustomElement.h"
 
 namespace scene2d {
 
@@ -54,12 +56,7 @@ enum ModifierState {
     ALT_MODIFIER = LALT_MODIFIER | RALT_MODIFIER,
 };
 
-enum ButtonState {
-    NO_BUTTON = 0,
-    LEFT_BUTTON = 1,
-    RIGHT_BUTTON = 2,
-    MIDDLE_BUTTON = 4,
-};
+using ButtonState = kwui::ButtonState;
 
 enum MouseCommand {
     MOUSE_DOWN,
@@ -77,8 +74,8 @@ struct MouseEvent : public Event {
     PointF view_pos;
     PointF pos;
     float wheel_delta = 0.0f;
-    ButtonState button = NO_BUTTON;
-    int buttons = NO_BUTTON;
+    ButtonState button = ButtonState::NO_BUTTON;
+    int buttons = ButtonState::NO_BUTTON;
     int modifiers = NO_MODIFILER;
 
     MouseEvent(Node* t, int c)

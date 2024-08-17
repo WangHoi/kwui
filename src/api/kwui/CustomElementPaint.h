@@ -2,6 +2,7 @@
 
 #include "kwui_export.h"
 #include <memory>
+#include <string>
 
 namespace scene2d::control
 {
@@ -41,7 +42,44 @@ private:
 
     class Private;
     Private* d;
+    friend class ::scene2d::control::CustomElementControl;
+};
 
+class KWUI_EXPORT CustomElementPaintBrush
+{
+public:
+    ~CustomElementPaintBrush();
+
+    void setStroke(bool stroke = true);
+    void setColor(int red, int green, int blue, int alpha = 0xff);
+    void setStrokeWidth(float stroke_width);
+
+    static std::unique_ptr<CustomElementPaintBrush> create();
+
+private:
+    CustomElementPaintBrush();
+    CustomElementPaintBrush(const CustomElementPaintBrush&) = delete;
+    CustomElementPaintBrush& operator =(const CustomElementPaintBrush&) = delete;
+
+    class Private;
+    Private* d;
+    friend class ::scene2d::control::CustomElementControl;
+};
+
+class KWUI_EXPORT CustomElementPaintFont
+{
+public:
+    ~CustomElementPaintFont();
+
+    static std::unique_ptr<CustomElementPaintFont> create(const std::string& font_name, float point_size);
+
+private:
+    CustomElementPaintFont(const std::string& font_name, float point_size);
+    CustomElementPaintFont(const CustomElementPaintFont&) = delete;
+    CustomElementPaintFont& operator =(const CustomElementPaintFont&) = delete;
+
+    class Private;
+    Private* d;
     friend class ::scene2d::control::CustomElementControl;
 };
 

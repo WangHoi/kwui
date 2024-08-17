@@ -444,7 +444,8 @@ void PaintPathD2D::finalize()
                 gsink_->EndFigure(D2D1_FIGURE_END_OPEN);
                 firstp_ = absl::nullopt;
             }
-            (void)gsink_->Close();
+            HRESULT hr = gsink_->Close();
+            CHECK(SUCCEEDED(hr));
             gsink_ = nullptr;
         }
         finalized_ = true;
@@ -672,6 +673,11 @@ void PainterImpl::drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF
 void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush)
 {
     auto* d2d_path = dynamic_cast<const PaintPathD2D*>(path)->getD2D1PathGeometry();
+    if (!d2d_path)
+        return;
+    UINT32 fc, sc;
+    d2d_path->GetFigureCount(&fc);
+    d2d_path->GetSegmentCount(&sc);
     if (brush.style() == graph2d::PAINT_STYLE_FILL) {
         if (brush.color().getAlpha() > 0) {
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());

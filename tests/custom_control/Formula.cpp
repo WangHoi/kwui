@@ -50,6 +50,11 @@ float noise(float x)
     return 2.0 * (a + (b - a) * w);
 }
 
+float sinc(float x)
+{
+    return (fabs(x) < 1e-3f) ? 1.0f : (sinf(x) / x);
+}
+
 float SimpleFormula::evaluate(float x, float t)
 {
     return 30 * sin(x * 0.04) + 20 * sin(x * 0.1) + 5 * sin(x * 0.3);
@@ -62,8 +67,7 @@ std::unique_ptr<FormulaInterface> SimpleFormula::create()
 
 float SineWaveFormula::evaluate(float x, float t)
 {
-    float ret = 2.0f * noise(3.0f * x + t) + 3.0f * sin(x) / x;
-    return ret;
+    return 2.0f * noise(3.0f * x + t) + 3.0f * sinc(x);
 }
 
 std::unique_ptr<FormulaInterface> SineWaveFormula::create()

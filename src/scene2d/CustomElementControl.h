@@ -19,16 +19,21 @@ public:
     base::string_atom name() override;
 
     // Implements `Control`
+    bool hitTest(const scene2d::PointF& pos, int flags) const override;
     void onAttach(scene2d::Node* node) override;
     void onDetach(Node* node) override;
     void onAnimationFrame(Node* node, absl::Time timestamp) override;
     void onPaint(graph2d::PaintContextInterface& p, const scene2d::RectF& rect) override;
+    void onMouseEvent(Node* node, MouseEvent& evt) override;
 
     // Implements `CustomElementPaintContext`
     void* getNativeBitmap(float& out_pixel_width, float& out_pixel_height) override;
     void setFillBitmap(void* native_bitmap) override;
     void drawRoundedRect(float left, float top, float width, float height, float radius) override;
-    void drawPath(const kwui::CustomElementPaintPath* path) override;
+    void drawPath(const kwui::CustomElementPaintPath& path, const kwui::CustomElementPaintBrush& brush) override;
+    void drawText(const std::string& text, float x, float y,
+                  const kwui::CustomElementPaintBrush& brush,
+                  const kwui::CustomElementPaintFont& font) override;
 
 private:
     base::string_atom name_;
@@ -40,5 +45,4 @@ private:
 };
 
 ControlFactoryFn CustomElementContrlFactory(base::string_atom name, kwui::CustomElementFactoryFn factory_fn);
-
 }

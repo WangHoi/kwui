@@ -311,10 +311,10 @@ ATOM RegisterWindowClass(HINSTANCE hInstance, const wchar_t* class_name, HICON i
 }
 
 static int MakeButtonMask(WPARAM wParam) {
-    int mask = scene2d::NO_BUTTON;
-    if (wParam & MK_LBUTTON) mask |= scene2d::LEFT_BUTTON;
-    if (wParam & MK_MBUTTON) mask |= scene2d::MIDDLE_BUTTON;
-    if (wParam & MK_RBUTTON) mask |= scene2d::RIGHT_BUTTON;
+    int mask = kwui::ButtonState::NO_BUTTON;
+    if (wParam & MK_LBUTTON) mask |= kwui::ButtonState::LEFT_BUTTON;
+    if (wParam & MK_MBUTTON) mask |= kwui::ButtonState::MIDDLE_BUTTON;
+    if (wParam & MK_RBUTTON) mask |= kwui::ButtonState::RIGHT_BUTTON;
     return mask;
 }
 
@@ -454,22 +454,22 @@ LRESULT DialogWin32::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         }
         break;
     case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
-        OnMouseDown(scene2d::LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseDown(kwui::ButtonState::LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_LBUTTONUP:
-        OnMouseUp(scene2d::LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseUp(kwui::ButtonState::LEFT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_MBUTTONDOWN: case WM_MBUTTONDBLCLK:
-        OnMouseDown(scene2d::MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseDown(kwui::ButtonState::MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_MBUTTONUP:
-        OnMouseUp(scene2d::MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseUp(kwui::ButtonState::MIDDLE_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_RBUTTONDOWN: case WM_RBUTTONDBLCLK:
-        OnMouseDown(scene2d::RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseDown(kwui::ButtonState::RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_RBUTTONUP:
-        OnMouseUp(scene2d::RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
+        OnMouseUp(kwui::ButtonState::RIGHT_BUTTON, MakeButtonMask(wParam), GetModifiersState());
         break;
     case WM_MOUSEMOVE:
         mouse_position_ = scene2d::PointF((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam))
@@ -842,7 +842,7 @@ void DialogWin32::OnMouseDown(scene2d::ButtonState button, int buttons, int modi
         SetCapture(hwnd_);
     }
 
-    if (button != scene2d::LEFT_BUTTON) return;
+    if (button != kwui::ButtonState::LEFT_BUTTON) return;
     scene2d::Node* node;
     scene2d::PointF local_pos;
     node = scene_->pickNode(mouse_position_, scene2d::NODE_FLAG_CLICKABLE, &local_pos);
@@ -877,13 +877,13 @@ void DialogWin32::OnMouseUp(scene2d::ButtonState button, int buttons, int modifi
         ReleaseCapture();
     }
 
-    if (button != scene2d::LEFT_BUTTON) return;
+    if (button != kwui::ButtonState::LEFT_BUTTON) return;
 
     base::object_refptr<scene2d::Node> node = active_node_.upgrade();
     if (node) {
         active_node_ = nullptr;
         node->state_ &= ~scene2d::NODE_STATE_ACTIVE;
-        scene2d::PointF local_pos = mouse_position_ - scene_->mapPointToScene(node.get(), scene2d::PointF());
+        scene2d::PointF local_pos = mouse_position_ - scene_->mapPointToScene(node.get(), scene2d::PointF(), true);
         scene2d::MouseEvent mouse_up(node.get(), scene2d::MOUSE_UP, mouse_position_, local_pos, button, buttons, modifiers);
         scene_->dispatchEvent(node.get(), mouse_up, true);
     }
@@ -894,8 +894,8 @@ void DialogWin32::OnMouseMove(int buttons, int modifiers) {
     UpdateHoveredNode();
     base::object_refptr<scene2d::Node> node = active_node_ ? active_node_.upgrade() : hovered_node_.upgrade();
     if (node) {
-        scene2d::PointF local_pos = mouse_position_ - scene_->mapPointToScene(node.get(), scene2d::PointF());
-        scene2d::MouseEvent mouse_move(node.get(), scene2d::MOUSE_MOVE, mouse_position_, local_pos, scene2d::NO_BUTTON, buttons, modifiers);
+        scene2d::PointF local_pos = mouse_position_ - scene_->mapPointToScene(node.get(), scene2d::PointF(), true);
+        scene2d::MouseEvent mouse_move(node.get(), scene2d::MOUSE_MOVE, mouse_position_, local_pos, kwui::ButtonState::NO_BUTTON, buttons, modifiers);
         scene_->dispatchEvent(node.get(), mouse_move, true);
         RequestPaint();
     }
