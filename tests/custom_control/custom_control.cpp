@@ -23,7 +23,6 @@ KWUI_MAIN()
 
     ImplicitPlot plot;
     plot.update(300, 300);
-    plot.dump();
 
     return app.exec();
 }
