@@ -1,7 +1,9 @@
 #include "kwui.h"
+#include "PlotElement.h"
+#include "ImplicitPlot.h"
+
 #include <string.h>
 
-#include "PlotElement.h"
 using namespace kwui;
 
 KWUI_MAIN()
@@ -18,5 +20,10 @@ KWUI_MAIN()
 
     ScriptEngine::get()
         ->loadFile(":/entry.js");
+
+    ImplicitPlot plot;
+    plot.update(300, 300);
+    plot.dump();
+
     return app.exec();
 }
