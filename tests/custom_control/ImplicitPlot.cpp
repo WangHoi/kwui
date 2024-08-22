@@ -1,38 +1,38 @@
 #include "ImplicitPlot.h"
 #include "windows/graphics/GraphicDeviceD2D.h"
 #include "windows/graphics/PaintSurfaceD2D.h"
-#include "CImg.h"
 #include "graph2d/graph2d.h"
 #include "graph2d/PaintContextInterface.h"
 #include "graph2d/PaintPathInterface.h"
-using namespace cimg_library;
 #define STB_IMAGE_IMPLEMENTATION4
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 static const int RES = 10;
-static const int PADDING_PIXELS = 3;
-static const float STROKE_WIDTH = 2;
+static const int PADDING_PIXELS = 2;
 
 static float imp_func(float x, float y)
 {
-    return powf(x, 4) + powf(y, 4) - x*y - 8 * 64;
+    return powf(x, 4) + powf(y, 4) - x * y - 8 * 64;
     // return fabsf(x * y) - 5;
     // return x * x + y * y - 36;
 }
 
 ImplicitPlot::ImplicitPlot()
 {
-    precomputeMask();
 }
 
 ImplicitPlot::~ImplicitPlot()
 {
 }
 
-void ImplicitPlot::update(int w, int h)
+void ImplicitPlot::update(float stroke_width, int w, int h,
+                          std::tuple<float, float> x_range,
+                          std::tuple<float, float> y_range)
 {
+    updateMask(stroke_width);
+
     if (w != width_ || h != height_) {
         width_ = w;
         height_ = h;
@@ -42,13 +42,15 @@ void ImplicitPlot::update(int w, int h)
     }
 
     // Init height map
-    float mid_y = 10.0f;
-    float mid_x = mid_y * float(w) / float(h);
-    float scale = 20.0f / (float)std::min(w, h);
+    auto [min_x, max_x] = x_range;
+    auto [min_y, max_y] = y_range;
+    float mid_x = 0.5f * (max_x - min_x);
+    float mid_y = 0.5f * (max_y - min_y);
+    float scale = (max_y - min_y) / h;
     for (int row = 0; row <= h; ++row) {
-        float y = -(float)row * scale + mid_y;
+        float y = -(float)row * scale + max_y;
         for (int col = 0; col <= w; ++col) {
-            float x = (float)col * scale - mid_x;
+            float x = (float)col * scale + min_x;
             vertices_buf_[row * (w + 1) + col] = imp_func(x, y);
             // fprintf(stderr, "%d(%.3f), %d(%.3f) : %.3f\n", col, x, row, y, imp_func(x, y));
         }
@@ -68,8 +70,8 @@ void ImplicitPlot::update(int w, int h)
                 | (uint8_t(verts[2] >= 0.0f) << 1) | uint8_t(verts[3] >= 0.0f);
 
             if (quad.type == 5 || quad.type == 10) {
-                float y = -((float)row + 0.5f) * scale - mid_y;
-                float x = ((float)col + 0.5f) * scale - mid_x;
+                float y = -((float)row + 0.5f) * scale + max_y;
+                float x = ((float)col + 0.5f) * scale + min_x;
                 float z = imp_func(x, y);
                 if (z < 0.0f) {
                     if (quad.type == 5) quad.type = 10;
@@ -80,12 +82,12 @@ void ImplicitPlot::update(int w, int h)
     }
 
     // Stroke
+    /*
     {
         for (int row = 1; row + 1 < h; ++row) {
             for (int col = 1; col + 1 < w; ++col) {
                 uint8_t quad[9] = {
                     quad_buf_[row * w + col].type, // center
-                    /*
                     quad_buf_[row * w + col - 1].type, // left
                     quad_buf_[(row - 1) * w + col - 1].type, // top-left
                     quad_buf_[(row - 1) * w + col].type, // up
@@ -94,7 +96,6 @@ void ImplicitPlot::update(int w, int h)
                     quad_buf_[(row + 1) * w + col + 1].type, // bottom-right
                     quad_buf_[(row + 1) * w].type, // down
                     quad_buf_[(row + 1) * w + col - 1].type, // bottom-left
-                    */
                 };
 
                 bool fill = false;
@@ -109,6 +110,7 @@ void ImplicitPlot::update(int w, int h)
         }
         stbi_write_png("dump_plot.png", width_, height_, 1, img_buf_.data(), width_);
     }
+    */
     {
         for (int row = 0; row < h; ++row) {
             for (int col = 0; col < w; ++col) {
@@ -121,17 +123,22 @@ void ImplicitPlot::update(int w, int h)
                         m |= masks[offsetToIndex(-xoff, -yoff)];
                     }
                 }
-                auto c =std::clamp<int>(m.coverage() * 255.0f, 0, 255);
-                img_buf_[row * w + col] = (uint8_t)std::clamp<int>(m.coverage() * 255.0f, 0, 255);
+                auto c = std::clamp<int>(m.coverage() * 255.0f, 0, 255);
+                // ABGR
+                float a = m.coverage();
+                img_buf_[row * w + col] = (uint32_t)std::clamp<int>(m.coverage() * 255.0f, 0, 255) << 24
+                    | uint32_t(255 * a);
             }
         }
-        stbi_write_png("dump_plot_aa.png", width_, height_, 1, img_buf_.data(), width_);
+        if (dump_image_)
+            stbi_write_png("dump_plot_aa.png", width_, height_, 4, img_buf_.data(), width_ * 4);
     }
 }
 
 void ImplicitPlot::dump()
 {
-    stbi_write_png("dump_plot.png", width_, height_, 1, img_buf_.data(), width_);
+    if (dump_image_)
+        stbi_write_png("dump_plot.png", width_, height_, 4, img_buf_.data(), width_ * 4);
 }
 
 void ImplicitPlot::computeMaskOffset(int layers)
@@ -179,9 +186,13 @@ void ImplicitPlot::computeAllMasks(std::vector<Mask>& masks, const uint8_t* buf,
     int kk = 1;
 }
 
-void ImplicitPlot::precomputeMask()
+void ImplicitPlot::updateMask(float stroke_width)
 {
-    const int layers = 1 + (int)ceilf(0.5f * STROKE_WIDTH);
+    if (stroke_width == stroke_width_)
+        return;
+
+    stroke_width_ = stroke_width;
+    const int layers = 1 + (int)ceilf(0.5f * stroke_width);
     computeMaskOffset(layers);
 
     int size = (PADDING_PIXELS * 2 + 1) * RES;
@@ -192,7 +203,7 @@ void ImplicitPlot::precomputeMask()
     brush.setColor(style::Color(0xff, 0xff, 0xff, 0xff));
 
     for (uint8_t type = 0; type < 16; ++type) {
-        auto p = createMaskPath(type, STROKE_WIDTH);
+        auto p = createMaskPath(type, stroke_width);
         if (!p) {
             masks_[type].resize(index_offset_.size());
             continue;
@@ -211,16 +222,16 @@ void ImplicitPlot::precomputeMask()
             data->GetStride(&stride);
 
             // dump to file
-            char fname[128] = {};
-            snprintf(fname, _countof(fname) - 1, "dump_mask_%d.png", (int)type);
-            stbi_write_png(fname, size, size, 1, buf, stride);
+            if (dump_image_) {
+                char fname[128] = {};
+                snprintf(fname, _countof(fname) - 1, "dump_mask_%d.png", (int)type);
+                stbi_write_png(fname, size, size, 1, buf, stride);
+            }
 
             // compute mask
             computeAllMasks(masks_[type], buf, stride);
         }
     }
-
-
 }
 
 std::unique_ptr<graph2d::PaintPathInterface> ImplicitPlot::createMaskPath(uint8_t type, float stroke_width)

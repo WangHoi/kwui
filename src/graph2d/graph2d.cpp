@@ -136,19 +136,54 @@ float getInitialDesktopDpiScale()
 	return 1.0f;
 #endif
 }
-std::shared_ptr<BitmapInterface> createBitmap(const std::string& url)
+std::shared_ptr<BitmapInterface> createBitmapFromUrl(const std::string& url)
 {
 #if WITH_SKIA
 	return std::shared_ptr<BitmapInterface>(new xskia::BitmapX(url));
 #else
 #ifdef _WIN32
-	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapImpl(url));
+	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapFromUrlImpl(url));
 #else
-#pragma message("TODO: implement graph2d::createTextFlow().")
+#pragma message("TODO: implement graph2d::createBitmapFromUrl().")
 	return nullptr;
 #endif
 #endif
 }
+
+std::shared_ptr<BitmapInterface> createBitmap(const void* pixels, size_t src_width, size_t src_height,
+											  size_t src_stride, kwui::ColorType color_type, float dpi_scale)
+{
+#if WITH_SKIA
+	return nullptr;
+#else
+#ifdef _WIN32
+	DXGI_FORMAT format;
+	D2D1_ALPHA_MODE alpha;
+	switch (color_type) {
+	case kwui::COLOR_TYPE_ALPHA8:
+		format = DXGI_FORMAT_A8_UNORM;
+		alpha = D2D1_ALPHA_MODE_IGNORE;
+		break;
+	case kwui::COLOR_TYPE_BGRA8888:
+		format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		alpha = D2D1_ALPHA_MODE_PREMULTIPLIED;
+		break;
+	case kwui::COLOR_TYPE_RGBA8888:
+		format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		alpha = D2D1_ALPHA_MODE_PREMULTIPLIED;
+		break;
+	default:
+		;
+	}
+	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapImpl(
+		pixels, src_width, src_height, src_stride, dpi_scale, format, alpha));
+#else
+#pragma message("TODO: implement graph2d::createBitmap().")
+	return nullptr;
+#endif
+#endif
+}
+
 
 std::unique_ptr<PaintPathInterface> createPath()
 {

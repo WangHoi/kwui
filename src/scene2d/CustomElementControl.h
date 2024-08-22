@@ -35,6 +35,8 @@ public:
                   const kwui::CustomElementPaintBrush& brush,
                   const kwui::CustomElementPaintFont& font) override;
     float getDpiScale() const override;
+    void writePixels(const void* pixels, size_t src_width, size_t src_height, size_t src_stride, float dst_x,
+                     float dst_y, kwui::ColorType color_type) override;
 
 private:
     base::string_atom name_;

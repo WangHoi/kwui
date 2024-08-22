@@ -161,6 +161,17 @@ float CustomElementControl::getDpiScale() const
     return cur_painter_ ? cur_painter_->getDpiScale() : 1.0f;
 }
 
+void CustomElementControl::writePixels(const void* pixels, size_t src_width, size_t src_height, size_t src_stride,
+                                       float dst_x, float dst_y, kwui::ColorType color_type)
+{
+    if (!cur_painter_)
+        return;
+    auto bmp = graph2d::createBitmap(pixels, src_width, src_height, src_stride, kwui::COLOR_TYPE_RGBA8888);
+    cur_painter_->drawBitmap(bmp.get(),
+                             PointF(dst_x, dst_y),
+                             DimensionF(src_width, src_height));
+}
+
 ControlFactoryFn CustomElementContrlFactory(base::string_atom name, kwui::CustomElementFactoryFn factory_fn)
 {
     g_factory_map[name] = factory_fn;

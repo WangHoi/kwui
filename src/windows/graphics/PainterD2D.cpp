@@ -541,7 +541,7 @@ void PainterImpl::drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush
             p_._rt->FillRectangle(rc, d2d_brush.Get());
         }
         if (brush.shader()) {
-            const auto* bitmap = (const BitmapImpl*)brush.shader();
+            const auto* bitmap = (const BitmapFromUrlImpl*)brush.shader();
             auto* d2d_bitmap = bitmap->d2dBitmap(p_);
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
             p_._rt->FillRectangle(rc, d2d_brush.Get());
@@ -575,7 +575,7 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
                 p_._rt->FillRoundedRectangle(rc, d2d_brush.Get());
             }
             if (brush.shader()) {
-                const auto* bitmap = (const BitmapImpl*)brush.shader();
+                const auto* bitmap = (const BitmapFromUrlImpl*)brush.shader();
                 auto* d2d_bitmap = bitmap->d2dBitmap(p_);
                 ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
                 p_._rt->FillRoundedRectangle(rc, d2d_brush.Get());
@@ -684,7 +684,7 @@ void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2
             p_._rt->FillGeometry(d2d_path, d2d_brush.Get());
         }
         if (brush.shader()) {
-            const auto* bitmap = (const BitmapImpl*)brush.shader();
+            const auto* bitmap = (const BitmapFromUrlImpl*)brush.shader();
             auto* d2d_bitmap = bitmap->d2dBitmap(p_);
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
             p_._rt->FillGeometry(d2d_path, d2d_brush.Get());

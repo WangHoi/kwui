@@ -23,6 +23,13 @@ enum KWUI_EXPORT ArcSize
     ARC_SIZE_LARGE,
 };
 
+enum KWUI_EXPORT ColorType
+{
+    COLOR_TYPE_ALPHA8,
+    COLOR_TYPE_BGRA8888,
+    COLOR_TYPE_RGBA8888,
+};
+
 class KWUI_EXPORT CustomElementPaintPath
 {
 public:

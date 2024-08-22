@@ -906,7 +906,7 @@ static void resolve_style(std::shared_ptr<graph2d::BitmapInterface>& style, cons
 			style = *parent;
 	} else if (spec.type == style::ValueSpecType::Specified) {
 		if (spec.value->unit == style::ValueUnit::Url) {
-			style = graph2d::createBitmap(spec.value->string_val);
+			style = graph2d::createBitmapFromUrl(spec.value->string_val);
 		}
 	}
 }

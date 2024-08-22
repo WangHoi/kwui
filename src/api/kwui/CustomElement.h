@@ -56,5 +56,9 @@ public:
     virtual void drawText(const std::string& text, float x, float y, const CustomElementPaintBrush& brush,
                           const CustomElementPaintFont& font) = 0;
     virtual float getDpiScale() const = 0;
+    virtual void writePixels(const void* pixels,
+                             size_t src_width, size_t src_height, size_t src_stride,
+                             float dst_x, float dst_y,
+                             ColorType color_type) = 0;
 };
 }

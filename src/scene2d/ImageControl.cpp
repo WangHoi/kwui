@@ -16,7 +16,7 @@ void ImageControl::onPaint(graph2d::PaintContextInterface& pi, const scene2d::Re
 {
 	// TODO: bitmap DPI support
 	if (!bitmap_) {
-		bitmap_ = graph2d::createBitmap(image_src_);
+		bitmap_ = graph2d::createBitmapFromUrl(image_src_);
 	}
 	if (bitmap_) {
 		pi.drawBitmap(bitmap_.get(), rect.origin(), rect.size());

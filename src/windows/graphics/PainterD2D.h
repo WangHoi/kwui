@@ -164,15 +164,22 @@ private:
     friend class PainterImpl;
 };
 
-class BitmapImpl : public graph2d::BitmapInterface
+class BitmapD2DInterface : public graph2d::BitmapInterface
 {
 public:
-    BitmapImpl(const std::string& url)
+    virtual ~BitmapD2DInterface() = default;
+    virtual ID2D1Bitmap* d2dBitmap(Painter& p) const = 0;
+};
+
+class BitmapFromUrlImpl : public BitmapD2DInterface
+{
+public:
+    BitmapFromUrlImpl(const std::string& url)
         : url_(url)
     {
     }
 
-    const std::string& url() const override
+    const std::string& url() const
     {
         return url_;
     }
@@ -194,7 +201,7 @@ public:
         return scene2d::DimensionF(ps.width, ps.height);
     }
 
-    ID2D1Bitmap* d2dBitmap(Painter& p) const
+    ID2D1Bitmap* d2dBitmap(Painter& p) const override
     {
         if (!bitmap_) {
             BitmapSubItem item = GraphicDeviceD2D::instance()
@@ -208,6 +215,36 @@ public:
 
 private:
     std::string url_; // utf-8
+    mutable ComPtr<ID2D1Bitmap> bitmap_;
+};
+
+class BitmapImpl : public BitmapD2DInterface
+{
+public:
+    BitmapImpl(const void* pixels, size_t src_width, size_t src_height,
+               size_t src_stride, float dpi_scale, DXGI_FORMAT format,
+               D2D1_ALPHA_MODE alpha)
+    {
+        bitmap_ = GraphicDeviceD2D::instance()
+            ->createBitmap(src_width, src_height, dpi_scale,
+                           pixels, src_stride, format, alpha);
+    }
+
+    scene2d::DimensionF size() override
+    {
+        if (!bitmap_) {
+            return scene2d::DimensionF();
+        }
+        D2D1_SIZE_U ps = bitmap_->GetPixelSize();
+        return scene2d::DimensionF(ps.width, ps.height);
+    }
+
+    ID2D1Bitmap* d2dBitmap(Painter& p) const override
+    {
+        return bitmap_.Get();
+    }
+
+private:
     mutable ComPtr<ID2D1Bitmap> bitmap_;
 };
 
@@ -309,7 +346,7 @@ public:
                     const scene2d::PointF& origin,
                     const scene2d::DimensionF& size) override
     {
-        auto bitmap = static_cast<const BitmapImpl*>(image)->d2dBitmap(p_);
+        auto bitmap = static_cast<const BitmapD2DInterface*>(image)->d2dBitmap(p_);
         if (bitmap) {
             p_.DrawBitmap(bitmap, origin, size);
         }

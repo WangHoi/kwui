@@ -5,6 +5,7 @@
 
 #include "Formula.h"
 #include "CartesianCoord.h"
+#include "ImplicitPlot.h"
 
 class PlotElement : public kwui::CustomElement
 {
@@ -29,6 +30,7 @@ private:
     std::vector<std::unique_ptr<FormulaInterface>> formulas_;
     CartesianCoord coord_;
     std::optional<Point> mouse_down_pos_;
+    std::unique_ptr<ImplicitPlot> implicit_plot_;
 };
 
 kwui::CustomElement* PlotElementFactory();
