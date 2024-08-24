@@ -104,7 +104,9 @@ void* CustomElementControl::getNativeBitmap(float& out_pixel_width, float& out_p
         native_.d2d_bitmap = windows::graphics::GraphicDeviceD2D::instance()
             ->createBitmap(cur_rect_.width() * native_.dpi_scale,
                            cur_rect_.height() * native_.dpi_scale,
-                           native_.dpi_scale);
+                           native_.dpi_scale,
+                           DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
+                           D2D1_ALPHA_MODE_PREMULTIPLIED);
         ComPtr<IDXGISurface> surface;
         native_.d2d_bitmap->GetSurface(surface.GetAddressOf());
         surface.As(&native_.d3d_tex);
