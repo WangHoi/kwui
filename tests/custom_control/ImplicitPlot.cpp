@@ -171,6 +171,16 @@ void ImplicitPlot::computeMaskOffset(int layers)
             index_offset_.emplace_back(l - 1 - i, l);
         }
     }
+
+    if (dump_image_)
+    {
+        fprintf(stderr, "static const int2 mask_offsets[%zd] = {\n", index_offset_.size());
+        for (size_t i = 0; i < index_offset_.size(); ++i) {
+            auto [x, y] = index_offset_[i];
+            fprintf(stderr, "    {%d, %d},\n", x, y);
+        }
+        fprintf(stderr, "};\n");
+    }
 }
 
 void ImplicitPlot::computeAllMasks(std::vector<Mask>& masks, const uint8_t* buf, size_t stride)
@@ -231,6 +241,21 @@ void ImplicitPlot::updateMask(float stroke_width)
             // compute mask
             computeAllMasks(masks_[type], buf, stride);
         }
+    }
+
+    if (dump_image_)
+    {
+        fprintf(stderr, "static const uint4 mask_weights[16][%zd] = {\n", index_offset_.size());
+        for (uint8_t type = 0; type < 16; ++type) {
+            fprintf(stderr, "    { ");
+            for (auto [x, y] : index_offset_) {
+                auto idx = offsetToIndex(-x, -y);
+                const auto& m = masks_[type][idx];
+                fprintf(stderr, "{0x%08x, 0x%08x, 0x%08x, 0x%08x}, ", m.raw[0], m.raw[1], m.raw[2], m.raw[3]);
+            }
+            fprintf(stderr, "    },\n");
+        }
+        fprintf(stderr, "};\n");
     }
 }
 
