@@ -12,5 +12,7 @@ KWUI_MAIN()
     kwui_Application_setResourceRootDir(app, "d:/projects/kwui/tests/overflow/assets");
 #endif
     kwui_ScriptEngine_loadFile(":/entry.js");
-    return kwui_Application_exec(app);
+    int ret = kwui_Application_exec(app);
+    kwui_Application_delete(app);
+    return ret;
 }
