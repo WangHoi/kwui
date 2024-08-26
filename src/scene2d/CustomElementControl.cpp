@@ -105,7 +105,7 @@ void* CustomElementControl::getNativeBitmap(float& out_pixel_width, float& out_p
             ->createBitmap(cur_rect_.width() * native_.dpi_scale,
                            cur_rect_.height() * native_.dpi_scale,
                            native_.dpi_scale,
-                           DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
+                           DXGI_FORMAT_B8G8R8A8_UNORM,
                            D2D1_ALPHA_MODE_PREMULTIPLIED);
         ComPtr<IDXGISurface> surface;
         native_.d2d_bitmap->GetSurface(surface.GetAddressOf());
