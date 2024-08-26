@@ -722,10 +722,11 @@ ComPtr<ID2D1Bitmap> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& pa
         border_radius);
 
     // Check bitmap cache
-    std::string cache_key = absl::StrFormat("box-shadow: outset, blur=%.2f, pixel_size=%.0fx%.0f",
+    std::string cache_key = absl::StrFormat("box-shadow: outset, blur=%.2f, pixel_size=%.0fx%.0f, color=#%08x",
                                             blur_radius,
                                             (blur_radius + rrect.width() + blur_radius) * dpi_scale,
-                                            (blur_radius + rrect.height() + blur_radius) * dpi_scale);
+                                            (blur_radius + rrect.height() + blur_radius) * dpi_scale,
+                                            box_shadow.color.getRgba());
 
     if (surface_) {
         auto b = surface_->getCachedetBitmap(cache_key);
@@ -735,7 +736,7 @@ ComPtr<ID2D1Bitmap> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& pa
 
     // Create shadow bitmap
     PaintSurfaceBitmapD2D::Configuration ci;
-    ci.format = DXGI_FORMAT_A8_UNORM;
+    ci.format = DXGI_FORMAT_B8G8R8A8_UNORM;
     ci.pixel_size.width = (blur_radius + rrect.width() + blur_radius) * dpi_scale;
     ci.pixel_size.height = (blur_radius + rrect.height() + blur_radius) * dpi_scale;
     ci.dpi_scale = dpi_scale;
@@ -743,7 +744,7 @@ ComPtr<ID2D1Bitmap> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& pa
     if (auto bp = bmp->beginPaint()) {
         bp->clear(style::Color());
         graph2d::PaintBrush brush;
-        brush.setColor(style::named_color::white);
+        brush.setColor(box_shadow.color);
         bp->drawRRect(rrect, brush);
         bmp->endPaint();
     }
@@ -756,10 +757,10 @@ ComPtr<ID2D1Bitmap> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& pa
         mapped->GetStride(&stride);
         mapped->GetDataPointer(&bmp_size, &bmp_data);
         if (bmp_data) {
-            JuceImage jimg = JuceImage::fromSingleChannel(ci.pixel_size.width,
-                                                          ci.pixel_size.height,
-                                                          bmp_data,
-                                                          stride);
+            JuceImage jimg = JuceImage::fromARGB(ci.pixel_size.width,
+                                                 ci.pixel_size.height,
+                                                 bmp_data,
+                                                 stride);
             applyStackBlur(jimg, blur_radius * dpi_scale);
         }
     }
@@ -772,17 +773,17 @@ ComPtr<ID2D1Bitmap> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& pa
         ci.pixel_size.height / dpi_scale);
     auto color_brush = p_.CreateBrush(box_shadow.color);
 
-    ComPtr<ID2D1Bitmap> opacity_bitmap;
+    ComPtr<ID2D1Bitmap> shadow_bitmap;
     p_._rt->CreateBitmapFromWicBitmap(bmp->getWicBitmap(),
                                       D2D1::BitmapProperties(
                                           D2D1::PixelFormat(ci.format, D2D1_ALPHA_MODE_PREMULTIPLIED),
                                           dpi_scale * USER_DEFAULT_SCREEN_DPI,
                                           dpi_scale * USER_DEFAULT_SCREEN_DPI),
-                                      opacity_bitmap.GetAddressOf());
-    if (surface_ && opacity_bitmap)
-        surface_->updateCachedBitmap(cache_key, opacity_bitmap);
+                                      shadow_bitmap.GetAddressOf());
+    if (surface_ && shadow_bitmap)
+        surface_->updateCachedBitmap(cache_key, shadow_bitmap);
 
-    return opacity_bitmap;
+    return shadow_bitmap;
 }
 
 ComPtr<ID2D1Bitmap> PainterImpl::makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
@@ -805,10 +806,11 @@ ComPtr<ID2D1Bitmap> PainterImpl::makeInsetShadowBitmap(const scene2d::RectF& pad
         border_radius);
 
     // Check bitmap cache
-    std::string cache_key = absl::StrFormat("box-shadow: inset, blur=%.2f, pixel_size=%.0fx%.0f",
+    std::string cache_key = absl::StrFormat("box-shadow: inset, blur=%.2f, pixel_size=%.0fx%.0f, color=#%08x",
                                             blur_radius,
                                             (blur_radius + rrect.width() + blur_radius) * dpi_scale,
-                                            (blur_radius + rrect.height() + blur_radius) * dpi_scale);
+                                            (blur_radius + rrect.height() + blur_radius) * dpi_scale,
+                                            box_shadow.color.getRgba());
 
     if (surface_) {
         auto b = surface_->getCachedetBitmap(cache_key);
@@ -818,7 +820,7 @@ ComPtr<ID2D1Bitmap> PainterImpl::makeInsetShadowBitmap(const scene2d::RectF& pad
 
     // Create shadow bitmap
     PaintSurfaceBitmapD2D::Configuration ci;
-    ci.format = DXGI_FORMAT_A8_UNORM;
+    ci.format = DXGI_FORMAT_B8G8R8A8_UNORM;
     ci.pixel_size.width = (blur_radius + rrect.width() + blur_radius) * dpi_scale;
     ci.pixel_size.height = (blur_radius + rrect.height() + blur_radius) * dpi_scale;
     ci.dpi_scale = dpi_scale;
@@ -844,10 +846,10 @@ ComPtr<ID2D1Bitmap> PainterImpl::makeInsetShadowBitmap(const scene2d::RectF& pad
         mapped->GetStride(&stride);
         mapped->GetDataPointer(&bmp_size, &bmp_data);
         if (bmp_data) {
-            JuceImage jimg = JuceImage::fromSingleChannel(ci.pixel_size.width,
-                                                          ci.pixel_size.height,
-                                                          bmp_data,
-                                                          stride);
+            JuceImage jimg = JuceImage::fromARGB(ci.pixel_size.width,
+                                                 ci.pixel_size.height,
+                                                 bmp_data,
+                                                 stride);
             applyStackBlur(jimg, blur_radius * dpi_scale);
         }
     }

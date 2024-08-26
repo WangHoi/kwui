@@ -38,6 +38,15 @@ public:
             | (std::clamp<uint32_t>(uint32_t(_c[0] * 255.0f), 0, 0xff) << 16)
             | (std::clamp<uint32_t>(uint32_t(_c[3] * 255.0f), 0, 0xff) << 24);
     }
+
+    // Little-endian: ABGR
+    uint32_t getRgba() const
+    {
+        return std::clamp<uint32_t>(uint32_t(_c[3] * 255.0f), 0, 0xff)
+            | (std::clamp<uint32_t>(uint32_t(_c[2] * 255.0f), 0, 0xff) << 8)
+            | (std::clamp<uint32_t>(uint32_t(_c[1] * 255.0f), 0, 0xff) << 16)
+            | (std::clamp<uint32_t>(uint32_t(_c[0] * 255.0f), 0, 0xff) << 24);
+    }
 #if WITH_SKIA
 	operator SkColor4f() const;
 #endif
