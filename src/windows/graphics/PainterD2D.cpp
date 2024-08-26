@@ -478,9 +478,9 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
 
         // Create opacity bitmap brush
         ComPtr<ID2D1Bitmap> opacity_bitmap = makeInsetShadowBitmap(padding_rect,
-                                                            inset_border_width,
-                                                            border_radius,
-                                                            box_shadow);
+                                                                   inset_border_width,
+                                                                   border_radius,
+                                                                   box_shadow);
         ComPtr<ID2D1BitmapBrush> opacity_brush;
         p_._rt->CreateBitmapBrush(opacity_bitmap.Get(), opacity_brush.GetAddressOf());
         opacity_brush->SetTransform(D2D1::Matrix3x2F::Translation(src_origin.x, src_origin.y));
@@ -544,6 +544,7 @@ void PainterImpl::drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush
             const auto* bitmap = (const BitmapFromUrlImpl*)brush.shader();
             auto* d2d_bitmap = bitmap->d2dBitmap(p_);
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
+            d2d_brush->SetTransform(D2D1::Matrix3x2F::Translation(rc.left, rc.top));
             p_._rt->FillRectangle(rc, d2d_brush.Get());
         }
     } else {
@@ -578,6 +579,7 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
                 const auto* bitmap = (const BitmapFromUrlImpl*)brush.shader();
                 auto* d2d_bitmap = bitmap->d2dBitmap(p_);
                 ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
+                d2d_brush->SetTransform(D2D1::Matrix3x2F::Translation(rc.rect.left, rc.rect.top));
                 p_._rt->FillRoundedRectangle(rc, d2d_brush.Get());
             }
         } else {
@@ -687,6 +689,7 @@ void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2
             const auto* bitmap = (const BitmapFromUrlImpl*)brush.shader();
             auto* d2d_bitmap = bitmap->d2dBitmap(p_);
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
+            // TODO: drawPath: brush transform
             p_._rt->FillGeometry(d2d_path, d2d_brush.Get());
         }
     } else {
@@ -925,6 +928,16 @@ void Painter::DrawBitmap(ID2D1Bitmap* bitmap, float x, float y, float w, float h
     if (_current.pixel_snap)
         rect = PixelSnap(rect);
     _rt->DrawBitmap(bitmap, rect, 1.0);
+}
+
+void Painter::DrawBitmapRect(ID2D1Bitmap* bitmap, const scene2d::RectF& src_rect, const scene2d::RectF& dst_rect)
+{
+    D2D1_RECT_F d2d_dst_rect = dst_rect;
+    if (_current.pixel_snap)
+        d2d_dst_rect = PixelSnap(dst_rect);
+    _rt->DrawBitmap(bitmap, d2d_dst_rect,
+                    1.0, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+                    src_rect);
 }
 
 void Painter::DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, float h,

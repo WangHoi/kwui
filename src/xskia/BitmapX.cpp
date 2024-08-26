@@ -3,7 +3,7 @@
 
 namespace xskia {
 
-scene2d::DimensionF BitmapX::size()
+scene2d::DimensionF BitmapX::size() const
 {
     if (!image_) {
         auto item = GraphicDeviceX::instance()->getBitmap(url_, 1.0f);

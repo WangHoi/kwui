@@ -15,7 +15,7 @@ public:
     {
         return url_;
     }
-    scene2d::DimensionF size() override;
+    scene2d::DimensionF size() const override;
     sk_sp<SkImage> skImage() const;
 
 private:

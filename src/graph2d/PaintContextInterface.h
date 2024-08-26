@@ -1,6 +1,5 @@
 #pragma once
 #include "scene2d/geom_types.h"
-#include "style/StyleValue.h"
 #include "style/StyleColor.h"
 #include "PaintBrush.h"
 
@@ -76,6 +75,14 @@ public:
     virtual void drawBitmap(const BitmapInterface* image,
                             const scene2d::PointF& origin,
                             const scene2d::DimensionF& size) = 0;
+
+    virtual void drawBitmapNine(const BitmapInterface* image,
+                                const style::EdgeOffsetF& src_center,
+                                const scene2d::RectF& dst_rect);
+
+    virtual void drawBitmapRect(const BitmapInterface* image,
+                                const scene2d::RectF& src_rect,
+                                const scene2d::RectF& dst_rect) = 0;
     // TODO: drawRoundedRect(): support stroke
     virtual void drawRoundedRect(const scene2d::RectF& rect,
                                  const scene2d::CornerRadiusF& border_radius,

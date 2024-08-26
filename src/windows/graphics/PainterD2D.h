@@ -91,6 +91,7 @@ public:
     }
 
     void DrawBitmap(ID2D1Bitmap* bitmap, float x, float y, float w, float h);
+    void DrawBitmapRect(ID2D1Bitmap* bitmap, const scene2d::RectF& src_rect, const scene2d::RectF& dst_rect);
     void DrawScale9Bitmap(ID2D1Bitmap* bitmap, float x, float y, float w, float h,
                           float src_margin, float dst_margin);
     ComPtr<ID2D1LinearGradientBrush> CreateLinearGradientBrush_Logo();
@@ -184,7 +185,7 @@ public:
         return url_;
     }
 
-    scene2d::DimensionF size() override
+    scene2d::DimensionF size() const override
     {
         if (!bitmap_) {
             BitmapSubItem item = GraphicDeviceD2D::instance()
@@ -230,7 +231,7 @@ public:
                            pixels, src_stride, format, alpha);
     }
 
-    scene2d::DimensionF size() override
+    scene2d::DimensionF size() const override
     {
         if (!bitmap_) {
             return scene2d::DimensionF();
@@ -349,6 +350,16 @@ public:
         auto bitmap = static_cast<const BitmapD2DInterface*>(image)->d2dBitmap(p_);
         if (bitmap) {
             p_.DrawBitmap(bitmap, origin, size);
+        }
+    }
+
+    void drawBitmapRect(const graph2d::BitmapInterface* image,
+                        const scene2d::RectF& src_rect,
+                        const scene2d::RectF& dst_rect) override
+    {
+        auto bitmap = static_cast<const BitmapD2DInterface*>(image)->d2dBitmap(p_);
+        if (bitmap) {
+            p_.DrawBitmapRect(bitmap, src_rect, dst_rect);
         }
     }
 

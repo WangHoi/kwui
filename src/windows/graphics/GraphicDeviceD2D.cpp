@@ -74,12 +74,12 @@ bool GraphicDeviceD2D::init()
 #endif
 
         // Create Direct3D device and context
-        ID3D11Device* device;
-        ID3D11DeviceContext* context;
+        ComPtr<ID3D11Device> device;
+        ComPtr<ID3D11DeviceContext> context;
 
         hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creation_flags, feature_levels,
                                ARRAYSIZE(feature_levels), D3D11_SDK_VERSION,
-                               &device, &d2d1_.feature_level, &context);
+                               device.GetAddressOf(), &d2d1_.feature_level, context.GetAddressOf());
         if (FAILED(hr)) break;
         hr = device->QueryInterface<ID3D11Device1>(d2d1_.dev3d.GetAddressOf());
         if (FAILED(hr)) break;
@@ -472,13 +472,14 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string& name, absl::Span<con
     bitmap_cache_[name] = bitmap;
 }
 
-void GraphicDeviceD2D::loadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1,
-                                         absl::Span<const uint8_t> res_x1_5, absl::Span<const uint8_t> res_x2)
+void GraphicDeviceD2D::loadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1, float scale_x1,
+                                         absl::Span<const uint8_t> res_x1_5, float scale_x1_5,
+                                         absl::Span<const uint8_t> res_x2, float scale_x2)
 {
     BitmapItem bitmap;
-    bitmap.x1 = loadBitmapFromResource(res_x1, scene2d::PointF::fromAll(1.0f));
-    bitmap.x1_5 = loadBitmapFromResource(res_x1_5, scene2d::PointF::fromAll(1.5f));
-    bitmap.x2 = loadBitmapFromResource(res_x2, scene2d::PointF::fromAll(2.0f));
+    bitmap.x1 = loadBitmapFromResource(res_x1, scene2d::PointF::fromAll(scale_x1));
+    bitmap.x1_5 = loadBitmapFromResource(res_x1_5, scene2d::PointF::fromAll(scale_x1_5));
+    bitmap.x2 = loadBitmapFromResource(res_x2, scene2d::PointF::fromAll(scale_x2));
     bitmap_cache_[name] = bitmap;
 }
 
@@ -621,6 +622,7 @@ BitmapSubItem GraphicDeviceD2D::loadBitmapFromStream(ComPtr<IWICStream> stream, 
 
 void GraphicDeviceD2D::loadBitmapToCache(const std::string& name)
 {
+    float scale_x1 = 1, scale_x1_5 = 1.5f, scale_x2 = 2;
     if (absl::StartsWith(name, "kwui::")) {
         std::string name_res = name.substr(6);
         absl::optional<absl::Span<const uint8_t>> x1, x1_5, x2;
@@ -634,11 +636,15 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string& name)
         }
         if (!x1.has_value())
             return;
-        if (!x1_5.has_value())
+        if (!x1_5.has_value()) {
             x1_5 = x1;
-        if (!x2.has_value())
+            scale_x1_5 = scale_x1;
+        }
+        if (!x2.has_value()) {
             x2 = x1_5;
-        loadBitmapToCache(name, x1.value(), x1_5.value(), x2.value());
+            scale_x2 = scale_x1_5;
+        }
+        loadBitmapToCache(name, x1.value(), scale_x1, x1_5.value(), scale_x1_5, x2.value(), scale_x2);
     } else if (absl::StartsWith(name, ":")) {
         auto RM = base::ResourceManager::instance();
         std::string name_res = name.substr(1);
@@ -653,12 +659,17 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string& name)
         }
         if (!x1.has_value())
             return;
-        if (!x1_5.has_value())
+        if (!x1_5.has_value()) {
             x1_5 = x1;
-        if (!x2.has_value())
+            scale_x1_5 = scale_x1;
+        }
+        if (!x2.has_value()) {
             x2 = x1_5;
-        loadBitmapToCache(name, absl::MakeSpan(x1->data, x1->size),
-                          absl::MakeSpan(x1_5->data, x1_5->size), absl::MakeSpan(x2->data, x2->size));
+            scale_x2 = scale_x1_5;
+        }
+        loadBitmapToCache(name, absl::MakeSpan(x1->data, x1->size), scale_x1,
+                          absl::MakeSpan(x1_5->data, x1_5->size), scale_x1_5,
+                          absl::MakeSpan(x2->data, x2->size), scale_x2);
     } else {
         auto filename_x1 = base::EncodingManager::UTF8ToWide(name);
         absl::optional<std::wstring> filename_x1_5, filename_x2;
@@ -675,10 +686,14 @@ void GraphicDeviceD2D::loadBitmapToCache(const std::string& name)
             bi.x1_5 = loadBitmapFromFilename(filename_x1_5.value(), scene2d::PointF::fromAll(1.5f));
         if (filename_x2.has_value())
             bi.x2 = loadBitmapFromFilename(filename_x2.value(), scene2d::PointF::fromAll(2.0f));
-        if (!bi.x1_5)
+        if (!bi.x1_5) {
             bi.x1_5 = bi.x1;
-        if (!bi.x2)
+            scale_x1_5 = scale_x1;
+        }
+        if (!bi.x2) {
             bi.x2 = bi.x1_5;
+            scale_x2 = scale_x1_5;
+        }
         bitmap_cache_[name] = bi;
     }
 }

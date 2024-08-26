@@ -6,7 +6,7 @@ namespace graph2d {
 class BitmapInterface {
 public:
     virtual ~BitmapInterface() = default;
-    virtual scene2d::DimensionF size() = 0;
+    virtual scene2d::DimensionF size() const = 0;
 };
 
 }

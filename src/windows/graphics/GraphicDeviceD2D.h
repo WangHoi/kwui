@@ -103,8 +103,10 @@ public:
     std::string getDefaultFontFamily() const;
     bool getFontMetrics(const std::string& font_family, DWRITE_FONT_METRICS& out_metrics);
     void loadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1);
-    void loadBitmapToCache(const std::string& name, absl::Span<const uint8_t> res_x1,
-                           absl::Span<const uint8_t> res_x1_5, absl::Span<const uint8_t> res_x2);
+    void loadBitmapToCache(const std::string& name,
+                           absl::Span<const uint8_t> res_x1, float scale_x1,
+                           absl::Span<const uint8_t> res_x1_5, float scale_x1_5,
+                           absl::Span<const uint8_t> res_x2, float scale_x2);
     void loadBitmapToCache(const std::string& name, const std::wstring& filename);
     BitmapSubItem getBitmap(const std::string& name, float dpi_scale = 1.0f);
     float getInitialDesktopDpiScale() const;
