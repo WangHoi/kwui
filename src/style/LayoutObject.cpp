@@ -84,58 +84,18 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PaintContextInterface* painte
         scene2d::CornerRadiusF border_radius;
         border_radius.top_left.width = border_radius.top_left.height = st.border_top_left_radius.pixelOrZero();
         border_radius.top_right.width = border_radius.top_right.height = st.border_top_right_radius.pixelOrZero();
-        border_radius.bottom_right.width = border_radius.bottom_right.height = st.border_bottom_right_radius.pixelOrZero();
+        border_radius.bottom_right.width = border_radius.bottom_right.height = st.border_bottom_right_radius.
+            pixelOrZero();
         border_radius.bottom_left.width = border_radius.bottom_left.height = st.border_bottom_left_radius.pixelOrZero();
         // LOG(INFO) << "paint box: " << render_rect;
         auto rect = b.paddingRect().translated(b.pos);
 
-        // draw outset box-shadow
-        if (st.box_shadow) {
-            for (auto& bsv : *st.box_shadow) {
-                if (!bsv.inset) {
-                    graph2d::BoxShadow bs;
-                    bs.inset = bsv.inset;
-                    bs.color = bsv.color;
-                    bs.offset_x = bsv.offset_x.pixelOrZero();
-                    bs.offset_y = bsv.offset_y.pixelOrZero();
-                    bs.blur_radius = bsv.blur_radius.pixelOrZero();
-                    bs.spread_x = bsv.spread_x.pixelOrZero();
-                    bs.spread_y = bsv.spread_y.pixelOrZero();
-                    painter->drawBoxShadow(rect, b.border, border_radius, bs);
-                }
-            }
-        }
-
-        painter->drawBox(
-            rect,
-            b.border,
-            border_radius,
-            st.background_color,
-            st.border_color,
-            st.background_image.get());
-
-        // draw inset box-shadow
-        if (st.box_shadow) {
-            for (auto& bsv : *st.box_shadow) {
-                if (bsv.inset) {
-                    graph2d::BoxShadow bs;
-                    bs.inset = bsv.inset;
-                    bs.color = bsv.color;
-                    bs.offset_x = bsv.offset_x.pixelOrZero();
-                    bs.offset_y = bsv.offset_y.pixelOrZero();
-                    bs.blur_radius = bsv.blur_radius.pixelOrZero();
-                    bs.spread_x = bsv.spread_x.pixelOrZero();
-                    bs.spread_y = bsv.spread_y.pixelOrZero();
-                    painter->drawBoxShadow(rect, b.border, border_radius, bs);
-                }
-            }
-        }
+        paintBox(painter, rect, b.border, border_radius, st);
     } else if (absl::holds_alternative<std::vector<std::unique_ptr<InlineBox>>>(o->box)) {
         const auto& ibs = absl::get<std::vector<std::unique_ptr<InlineBox>>>(o->box);
         for (auto& ib : ibs) {
             auto rect = scene2d::RectF::fromOriginSize(ib->pos, ib->size);
-            painter->drawBox(rect, EdgeOffsetF(), scene2d::CornerRadiusF(), st.background_color, st.border_color,
-                             nullptr);
+            paintBox(painter, rect, EdgeOffsetF(), scene2d::CornerRadiusF(), st);
             if (st.text_decoration_line != TextDecorationLineType::None) {
                 paintTextDecoration(o, painter, ib.get());
             }
@@ -148,16 +108,12 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PaintContextInterface* painte
         scene2d::CornerRadiusF border_radius;
         border_radius.top_left.width = border_radius.top_left.height = st.border_top_left_radius.pixelOrZero();
         border_radius.top_right.width = border_radius.top_right.height = st.border_top_right_radius.pixelOrZero();
-        border_radius.bottom_right.width = border_radius.bottom_right.height = st.border_bottom_right_radius.pixelOrZero();
+        border_radius.bottom_right.width = border_radius.bottom_right.height = st.border_bottom_right_radius.
+            pixelOrZero();
         border_radius.bottom_left.width = border_radius.bottom_left.height = st.border_bottom_left_radius.pixelOrZero();
-        //LOG(INFO) << "paint box: " << render_rect;
-        painter->drawBox(
-            b.paddingRect().translated(ibb.inline_box->pos),
-            b.border,
-            border_radius,
-            st.background_color,
-            st.border_color,
-            st.background_image.get());
+        auto rect = b.paddingRect().translated(ibb.inline_box->pos);
+
+        paintBox(painter, rect, b.border, border_radius, st);
     } else if (absl::holds_alternative<TextBox>(o->box)) {
         const TextBox& tb = absl::get<TextBox>(o->box);
         size_t n = tb.glyph_run_boxes.glyph_runs.size();
@@ -1692,6 +1648,52 @@ void LayoutObject::paintTextDecoration(LayoutObject* o, graph2d::PaintContextInt
             ib->size.width,
             fm.line_through_thickness);
         painter->drawBox(rect, EdgeOffsetF(), scene2d::CornerRadiusF(), st.color, Color(), nullptr);
+    }
+}
+
+void LayoutObject::paintBox(graph2d::PaintContextInterface* painter, const scene2d::RectF& rect,
+                            const EdgeOffsetF& border_width, const scene2d::CornerRadiusF& border_radius,
+                            const Style& st)
+{
+    // draw outset box-shadow
+    if (st.box_shadow) {
+        for (auto& bsv : *st.box_shadow) {
+            if (!bsv.inset) {
+                graph2d::BoxShadow bs;
+                bs.inset = bsv.inset;
+                bs.color = bsv.color;
+                bs.offset_x = bsv.offset_x.pixelOrZero();
+                bs.offset_y = bsv.offset_y.pixelOrZero();
+                bs.blur_radius = bsv.blur_radius.pixelOrZero();
+                bs.spread_x = bsv.spread_x.pixelOrZero();
+                bs.spread_y = bsv.spread_y.pixelOrZero();
+                painter->drawBoxShadow(rect, border_width, border_radius, bs);
+            }
+        }
+    }
+
+    painter->drawBox(rect,
+                     border_width,
+                     border_radius,
+                     st.background_color,
+                     st.border_color,
+                     st.background_image.get());
+
+    // draw inset box-shadow
+    if (st.box_shadow) {
+        for (auto& bsv : *st.box_shadow) {
+            if (bsv.inset) {
+                graph2d::BoxShadow bs;
+                bs.inset = bsv.inset;
+                bs.color = bsv.color;
+                bs.offset_x = bsv.offset_x.pixelOrZero();
+                bs.offset_y = bsv.offset_y.pixelOrZero();
+                bs.blur_radius = bsv.blur_radius.pixelOrZero();
+                bs.spread_x = bsv.spread_x.pixelOrZero();
+                bs.spread_y = bsv.spread_y.pixelOrZero();
+                painter->drawBoxShadow(rect, border_width, border_radius, bs);
+            }
+        }
     }
 }
 
