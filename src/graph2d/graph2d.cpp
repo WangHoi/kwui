@@ -139,7 +139,7 @@ float getInitialDesktopDpiScale()
 std::shared_ptr<BitmapInterface> createBitmapFromUrl(const std::string& url)
 {
 #if WITH_SKIA
-	return std::shared_ptr<BitmapInterface>(new xskia::BitmapX(url));
+	return std::shared_ptr<BitmapInterface>(new xskia::BitmapFromUrlX(url));
 #else
 #ifdef _WIN32
 	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapFromUrlImpl(url));

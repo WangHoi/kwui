@@ -185,7 +185,7 @@ public:
         return url_;
     }
 
-    scene2d::DimensionF size() const override
+    scene2d::DimensionF pixelSize() const override
     {
         if (!bitmap_) {
             BitmapSubItem item = GraphicDeviceD2D::instance()
@@ -231,7 +231,7 @@ public:
                            pixels, src_stride, format, alpha);
     }
 
-    scene2d::DimensionF size() const override
+    scene2d::DimensionF pixelSize() const override
     {
         if (!bitmap_) {
             return scene2d::DimensionF();

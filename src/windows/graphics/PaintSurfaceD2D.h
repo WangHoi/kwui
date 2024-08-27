@@ -22,7 +22,7 @@ public:
     bool endPaint() override;
     void swapBuffers() override;
 
-    std::shared_ptr<BitmapImpl> getCachedetBitmap(const std::string& key) const;
+    std::shared_ptr<BitmapImpl> getCachedBitmap(const std::string& key) const;
     void updateCachedBitmap(const std::string& key, std::shared_ptr<BitmapImpl> bitmap);
 
 private:

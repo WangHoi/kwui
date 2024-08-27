@@ -824,7 +824,7 @@ std::shared_ptr<BitmapImpl> PainterImpl::makeOutsetShadowBitmap(const scene2d::R
                                             box_shadow.color.getRgba());
 
     if (surface_) {
-        auto b = surface_->getCachedetBitmap(cache_key);
+        auto b = surface_->getCachedBitmap(cache_key);
         if (b)
             return b;
     }
@@ -899,7 +899,7 @@ std::shared_ptr<BitmapImpl> PainterImpl::makeInsetShadowBitmap(const scene2d::Re
                                             box_shadow.color.getRgba());
 
     if (surface_) {
-        auto b = surface_->getCachedetBitmap(cache_key);
+        auto b = surface_->getCachedBitmap(cache_key);
         if (b)
             return b;
     }

@@ -74,14 +74,14 @@ std::unique_ptr<graph2d::PaintContextInterface> PaintSurfaceX::beginPaint()
 		return nullptr;
 	auto canvas = wnd_surface_->getCanvas();
 	if (canvas) {
-		return std::make_unique<PainterX>(canvas, config_.dpi_scale);
+		return std::make_unique<PainterX>(this, canvas, config_.dpi_scale);
 	} else {
 		return nullptr;
 	}
 #else
 	if (!surface_)
 		return nullptr;
-	return std::make_unique<PainterX>(surface_->getCanvas(), config_.dpi_scale);
+	return std::make_unique<PainterX>(this, surface_->getCanvas(), config_.dpi_scale);
 #endif
 }
 
@@ -189,6 +189,17 @@ void PaintSurfaceX::createSurface()
 #pragma warning("TODO: PaintSurfaceX::createSurface().")
 #endif
 #endif // __ANDROID__
+}
+
+sk_sp<SkImage> PaintSurfaceX::getCachedBitmap(const std::string& key) const
+{
+	const auto it = bitmap_cache_.find(key);
+	return (it == bitmap_cache_.end()) ? nullptr : it->second;
+}
+
+void PaintSurfaceX::updateCachedBitmap(const std::string& key, sk_sp<SkImage> bitmap)
+{
+	bitmap_cache_[key] = bitmap;
 }
 
 }

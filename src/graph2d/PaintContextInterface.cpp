@@ -68,7 +68,7 @@ void PaintContextInterface::drawBitmapNine(const BitmapInterface* image, const s
 {
     // TODO: handle source bitmap and dst render surface DPI mismatch.
 
-    auto sz = image->size();
+    auto sz = image->pixelSize();
     // Top-Left
     drawBitmapRect(image, scene2d::RectF::fromLTRB(0, 0,
                                                    src_center.left, src_center.top),

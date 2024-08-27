@@ -32,6 +32,9 @@ public:
     void swapBuffers() override;
     void discardDeviceResources() override;
 
+    sk_sp<SkImage> getCachedBitmap(const std::string& key) const;
+    void updateCachedBitmap(const std::string& key, sk_sp<SkImage> bitmap);
+
 private:
     PaintSurfaceX(const Configuration& config);
     void createSurface();
@@ -39,6 +42,7 @@ private:
     Configuration config_;
     std::unique_ptr<uint8_t[]> buffer_;
     sk_sp<SkSurface> surface_;
+    std::unordered_map<std::string, sk_sp<SkImage>> bitmap_cache_;
 #ifdef __ANDROID__
     std::unique_ptr<android::WindowSurface> wnd_surface_;
 #endif
