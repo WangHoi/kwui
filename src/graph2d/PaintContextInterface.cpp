@@ -66,6 +66,8 @@ void PaintContextInterface::drawBox(const scene2d::RectF& padding_rect, const st
 void PaintContextInterface::drawBitmapNine(const BitmapInterface* image, const style::EdgeOffsetF& src_center,
                                            const scene2d::RectF& dst_rect)
 {
+    // TODO: handle source bitmap and dst render surface DPI mismatch.
+
     auto sz = image->size();
     // Top-Left
     drawBitmapRect(image, scene2d::RectF::fromLTRB(0, 0,

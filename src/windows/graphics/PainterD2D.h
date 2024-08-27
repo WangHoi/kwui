@@ -236,7 +236,7 @@ public:
         if (!bitmap_) {
             return scene2d::DimensionF();
         }
-        D2D1_SIZE_U ps = bitmap_->GetPixelSize();
+        D2D1_SIZE_F ps = bitmap_->GetSize();
         return scene2d::DimensionF(ps.width, ps.height);
     }
 
@@ -430,14 +430,15 @@ public:
     void drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush) override;
 
 private:
-    ComPtr<ID2D1Bitmap> makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
-                                               const style::EdgeOffsetF& inset_border_width,
-                                               const scene2d::CornerRadiusF& border_radius,
-                                               const graph2d::BoxShadow& box_shadow);
-    ComPtr<ID2D1Bitmap> makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
-                                              const style::EdgeOffsetF& inset_border_width,
-                                              const scene2d::CornerRadiusF& border_radius,
-                                              const graph2d::BoxShadow& box_shadow);
+    std::shared_ptr<BitmapImpl> makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
+                                                       const style::EdgeOffsetF& inset_border_width,
+                                                       const scene2d::CornerRadiusF& border_radius,
+                                                       const graph2d::BoxShadow& box_shadow,
+                                                       absl::optional<style::EdgeOffsetF>& expand_edges);
+    std::shared_ptr<BitmapImpl> makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
+                                                      const style::EdgeOffsetF& inset_border_width,
+                                                      const scene2d::CornerRadiusF& border_radius,
+                                                      const graph2d::BoxShadow& box_shadow);
 
     PaintSurfaceWindowD2D* surface_;
     Painter p_;

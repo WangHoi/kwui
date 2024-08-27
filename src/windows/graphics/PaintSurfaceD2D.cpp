@@ -105,13 +105,13 @@ void PaintSurfaceWindowD2D::swapBuffers()
     }
 }
 
-ComPtr<ID2D1Bitmap> PaintSurfaceWindowD2D::getCachedetBitmap(const std::string& key) const
+std::shared_ptr<BitmapImpl> PaintSurfaceWindowD2D::getCachedetBitmap(const std::string& key) const
 {
     const auto it = bitmap_cache_.find(key);
     return (it == bitmap_cache_.end()) ? nullptr : it->second;
 }
 
-void PaintSurfaceWindowD2D::updateCachedBitmap(const std::string& key, ComPtr<ID2D1Bitmap> bitmap)
+void PaintSurfaceWindowD2D::updateCachedBitmap(const std::string& key, std::shared_ptr<BitmapImpl> bitmap)
 {
     bitmap_cache_[key] = bitmap;
 }

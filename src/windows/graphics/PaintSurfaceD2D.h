@@ -5,6 +5,7 @@
 
 namespace windows::graphics
 {
+class BitmapImpl;
 
 class PaintSurfaceWindowD2D : public graph2d::PaintSurfaceInterface {
 public:
@@ -21,8 +22,8 @@ public:
     bool endPaint() override;
     void swapBuffers() override;
 
-    ComPtr<ID2D1Bitmap> getCachedetBitmap(const std::string& key) const;
-    void updateCachedBitmap(const std::string& key, ComPtr<ID2D1Bitmap> bitmap);
+    std::shared_ptr<BitmapImpl> getCachedetBitmap(const std::string& key) const;
+    void updateCachedBitmap(const std::string& key, std::shared_ptr<BitmapImpl> bitmap);
 
 private:
     PaintSurfaceWindowD2D(const Configuration& config);
@@ -30,7 +31,7 @@ private:
 
     Configuration config_;
     HwndRenderTarget hwnd_rt_;
-    std::unordered_map<std::string, ComPtr<ID2D1Bitmap>> bitmap_cache_;
+    std::unordered_map<std::string, std::shared_ptr<BitmapImpl>> bitmap_cache_;
 };
 
 class PaintSurfaceBitmapD2D : public graph2d::PaintSurfaceInterface {

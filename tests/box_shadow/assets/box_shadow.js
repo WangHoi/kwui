@@ -1,5 +1,5 @@
 function BoxShadowExample() {
-    return <div class="inner" />;
+    return <div class="inner"><spinner></spinner></div>;
 }
 
 var stylesheet = css`
