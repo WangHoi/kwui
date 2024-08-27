@@ -1,5 +1,5 @@
 function BoxShadowExample() {
-    return <div class="inner"><spinner></spinner></div>;
+    return <button class="inner">Click Me</button>;
 }
 
 var stylesheet = css`
@@ -8,8 +8,9 @@ var stylesheet = css`
         height: 100%;
         background-color: #add8e6;
     }
+    
 
-    div.inner {
+    button.inner {
         position: absolute;
         left: 64px;
         top: 64px;
@@ -17,10 +18,21 @@ var stylesheet = css`
         height: 300px;
         background-color: #add8e6;
         border-radius: 24px;
+        box-shadow:#93b8c4 10px 10px 10px,
+        #c7f8ff -10px -10px 10px;
+
+        line-height:300px;
+        text-align: center;
+        font-size: 64px;
+        color: lightslategray;
+    }
+
+    button.inner:active {
         box-shadow: #93b8c4 10px 10px 10px inset,
         #c7f8ff -10px -10px 10px inset,
         #93b8c4 10px 10px 10px,
         #c7f8ff -10px -10px 10px;
+        color: aliceblue;
     }
 `;
 
