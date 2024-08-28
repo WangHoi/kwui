@@ -36,7 +36,7 @@ float getInitialDesktopDpiScale();
  */
 std::shared_ptr<BitmapInterface> createBitmapFromUrl(const std::string& url);
 
-std::shared_ptr<BitmapInterface> createBitmap(const void* pixels, size_t src_width, size_t src_height,
+std::shared_ptr<BitmapInterface> createBitmap(const void* pixels, size_t pixel_width, size_t pixel_height,
                                               size_t src_stride, kwui::ColorType color_type, float dpi_scale = 1.0f);
 
 std::unique_ptr<PaintPathInterface> createPath();

@@ -16,7 +16,7 @@ PlotElement::PlotElement()
     formulas_.push_back(SquareWaveFormula::create());
     formulas_.push_back(SineWaveFormula::create());
     formulas_.push_back(MultiSineWaveFormula::create());
-    implicit_plot_ = std::make_unique<ImplicitPlot>();
+    // implicit_plot_ = std::make_unique<ImplicitPlot>();
 }
 
 void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwui::CustomElementPaintOption& po)
@@ -33,9 +33,9 @@ void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwu
     coord_.setSceneBounds(sx, sy, ex, ey);
 
     // Update implicit function
-    auto [tl_x, tl_y] = coord_.mapFromScene(sx, sy);
-    auto [br_x, br_y] = coord_.mapFromScene(ex, ey);
-    implicit_plot_->update(p.getDpiScale(), roundf(po.width), roundf(po.height), {tl_x, br_x}, {br_y, tl_y});
+    // auto [tl_x, tl_y] = coord_.mapFromScene(sx, sy);
+    // auto [br_x, br_y] = coord_.mapFromScene(ex, ey);
+    // implicit_plot_->update(p.getDpiScale(), roundf(po.width), roundf(po.height), {tl_x, br_x}, {br_y, tl_y});
 
     // Draw axis
     {
@@ -69,8 +69,8 @@ void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwu
     }
 
     // Draw implicit function
-    p.writePixels(implicit_plot_->imageData(), roundf(po.width), roundf(po.height), roundf(po.width) * 4,
-                  sx, sy, kwui::COLOR_TYPE_RGBA8888);
+    // p.writePixels(implicit_plot_->imageData(), roundf(po.width), roundf(po.height), roundf(po.width) * 4,
+    //               sx, sy, kwui::COLOR_TYPE_RGBA8888);
 }
 
 void PlotElement::drawAxis(kwui::CustomElementPaintContextInterface& p, float offset, float sx, float sy, float ex,

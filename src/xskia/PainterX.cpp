@@ -50,7 +50,6 @@ void PainterX::translate(const scene2d::PointF& offset)
 
 void PainterX::clipRect(const scene2d::RectF& rect)
 {
-    canvas_->save();
     canvas_->clipIRect(SkIRect::MakeLTRB(floor(rect.left), floor(rect.top),
                                          ceil(rect.right), ceil(rect.bottom)));
 }
@@ -282,7 +281,8 @@ SkPaint PainterX::makeSkPaint(const graph2d::PaintBrush& brush) const
     p.setAntiAlias(true);
     p.setColor(brush.color());
     if (auto img = brush.shader()) {
-        p.setShader(SkImageShader::Make(static_cast<const BitmapFromUrlX*>(img)->skImage(), SkTileMode::kClamp,
+        auto ximg = static_cast<const BitmapXInterface*>(img);
+        p.setShader(SkImageShader::Make(ximg->skImage(), SkTileMode::kClamp,
                                         SkTileMode::kClamp, SkSamplingOptions(), nullptr));
     }
     if (brush.style() == graph2d::PAINT_STYLE_STROKE) {

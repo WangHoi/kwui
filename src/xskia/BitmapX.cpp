@@ -20,8 +20,9 @@ scene2d::DimensionF BitmapFromUrlX::pixelSize() const
 
 float BitmapFromUrlX::dpiScale(float requested_dpi_scale) const
 {
+    // TODO: fix image dpi
     if (!image_) {
-        auto item = GraphicDeviceX::instance()->getBitmap(url_, requested_dpi_scale);
+        auto item = GraphicDeviceX::instance()->getBitmap(url_, 1);
         if (item) {
             return item.dpi_scale;
         } else {

@@ -30,7 +30,7 @@ private:
     std::vector<std::unique_ptr<FormulaInterface>> formulas_;
     CartesianCoord coord_;
     std::optional<Point> mouse_down_pos_;
-    std::unique_ptr<ImplicitPlot> implicit_plot_;
+    // std::unique_ptr<ImplicitPlot> implicit_plot_;
 };
 
 kwui::CustomElement* PlotElementFactory();

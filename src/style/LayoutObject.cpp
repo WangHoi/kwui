@@ -78,6 +78,8 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PaintContextInterface* painte
 
     absl::optional<scene2d::RectF> content_rect;
 
+    painter->save();
+
     if (absl::holds_alternative<BlockBox>(o->box)) {
         const BlockBox& b = absl::get<BlockBox>(o->box);
         content_rect.emplace(b.contentRect().translated(b.pos));
@@ -190,9 +192,7 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PaintContextInterface* painte
 
     LayoutObject* child = o->first_child;
     while (child) {
-        painter->save();
         paint(child, painter);
-        painter->restore();
         child = child->next_sibling;
     }
 
@@ -201,11 +201,11 @@ void LayoutObject::paint(LayoutObject* o, graph2d::PaintContextInterface* painte
             continue;
             //painter->setTranslation(content_rect.value_or(scene2d::RectF()).origin() + scroll_offset, true);
         }
-        painter->save();
         painter->translate(containingRectForPositionedChildren(o).value_or(scene2d::RectF()).origin() + scroll_offset);
         paint(child, painter);
-        painter->restore();
     }
+
+    painter->restore();
 }
 
 LayoutObject* LayoutObject::pick(LayoutObject* o, scene2d::PointF pos, int flag_mask, scene2d::PointF* out_local_pos)

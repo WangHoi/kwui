@@ -10,6 +10,7 @@
 #include "xskia/TextFlowX.h"
 #include "xskia/GraphicDeviceX.h"
 #include "xskia/BitmapX.h"
+#include "xskia/PaintPathX.h"
 #include "include/core/SkFont.h"
 #include "include/core/SkFontMetrics.h"
 #include "include/core/SkFontMgr.h"
@@ -150,11 +151,33 @@ std::shared_ptr<BitmapInterface> createBitmapFromUrl(const std::string& url)
 #endif
 }
 
-std::shared_ptr<BitmapInterface> createBitmap(const void* pixels, size_t src_width, size_t src_height,
+std::shared_ptr<BitmapInterface> createBitmap(const void* pixels, size_t pixel_width, size_t pixel_height,
 											  size_t src_stride, kwui::ColorType color_type, float dpi_scale)
 {
 #if WITH_SKIA
-	return nullptr;
+	SkColorType format;
+	SkAlphaType alpha;
+	switch (color_type) {
+	case kwui::COLOR_TYPE_ALPHA8:
+		format = SkColorType::kAlpha_8_SkColorType;
+		alpha = SkAlphaType::kUnknown_SkAlphaType;
+		break;
+	case kwui::COLOR_TYPE_BGRA8888:
+		format = SkColorType::kBGRA_8888_SkColorType;
+		alpha = SkAlphaType::kPremul_SkAlphaType;
+		break;
+	case kwui::COLOR_TYPE_RGBA8888:
+		format = SkColorType::kRGBA_8888_SkColorType;
+		alpha = SkAlphaType::kPremul_SkAlphaType;
+		break;
+	default:
+		return nullptr;
+	}
+
+	SkImageInfo info = SkImageInfo::Make(pixel_width, pixel_height, format, alpha);
+	auto data = SkData::MakeWithCopy(pixels, src_stride * pixel_height);
+	auto img = SkImage::MakeRasterData(info, data, src_stride);
+	return std::make_shared<xskia::BitmapX>(img, dpi_scale);
 #else
 #ifdef _WIN32
 	DXGI_FORMAT format;
@@ -173,10 +196,10 @@ std::shared_ptr<BitmapInterface> createBitmap(const void* pixels, size_t src_wid
 		alpha = D2D1_ALPHA_MODE_PREMULTIPLIED;
 		break;
 	default:
-		;
+		return nullptr;
 	}
 	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapD2D(
-		pixels, src_width, src_height, src_stride, dpi_scale, format, alpha));
+		pixels, pixel_width, pixel_height, src_stride, dpi_scale, format, alpha));
 #else
 #pragma message("TODO: implement graph2d::createBitmap().")
 	return nullptr;
@@ -188,7 +211,7 @@ std::shared_ptr<BitmapInterface> createBitmap(const void* pixels, size_t src_wid
 std::unique_ptr<PaintPathInterface> createPath()
 {
 #if WITH_SKIA
-	return nullptr;
+	return std::unique_ptr<xskia::PaintPathX>(new xskia::PaintPathX);
 #else
 #ifdef _WIN32
 	return std::unique_ptr<PaintPathInterface>(new windows::graphics::PaintPathD2D());
