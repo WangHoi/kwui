@@ -62,7 +62,7 @@ private:
                                           const scene2d::CornerRadiusF& border_radius,
                                           const graph2d::BoxShadow& box_shadow,
                                           absl::optional<style::EdgeOffsetF>& expand_edges);
-    // returns a 1.0 dpi image
+    // returns a 1.0 dpi image, with extra 4 pixel padding around
     sk_sp<SkImage> makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
                                          const style::EdgeOffsetF& inset_border_width,
                                          const scene2d::CornerRadiusF& border_radius,

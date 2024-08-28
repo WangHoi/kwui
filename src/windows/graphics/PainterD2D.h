@@ -172,10 +172,10 @@ public:
     virtual ID2D1Bitmap* d2dBitmap(Painter& p) const = 0;
 };
 
-class BitmapFromUrlImpl : public BitmapD2DInterface
+class BitmapFromUrlD2D : public BitmapD2DInterface
 {
 public:
-    BitmapFromUrlImpl(const std::string& url)
+    BitmapFromUrlD2D(const std::string& url)
         : url_(url)
     {
     }
@@ -202,6 +202,7 @@ public:
         return scene2d::DimensionF(ps.width, ps.height);
     }
 
+
     ID2D1Bitmap* d2dBitmap(Painter& p) const override
     {
         if (!bitmap_) {
@@ -214,17 +215,30 @@ public:
         return bitmap_.Get();
     }
 
+    float dpiScale(float requested_dpi_scale) const override
+    {
+        if (!bitmap_) {
+            BitmapSubItem item = GraphicDeviceD2D::instance()
+                ->getBitmap(url_, requested_dpi_scale);
+            return item ? item.dpi_scale.x : 1.0f;
+        }
+        auto x = bitmap_->GetSize().width;
+        auto px = bitmap_->GetPixelSize().width;
+        return float(px) / x;
+    }
+
 private:
     std::string url_; // utf-8
     mutable ComPtr<ID2D1Bitmap> bitmap_;
 };
 
-class BitmapImpl : public BitmapD2DInterface
+class BitmapD2D : public BitmapD2DInterface
 {
 public:
-    BitmapImpl(const void* pixels, size_t src_width, size_t src_height,
-               size_t src_stride, float dpi_scale, DXGI_FORMAT format,
-               D2D1_ALPHA_MODE alpha)
+    BitmapD2D(const void* pixels, size_t src_width, size_t src_height,
+              size_t src_stride, float dpi_scale, DXGI_FORMAT format,
+              D2D1_ALPHA_MODE alpha)
+        : dpi_scale_(dpi_scale)
     {
         bitmap_ = GraphicDeviceD2D::instance()
             ->createBitmap(src_width, src_height, dpi_scale,
@@ -236,8 +250,13 @@ public:
         if (!bitmap_) {
             return scene2d::DimensionF();
         }
-        D2D1_SIZE_F ps = bitmap_->GetSize();
+        D2D1_SIZE_U ps = bitmap_->GetPixelSize();
         return scene2d::DimensionF(ps.width, ps.height);
+    }
+
+    float dpiScale(float /*requested_dpi_scale*/) const override
+    {
+        return dpi_scale_;
     }
 
     ID2D1Bitmap* d2dBitmap(Painter& p) const override
@@ -246,7 +265,8 @@ public:
     }
 
 private:
-    mutable ComPtr<ID2D1Bitmap> bitmap_;
+    ComPtr<ID2D1Bitmap> bitmap_;
+    float dpi_scale_;
 };
 
 class PaintPathD2D : public graph2d::PaintPathInterface
@@ -430,15 +450,15 @@ public:
     void drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush) override;
 
 private:
-    std::shared_ptr<BitmapImpl> makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
-                                                       const style::EdgeOffsetF& inset_border_width,
-                                                       const scene2d::CornerRadiusF& border_radius,
-                                                       const graph2d::BoxShadow& box_shadow,
-                                                       absl::optional<style::EdgeOffsetF>& expand_edges);
-    std::shared_ptr<BitmapImpl> makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
+    std::shared_ptr<BitmapD2D> makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
                                                       const style::EdgeOffsetF& inset_border_width,
                                                       const scene2d::CornerRadiusF& border_radius,
-                                                      const graph2d::BoxShadow& box_shadow);
+                                                      const graph2d::BoxShadow& box_shadow,
+                                                      absl::optional<style::EdgeOffsetF>& expand_edges);
+    std::shared_ptr<BitmapD2D> makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
+                                                     const style::EdgeOffsetF& inset_border_width,
+                                                     const scene2d::CornerRadiusF& border_radius,
+                                                     const graph2d::BoxShadow& box_shadow);
 
     PaintSurfaceWindowD2D* surface_;
     Painter p_;

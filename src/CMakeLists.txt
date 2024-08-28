@@ -19,21 +19,22 @@ if (ANDROID)
 endif ()
 
 set(dep_libs
-        absl::base
-        absl::span
-        absl::time
-        absl::strings
-        absl::string_view
-        absl::optional
-        absl::log
-        absl::log_initialize
-        absl::synchronization
-        absl::variant
-        absl::statusor
-        absl::status
-        absl::bind_front
-        fifo_map
-        quickjs)
+    absl::base
+    absl::span
+    absl::time
+    absl::strings
+    absl::string_view
+    absl::optional
+    absl::log
+    absl::log_initialize
+    absl::synchronization
+    absl::variant
+    absl::statusor
+    absl::status
+    absl::bind_front
+    fifo_map
+    tgaimage
+    quickjs)
 if (WIN32)
     list(APPEND dep_libs d3d11.lib d2d1.lib dwrite.lib Windowscodecs.lib Imm32.lib)
 else ()

@@ -17,6 +17,20 @@ scene2d::DimensionF BitmapFromUrlX::pixelSize() const
     auto dim = image_->dimensions();
     return scene2d::DimensionF(dim.fWidth, dim.fHeight);
 }
+
+float BitmapFromUrlX::dpiScale(float requested_dpi_scale) const
+{
+    if (!image_) {
+        auto item = GraphicDeviceX::instance()->getBitmap(url_, requested_dpi_scale);
+        if (item) {
+            return item.dpi_scale;
+        } else {
+            return 1;
+        }
+    }
+    return 1;
+}
+
 sk_sp<SkImage> BitmapFromUrlX::skImage() const
 {
     if (!image_) {

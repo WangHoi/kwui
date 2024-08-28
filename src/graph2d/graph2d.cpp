@@ -142,7 +142,7 @@ std::shared_ptr<BitmapInterface> createBitmapFromUrl(const std::string& url)
 	return std::shared_ptr<BitmapInterface>(new xskia::BitmapFromUrlX(url));
 #else
 #ifdef _WIN32
-	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapFromUrlImpl(url));
+	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapFromUrlD2D(url));
 #else
 #pragma message("TODO: implement graph2d::createBitmapFromUrl().")
 	return nullptr;
@@ -175,7 +175,7 @@ std::shared_ptr<BitmapInterface> createBitmap(const void* pixels, size_t src_wid
 	default:
 		;
 	}
-	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapImpl(
+	return std::shared_ptr<BitmapInterface>(new windows::graphics::BitmapD2D(
 		pixels, src_width, src_height, src_stride, dpi_scale, format, alpha));
 #else
 #pragma message("TODO: implement graph2d::createBitmap().")

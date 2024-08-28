@@ -66,9 +66,8 @@ void PaintContextInterface::drawBox(const scene2d::RectF& padding_rect, const st
 void PaintContextInterface::drawBitmapNine(const BitmapInterface* image, const style::EdgeOffsetF& src_center,
                                            const scene2d::RectF& dst_rect)
 {
-    // TODO: handle source bitmap and dst render surface DPI mismatch.
-
-    auto sz = image->pixelSize();
+    auto src_dpi_scale = image->dpiScale(getDpiScale());
+    auto src_resolution = image->pixelSize() /  image->dpiScale(getDpiScale());
     // Top-Left
     drawBitmapRect(image, scene2d::RectF::fromLTRB(0, 0,
                                                    src_center.left, src_center.top),
@@ -76,44 +75,46 @@ void PaintContextInterface::drawBitmapNine(const BitmapInterface* image, const s
                                             dst_rect.left + src_center.left, dst_rect.top + src_center.top));
     // Top
     drawBitmapRect(image, scene2d::RectF::fromLTRB(src_center.left, 0,
-                                                   sz.width - src_center.right, src_center.top),
+                                                   src_resolution.width - src_center.right, src_center.top),
                    scene2d::RectF::fromLTRB(dst_rect.left + src_center.left, dst_rect.top,
                                             dst_rect.right - src_center.right, dst_rect.top + src_center.top));
     // Top-Right
-    drawBitmapRect(image, scene2d::RectF::fromLTRB(sz.width - src_center.right, 0,
-                                                   sz.width, src_center.top),
+    drawBitmapRect(image, scene2d::RectF::fromLTRB(src_resolution.width - src_center.right, 0,
+                                                   src_resolution.width, src_center.top),
                    scene2d::RectF::fromLTRB(dst_rect.right - src_center.right, dst_rect.top,
                                             dst_rect.right, dst_rect.top + src_center.top));
     // Left
     drawBitmapRect(image, scene2d::RectF::fromLTRB(0, src_center.top,
-                                                   src_center.left, sz.height - src_center.bottom),
+                                                   src_center.left, src_resolution.height - src_center.bottom),
                    scene2d::RectF::fromLTRB(dst_rect.left, dst_rect.top + src_center.top,
                                             dst_rect.left + src_center.left, dst_rect.bottom - src_center.bottom));
     // Center
     drawBitmapRect(image, scene2d::RectF::fromLTRB(src_center.left, src_center.top,
-                                                   sz.width - src_center.right, sz.height - src_center.bottom),
+                                                   src_resolution.width - src_center.right,
+                                                   src_resolution.height - src_center.bottom),
                    scene2d::RectF::fromLTRB(dst_rect.left + src_center.left, dst_rect.top + src_center.top,
                                             dst_rect.right - src_center.right, dst_rect.bottom - src_center.bottom));
     // Right
     drawBitmapRect(
-        image, scene2d::RectF::fromLTRB(sz.width - src_center.right, src_center.top,
-                                        sz.width, sz.height - src_center.bottom),
+        image, scene2d::RectF::fromLTRB(src_resolution.width - src_center.right, src_center.top,
+                                        src_resolution.width, src_resolution.height - src_center.bottom),
         scene2d::RectF::fromLTRB(dst_rect.right - src_center.right, dst_rect.top + src_center.top,
                                  dst_rect.right, dst_rect.bottom - src_center.bottom));
     // Bottom-Left
-    drawBitmapRect(image, scene2d::RectF::fromLTRB(0, sz.height - src_center.bottom,
-                                                   src_center.left, sz.height),
+    drawBitmapRect(image, scene2d::RectF::fromLTRB(0, src_resolution.height - src_center.bottom,
+                                                   src_center.left, src_resolution.height),
                    scene2d::RectF::fromLTRB(dst_rect.left, dst_rect.bottom - src_center.bottom,
                                             dst_rect.left + src_center.left, dst_rect.bottom));
     // Bottom
-    drawBitmapRect(image, scene2d::RectF::fromLTRB(src_center.left, sz.height - src_center.bottom,
-                                                   sz.width - src_center.right, sz.height),
+    drawBitmapRect(image, scene2d::RectF::fromLTRB(src_center.left, src_resolution.height - src_center.bottom,
+                                                   src_resolution.width - src_center.right, src_resolution.height),
                    scene2d::RectF::fromLTRB(dst_rect.left + src_center.left, dst_rect.bottom - src_center.bottom,
                                             dst_rect.right - src_center.right, dst_rect.bottom));
     // Bottom-Right
     drawBitmapRect(
-        image, scene2d::RectF::fromLTRB(sz.width - src_center.right, sz.height - src_center.bottom,
-                                        sz.width, sz.height),
+        image, scene2d::RectF::fromLTRB(src_resolution.width - src_center.right,
+                                        src_resolution.height - src_center.bottom,
+                                        src_resolution.width, src_resolution.height),
         scene2d::RectF::fromLTRB(dst_rect.right - src_center.right, dst_rect.bottom - src_center.bottom,
                                  dst_rect.right, dst_rect.bottom));
 }

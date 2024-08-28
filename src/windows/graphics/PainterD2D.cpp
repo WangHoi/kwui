@@ -8,6 +8,9 @@
 
 namespace windows::graphics
 {
+
+static constexpr float PADDING_PIXELS = 4;
+
 Painter::Painter(ID2D1RenderTarget* rt, const scene2d::PointF& mouse_pos)
     : _rt(rt), _mouse_position(mouse_pos)
 {
@@ -553,9 +556,10 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
 
         // Blit the opacity bitmap
         auto dst_rrect = scene2d::RRectF::fromRectRadius(padding_rect, border_radius);
+        const float PADDING = PADDING_PIXELS / dpi_scale; // inset border pixmap padding
         auto src_origin = scene2d::PointF(
-            padding_rect.left - inset_border_width.left - blur_radius + box_shadow.offset_x,
-            padding_rect.top - inset_border_width.top - blur_radius + box_shadow.offset_y);
+            padding_rect.left - inset_border_width.left - (blur_radius + PADDING) + box_shadow.offset_x,
+            padding_rect.top - inset_border_width.top - (blur_radius + PADDING) + box_shadow.offset_y);
 
         // Create shadow bitmap
         auto shadow_bmp = makeInsetShadowBitmap(padding_rect,
@@ -614,7 +618,7 @@ void PainterImpl::drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush
             p_._rt->FillRectangle(rc, d2d_brush.Get());
         }
         if (brush.shader()) {
-            const auto* bitmap = (const BitmapFromUrlImpl*)brush.shader();
+            const auto* bitmap = (const BitmapFromUrlD2D*)brush.shader();
             auto* d2d_bitmap = bitmap->d2dBitmap(p_);
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
             d2d_brush->SetTransform(D2D1::Matrix3x2F::Translation(rc.left, rc.top));
@@ -649,7 +653,7 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
                 p_._rt->FillRoundedRectangle(rc, d2d_brush.Get());
             }
             if (brush.shader()) {
-                const auto* bitmap = (const BitmapFromUrlImpl*)brush.shader();
+                const auto* bitmap = (const BitmapFromUrlD2D*)brush.shader();
                 auto* d2d_bitmap = bitmap->d2dBitmap(p_);
                 ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
                 d2d_brush->SetTransform(D2D1::Matrix3x2F::Translation(rc.rect.left, rc.rect.top));
@@ -759,7 +763,7 @@ void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2
             p_._rt->FillGeometry(d2d_path, d2d_brush.Get());
         }
         if (brush.shader()) {
-            const auto* bitmap = (const BitmapFromUrlImpl*)brush.shader();
+            const auto* bitmap = (const BitmapFromUrlD2D*)brush.shader();
             auto* d2d_bitmap = bitmap->d2dBitmap(p_);
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
             // TODO: drawPath: brush transform
@@ -775,7 +779,7 @@ void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2
     }
 }
 
-std::shared_ptr<BitmapImpl> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
+std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
                                                                 const style::EdgeOffsetF& inset_border_width,
                                                                 const scene2d::CornerRadiusF& border_radius,
                                                                 const graph2d::BoxShadow& box_shadow,
@@ -859,7 +863,7 @@ std::shared_ptr<BitmapImpl> PainterImpl::makeOutsetShadowBitmap(const scene2d::R
             applyStackBlur(jimg, blur_radius * dpi_scale);
 
             // Make the bitmap
-            auto shadow_bitmap = std::make_shared<BitmapImpl>(bmp_data, (size_t)ci.pixel_size.width,
+            auto shadow_bitmap = std::make_shared<BitmapD2D>(bmp_data, (size_t)ci.pixel_size.width,
                                                               (size_t)ci.pixel_size.height,
                                                               stride, dpi_scale, ci.format,
                                                               D2D1_ALPHA_MODE_PREMULTIPLIED);
@@ -872,17 +876,18 @@ std::shared_ptr<BitmapImpl> PainterImpl::makeOutsetShadowBitmap(const scene2d::R
     return nullptr;
 }
 
-std::shared_ptr<BitmapImpl> PainterImpl::makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
+std::shared_ptr<BitmapD2D> PainterImpl::makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
                                                                const style::EdgeOffsetF& inset_border_width,
                                                                const scene2d::CornerRadiusF& border_radius,
                                                                const graph2d::BoxShadow& box_shadow)
 {
     // Compute extra padding
     const float dpi_scale = p_.GetDpiScale();
+    const float PADDING =  PADDING_PIXELS / dpi_scale;
     float blur_radius = roundf(box_shadow.blur_radius * dpi_scale) / dpi_scale;
     D2D1_RECT_F rect = p_.PixelSnapConservative(
-        scene2d::RectF::fromXYWH(blur_radius,
-                                 blur_radius,
+        scene2d::RectF::fromXYWH(blur_radius + PADDING,
+                                 blur_radius + PADDING,
                                  padding_rect.width() + inset_border_width.left +
                                  inset_border_width.right,
                                  padding_rect.height() + inset_border_width.top +
@@ -907,8 +912,8 @@ std::shared_ptr<BitmapImpl> PainterImpl::makeInsetShadowBitmap(const scene2d::Re
     // Create shadow bitmap
     PaintSurfaceBitmapD2D::Configuration ci;
     ci.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    ci.pixel_size.width = (blur_radius + rrect.width() + blur_radius) * dpi_scale;
-    ci.pixel_size.height = (blur_radius + rrect.height() + blur_radius) * dpi_scale;
+    ci.pixel_size.width = roundl((blur_radius + PADDING + rrect.width() + blur_radius + PADDING) * dpi_scale);
+    ci.pixel_size.height = roundl((blur_radius + PADDING + rrect.height() + blur_radius + PADDING) * dpi_scale);
     ci.dpi_scale = dpi_scale;
     auto bmp = PaintSurfaceBitmapD2D::create(ci);
 
@@ -939,7 +944,7 @@ std::shared_ptr<BitmapImpl> PainterImpl::makeInsetShadowBitmap(const scene2d::Re
             applyStackBlur(jimg, blur_radius * dpi_scale);
 
             // Make the bitmap
-            auto shadow_bitmap = std::make_shared<BitmapImpl>(bmp_data, (size_t)ci.pixel_size.width,
+            auto shadow_bitmap = std::make_shared<BitmapD2D>(bmp_data, (size_t)ci.pixel_size.width,
                                                               (size_t)ci.pixel_size.height,
                                                               stride, dpi_scale, ci.format,
                                                               D2D1_ALPHA_MODE_PREMULTIPLIED);

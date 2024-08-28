@@ -26,6 +26,7 @@ public:
         return url_;
     }
     scene2d::DimensionF pixelSize() const override;
+    float dpiScale(float requested_dpi_scale) const override;
     sk_sp<SkImage> skImage() const;
 
 private:
@@ -35,19 +36,23 @@ private:
 
 class BitmapX : public BitmapXInterface {
 public:
-    BitmapX(sk_sp<SkImage> img)
-        : image_(img)
+    BitmapX(sk_sp<SkImage> img, float dpi_scale = 1)
+        : image_(img), dpi_scale_(dpi_scale)
     {
     }
     scene2d::DimensionF pixelSize() const override;
+    float dpiScale(float /*requested_dpi_scale*/) const override
+    {
+        return dpi_scale_;
+    }
     sk_sp<SkImage> skImage() const
     {
         return image_;
     }
 
 private:
-    std::string url_; // utf-8
     mutable sk_sp<SkImage> image_;
+    float dpi_scale_ = 1;
 };
 
 }

@@ -11,11 +11,13 @@
 #include "style/Layout.h"
 #include "scene2d/Control.h"
 #include "include/core/SkRRect.h"
-#include "base/log.h"
 #include "graph2d/image_blur.h"
+#include "tgaimage.h"
 
 namespace xskia
 {
+static constexpr float PADDING_PIXELS = 4.0f;
+
 PainterX::PainterX(PaintSurfaceX* surface, SkCanvas* canvas, float dpi_scale)
     : surface_(surface), canvas_(canvas), dpi_scale_(dpi_scale)
 {
@@ -203,25 +205,29 @@ void PainterX::drawBoxShadow(const scene2d::RectF& padding_rect, const style::Ed
 
         // Blit the opacity bitmap
         auto dst_rrect = scene2d::RRectF::fromRectRadius(padding_rect, border_radius);
+        const float PADDING = PADDING_PIXELS / dpi_scale_; // inset border pixmap padding
         auto src_origin = scene2d::PointF(
-            padding_rect.left - inset_border_width.left - blur_radius + box_shadow.offset_x,
-            padding_rect.top - inset_border_width.top - blur_radius + box_shadow.offset_y);
+            padding_rect.left - inset_border_width.left - (blur_radius + PADDING) + box_shadow.offset_x,
+            padding_rect.top - inset_border_width.top - (blur_radius + PADDING) + box_shadow.offset_y);
 
         // Create shadow bitmap
         auto shadow_bmp = makeInsetShadowBitmap(padding_rect,
                                                 inset_border_width,
                                                 border_radius,
                                                 box_shadow);
+
         SkPaint paint;
-        paint.setColor(box_shadow.color);
-        SkMatrix paint_scale = SkMatrix::Scale(1.0f / dpi_scale_, 1.0f / dpi_scale_);
+        // paint.setColor(box_shadow.color);
+        SkMatrix paint_mtx;
+        paint_mtx.setScaleTranslate(1.0f / dpi_scale_, 1.0f / dpi_scale_, src_origin.x, src_origin.y);
+        // SkMatrix paint_scale = SkMatrix::I();
         paint.setShader(SkImageShader::Make(shadow_bmp, SkTileMode::kClamp, SkTileMode::kClamp,
-                                            SkSamplingOptions(SkFilterMode::kLinear), &paint_scale));
+                                            SkSamplingOptions(SkFilterMode::kLinear), &paint_mtx));
 
         // Draw the RRect
         SkPath path;
         path.addRRect(dst_rrect);
-        // canvas_->drawPath(path, paint);
+        canvas_->drawPath(path, paint);
     } else {
         // Compute extra padding
         float blur_radius = roundf(box_shadow.blur_radius * dpi_scale_) / dpi_scale_;
@@ -249,7 +255,7 @@ void PainterX::drawBoxShadow(const scene2d::RectF& padding_rect, const style::Ed
                                                  box_shadow,
                                                  expand_edges);
         if (expand_edges.has_value()) {
-            BitmapX bmp(shadow_bmp);
+            BitmapX bmp(shadow_bmp, dpi_scale_);
             drawBitmapNine(&bmp, expand_edges.value(), dst_rect);
         } else {
             canvas_->drawImageRect(shadow_bmp.get(), dst_rect, SkSamplingOptions(SkFilterMode::kLinear));
@@ -260,9 +266,11 @@ void PainterX::drawBoxShadow(const scene2d::RectF& padding_rect, const style::Ed
 void PainterX::drawBitmapRect(const graph2d::BitmapInterface* image, const scene2d::RectF& src_rect,
                               const scene2d::RectF& dst_rect)
 {
-    // TODO: handle source bitmap and dst render surface DPI mismatch.
     auto img = static_cast<const BitmapXInterface*>(image);
-    canvas_->drawImageRect(img->skImage().get(), src_rect, dst_rect,
+    auto img_scale = img->dpiScale(dpi_scale_);
+    auto src_rect_px = scene2d::RectF::fromLTRB(src_rect.left * img_scale, src_rect.top * img_scale,
+                                                src_rect.right * img_scale, src_rect.bottom * img_scale);
+    canvas_->drawImageRect(img->skImage().get(), src_rect_px, dst_rect,
                            SkSamplingOptions(SkFilterMode::kLinear),
                            nullptr,
                            SkCanvas::kStrict_SrcRectConstraint);
@@ -389,10 +397,11 @@ sk_sp<SkImage> PainterX::makeInsetShadowBitmap(const scene2d::RectF& padding_rec
                                                const scene2d::CornerRadiusF& border_radius,
                                                const graph2d::BoxShadow& box_shadow)
 {
-    // Compute extra padding
+    // Compute extra padding, one pixel padding
     float blur_radius = roundf(box_shadow.blur_radius * dpi_scale_) / dpi_scale_;
-    auto rect = scene2d::RectF::fromXYWH(blur_radius,
-                                         blur_radius,
+    const float PADDING = PADDING_PIXELS / dpi_scale_;
+    auto rect = scene2d::RectF::fromXYWH(blur_radius + PADDING,
+                                         blur_radius + PADDING,
                                          padding_rect.width() + inset_border_width.left +
                                          inset_border_width.right,
                                          padding_rect.height() + inset_border_width.top +
@@ -415,8 +424,9 @@ sk_sp<SkImage> PainterX::makeInsetShadowBitmap(const scene2d::RectF& padding_rec
     }
 
     // Create shadow bitmap
-    SkImageInfo info = SkImageInfo::MakeN32Premul((blur_radius + rrect.width() + blur_radius) * dpi_scale_,
-                                                  (blur_radius + rrect.height() + blur_radius) * dpi_scale_);
+    SkImageInfo info = SkImageInfo::MakeN32Premul(
+        roundl((blur_radius + PADDING + rrect.width() + blur_radius + PADDING) * dpi_scale_),
+        roundl((blur_radius + PADDING + rrect.height() + blur_radius + PADDING) * dpi_scale_));
     size_t stride = info.minRowBytes();
     size_t size = info.computeByteSize(stride);
     auto pixel_data = SkData::MakeZeroInitialized(size);
@@ -439,6 +449,12 @@ sk_sp<SkImage> PainterX::makeInsetShadowBitmap(const scene2d::RectF& padding_rec
                                          pixel_data->writable_data(),
                                          stride);
     applyStackBlur(jimg, blur_radius * dpi_scale_);
+
+    TGAImage dbg_img(info.width(), info.height(), 4);
+    std::vector<uint8_t> dbg_data((const uint8_t*)pixel_data->data(),
+                                  (const uint8_t*)pixel_data->data() + pixel_data->size());
+    dbg_img.setData(dbg_data);
+    dbg_img.write_tga_file("dbg_img.tga");
 
     // Make the bitmap
     auto shadow_bitmap = SkImage::MakeRasterData(info, pixel_data, stride);
