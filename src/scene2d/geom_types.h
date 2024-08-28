@@ -418,13 +418,13 @@ struct CornerRadiusF
     friend void AbslStringify(Sink& sink, const CornerRadiusF& o)
     {
         absl::Format(&sink, "CornerRadiusF { ");
-        if (o.top_left.x != 0.0f || o.top_left.y != 0.0f)
+        if (o.top_left.width != 0.0f || o.top_left.height != 0.0f)
             absl::Format(&sink, "top_left=%v, ", o.top_left);
-        if (o.top_right.x != 0.0f || o.top_right.y != 0.0f)
+        if (o.top_right.width != 0.0f || o.top_right.height != 0.0f)
             absl::Format(&sink, "top_right=%v, ", o.top_right);
-        if (o.bottom_right.x != 0.0f || o.bottom_right.y != 0.0f)
+        if (o.bottom_right.width != 0.0f || o.bottom_right.height != 0.0f)
             absl::Format(&sink, "bottom_right=%v, ", o.bottom_right);
-        if (o.bottom_left.x != 0.0f || o.bottom_left.y != 0.0f)
+        if (o.bottom_left.width != 0.0f || o.bottom_left.height != 0.0f)
             absl::Format(&sink, "bottom_left=%v, ", o.bottom_left);
         absl::Format(&sink, "}");
     }

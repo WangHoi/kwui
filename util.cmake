@@ -161,9 +161,10 @@ function(make_resource_header FILENAME VARNAME)
     set(infile "${CMAKE_CURRENT_LIST_DIR}/${FILENAME}")
     set(outfile "${CMAKE_CURRENT_BINARY_DIR}/${VARNAME}.txt")
 
-    find_file(bin2h_script NAMES bin2h.script.cmake
-        PATHS ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake
-        REQUIRED)
+#    find_file(bin2h_script NAMES bin2h.script.cmake
+#        PATHS ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake
+#        REQUIRED)
+    set(bin2h_script "D:/projects/kwui-rs/kwui-sys/deps/kwui/cmake/bin2h.script.cmake")
     add_custom_command(OUTPUT "${outfile}"
         COMMAND ${CMAKE_COMMAND} -D "INPUT_FILE=${infile}" -D "OUTPUT_FILE=${outfile}"
         -P "${bin2h_script}"

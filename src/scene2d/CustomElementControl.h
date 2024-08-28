@@ -4,7 +4,9 @@
 #include "scene2d/geom_types.h"
 #include "scene2d/TextLayout.h"
 #include "style/StyleColor.h"
+#ifdef _WIN32
 #include "windows/graphics/PainterD2D.h"
+#endif
 #include <string>
 #include <deque>
 #include <memory>
@@ -41,8 +43,10 @@ public:
 private:
     base::string_atom name_;
     std::unique_ptr<kwui::CustomElement> custom_ = nullptr;
+#if _WIN32
     windows::graphics::NativeBitmap native_;
     ComPtr<ID2D1Bitmap1> bitmap_;
+#endif
     graph2d::PaintContextInterface* cur_painter_ = nullptr;
     RectF cur_rect_;
 };

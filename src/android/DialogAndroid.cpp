@@ -196,7 +196,7 @@ void DialogAndroid::handleLongPressEvent(float x, float y)
 		//LOG(INFO) << "mouse down " << local_pos;
 		//active_node_ = node->weaken();
 		//node->state_ |= scene2d::NODE_STATE_ACTIVE;
-		int button = scene2d::RIGHT_BUTTON;
+		int button = kwui::RIGHT_BUTTON;
 		int modifiers = 0;
 		scene2d::MouseEvent mouse_down(node, scene2d::MOUSE_DOWN, mouse_position_, local_pos, button, button, modifiers);
 		scene_->dispatchEvent(node, mouse_down, true);
@@ -219,7 +219,7 @@ void DialogAndroid::handleSingleTapConfirmedEvent(float x, float y)
 		// LOG(INFO) << "handleSingleTapConfirmedEvent " << local_pos << ", tag=" << node->tag_;
 		//active_node_ = node->weaken();
 		//node->state_ |= scene2d::NODE_STATE_ACTIVE;
-		scene2d::ButtonState button = scene2d::LEFT_BUTTON;
+		scene2d::ButtonState button = kwui::LEFT_BUTTON;
 		int modifiers = 0;
 		scene2d::MouseEvent mouse_down(node, scene2d::MOUSE_DOWN, mouse_position_, local_pos, button, button, modifiers);
 		//mouse_down.button = button;

@@ -91,6 +91,7 @@ void CustomElementControl::onMouseEvent(Node* node, MouseEvent& evt)
 
 void* CustomElementControl::getNativeBitmap(float& out_pixel_width, float& out_pixel_height)
 {
+#ifdef _WIN32
     if (!cur_painter_)
         return nullptr;
 
@@ -114,6 +115,9 @@ void* CustomElementControl::getNativeBitmap(float& out_pixel_width, float& out_p
     out_pixel_width = native_.width * native_.dpi_scale;
     out_pixel_height = native_.height * native_.dpi_scale;
     return native_.d3d_tex.Get();
+#else
+    return nullptr;
+#endif
 }
 
 void CustomElementControl::setFillBitmap(void* native_bitmap)
@@ -121,11 +125,13 @@ void CustomElementControl::setFillBitmap(void* native_bitmap)
     if (!cur_painter_)
         return;
 
+#ifdef _WIN32
     if (native_.d3d_tex.Get() == native_bitmap && native_.d2d_bitmap) {
         auto& wp = windows::graphics::PainterImpl::unwrap(*cur_painter_);
         auto brush = wp.CreateBitmapBrush(native_.d2d_bitmap.Get());
         wp.SetBrush(brush);
     }
+#endif
 }
 
 void CustomElementControl::drawRoundedRect(float left, float top, float width, float height, float radius)
@@ -133,8 +139,16 @@ void CustomElementControl::drawRoundedRect(float left, float top, float width, f
     if (!cur_painter_)
         return;
 
+#ifdef _WIN32
+#if WITH_SKIA
+    // TODO: drawRoundedRect()
+#else
     auto& wp = windows::graphics::PainterImpl::unwrap(*cur_painter_);
     wp.DrawRoundedRect(left, top, width, height, radius);
+#endif
+#else
+    // TODO: drawRoundedRect()
+#endif
 }
 
 void CustomElementControl::drawPath(const kwui::CustomElementPaintPath& path,
