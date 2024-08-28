@@ -170,17 +170,20 @@ void PainterX::drawArc(const scene2d::PointF& center,
 
 void PainterX::drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush& brush)
 {
-    canvas_->drawRect(rect, makeSkPaint(brush));
+    auto paint = makeSkPaint(brush, &rect.origin());
+    canvas_->drawRect(rect, paint);
 }
 
 void PainterX::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBrush& brush)
 {
-    canvas_->drawRRect(rrect, makeSkPaint(brush));
+    auto paint = makeSkPaint(brush, &rrect.origin());
+    canvas_->drawRRect(rrect, paint);
 }
 
 void PainterX::drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner, const graph2d::PaintBrush& brush)
 {
-    canvas_->drawDRRect(outer, inner, makeSkPaint(brush));
+    auto paint = makeSkPaint(brush, &outer.origin());
+    canvas_->drawDRRect(outer, inner, paint);
 }
 
 void PainterX::drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush)
@@ -275,15 +278,19 @@ void PainterX::drawBitmapRect(const graph2d::BitmapInterface* image, const scene
                            SkCanvas::kStrict_SrcRectConstraint);
 }
 
-SkPaint PainterX::makeSkPaint(const graph2d::PaintBrush& brush) const
+SkPaint PainterX::makeSkPaint(const graph2d::PaintBrush& brush, const scene2d::PointF* offset) const
 {
     SkPaint p;
     p.setAntiAlias(true);
     p.setColor(brush.color());
     if (auto img = brush.shader()) {
         auto ximg = static_cast<const BitmapXInterface*>(img);
+        auto ximg_dpi_scale = ximg->dpiScale(dpi_scale_);
+        SkMatrix m;
+        scene2d::PointF off = offset ? *offset : scene2d::PointF();
+        m.setScaleTranslate(1.0f / ximg_dpi_scale, 1.0f / ximg_dpi_scale, off.x, off.y);
         p.setShader(SkImageShader::Make(ximg->skImage(), SkTileMode::kClamp,
-                                        SkTileMode::kClamp, SkSamplingOptions(), nullptr));
+                                        SkTileMode::kClamp, SkSamplingOptions(), &m));
     }
     if (brush.style() == graph2d::PAINT_STYLE_STROKE) {
         p.setStroke(true);
