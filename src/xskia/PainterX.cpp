@@ -170,26 +170,35 @@ void PainterX::drawArc(const scene2d::PointF& center,
 
 void PainterX::drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush& brush)
 {
-    auto paint = makeSkPaint(brush, &rect.origin());
-    canvas_->drawRect(rect, paint);
+    flattenSkPaint([&](const auto& paint)
+    {
+        canvas_->drawRect(rect, paint);
+    }, brush, &rect.origin());
 }
 
 void PainterX::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBrush& brush)
 {
-    auto paint = makeSkPaint(brush, &rrect.origin());
-    canvas_->drawRRect(rrect, paint);
+    flattenSkPaint([&](const auto& paint)
+    {
+        canvas_->drawRRect(rrect, paint);
+    }, brush, &rrect.origin());
 }
 
 void PainterX::drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner, const graph2d::PaintBrush& brush)
 {
-    auto paint = makeSkPaint(brush, &outer.origin());
-    canvas_->drawDRRect(outer, inner, paint);
+    flattenSkPaint([&](const auto& paint)
+    {
+        canvas_->drawDRRect(outer, inner, paint);
+    }, brush, &outer.origin());
 }
 
 void PainterX::drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush)
 {
     auto sk_path = static_cast<const PaintPathX*>(path);
-    canvas_->drawPath(sk_path->skPath(), makeSkPaint(brush));
+    flattenSkPaint([&](const auto& paint)
+    {
+        canvas_->drawPath(sk_path->skPath(), paint);
+    }, brush);
 }
 
 void PainterX::drawBoxShadow(const scene2d::RectF& padding_rect, const style::EdgeOffsetF& inset_border_width,
@@ -278,20 +287,11 @@ void PainterX::drawBitmapRect(const graph2d::BitmapInterface* image, const scene
                            SkCanvas::kStrict_SrcRectConstraint);
 }
 
-SkPaint PainterX::makeSkPaint(const graph2d::PaintBrush& brush, const scene2d::PointF* offset) const
+void PainterX::flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, const graph2d::PaintBrush& brush,
+                              const scene2d::PointF* offset) const
 {
     SkPaint p;
     p.setAntiAlias(true);
-    p.setColor(brush.color());
-    if (auto img = brush.shader()) {
-        auto ximg = static_cast<const BitmapXInterface*>(img);
-        auto ximg_dpi_scale = ximg->dpiScale(dpi_scale_);
-        SkMatrix m;
-        scene2d::PointF off = offset ? *offset : scene2d::PointF();
-        m.setScaleTranslate(1.0f / ximg_dpi_scale, 1.0f / ximg_dpi_scale, off.x, off.y);
-        p.setShader(SkImageShader::Make(ximg->skImage(), SkTileMode::kClamp,
-                                        SkTileMode::kClamp, SkSamplingOptions(), &m));
-    }
     if (brush.style() == graph2d::PAINT_STYLE_STROKE) {
         p.setStroke(true);
         p.setStrokeWidth(brush.strokeWidth());
@@ -315,7 +315,26 @@ SkPaint PainterX::makeSkPaint(const graph2d::PaintBrush& brush, const scene2d::P
         }
         p.setStrokeMiter(brush.strokeMiterLimit());
     }
-    return p;
+
+    // Background color
+    if (!brush.color().isTransparent()) {
+        SkPaint p1(p);
+        p1.setColor(brush.color());
+        func(p1);
+    }
+
+    // Background image
+    if (auto img = brush.shader()) {
+        SkPaint p1(p);
+        auto ximg = static_cast<const BitmapXInterface*>(img);
+        auto ximg_dpi_scale = ximg->dpiScale(dpi_scale_);
+        SkMatrix m;
+        scene2d::PointF off = offset ? *offset : scene2d::PointF();
+        m.setScaleTranslate(1.0f / ximg_dpi_scale, 1.0f / ximg_dpi_scale, off.x, off.y);
+        p1.setShader(SkImageShader::Make(ximg->skImage(), SkTileMode::kClamp,
+                                        SkTileMode::kClamp, SkSamplingOptions(), &m));
+        func(p1);
+    }
 }
 
 sk_sp<SkImage> PainterX::makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
@@ -381,7 +400,10 @@ sk_sp<SkImage> PainterX::makeOutsetShadowBitmap(const scene2d::RectF& padding_re
     bp->scale(dpi_scale_, dpi_scale_);
     graph2d::PaintBrush brush;
     brush.setColor(box_shadow.color);
-    bp->drawRRect(rrect, makeSkPaint(brush));
+    flattenSkPaint([&](const auto& paint)
+    {
+        bp->drawRRect(rrect, paint);
+    }, brush);
     bmp->flush();
 
     // Blur the bitmap
@@ -447,7 +469,10 @@ sk_sp<SkImage> PainterX::makeInsetShadowBitmap(const scene2d::RectF& padding_rec
     auto outer = scene2d::RRectF::fromRectRadius(
         scene2d::RectF::fromXYWH(0, 0, info.width() / dpi_scale_, info.height() / dpi_scale_),
         scene2d::CornerRadiusF());
-    bp->drawDRRect(outer, rrect, makeSkPaint(brush));
+    flattenSkPaint([&](const auto& paint)
+    {
+        bp->drawDRRect(outer, rrect, paint);
+    }, brush);
     bp->flush();
 
     // Blur the bitmap

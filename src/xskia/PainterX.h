@@ -55,7 +55,7 @@ public:
                         const scene2d::RectF& dst_rect) override;
 
 private:
-    SkPaint makeSkPaint(const graph2d::PaintBrush& brush, const scene2d::PointF* offset = nullptr) const;
+    void flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, const graph2d::PaintBrush& brush, const scene2d::PointF* offset = nullptr) const;
     // returns a 1.0 dpi image
     sk_sp<SkImage> makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
                                           const style::EdgeOffsetF& inset_border_width,

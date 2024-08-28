@@ -22,6 +22,11 @@ public:
     Color(int r, int g, int b, int a = 255) { set(r, g, b, a); }
     static Color fromString(std::string_view str); // from web color name #FFDDEE or #FFDDEEFF
 
+    bool isTransparent() const
+    {
+        return std::clamp<uint32_t>(uint32_t(_c[3] * 255.0f), 0, 0xff) == 0;
+    }
+
     // Little-endian: BGRX
     uint32_t getRgb() const
     {
