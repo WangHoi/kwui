@@ -1,5 +1,7 @@
 #pragma once
 
+#include "kwui_export.h"
+
 namespace kwui
 {
 enum KWUI_EXPORT ButtonState : int

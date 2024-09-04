@@ -842,7 +842,6 @@ void DialogWin32::OnMouseDown(scene2d::ButtonState button, int buttons, int modi
         SetCapture(hwnd_);
     }
 
-    if (button != kwui::ButtonState::LEFT_BUTTON) return;
     scene2d::Node* node;
     scene2d::PointF local_pos;
     node = scene_->pickNode(mouse_position_, scene2d::NODE_FLAG_CLICKABLE, &local_pos);
@@ -876,8 +875,6 @@ void DialogWin32::OnMouseUp(scene2d::ButtonState button, int buttons, int modifi
         //c2_log("release mouse\n");
         ReleaseCapture();
     }
-
-    if (button != kwui::ButtonState::LEFT_BUTTON) return;
 
     base::object_refptr<scene2d::Node> node = active_node_.upgrade();
     if (node) {
