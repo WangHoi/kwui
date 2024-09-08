@@ -834,7 +834,7 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::Re
     }
 
     // Create shadow bitmap
-    PaintSurfaceBitmapD2D::Configuration ci;
+    PaintSurfaceBitmapD2D::CreateInfo ci;
     ci.format = DXGI_FORMAT_B8G8R8A8_UNORM;
     ci.pixel_size.width = (blur_radius + rrect.width() + blur_radius) * dpi_scale;
     ci.pixel_size.height = (blur_radius + rrect.height() + blur_radius) * dpi_scale;
@@ -910,7 +910,7 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeInsetShadowBitmap(const scene2d::Rec
     }
 
     // Create shadow bitmap
-    PaintSurfaceBitmapD2D::Configuration ci;
+    PaintSurfaceBitmapD2D::CreateInfo ci;
     ci.format = DXGI_FORMAT_B8G8R8A8_UNORM;
     ci.pixel_size.width = roundl((blur_radius + PADDING + rrect.width() + blur_radius + PADDING) * dpi_scale);
     ci.pixel_size.height = roundl((blur_radius + PADDING + rrect.height() + blur_radius + PADDING) * dpi_scale);

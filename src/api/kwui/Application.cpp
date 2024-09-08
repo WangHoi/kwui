@@ -1,4 +1,5 @@
 #include "Application.h"
+#include "Application_private.h"
 #include "ScriptEngine.h"
 #include "resources/resources.h"
 #include "scene2d/KmlControl.h"
@@ -27,6 +28,8 @@
 
 namespace kwui
 {
+PaintSurfaceType g_surface_type_hint = PAINT_SURFACE_DEFAULT;
+
 static Application* g_app = nullptr;
 static LogCallback g_log_callback = nullptr;
 #ifdef NDEBUG
@@ -173,6 +176,11 @@ Application::~Application()
 #ifdef _WIN32
     CoUninitialize();
 #endif
+}
+
+void Application::setPaintSurfaceTypeHint(PaintSurfaceType type)
+{
+    g_surface_type_hint = type;
 }
 
 void Application::setLogCallback(LogCallback callback)

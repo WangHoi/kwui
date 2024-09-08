@@ -136,7 +136,7 @@ void PaintSurfaceWindowD2D::recreateRenderTarget()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::unique_ptr<PaintSurfaceBitmapD2D> PaintSurfaceBitmapD2D::create(const Configuration& config)
+std::unique_ptr<PaintSurfaceBitmapD2D> PaintSurfaceBitmapD2D::create(const CreateInfo& config)
 {
     return std::unique_ptr<PaintSurfaceBitmapD2D>(new PaintSurfaceBitmapD2D(config));
 }
@@ -197,7 +197,7 @@ IWICBitmap* PaintSurfaceBitmapD2D::getWicBitmap() const
     return nullptr;
 }
 
-PaintSurfaceBitmapD2D::PaintSurfaceBitmapD2D(const Configuration& config)
+PaintSurfaceBitmapD2D::PaintSurfaceBitmapD2D(const CreateInfo& config)
     : config_(config)
 {
     recreateRenderTarget();

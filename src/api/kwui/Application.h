@@ -30,12 +30,22 @@ struct KWUI_EXPORT ResourceItem {
     size_t size = 0;
 };
 
+enum KWUI_EXPORT PaintSurfaceType
+{
+    PAINT_SURFACE_DEFAULT,
+    PAINT_SURFACE_X_RASTER,
+    PAINT_SURFACE_X_OPENGL,
+    PAINT_SURFACE_X_VULKAN,
+    PAINT_SURFACE_X_D3D12,
+};
+
 class KWUI_EXPORT Application
 {
 public:
     Application(int argc, char* argv[]);
     Application(int argc, wchar_t* argv[]);
     ~Application();
+    static void setPaintSurfaceTypeHint(PaintSurfaceType type);
     static void setLogCallback(LogCallback callback);
     static bool scriptReloadEnabled();
     static void enableScriptReload(bool enable);

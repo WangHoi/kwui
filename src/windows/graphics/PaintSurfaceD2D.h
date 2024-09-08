@@ -36,13 +36,13 @@ private:
 
 class PaintSurfaceBitmapD2D : public graph2d::PaintSurfaceInterface {
 public:
-    struct Configuration {
+    struct CreateInfo {
         DXGI_FORMAT format;
         scene2d::DimensionF pixel_size;
         float dpi_scale = 1.0f;
     };
 
-    static std::unique_ptr<PaintSurfaceBitmapD2D> create(const Configuration& config);
+    static std::unique_ptr<PaintSurfaceBitmapD2D> create(const CreateInfo& config);
     void discardDeviceResources() override {}
     void resize(int pixel_width, int pixel_height, float dpi_scale) override;
     std::unique_ptr<graph2d::PaintContextInterface> beginPaint() override;
@@ -53,10 +53,10 @@ public:
     IWICBitmap* getWicBitmap() const;
 
 private:
-    PaintSurfaceBitmapD2D(const Configuration& config);
+    PaintSurfaceBitmapD2D(const CreateInfo& config);
     void recreateRenderTarget();
 
-    Configuration config_;
+    CreateInfo config_;
     WicBitmapRenderTarget wic_rt_;
 };
 

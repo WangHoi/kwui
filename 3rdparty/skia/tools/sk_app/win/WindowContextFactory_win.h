@@ -9,8 +9,8 @@
 #ifndef WindowContextFactory_win_DEFINED
 #define WindowContextFactory_win_DEFINED
 
-#include "xgl-window-base.h"
-//#include <Windows.h>
+// #include "xgl-window-base.h"
+#include <Windows.h>
 
 #include <memory>
 

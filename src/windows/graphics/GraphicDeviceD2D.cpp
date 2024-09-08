@@ -53,7 +53,7 @@ bool GraphicDeviceD2D::init()
 #if defined(_DEBUG)
         options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
 #endif
-        hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &options,
+        hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, __uuidof(ID2D1Factory1), &options,
                                reinterpret_cast<void**>(d2d1_.factory.GetAddressOf()));
         if (FAILED(hr)) break;
 
@@ -101,7 +101,7 @@ bool GraphicDeviceD2D::init()
     if (!use_d2d1_) {
         LOG(WARNING) << "Fallback to Direct2D 1.0";
         do {
-            hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, d2d0_.factory.GetAddressOf());
+            hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, d2d0_.factory.GetAddressOf());
             if (FAILED(hr)) break;
         } while (false);
     }

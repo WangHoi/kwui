@@ -12,6 +12,7 @@
 #include "graph2d/PaintContextInterface.h"
 #include "api/kwui/ScriptEngine.h"
 #include "api/kwui/Application.h"
+#include "api/kwui/Application_private.h"
 #include "base/ResourceManager.h"
 #include "graph2d/graph2d.h"
 #ifdef _WIN32
@@ -942,7 +943,8 @@ void DialogWin32::UpdateFocusedNode() {
 }
 void DialogWin32::recreateSurface() {
 #if WITH_SKIA
-    xskia::PaintSurfaceX::Configuration config;
+    xskia::PaintSurfaceX::CreateInfo config;
+    config.surface_type = kwui::g_surface_type_hint;
     config.hwnd = hwnd_;
     config.pixel_size = pixel_size_;
     config.dpi_scale = dpi_scale_;
