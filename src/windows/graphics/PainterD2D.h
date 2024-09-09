@@ -16,20 +16,6 @@ namespace windows::graphics
 {
 class PaintSurfaceWindowD2D;
 
-struct NativeBitmap
-{
-    float width = 0;
-    float height = 0;
-    float dpi_scale = 1;
-    ComPtr<ID3D11Texture2D> d3d_tex;
-    ComPtr<ID2D1Bitmap1> d2d_bitmap;
-
-    operator bool() const
-    {
-        return d3d_tex != nullptr && d2d_bitmap != nullptr;
-    }
-};
-
 class PainterImpl;
 
 class Painter
@@ -97,9 +83,9 @@ public:
     ComPtr<ID2D1LinearGradientBrush> CreateLinearGradientBrush_Logo();
     ComPtr<ID2D1RadialGradientBrush> CreateRadialGradientBrush_Highlight();
     ComPtr<ID2D1BitmapBrush> CreateBitmapBrush(ID2D1Bitmap* bitmap);
+    ComPtr<ID2D1Bitmap> CreateSharedBitmap(IDXGISurface* surface, float dpi_scale,
+                                           D2D1_ALPHA_MODE alpha_mode = D2D1_ALPHA_MODE_IGNORE);
     void SetBrush(ComPtr<ID2D1Brush> brush);
-
-    NativeBitmap createNativeBitmap(float width, float height);
 
 private:
     ComPtr<ID2D1Brush> CreateBrush(const style::Color& c);
@@ -187,14 +173,18 @@ public:
 
     scene2d::DimensionF pixelSize() const override
     {
-        if (!bitmap_) {
+        if (!bitmap_)
+        {
             BitmapSubItem item = GraphicDeviceD2D::instance()
                 ->getBitmap(url_, 1.0f);
-            if (item) {
+            if (item)
+            {
                 UINT w, h;
                 item.frame->GetSize(&w, &h);
                 return scene2d::DimensionF((float)w, (float)h);
-            } else {
+            }
+            else
+            {
                 return scene2d::DimensionF();
             }
         }
@@ -205,7 +195,8 @@ public:
 
     ID2D1Bitmap* d2dBitmap(Painter& p) const override
     {
-        if (!bitmap_) {
+        if (!bitmap_)
+        {
             BitmapSubItem item = GraphicDeviceD2D::instance()
                 ->getBitmap(url_, p.GetDpiScale());
             if (item)
@@ -217,7 +208,8 @@ public:
 
     float dpiScale(float requested_dpi_scale) const override
     {
-        if (!bitmap_) {
+        if (!bitmap_)
+        {
             BitmapSubItem item = GraphicDeviceD2D::instance()
                 ->getBitmap(url_, requested_dpi_scale);
             return item ? item.dpi_scale.x : 1.0f;
@@ -247,7 +239,8 @@ public:
 
     scene2d::DimensionF pixelSize() const override
     {
-        if (!bitmap_) {
+        if (!bitmap_)
+        {
             return scene2d::DimensionF();
         }
         D2D1_SIZE_U ps = bitmap_->GetPixelSize();
@@ -368,7 +361,8 @@ public:
                     const scene2d::DimensionF& size) override
     {
         auto bitmap = static_cast<const BitmapD2DInterface*>(image)->d2dBitmap(p_);
-        if (bitmap) {
+        if (bitmap)
+        {
             p_.DrawBitmap(bitmap, origin, size);
         }
     }
@@ -378,7 +372,8 @@ public:
                         const scene2d::RectF& dst_rect) override
     {
         auto bitmap = static_cast<const BitmapD2DInterface*>(image)->d2dBitmap(p_);
-        if (bitmap) {
+        if (bitmap)
+        {
             p_.DrawBitmapRect(bitmap, src_rect, dst_rect);
         }
     }

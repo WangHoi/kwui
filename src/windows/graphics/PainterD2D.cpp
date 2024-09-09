@@ -8,7 +8,6 @@
 
 namespace windows::graphics
 {
-
 static constexpr float PADDING_PIXELS = 4;
 
 Painter::Painter(ID2D1RenderTarget* rt, const scene2d::PointF& mouse_pos)
@@ -47,7 +46,8 @@ void Painter::DrawRect(float x, float y, float w, float h)
         stroke_rect = PixelSnap(stroke_rect);
 
     D2D1_RECT_F fill_rect = stroke_rect;
-    if (_current.stroke_width > 0) {
+    if (_current.stroke_width > 0)
+    {
         const float stroke_width = std::max(0.0f,
                                             std::min({
                                                 0.5f * (stroke_rect.right - stroke_rect.left),
@@ -66,17 +66,22 @@ void Painter::DrawRect(float x, float y, float w, float h)
         stroke_rect.bottom -= half_width;
     }
 
-    if (_current.HasFill()) {
+    if (_current.HasFill())
+    {
         ComPtr<ID2D1Brush> brush;
-        if (_current.gradient_brush) {
+        if (_current.gradient_brush)
+        {
             brush = _current.gradient_brush;
             brush->SetTransform(D2D1::Matrix3x2F::Translation(fill_rect.left, fill_rect.top));
-        } else {
+        }
+        else
+        {
             brush = CreateBrush(_current.color);
         }
         _rt->FillRectangle(fill_rect, brush.Get());
     }
-    if (_current.HasStroke()) {
+    if (_current.HasStroke())
+    {
         ComPtr<ID2D1Brush> brush = CreateBrush(_current.stroke_color);
         _rt->DrawRectangle(stroke_rect, brush.Get(), _current.stroke_width);
     }
@@ -86,14 +91,16 @@ void Painter::DrawRoundedRect(float x, float y, float w, float h, float r)
 {
     D2D1_RECT_F rect = D2D1::RectF(x, y,
                                    x + w, y + h);
-    if (_current.pixel_snap) {
+    if (_current.pixel_snap)
+    {
         rect = PixelSnap(rect);
         //r = PixelSnap(r);
     }
 
     D2D1_ROUNDED_RECT stroke_rrect = D2D1::RoundedRect(rect, r, r);
     D2D1_ROUNDED_RECT fill_rrect = stroke_rrect;
-    if (_current.stroke_width > 0) {
+    if (_current.stroke_width > 0)
+    {
         const float stroke_width = std::max(0.0f,
                                             std::min({
                                                 0.5f * (stroke_rrect.rect.right - stroke_rrect.rect.left),
@@ -112,17 +119,22 @@ void Painter::DrawRoundedRect(float x, float y, float w, float h, float r)
         stroke_rrect.rect.bottom -= half_width;
     }
 
-    if (_current.HasFill()) {
+    if (_current.HasFill())
+    {
         ComPtr<ID2D1Brush> brush;
-        if (_current.gradient_brush) {
+        if (_current.gradient_brush)
+        {
             brush = _current.gradient_brush;
             brush->SetTransform(D2D1::Matrix3x2F::Translation(fill_rrect.rect.left, fill_rrect.rect.top));
-        } else {
+        }
+        else
+        {
             brush = CreateBrush(_current.color);
         }
         _rt->FillRoundedRectangle(fill_rrect, brush.Get());
     }
-    if (_current.HasStroke()) {
+    if (_current.HasStroke())
+    {
         ComPtr<ID2D1Brush> brush = CreateBrush(_current.stroke_color);
         _rt->DrawRoundedRectangle(stroke_rrect, brush.Get(), _current.stroke_width);
     }
@@ -132,17 +144,22 @@ void Painter::DrawCircle(float center_x, float center_y, float radius)
 {
     auto circle = D2D1::Ellipse(D2D1::Point2F(center_x, center_y), radius, radius);
 
-    if (_current.HasFill()) {
+    if (_current.HasFill())
+    {
         ComPtr<ID2D1Brush> brush;
-        if (_current.gradient_brush) {
+        if (_current.gradient_brush)
+        {
             brush = _current.gradient_brush;
             //brush->SetTransform(D2D1::Matrix3x2F::Translation(center_xfill_rect.left, fill_rect.top));
-        } else {
+        }
+        else
+        {
             brush = CreateBrush(_current.color);
         }
         _rt->FillEllipse(circle, brush.Get());
     }
-    if (_current.HasStroke()) {
+    if (_current.HasStroke())
+    {
         ComPtr<ID2D1Brush> brush = CreateBrush(_current.stroke_color);
         _rt->DrawEllipse(circle, brush.Get(), _current.stroke_width);
     }
@@ -168,7 +185,8 @@ void Painter::DrawArc(float center_x, float center_y, float radius, float start_
                                 D2D1_SWEEP_DIRECTION_CLOCKWISE, arc_size));
     gs->EndFigure(D2D1_FIGURE_END_OPEN);
     gs->Close();
-    if (_current.HasStroke()) {
+    if (_current.HasStroke())
+    {
         ComPtr<ID2D1Brush> brush = CreateBrush(_current.stroke_color);
         _rt->DrawGeometry(geom.Get(), brush.Get(), _current.stroke_width);
     }
@@ -177,12 +195,16 @@ void Painter::DrawArc(float center_x, float center_y, float radius, float start_
 void Painter::DrawTextLayout(float x, float y, const TextLayoutD2D& layout)
 {
     D2D1_POINT_2F origin = D2D1::Point2F(x, y);
-    if (_current.HasFill()) {
+    if (_current.HasFill())
+    {
         ComPtr<ID2D1Brush> brush = CreateBrush(_current.color);
-        if (_current.gradient_brush) {
+        if (_current.gradient_brush)
+        {
             brush = _current.gradient_brush;
             brush->SetTransform(D2D1::Matrix3x2F::Translation(origin.x, origin.y));
-        } else {
+        }
+        else
+        {
             brush = CreateBrush(_current.color);
         }
         _rt->DrawTextLayout(origin,
@@ -195,12 +217,16 @@ void Painter::DrawTextLayout(float x, float y, const TextLayoutD2D& layout)
 void Painter::DrawGlyphRun(float x, float y, const GlyphRun& gr)
 {
     D2D1_POINT_2F origin = D2D1::Point2F(x, y);
-    if (_current.HasFill()) {
+    if (_current.HasFill())
+    {
         ComPtr<ID2D1Brush> brush = CreateBrush(_current.color);
-        if (_current.gradient_brush) {
+        if (_current.gradient_brush)
+        {
             brush = _current.gradient_brush;
             brush->SetTransform(D2D1::Matrix3x2F::Translation(origin.x, origin.y));
-        } else {
+        }
+        else
+        {
             brush = CreateBrush(_current.color);
         }
         _rt->DrawGlyphRun(origin,
@@ -219,14 +245,18 @@ void Painter::Restore()
 {
     int n = _current.push_clip_rect_count;
 
-    if (!_state_stack.empty()) {
+    if (!_state_stack.empty())
+    {
         _current = _state_stack.back();
         _state_stack.pop_back();
-    } else {
+    }
+    else
+    {
         _current.Reset();
     }
 
-    while (n-- > _current.push_clip_rect_count) {
+    while (n-- > _current.push_clip_rect_count)
+    {
         _rt->PopAxisAlignedClip();
     }
     _rt->SetTransform(_current.transform);
@@ -341,7 +371,8 @@ void PaintPathD2D::close()
 void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
 {
     // TopLeft
-    if (const auto& c = rrect.corner_radius.top_left; !c.isZeros()) {
+    if (const auto& c = rrect.corner_radius.top_left; !c.isZeros())
+    {
         moveTo(rrect.rect.left, rrect.rect.top + c.height);
         arcTo(c.width,
               c.height,
@@ -350,7 +381,9 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
               graph2d::ArcSize::ARC_SIZE_SMALL,
               rrect.rect.left + c.width,
               rrect.rect.top);
-    } else {
+    }
+    else
+    {
         moveTo(rrect.rect.left, rrect.rect.top);
     }
 
@@ -358,7 +391,8 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
     lineTo(rrect.rect.right - rrect.corner_radius.top_right.width, rrect.rect.top);
 
     // TopRight
-    if (const auto& c = rrect.corner_radius.top_right; !c.isZeros()) {
+    if (const auto& c = rrect.corner_radius.top_right; !c.isZeros())
+    {
         arcTo(c.width,
               c.height,
               90.0f,
@@ -372,7 +406,8 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
     lineTo(rrect.rect.right, rrect.rect.bottom - rrect.corner_radius.bottom_right.height);
 
     // BottomRight
-    if (const auto& c = rrect.corner_radius.bottom_right; !c.isZeros()) {
+    if (const auto& c = rrect.corner_radius.bottom_right; !c.isZeros())
+    {
         arcTo(c.width,
               c.height,
               90.0f,
@@ -386,7 +421,8 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
     lineTo(rrect.rect.left + rrect.corner_radius.bottom_left.width, rrect.rect.bottom);
 
     // Bottom-Left
-    if (const auto& c = rrect.corner_radius.bottom_left; !c.isZeros()) {
+    if (const auto& c = rrect.corner_radius.bottom_left; !c.isZeros())
+    {
         arcTo(c.width,
               c.height,
               90.0f,
@@ -403,8 +439,10 @@ void PaintPathD2D::addRRect(const scene2d::RRectF& rrect)
 void PaintPathD2D::updateCheck()
 {
     if (!geometry_) reset();
-    if (!gsink_) {
-        if (finalized_) {
+    if (!gsink_)
+    {
+        if (finalized_)
+        {
         TRY_SEALED:
             ComPtr<ID2D1PathGeometry> tpg = GraphicDeviceD2D::instance()->createPathGeometry();
             if (!tpg) return;
@@ -413,7 +451,8 @@ void PaintPathD2D::updateCheck()
             UINT32 count = 0;
             geometry_->GetFigureCount(&count);
 
-            if (count) {
+            if (count)
+            {
                 hr = tpg->Open(gsink_.ReleaseAndGetAddressOf());
                 DCHECK(SUCCEEDED(hr));
                 if (FAILED(hr)) return;
@@ -423,7 +462,9 @@ void PaintPathD2D::updateCheck()
             }
             geometry_ = tpg;
             finalized_ = false;
-        } else {
+        }
+        else
+        {
             HRESULT hr = geometry_->Open(gsink_.ReleaseAndGetAddressOf());
             //ps->SetFillMode(D2D1_FILL_MODE::D2D1_FILL_MODE_ALTERNATE);
             if (hr == 0x88990001) // object is not in correct state
@@ -441,9 +482,12 @@ void PaintPathD2D::reset()
 
 void PaintPathD2D::finalize()
 {
-    if (!finalized_) {
-        if (gsink_) {
-            if (firstp_.has_value()) {
+    if (!finalized_)
+    {
+        if (gsink_)
+        {
+            if (firstp_.has_value())
+            {
                 gsink_->EndFigure(D2D1_FIGURE_END_OPEN);
                 firstp_ = absl::nullopt;
             }
@@ -540,7 +584,8 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
                                 const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow)
 {
     const float dpi_scale = p_.GetDpiScale();;
-    if (box_shadow.inset) {
+    if (box_shadow.inset)
+    {
         // Compute extra padding
         float blur_radius = roundf(box_shadow.blur_radius * dpi_scale) / dpi_scale;
         D2D1_RECT_F rect = p_.PixelSnapConservative(
@@ -574,7 +619,9 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
         auto path = std::make_unique<PaintPathD2D>();
         path->addRRect(dst_rrect);
         p_._rt->FillGeometry(path->getD2D1PathGeometry(), shadow_bmp_brush.Get());
-    } else {
+    }
+    else
+    {
         // Compute extra padding
         float blur_radius = roundf(box_shadow.blur_radius * dpi_scale) / dpi_scale;
         D2D1_RECT_F rect = p_.PixelSnapConservative(
@@ -601,9 +648,12 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
                                                  border_radius,
                                                  box_shadow,
                                                  expand_edges);
-        if (expand_edges.has_value()) {
+        if (expand_edges.has_value())
+        {
             drawBitmapNine(shadow_bmp.get(), expand_edges.value(), dst_rect);
-        } else {
+        }
+        else
+        {
             drawBitmap(shadow_bmp.get(), dst_rect.origin(), dst_rect.size());
         }
     }
@@ -612,20 +662,26 @@ void PainterImpl::drawBoxShadow(const scene2d::RectF& padding_rect, const style:
 void PainterImpl::drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush& brush)
 {
     D2D1_RECT_F rc(rect);
-    if (brush.style() == graph2d::PAINT_STYLE_FILL) {
-        if (brush.color().getAlpha() > 0) {
+    if (brush.style() == graph2d::PAINT_STYLE_FILL)
+    {
+        if (brush.color().getAlpha() > 0)
+        {
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
             p_._rt->FillRectangle(rc, d2d_brush.Get());
         }
-        if (brush.shader()) {
+        if (brush.shader())
+        {
             const auto* bitmap = (const BitmapFromUrlD2D*)brush.shader();
             auto* d2d_bitmap = bitmap->d2dBitmap(p_);
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
             d2d_brush->SetTransform(D2D1::Matrix3x2F::Translation(rc.left, rc.top));
             p_._rt->FillRectangle(rc, d2d_brush.Get());
         }
-    } else {
-        if (brush.color().getAlpha() > 0) {
+    }
+    else
+    {
+        if (brush.color().getAlpha() > 0)
+        {
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
             p_._rt->DrawRectangle(rc, d2d_brush.Get(), brush.strokeWidth());
         }
@@ -639,7 +695,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
         return drawRect(rrect.rect, brush);
 
     // All corners' radius have same width and height
-    if (rrect.corner_radius.isSymmetric()) {
+    if (rrect.corner_radius.isSymmetric())
+    {
         const auto& radius = rrect.corner_radius.top_left;
 
         D2D1_ROUNDED_RECT rc{
@@ -647,20 +704,26 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
             radius.width,
             radius.height,
         };
-        if (brush.style() == graph2d::PAINT_STYLE_FILL) {
-            if (brush.color().getAlpha() > 0) {
+        if (brush.style() == graph2d::PAINT_STYLE_FILL)
+        {
+            if (brush.color().getAlpha() > 0)
+            {
                 ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
                 p_._rt->FillRoundedRectangle(rc, d2d_brush.Get());
             }
-            if (brush.shader()) {
+            if (brush.shader())
+            {
                 const auto* bitmap = (const BitmapFromUrlD2D*)brush.shader();
                 auto* d2d_bitmap = bitmap->d2dBitmap(p_);
                 ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
                 d2d_brush->SetTransform(D2D1::Matrix3x2F::Translation(rc.rect.left, rc.rect.top));
                 p_._rt->FillRoundedRectangle(rc, d2d_brush.Get());
             }
-        } else {
-            if (brush.color().getAlpha() > 0) {
+        }
+        else
+        {
+            if (brush.color().getAlpha() > 0)
+            {
                 ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
                 p_._rt->DrawRoundedRectangle(rc, d2d_brush.Get(), brush.strokeWidth());
             }
@@ -672,7 +735,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
     auto path = std::make_unique<PaintPathD2D>();
     {
         // TopLeft
-        if (const auto& c = rrect.corner_radius.top_left; !c.isZeros()) {
+        if (const auto& c = rrect.corner_radius.top_left; !c.isZeros())
+        {
             path->moveTo(rrect.rect.left, rrect.rect.top + c.height);
             path->arcTo(c.width,
                         c.height,
@@ -681,7 +745,9 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
                         graph2d::ArcSize::ARC_SIZE_SMALL,
                         rrect.rect.left + c.width,
                         rrect.rect.top);
-        } else {
+        }
+        else
+        {
             path->moveTo(rrect.rect.left, rrect.rect.top);
         }
 
@@ -689,7 +755,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
         path->lineTo(rrect.rect.right - rrect.corner_radius.top_right.width, rrect.rect.top);
 
         // TopRight
-        if (const auto& c = rrect.corner_radius.top_right; !c.isZeros()) {
+        if (const auto& c = rrect.corner_radius.top_right; !c.isZeros())
+        {
             path->arcTo(c.width,
                         c.height,
                         90.0f,
@@ -703,7 +770,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
         path->lineTo(rrect.rect.right, rrect.rect.bottom - rrect.corner_radius.bottom_right.height);
 
         // BottomRight
-        if (const auto& c = rrect.corner_radius.bottom_right; !c.isZeros()) {
+        if (const auto& c = rrect.corner_radius.bottom_right; !c.isZeros())
+        {
             path->arcTo(c.width,
                         c.height,
                         90.0f,
@@ -717,7 +785,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
         path->lineTo(rrect.rect.left + rrect.corner_radius.bottom_left.width, rrect.rect.bottom);
 
         // Bottom-Left
-        if (const auto& c = rrect.corner_radius.bottom_left; !c.isZeros()) {
+        if (const auto& c = rrect.corner_radius.bottom_left; !c.isZeros())
+        {
             path->arcTo(c.width,
                         c.height,
                         90.0f,
@@ -737,7 +806,8 @@ void PainterImpl::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBr
 void PainterImpl::drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner,
                              const graph2d::PaintBrush& brush)
 {
-    if (brush.style() == graph2d::PAINT_STYLE_STROKE) {
+    if (brush.style() == graph2d::PAINT_STYLE_STROKE)
+    {
         drawRRect(outer, brush);
         drawRRect(inner, brush);
         return;
@@ -757,20 +827,26 @@ void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2
     UINT32 fc, sc;
     d2d_path->GetFigureCount(&fc);
     d2d_path->GetSegmentCount(&sc);
-    if (brush.style() == graph2d::PAINT_STYLE_FILL) {
-        if (brush.color().getAlpha() > 0) {
+    if (brush.style() == graph2d::PAINT_STYLE_FILL)
+    {
+        if (brush.color().getAlpha() > 0)
+        {
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
             p_._rt->FillGeometry(d2d_path, d2d_brush.Get());
         }
-        if (brush.shader()) {
+        if (brush.shader())
+        {
             const auto* bitmap = (const BitmapFromUrlD2D*)brush.shader();
             auto* d2d_bitmap = bitmap->d2dBitmap(p_);
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBitmapBrush(d2d_bitmap);
             // TODO: drawPath: brush transform
             p_._rt->FillGeometry(d2d_path, d2d_brush.Get());
         }
-    } else {
-        if (brush.color().getAlpha() > 0) {
+    }
+    else
+    {
+        if (brush.color().getAlpha() > 0)
+        {
             ComPtr<ID2D1Brush> d2d_brush = p_.CreateBrush(brush.color());
             ComPtr<ID2D1StrokeStyle> stroke_style = GraphicDeviceD2D::instance()
                 ->createStrokeStyle(brush.strokeCap(), brush.strokeJoin(), brush.strokeMiterLimit());
@@ -780,10 +856,10 @@ void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2
 }
 
 std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
-                                                                const style::EdgeOffsetF& inset_border_width,
-                                                                const scene2d::CornerRadiusF& border_radius,
-                                                                const graph2d::BoxShadow& box_shadow,
-                                                                absl::optional<style::EdgeOffsetF>& expand_edges)
+                                                               const style::EdgeOffsetF& inset_border_width,
+                                                               const scene2d::CornerRadiusF& border_radius,
+                                                               const graph2d::BoxShadow& box_shadow,
+                                                               absl::optional<style::EdgeOffsetF>& expand_edges)
 {
     // Compute extra padding
     const float dpi_scale = p_.GetDpiScale();
@@ -808,7 +884,8 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::Re
         border_radius.bottom_left.height + inset_border_width.bottom
     });
     if (rect.right - rect.left >= 2 * max_border_radius
-        && rect.bottom - rect.top >= 2 * max_border_radius) {
+        && rect.bottom - rect.top >= 2 * max_border_radius)
+    {
         expand_edges = style::EdgeOffsetF::fromAll(blur_radius + max_border_radius);
         rect = scene2d::RectF::fromXYWH(blur_radius,
                                         blur_radius,
@@ -827,7 +904,8 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::Re
                                             (blur_radius + rrect.height() + blur_radius) * dpi_scale,
                                             box_shadow.color.getRgba());
 
-    if (surface_) {
+    if (surface_)
+    {
         auto b = surface_->getCachedBitmap(cache_key);
         if (b)
             return b;
@@ -840,7 +918,8 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::Re
     ci.pixel_size.height = (blur_radius + rrect.height() + blur_radius) * dpi_scale;
     ci.dpi_scale = dpi_scale;
     auto bmp = PaintSurfaceBitmapD2D::create(ci);
-    if (auto bp = bmp->beginPaint()) {
+    if (auto bp = bmp->beginPaint())
+    {
         bp->clear(style::Color());
         graph2d::PaintBrush brush;
         brush.setColor(box_shadow.color);
@@ -849,13 +928,15 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::Re
     }
 
     // Blur the bitmap
-    if (auto mapped = bmp->map()) {
+    if (auto mapped = bmp->map())
+    {
         UINT stride;
         UINT bmp_size;
         BYTE* bmp_data = nullptr;
         mapped->GetStride(&stride);
         mapped->GetDataPointer(&bmp_size, &bmp_data);
-        if (bmp_data) {
+        if (bmp_data)
+        {
             JuceImage jimg = JuceImage::fromARGB(ci.pixel_size.width,
                                                  ci.pixel_size.height,
                                                  bmp_data,
@@ -864,9 +945,9 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::Re
 
             // Make the bitmap
             auto shadow_bitmap = std::make_shared<BitmapD2D>(bmp_data, (size_t)ci.pixel_size.width,
-                                                              (size_t)ci.pixel_size.height,
-                                                              stride, dpi_scale, ci.format,
-                                                              D2D1_ALPHA_MODE_PREMULTIPLIED);
+                                                             (size_t)ci.pixel_size.height,
+                                                             stride, dpi_scale, ci.format,
+                                                             D2D1_ALPHA_MODE_PREMULTIPLIED);
             if (surface_ && shadow_bitmap)
                 surface_->updateCachedBitmap(cache_key, shadow_bitmap);
             return shadow_bitmap;
@@ -877,13 +958,13 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::Re
 }
 
 std::shared_ptr<BitmapD2D> PainterImpl::makeInsetShadowBitmap(const scene2d::RectF& padding_rect,
-                                                               const style::EdgeOffsetF& inset_border_width,
-                                                               const scene2d::CornerRadiusF& border_radius,
-                                                               const graph2d::BoxShadow& box_shadow)
+                                                              const style::EdgeOffsetF& inset_border_width,
+                                                              const scene2d::CornerRadiusF& border_radius,
+                                                              const graph2d::BoxShadow& box_shadow)
 {
     // Compute extra padding
     const float dpi_scale = p_.GetDpiScale();
-    const float PADDING =  PADDING_PIXELS / dpi_scale;
+    const float PADDING = PADDING_PIXELS / dpi_scale;
     float blur_radius = roundf(box_shadow.blur_radius * dpi_scale) / dpi_scale;
     D2D1_RECT_F rect = p_.PixelSnapConservative(
         scene2d::RectF::fromXYWH(blur_radius + PADDING,
@@ -903,7 +984,8 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeInsetShadowBitmap(const scene2d::Rec
                                             (blur_radius + rrect.height() + blur_radius) * dpi_scale,
                                             box_shadow.color.getRgba());
 
-    if (surface_) {
+    if (surface_)
+    {
         auto b = surface_->getCachedBitmap(cache_key);
         if (b)
             return b;
@@ -918,7 +1000,8 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeInsetShadowBitmap(const scene2d::Rec
     auto bmp = PaintSurfaceBitmapD2D::create(ci);
 
     // Draw the border
-    if (auto bp = bmp->beginPaint()) {
+    if (auto bp = bmp->beginPaint())
+    {
         bp->clear(style::Color());
         graph2d::PaintBrush brush;
         brush.setColor(box_shadow.color);
@@ -930,13 +1013,15 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeInsetShadowBitmap(const scene2d::Rec
     }
 
     // Blur the bitmap
-    if (auto mapped = bmp->map()) {
+    if (auto mapped = bmp->map())
+    {
         UINT stride;
         UINT bmp_size;
         BYTE* bmp_data = nullptr;
         mapped->GetStride(&stride);
         mapped->GetDataPointer(&bmp_size, &bmp_data);
-        if (bmp_data) {
+        if (bmp_data)
+        {
             JuceImage jimg = JuceImage::fromARGB(ci.pixel_size.width,
                                                  ci.pixel_size.height,
                                                  bmp_data,
@@ -945,9 +1030,9 @@ std::shared_ptr<BitmapD2D> PainterImpl::makeInsetShadowBitmap(const scene2d::Rec
 
             // Make the bitmap
             auto shadow_bitmap = std::make_shared<BitmapD2D>(bmp_data, (size_t)ci.pixel_size.width,
-                                                              (size_t)ci.pixel_size.height,
-                                                              stride, dpi_scale, ci.format,
-                                                              D2D1_ALPHA_MODE_PREMULTIPLIED);
+                                                             (size_t)ci.pixel_size.height,
+                                                             stride, dpi_scale, ci.format,
+                                                             D2D1_ALPHA_MODE_PREMULTIPLIED);
             if (surface_ && shadow_bitmap)
                 surface_->updateCachedBitmap(cache_key, shadow_bitmap);
             return shadow_bitmap;
@@ -1006,7 +1091,8 @@ ComPtr<ID2D1Bitmap> Painter::CreateBitmap(const BitmapSubItem& item)
                                  item.dpi_scale.y * USER_DEFAULT_SCREEN_DPI);
     hr = _rt->CreateBitmapFromWicBitmap(
         item.converter.Get(), bitmap_props, bitmap.GetAddressOf());
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         LOG(ERROR) << "Painter::CreateBitmap failed, hr=" << std::hex << hr;
     }
     return bitmap;
@@ -1158,7 +1244,8 @@ ComPtr<ID2D1LinearGradientBrush> Painter::CreateLinearGradientBrush_Logo()
     D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES props
         = D2D1::LinearGradientBrushProperties(D2D1::Point2F(40, 2), D2D1::Point2F(40, 80));
     hr = _rt->CreateLinearGradientBrush(props, pGradientStops.Get(), brush.GetAddressOf());
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         LOG(ERROR) << "Create LinearGradientBrush failed, hr=" << std::hex << hr;
     }
     return brush;
@@ -1187,7 +1274,8 @@ ComPtr<ID2D1RadialGradientBrush> Painter::CreateRadialGradientBrush_Highlight()
     D2D1_RADIAL_GRADIENT_BRUSH_PROPERTIES props
         = D2D1::RadialGradientBrushProperties(D2D1::Point2F(32, 32), D2D1::Point2F(), 32, 32);
     hr = _rt->CreateRadialGradientBrush(props, pGradientStops.Get(), brush.GetAddressOf());
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         LOG(ERROR) << "Create RadialGradientBrush failed, hr=" << std::hex << hr;
     }
     return brush;
@@ -1201,10 +1289,30 @@ ComPtr<ID2D1BitmapBrush> Painter::CreateBitmapBrush(ID2D1Bitmap* bitmap)
     HRESULT hr;
     ComPtr<ID2D1BitmapBrush> brush;
     hr = _rt->CreateBitmapBrush(bitmap, brush.GetAddressOf());
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         LOG(ERROR) << "Create BitmapBrush failed, hr=" << std::hex << hr;
     }
     return brush;
+}
+
+ComPtr<ID2D1Bitmap> Painter::CreateSharedBitmap(IDXGISurface* surface, float dpi_scale, D2D1_ALPHA_MODE alpha_mode)
+{
+    if (!surface)
+        return nullptr;
+
+    HRESULT hr;
+    ComPtr<ID2D1Bitmap> bitmap;
+    DXGI_SURFACE_DESC desc;
+    surface->GetDesc(&desc);
+    auto props = D2D1::BitmapProperties(D2D1::PixelFormat(desc.Format, alpha_mode),
+                                        USER_DEFAULT_SCREEN_DPI * dpi_scale, USER_DEFAULT_SCREEN_DPI * dpi_scale);
+    hr = _rt->CreateSharedBitmap(IID_IDXGISurface, surface, &props, bitmap.GetAddressOf());
+    if (FAILED(hr))
+    {
+        LOG(ERROR) << "CreateSharedBitmap failed, hr=" << std::hex << hr;
+    }
+    return bitmap;
 }
 
 void Painter::SetBrush(ComPtr<ID2D1Brush> brush)
@@ -1212,20 +1320,4 @@ void Painter::SetBrush(ComPtr<ID2D1Brush> brush)
     _current.gradient_brush = brush;
 }
 
-NativeBitmap Painter::createNativeBitmap(float width, float height)
-{
-    auto GD = GraphicDeviceD2D::instance();
-    HRESULT hr;
-    ComPtr<ID3D11Texture2D> tex;
-    ComPtr<ID2D1Bitmap1> bitmap;
-    hr = GD->createNativeBitmap(width, height, tex, bitmap);
-    if (FAILED(hr)) return NativeBitmap();
-
-    NativeBitmap b;
-    b.width = width;
-    b.height = height;
-    b.d3d_tex = tex;
-    b.d2d_bitmap = bitmap;
-    return b;
-}
 } // namespace windows::graphics

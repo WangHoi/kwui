@@ -28,9 +28,12 @@ bool CustomElementControl::hitTest(const scene2d::PointF& pos, int flags) const
 void CustomElementControl::onAttach(scene2d::Node* node)
 {
     auto it = g_factory_map.find(name_);
-    if (it != g_factory_map.end()) {
+    if (it != g_factory_map.end())
+    {
         custom_.reset(it->second());
-    } else {
+    }
+    else
+    {
         custom_ = nullptr;
     }
     if (custom_)
@@ -61,7 +64,8 @@ void CustomElementControl::onPaint(graph2d::PaintContextInterface& p, const scen
     base::scoped_setter _1(cur_painter_, &p);
     base::scoped_setter _2(cur_rect_, rect);
 
-    if (custom_) {
+    if (custom_)
+    {
         p.save();
         p.clipRect(rect);
         kwui::CustomElementPaintOption po;
@@ -76,61 +80,38 @@ void CustomElementControl::onPaint(graph2d::PaintContextInterface& p, const scen
 
 void CustomElementControl::onMouseEvent(Node* node, MouseEvent& evt)
 {
-    if (custom_) {
-        if (evt.cmd == MouseCommand::MOUSE_WHEEL) {
+    if (custom_)
+    {
+        if (evt.cmd == MouseCommand::MOUSE_WHEEL)
+        {
             custom_->onWheel(evt.wheel_delta);
-        } else if (evt.cmd == MouseCommand::MOUSE_DOWN) {
+        }
+        else if (evt.cmd == MouseCommand::MOUSE_DOWN)
+        {
             custom_->onMouseDown(evt.button, evt.buttons, evt.pos.x, evt.pos.y);
-        } else if (evt.cmd == MouseCommand::MOUSE_MOVE) {
+        }
+        else if (evt.cmd == MouseCommand::MOUSE_MOVE)
+        {
             custom_->onMouseMove(evt.button, evt.buttons, evt.pos.x, evt.pos.y);
-        } else if (evt.cmd == MouseCommand::MOUSE_UP) {
+        }
+        else if (evt.cmd == MouseCommand::MOUSE_UP)
+        {
             custom_->onMouseUp(evt.button, evt.buttons, evt.pos.x, evt.pos.y);
         }
     }
 }
 
-void* CustomElementControl::getNativeBitmap(float& out_pixel_width, float& out_pixel_height)
-{
-#ifdef _WIN32
-    if (!cur_painter_)
-        return nullptr;
-
-    auto& wp = windows::graphics::PainterImpl::unwrap(*cur_painter_);
-    if (native_.width != cur_rect_.width()
-        || native_.height != cur_rect_.height()
-        || native_.dpi_scale != wp.GetDpiScale()) {
-        native_.width = cur_rect_.width();
-        native_.height = cur_rect_.height();
-        native_.dpi_scale = wp.GetDpiScale();
-        native_.d2d_bitmap = windows::graphics::GraphicDeviceD2D::instance()
-            ->createBitmap(cur_rect_.width() * native_.dpi_scale,
-                           cur_rect_.height() * native_.dpi_scale,
-                           native_.dpi_scale,
-                           DXGI_FORMAT_B8G8R8A8_UNORM,
-                           D2D1_ALPHA_MODE_PREMULTIPLIED);
-        ComPtr<IDXGISurface> surface;
-        native_.d2d_bitmap->GetSurface(surface.GetAddressOf());
-        surface.As(&native_.d3d_tex);
-    }
-    out_pixel_width = native_.width * native_.dpi_scale;
-    out_pixel_height = native_.height * native_.dpi_scale;
-    return native_.d3d_tex.Get();
-#else
-    return nullptr;
-#endif
-}
-
-void CustomElementControl::setFillBitmap(void* native_bitmap)
+void CustomElementControl::setFillBitmap(void* native_bitmap, float dpi_scale)
 {
     if (!cur_painter_)
         return;
-
 #ifdef _WIN32
-    if (native_.d3d_tex.Get() == native_bitmap && native_.d2d_bitmap) {
-        auto& wp = windows::graphics::PainterImpl::unwrap(*cur_painter_);
-        auto brush = wp.CreateBitmapBrush(native_.d2d_bitmap.Get());
-        wp.SetBrush(brush);
-    }
+    auto& wp = windows::graphics::PainterImpl::unwrap(*cur_painter_);
+    auto bitmap = wp.CreateSharedBitmap(static_cast<IDXGISurface*>(native_bitmap),
+                                        dpi_scale,
+                                        D2D1_ALPHA_MODE_PREMULTIPLIED);
+    auto brush = wp.CreateBitmapBrush(bitmap.Get());
+    wp.SetBrush(brush);
 #endif
 }
 

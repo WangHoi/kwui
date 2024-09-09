@@ -29,8 +29,7 @@ public:
     void onMouseEvent(Node* node, MouseEvent& evt) override;
 
     // Implements `CustomElementPaintContext`
-    void* getNativeBitmap(float& out_pixel_width, float& out_pixel_height) override;
-    void setFillBitmap(void* native_bitmap) override;
+    void setFillBitmap(void* native_bitmap, float dpi_scale) override;
     void drawRoundedRect(float left, float top, float width, float height, float radius) override;
     void drawPath(const kwui::CustomElementPaintPath& path, const kwui::CustomElementPaintBrush& brush) override;
     void drawText(const std::string& text, float x, float y,
@@ -44,7 +43,6 @@ private:
     base::string_atom name_;
     std::unique_ptr<kwui::CustomElement> custom_ = nullptr;
 #if _WIN32
-    windows::graphics::NativeBitmap native_;
     ComPtr<ID2D1Bitmap1> bitmap_;
 #endif
     graph2d::PaintContextInterface* cur_painter_ = nullptr;
