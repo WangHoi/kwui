@@ -119,7 +119,16 @@ void PaintSurfaceWindowD2D::updateCachedBitmap(const std::string& key, std::shar
 PaintSurfaceWindowD2D::PaintSurfaceWindowD2D(const Configuration& config)
     : config_(config)
 {
+    realizeSurfaceType();
     recreateRenderTarget();
+}
+
+void PaintSurfaceWindowD2D::realizeSurfaceType()
+{
+    if (config_.surface_type != kwui::PAINT_SURFACE_DEFAULT)
+        return;
+    auto GD = GraphicDeviceD2D::instance();
+    config_.surface_type = GD->getD3DDevice1() ? kwui::PAINT_SURFACE_X_D3D11_1 : kwui::PAINT_SURFACE_X_D3D10_1;
 }
 
 void PaintSurfaceWindowD2D::recreateRenderTarget()

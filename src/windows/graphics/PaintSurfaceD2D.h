@@ -10,6 +10,7 @@ class BitmapD2D;
 class PaintSurfaceWindowD2D : public graph2d::PaintSurfaceInterface {
 public:
     struct Configuration {
+        kwui::PaintSurfaceType surface_type = kwui::PAINT_SURFACE_DEFAULT;
         HWND hwnd = NULL;
         scene2d::DimensionF size;
         float dpi_scale = 1.0f;
@@ -27,6 +28,7 @@ public:
 
 private:
     PaintSurfaceWindowD2D(const Configuration& config);
+    void realizeSurfaceType();
     void recreateRenderTarget();
 
     Configuration config_;

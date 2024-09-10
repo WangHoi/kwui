@@ -955,6 +955,7 @@ void DialogWin32::recreateSurface() {
         << " surface=" << std::hex << surface_.get();
 #else
     graphics::PaintSurfaceWindowD2D::Configuration config;
+    config.surface_type = kwui::g_surface_type_hint;
     config.hwnd = hwnd_;
     config.size = size_;
     config.dpi_scale = dpi_scale_;
