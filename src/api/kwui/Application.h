@@ -15,7 +15,9 @@ typedef void (*LogCallback)(const char* msg);
 enum InternalRendererType
 {
     INTERNAL_RENDERER_UNKNOWN,
+    INTERNAL_RENDERER_D3D10_1,
     INTERNAL_RENDERER_D3D11_1,
+    INTERNAL_RENDERER_OPENGL,
 };
 
 struct KWUI_EXPORT InternalData {
@@ -47,6 +49,7 @@ public:
     Application(int argc, char* argv[]);
     Application(int argc, wchar_t* argv[]);
     ~Application();
+    static Application* instance();
     static void setPaintSurfaceTypeHint(PaintSurfaceType type);
     static void setLogCallback(LogCallback callback);
     static bool scriptReloadEnabled();
@@ -61,7 +64,6 @@ public:
     static void quit();
 
     static bool loadResource(const char* path, ResourceItem* resource_item);
-
     const InternalData* internalData();
     void registerCustomElement(const char* name, CustomElementFactoryFn factory_fn);
 

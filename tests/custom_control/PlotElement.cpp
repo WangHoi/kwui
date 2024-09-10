@@ -1,5 +1,7 @@
 #include "PlotElement.h"
-
+#ifdef _WIN32
+#include "TriangleD3D11.h"
+#endif
 #include <algorithm>
 #include <chrono>
 #include <optional>
@@ -71,6 +73,13 @@ void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwu
     // Draw implicit function
     // p.writePixels(implicit_plot_->imageData(), roundf(po.width), roundf(po.height), roundf(po.width) * 4,
     //               sx, sy, kwui::COLOR_TYPE_RGBA8888);
+
+    // Draw native
+    if (auto idata = kwui::Application::instance()->internalData()) {
+        if (idata->renderer_type == kwui::INTERNAL_RENDERER_D3D11_1) {
+            TriangleD3D11::draw(static_cast<ID3D11Device1*>(idata->context), p, po);
+        }
+    }
 }
 
 void PlotElement::drawAxis(kwui::CustomElementPaintContextInterface& p, float offset, float sx, float sy, float ex,

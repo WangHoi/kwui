@@ -178,6 +178,11 @@ Application::~Application()
 #endif
 }
 
+Application* Application::instance()
+{
+    return g_app;
+}
+
 void Application::setPaintSurfaceTypeHint(PaintSurfaceType type)
 {
     g_surface_type_hint = type;
