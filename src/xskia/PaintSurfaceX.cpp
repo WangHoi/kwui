@@ -217,6 +217,8 @@ void PaintSurfaceX::createSurface()
         surface_ = SkSurface::MakeRasterDirect(image_info, pixels, w * 4);
     } else if (config_.surface_type == kwui::PAINT_SURFACE_X_OPENGL) {
         sk_app::DisplayParams params;
+        params.fMSAASampleCount = 4;
+        // params.fSurfaceProps = SkSurfaceProps(SkSurfaceProps::kDynamicMSAA_Flag, SkPixelGeometry::kUnknown_SkPixelGeometry);
         wnd_context_ = sk_app::window_context_factory::MakeGLForWin(config_.hwnd, params);
         if (wnd_context_)
             surface_ = wnd_context_->getBackbufferSurface();

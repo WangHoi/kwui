@@ -3,6 +3,7 @@
 //
 
 #include "CartesianCoord.h"
+#include <math.h>
 
 static float lerp(float x, float y, float s)
 {
