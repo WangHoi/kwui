@@ -27,7 +27,7 @@ public:
     }
     scene2d::DimensionF pixelSize() const override;
     float dpiScale(float requested_dpi_scale) const override;
-    sk_sp<SkImage> skImage() const;
+    sk_sp<SkImage> skImage() const override;
 
 private:
     std::string url_; // utf-8

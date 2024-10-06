@@ -76,9 +76,11 @@ void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwu
 
     // Draw native
     if (auto idata = kwui::Application::instance()->internalData()) {
+#ifdef _WIN32
         if (idata->renderer_type == kwui::INTERNAL_RENDERER_D3D11_1) {
             TriangleD3D11::draw(static_cast<ID3D11Device1*>(idata->context), p, po);
         }
+#endif
     }
 }
 

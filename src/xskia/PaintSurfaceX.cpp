@@ -185,6 +185,8 @@ void PaintSurfaceX::createSurface()
 {
 #ifdef __ANDROID__
 	sk_app::DisplayParams params;
+    params.fMSAASampleCount = 4;
+    // params.fSurfaceProps = SkSurfaceProps(SkSurfaceProps::kDynamicMSAA_Flag, SkPixelGeometry::kUnknown_SkPixelGeometry);
     auto wnd_ctx = sk_app::window_context_factory::MakeGLForAndroid(config_.hwnd, params);
 	if (wnd_ctx) {
 		wnd_surface_.reset(new android::WindowSurface(config_.hwnd, std::move(wnd_ctx)));

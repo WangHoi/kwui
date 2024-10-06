@@ -5,10 +5,13 @@ target_sources(test_custom_control PRIVATE
     Formula.cpp
     CartesianCoord.cpp
     #    ImplicitPlot.cpp
-    TriangleD3D11.cpp
+#    TriangleD3D11.cpp
 )
 if (WIN32)
-    target_sources(test_custom_control PRIVATE dpi-aware.manifest)
+    target_sources(test_custom_control PRIVATE
+        dpi-aware.manifest
+        TriangleD3D11.cpp
+    )
 endif ()
 target_include_directories(test_custom_control PRIVATE ${CMAKE_SOURCE_DIR}/src/api)
 

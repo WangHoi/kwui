@@ -134,7 +134,7 @@ void DialogAndroid::handleSurfaceChanged(ANativeWindow* hwnd, float dpi_scale)
 
 	surface_ = nullptr;
 
-	xskia::PaintSurfaceX::Configuration cfg;
+	xskia::PaintSurfaceX::CreateInfo cfg;
 	cfg.hwnd = hwnd;
 	cfg.pixel_size = pixel_size_;
 	cfg.dpi_scale = dpi_scale;

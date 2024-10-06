@@ -108,7 +108,7 @@ function(make_apk_ndk_library TARGET)
     if (CMAKE_BUILD_TYPE STREQUAL Release)
         set(SOURCEEXCLUDE_DEBUGPREFIX  "!") # Exclude debug files
     else()    
-        set(ANDROID_ADDITIONAL_PARAMS "${ANDROID_ADDITIONAL_PARAMS} android:debuggable=\"true\"") #@todo  android:extractNativeLibs=\"true\"
+#        set(ANDROID_ADDITIONAL_PARAMS "${ANDROID_ADDITIONAL_PARAMS} android:debuggable=\"true\"") #@todo  android:extractNativeLibs=\"true\"
         set(SOURCEEXCLUDE_DEBUGPREFIX  "") # Include debug files
     endif()
 

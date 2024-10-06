@@ -170,26 +170,29 @@ void PainterX::drawArc(const scene2d::PointF& center,
 
 void PainterX::drawRect(const scene2d::RectF& rect, const graph2d::PaintBrush& brush)
 {
+    auto origin = rect.origin();
     flattenSkPaint([&](const auto& paint)
     {
         canvas_->drawRect(rect, paint);
-    }, brush, &rect.origin());
+    }, brush, &origin);
 }
 
 void PainterX::drawRRect(const scene2d::RRectF& rrect, const graph2d::PaintBrush& brush)
 {
+    auto origin = rrect.origin();
     flattenSkPaint([&](const auto& paint)
     {
         canvas_->drawRRect(rrect, paint);
-    }, brush, &rrect.origin());
+    }, brush, &origin);
 }
 
 void PainterX::drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner, const graph2d::PaintBrush& brush)
 {
+    auto origin = outer.origin();
     flattenSkPaint([&](const auto& paint)
     {
         canvas_->drawDRRect(outer, inner, paint);
-    }, brush, &outer.origin());
+    }, brush, &origin);
 }
 
 void PainterX::drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush)
