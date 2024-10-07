@@ -47,6 +47,7 @@ private:
 #endif
     graph2d::PaintContextInterface* cur_painter_ = nullptr;
     RectF cur_rect_;
+    std::shared_ptr<graph2d::BitmapInterface> tmp_fill_bitmap_;
 };
 
 ControlFactoryFn CustomElementContrlFactory(base::string_atom name, kwui::CustomElementFactoryFn factory_fn);

@@ -6,7 +6,6 @@
       "description": "面向具有 Visual Studio 开发环境的 Windows。",
       "hidden": true,
       "generator": "Ninja",
-      /*"cmakeExecutable": "D:/Program Files/CMake/bin/cmake.exe",*/
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "installDir": "${sourceDir}/out/install/${presetName}",
       "cacheVariables": {
@@ -38,7 +37,7 @@
           "intelliSenseMode": "windows-msvc-x86"
         },
         "jetbrains.com/clion": {
-          "toolchain": "Visual Studio"
+          "toolchain": "Visual Studio x86"
         }
       }
     },

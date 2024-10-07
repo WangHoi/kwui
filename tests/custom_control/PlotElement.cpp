@@ -2,6 +2,9 @@
 #ifdef _WIN32
 #include "TriangleD3D11.h"
 #endif
+#if WITH_SKIA
+#include "TriangleGL.h"
+#endif
 #include <algorithm>
 #include <chrono>
 #include <optional>
@@ -76,10 +79,16 @@ void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwu
 
     // Draw native
     if (auto idata = kwui::Application::instance()->internalData()) {
+#if WITH_SKIA
+        if (idata->renderer_type == kwui::INTERNAL_RENDERER_OPENGL) {
+            TriangleGL::draw(static_cast<ID3D11Device1*>(idata->context), p, po);
+        }
+#else
 #ifdef _WIN32
         if (idata->renderer_type == kwui::INTERNAL_RENDERER_D3D11_1) {
             TriangleD3D11::draw(static_cast<ID3D11Device1*>(idata->context), p, po);
         }
+#endif
 #endif
     }
 }

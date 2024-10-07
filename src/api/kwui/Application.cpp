@@ -107,6 +107,8 @@ public:
 #if WITH_SKIA
         LOG(INFO) << "Init GraphicDevice...";
         xskia::GraphicDeviceX::createInstance();
+        internal_data_.renderer_type = INTERNAL_RENDERER_OPENGL;
+        internal_data_.context = nullptr;
 #else
 #ifdef _WIN32
         LOG(INFO) << "Init GraphicDevice...";

@@ -1,8 +1,11 @@
+#include <include/gpu/GrBackendSurface.h>
+
 #include "graph2d/PaintContextInterface.h"
 #include "include/core/SkCanvas.h"
 
 namespace xskia
 {
+class BitmapX;
 class PaintSurfaceX;
 
 class PainterX : public graph2d::PaintContextInterface
@@ -53,6 +56,7 @@ public:
                        const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow) override;
     void drawBitmapRect(const graph2d::BitmapInterface* image, const scene2d::RectF& src_rect,
                         const scene2d::RectF& dst_rect) override;
+    std::shared_ptr<graph2d::BitmapInterface> adoptBackendTexture(const GrBackendTexture& tex);
 
 private:
     void flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, const graph2d::PaintBrush& brush, const scene2d::PointF* offset = nullptr) const;

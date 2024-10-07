@@ -290,6 +290,15 @@ void PainterX::drawBitmapRect(const graph2d::BitmapInterface* image, const scene
                            SkCanvas::kStrict_SrcRectConstraint);
 }
 
+std::shared_ptr<graph2d::BitmapInterface> PainterX::adoptBackendTexture(const GrBackendTexture& tex)
+{
+    auto img = SkImage::MakeFromAdoptedTexture(canvas_->recordingContext(),
+                                               tex,
+                                               kBottomLeft_GrSurfaceOrigin,
+                                               kRGBA_8888_SkColorType, kUnpremul_SkAlphaType);
+    return std::make_shared<BitmapX>(img, dpi_scale_);
+}
+
 void PainterX::flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, const graph2d::PaintBrush& brush,
                               const scene2d::PointF* offset) const
 {
@@ -335,7 +344,7 @@ void PainterX::flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, cons
         scene2d::PointF off = offset ? *offset : scene2d::PointF();
         m.setScaleTranslate(1.0f / ximg_dpi_scale, 1.0f / ximg_dpi_scale, off.x, off.y);
         p1.setShader(SkImageShader::Make(ximg->skImage(), SkTileMode::kClamp,
-                                        SkTileMode::kClamp, SkSamplingOptions(), &m));
+                                         SkTileMode::kClamp, SkSamplingOptions(), &m));
         func(p1);
     }
 }

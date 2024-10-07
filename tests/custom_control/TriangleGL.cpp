@@ -13,6 +13,28 @@ void TriangleGL::draw(ID3D11Device1* device,
                       kwui::CustomElementPaintContextInterface& painter,
                       const kwui::CustomElementPaintOption& po)
 {
+	if (nullptr == wglGetCurrentContext()) {
+		return;
+	}
+
+	struct FreeModule { void operator()(HMODULE m) { (void)FreeLibrary(m); } };
+	std::unique_ptr<typename std::remove_pointer<HMODULE>::type, FreeModule> module(
+			LoadLibraryA("opengl32.dll"));
+	if (!module) {
+		return;
+	}
+	GLADuserptrloadfunc win_get_gl_proc = [](void* ctx, const char* name) -> GLADapiproc {
+		SkASSERT(wglGetCurrentContext());
+		if (GLADapiproc p = (GLADapiproc)GetProcAddress((HMODULE)ctx, name)) {
+			return p;
+		}
+		if (GLADapiproc p = (GLADapiproc)wglGetProcAddress(name)) {
+			return p;
+		}
+		return nullptr;
+	};
+	gladLoadGLUserPtr(win_get_gl_proc, (void*)module.get());
+
     auto dpi_scale = painter.getDpiScale();
     auto pixel_width = po.width * dpi_scale;
     auto pixel_height = po.height * dpi_scale;
@@ -22,12 +44,15 @@ void TriangleGL::draw(ID3D11Device1* device,
 		float color[4];
 	};
 
-	gladLoadGL(reinterpret_cast<GLADloadfunc>(wglGetProcAddress));
+	GLuint old_vao, old_fbo, old_tex2d;
+	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, (GLint*)&old_vao);
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*)&old_fbo);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&old_tex2d);
 
 	GLuint fbo = 0;
+	GLuint texture;
 	{
 		glGenFramebuffers(1, &fbo);
-		unsigned int texture;
 		glGenTextures(1, &texture);
 
 		glBindTexture(GL_TEXTURE_2D, texture);
@@ -112,7 +137,7 @@ void TriangleGL::draw(ID3D11Device1* device,
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glViewport(0, 0, pixel_width, pixel_height);
 
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(program);
@@ -120,6 +145,14 @@ void TriangleGL::draw(ID3D11Device1* device,
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    painter.setFillBitmap((void*)fbo, dpi_scale);
+	glDeleteFramebuffers(1, &fbo);
+	glDeleteProgram(program);
+	glDeleteVertexArrays(1, &vao);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
+	glBindVertexArray(old_vao);
+	glBindTexture(GL_TEXTURE_2D, old_tex2d);
+
+    painter.setFillBitmap((void*)(uintptr_t)texture, dpi_scale);
     painter.drawRoundedRect(po.left, po.top, po.width, po.height, 8);
 }

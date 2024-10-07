@@ -1,8 +1,13 @@
 #include "CustomElementControl.h"
+
+#include <include/gpu/GrBackendSurface.h>
+#include <src/gpu/ganesh/gl/GrGLDefines_impl.h>
+
 #include "Scene.h"
 #include "graph2d/graph2d.h"
 #include "api/kwui/CustomElementPaint.h"
 #include "api/kwui/CustomElementPaint_private.h"
+#include "xskia/PainterX.h"
 
 namespace scene2d::control
 {
@@ -71,6 +76,7 @@ void CustomElementControl::onPaint(graph2d::PaintContextInterface& p, const scen
         po.height = rect.height();
         custom_->onPaint(*this, po);
         p.restore();
+        tmp_fill_bitmap_ = nullptr;
     }
 }
 
@@ -93,6 +99,18 @@ void CustomElementControl::setFillBitmap(void* native_bitmap, float dpi_scale)
 {
     if (!cur_painter_)
         return;
+#if WITH_SKIA
+    // OpenGL
+    float pixel_width = cur_rect_.width() * dpi_scale;
+    float pixel_height = cur_rect_.height() * dpi_scale;
+    GrGLTextureInfo gl_info;
+    gl_info.fTarget = GR_GL_TEXTURE_2D;
+    gl_info.fID = (uintptr_t)native_bitmap;
+    gl_info.fFormat = GR_GL_RGBA8;
+    GrBackendTexture tex(pixel_width, pixel_height, GrMipmapped::kNo, gl_info);
+    auto xp = (xskia::PainterX*)cur_painter_;
+    tmp_fill_bitmap_ = xp->adoptBackendTexture(tex);
+#else
 #ifdef _WIN32
     do {
         auto srv = static_cast<ID3D11ShaderResourceView*>(native_bitmap);
@@ -116,6 +134,7 @@ void CustomElementControl::setFillBitmap(void* native_bitmap, float dpi_scale)
         wp.SetBrush(brush);
     } while(false);
 #endif
+#endif
 }
 
 void CustomElementControl::drawRoundedRect(float left, float top, float width, float height, float radius)
@@ -123,15 +142,17 @@ void CustomElementControl::drawRoundedRect(float left, float top, float width, f
     if (!cur_painter_)
         return;
 
-#ifdef _WIN32
 #if WITH_SKIA
     // TODO: drawRoundedRect()
+    auto rrect = RRectF::fromRectRadius(RectF::fromXYWH(left, top, width, height), CornerRadiusF(radius));
+    graph2d::PaintBrush paint;
+    paint.setShader(tmp_fill_bitmap_.get());
+    cur_painter_->drawRRect(rrect, paint);
 #else
+#ifdef _WIN32
     auto& wp = windows::graphics::PainterImpl::unwrap(*cur_painter_);
     wp.DrawRoundedRect(left, top, width, height, radius);
 #endif
-#else
-    // TODO: drawRoundedRect()
 #endif
 }
 
