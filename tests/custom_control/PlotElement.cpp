@@ -81,7 +81,7 @@ void PlotElement::onPaint(kwui::CustomElementPaintContextInterface& p, const kwu
     if (auto idata = kwui::Application::instance()->internalData()) {
 #if WITH_SKIA
         if (idata->renderer_type == kwui::INTERNAL_RENDERER_OPENGL) {
-            TriangleGL::draw(static_cast<ID3D11Device1*>(idata->context), p, po);
+            TriangleGL::draw(idata->context, p, po);
         }
 #else
 #ifdef _WIN32

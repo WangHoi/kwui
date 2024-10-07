@@ -5,14 +5,22 @@
 #include <GL/gl.h>
 #endif
 #ifdef __ANDROID__
+#include <android/hardware_buffer.h>
+// #include <khr/khrplatform.h>
+#define EGLAPIENTRY
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <GLES/gl.h>
+#include <GLES/glext.h>
 #endif
 
-void TriangleGL::draw(ID3D11Device1* device,
+void TriangleGL::draw(void* device,
                       kwui::CustomElementPaintContextInterface& painter,
                       const kwui::CustomElementPaintOption& po)
 {
+#ifdef __ANDROID__
+	gladLoadGL(eglGetProcAddress);
+#elif defined(_WIN32)
 	if (nullptr == wglGetCurrentContext()) {
 		return;
 	}
@@ -34,6 +42,7 @@ void TriangleGL::draw(ID3D11Device1* device,
 		return nullptr;
 	};
 	gladLoadGLUserPtr(win_get_gl_proc, (void*)module.get());
+#endif
 
     auto dpi_scale = painter.getDpiScale();
     auto pixel_width = po.width * dpi_scale;
@@ -93,9 +102,13 @@ void TriangleGL::draw(ID3D11Device1* device,
 
 	GLuint program = glCreateProgram();
 	{
-		const char* vert_glsl = R"(
-      #version 330 core
-
+		std::string prelude;
+#if __ANDROID__
+		prelude += "#version 300 es\n";
+#else
+		prelude += "#version 330 core\n";
+#endif
+		std::string vert_glsl_string = prelude + R"(
       layout(location=0) in vec3 a_position;
       layout(location=1) in vec4 a_color;
 
@@ -107,9 +120,7 @@ void TriangleGL::draw(ID3D11Device1* device,
       }
     )";
 
-		const char* frag_glsl = R"(
-      #version 330 core
-
+		std::string frag_glsl_string = prelude + R"(
       in vec4 v_color;
       out vec4 f_color;
 
@@ -119,11 +130,13 @@ void TriangleGL::draw(ID3D11Device1* device,
     )";
 
 		GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+		const char* vert_glsl = vert_glsl_string.c_str();
 		glShaderSource(vs, 1, &vert_glsl, 0);
 		glCompileShader(vs);
 		glAttachShader(program, vs);
 
 		GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+		const char* frag_glsl = frag_glsl_string.c_str();
 		glShaderSource(fs, 1, &frag_glsl, 0);
 		glCompileShader(fs);
 		glAttachShader(program, fs);
