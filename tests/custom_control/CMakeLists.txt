@@ -13,6 +13,11 @@ if (WIN32)
         TriangleD3D11.cpp
     )
 endif ()
+if (WITH_SKIA)
+    target_sources(test_custom_control PRIVATE
+        TriangleGL.cpp
+    )
+endif ()
 target_include_directories(test_custom_control PRIVATE ${CMAKE_SOURCE_DIR}/src/api)
 
 # work around
