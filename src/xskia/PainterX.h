@@ -1,5 +1,4 @@
 #include <include/gpu/GrBackendSurface.h>
-
 #include "graph2d/PaintContextInterface.h"
 #include "include/core/SkCanvas.h"
 

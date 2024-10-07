@@ -1,13 +1,14 @@
 #include "CustomElementControl.h"
-
-#include <include/gpu/GrBackendSurface.h>
-#include <src/gpu/ganesh/gl/GrGLDefines_impl.h>
-
 #include "Scene.h"
 #include "graph2d/graph2d.h"
 #include "api/kwui/CustomElementPaint.h"
 #include "api/kwui/CustomElementPaint_private.h"
+
+#if WITH_SKIA
+#include <include/gpu/GrBackendSurface.h>
+#include <src/gpu/ganesh/gl/GrGLDefines_impl.h>
 #include "xskia/PainterX.h"
+#endif
 
 namespace scene2d::control
 {
