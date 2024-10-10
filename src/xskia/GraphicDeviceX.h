@@ -19,6 +19,7 @@ struct BitmapSubItemX {
 	}
 
 };
+class GLWindowContextXWin32;
 class GraphicDeviceX {
 public:
 	~GraphicDeviceX();
@@ -32,10 +33,7 @@ public:
 		SkFontStyle style);
 	BitmapSubItemX getBitmap(const std::string& url, float dpi_scale);
 #ifdef _WIN32
-	HGLRC rootGLContext() const
-	{
-		return root_context_ ? root_context_->getGLRC() : nullptr;
-	}
+	HGLRC rootGLContext() const;
 #endif
 
 private:
@@ -45,7 +43,8 @@ private:
 	std::unordered_map<std::string, sk_sp<SkTypeface>> font_cache_;
 	std::unordered_map<std::string, sk_sp<SkImage>> bitmap_cache_;
 #ifdef _WIN32
-	sk_sp<SkWGLPbufferContext> root_context_;
+	std::unique_ptr<GLWindowContextXWin32> root_context_;
+	HWND temp_hwnd_ = NULL;
 #endif
 };
 

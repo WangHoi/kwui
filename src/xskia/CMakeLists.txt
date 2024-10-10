@@ -15,6 +15,8 @@ list(APPEND kwui_priv_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/TextLayoutX.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintPathX.h
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintPathX.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/GLStateSaver.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/GLStateSaver.cpp
 )
 if (WIN32)
     list(APPEND kwui_priv_srcs

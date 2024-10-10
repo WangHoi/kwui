@@ -17,6 +17,72 @@
 #include "base/ResourceManager.h"
 #include "base/EncodingManager.h"
 #include "base/log.h"
+#include "GLWindowContextXWin32.h"
+
+namespace {
+#if defined(UNICODE)
+#define STR_LIT(X) L## #X
+#else
+#define STR_LIT(X) #X
+#endif
+
+#define TEMP_CLASS STR_LIT("kwui_TempClass")
+
+HWND create_temp_window() {
+    HMODULE module = GetModuleHandle(nullptr);
+    HWND wnd;
+    RECT windowRect;
+    windowRect.left = 0;
+    windowRect.right = 8;
+    windowRect.top = 0;
+    windowRect.bottom = 8;
+
+    WNDCLASS wc;
+
+    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    wc.lpfnWndProc = (WNDPROC) DefWindowProc;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
+    wc.hInstance = module;
+    wc.hIcon = LoadIcon(nullptr, IDI_WINLOGO);
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc.hbrBackground = nullptr;
+    wc.lpszMenuName = nullptr;
+    wc.lpszClassName = TEMP_CLASS;
+
+    if(!RegisterClass(&wc)) {
+        return 0;
+    }
+
+    DWORD style, exStyle;
+    exStyle = WS_EX_CLIENTEDGE;
+    style = WS_SYSMENU;
+
+    AdjustWindowRectEx(&windowRect, style, false, exStyle);
+    if(!(wnd = CreateWindowEx(exStyle,
+                              TEMP_CLASS,
+                              STR_LIT("PlaceholderWindow"),
+                              WS_CLIPSIBLINGS | WS_CLIPCHILDREN | style,
+                              0, 0,
+                              windowRect.right-windowRect.left,
+                              windowRect.bottom-windowRect.top,
+                              nullptr, nullptr,
+                              module,
+                              nullptr))) {
+        UnregisterClass(TEMP_CLASS, module);
+        return nullptr;
+                              }
+    ShowWindow(wnd, SW_HIDE);
+
+    return wnd;
+}
+
+void destroy_temp_window(HWND wnd) {
+    DestroyWindow(wnd);
+    HMODULE module = GetModuleHandle(nullptr);
+    UnregisterClass(TEMP_CLASS, module);
+}
+}
 
 namespace xskia
 {
@@ -24,6 +90,10 @@ static GraphicDeviceX* s_instance = nullptr;
 
 GraphicDeviceX::~GraphicDeviceX()
 {
+#ifdef _WIN32
+    root_context_ = nullptr;
+    destroy_temp_window(temp_hwnd_);
+#endif
 }
 
 GraphicDeviceX* GraphicDeviceX::createInstance()
@@ -41,12 +111,11 @@ GraphicDeviceX* GraphicDeviceX::createInstance()
 
 #ifdef _WIN32
         // Create offscreen root GLContext
-        s_instance->root_context_ = SkWGLPbufferContext::Create(
-            GetDC(NULL), kGLPreferCoreProfile_SkWGLContextRequest, nullptr);
-        if (auto ctx = s_instance->root_context_.get())
+        s_instance->temp_hwnd_ = create_temp_window();
+        s_instance->root_context_ = MakeGLForWin(s_instance->temp_hwnd_, sk_app::DisplayParams(), nullptr);
+        if (!s_instance->root_context_)
         {
-            if (!wglMakeCurrent(ctx->getDC(), ctx->getGLRC()))
-                LOG(ERROR) << "wglMakeCurrent root GLContext failed.";
+            LOG(ERROR) << "wglMakeCurrent root GLContext failed.";
         }
 #endif
     }
@@ -103,6 +172,13 @@ BitmapSubItemX GraphicDeviceX::getBitmap(const std::string& name, float dpi_scal
     res.dpi_scale = dpi_scale;
     return res;
 }
+
+#ifdef _WIN32
+HGLRC GraphicDeviceX::rootGLContext() const
+{
+    return root_context_ ? root_context_->glrc() : nullptr;
+}
+#endif
 
 void GraphicDeviceX::loadBitmapToCache(const std::string& name)
 {
