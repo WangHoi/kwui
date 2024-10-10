@@ -3,6 +3,8 @@
 #include <tools/sk_app/DisplayParams.h>
 #include <tools/sk_app/WindowContext.h>
 
+#include "GLWindowContextXWin32.h"
+#include "GraphicDeviceX.h"
 #include "PainterX.h"
 #ifdef __ANDROID__
 #include "tools/sk_app/android/WindowContextFactory_android.h"
@@ -221,7 +223,8 @@ void PaintSurfaceX::createSurface()
         sk_app::DisplayParams params;
         params.fMSAASampleCount = 4;
         // params.fSurfaceProps = SkSurfaceProps(SkSurfaceProps::kDynamicMSAA_Flag, SkPixelGeometry::kUnknown_SkPixelGeometry);
-        wnd_context_ = sk_app::window_context_factory::MakeGLForWin(config_.hwnd, params);
+        auto root_ctx = GraphicDeviceX::instance()->rootGLContext();
+        wnd_context_ = xskia::MakeGLForWin(config_.hwnd, params, root_ctx);
         if (wnd_context_)
             surface_ = wnd_context_->getBackbufferSurface();
     }

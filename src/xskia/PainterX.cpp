@@ -84,7 +84,8 @@ void PainterX::drawBitmap(const graph2d::BitmapInterface* image, const scene2d::
                           const scene2d::DimensionF& size)
 {
     auto bitmap = static_cast<const BitmapXInterface*>(image)->skImage();
-    if (bitmap) {
+    if (bitmap)
+    {
         canvas_->drawImageRect(bitmap,
                                SkRect::MakeXYWH(origin.x, origin.y, size.width, size.height),
                                SkSamplingOptions());
@@ -135,7 +136,8 @@ void PainterX::drawCircle(const scene2d::PointF& center,
     paint.setColor(background_color);
     canvas_->drawCircle(center, radius, paint);
 
-    if (border_width > 0.0f) {
+    if (border_width > 0.0f)
+    {
         paint.setStroke(true);
         paint.setStrokeWidth(border_width);
         paint.setColor(border_color);
@@ -160,7 +162,8 @@ void PainterX::drawArc(const scene2d::PointF& center,
                  center.y + radius);
     canvas_->drawArc(oval, start_angle, span_angle, false, paint);
 
-    if (border_width > 0.0f) {
+    if (border_width > 0.0f)
+    {
         paint.setStroke(true);
         paint.setStrokeWidth(border_width);
         paint.setColor(border_color);
@@ -207,7 +210,8 @@ void PainterX::drawPath(const graph2d::PaintPathInterface* path, const graph2d::
 void PainterX::drawBoxShadow(const scene2d::RectF& padding_rect, const style::EdgeOffsetF& inset_border_width,
                              const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow)
 {
-    if (box_shadow.inset) {
+    if (box_shadow.inset)
+    {
         // Compute extra padding
         float blur_radius = roundf(box_shadow.blur_radius * dpi_scale_) / dpi_scale_;
         auto rect = scene2d::RectF::fromXYWH(blur_radius,
@@ -242,7 +246,9 @@ void PainterX::drawBoxShadow(const scene2d::RectF& padding_rect, const style::Ed
         SkPath path;
         path.addRRect(dst_rrect);
         canvas_->drawPath(path, paint);
-    } else {
+    }
+    else
+    {
         // Compute extra padding
         float blur_radius = roundf(box_shadow.blur_radius * dpi_scale_) / dpi_scale_;
         auto rect = scene2d::RectF::fromXYWH(blur_radius,
@@ -268,10 +274,13 @@ void PainterX::drawBoxShadow(const scene2d::RectF& padding_rect, const style::Ed
                                                  border_radius,
                                                  box_shadow,
                                                  expand_edges);
-        if (expand_edges.has_value()) {
+        if (expand_edges.has_value())
+        {
             BitmapX bmp(shadow_bmp, dpi_scale_);
             drawBitmapNine(&bmp, expand_edges.value(), dst_rect);
-        } else {
+        }
+        else
+        {
             canvas_->drawImageRect(shadow_bmp.get(), dst_rect, SkSamplingOptions(SkFilterMode::kLinear));
         }
     }
@@ -292,10 +301,10 @@ void PainterX::drawBitmapRect(const graph2d::BitmapInterface* image, const scene
 
 std::shared_ptr<graph2d::BitmapInterface> PainterX::adoptBackendTexture(const GrBackendTexture& tex)
 {
-    auto img = SkImage::MakeFromAdoptedTexture(canvas_->recordingContext(),
-                                               tex,
-                                               kBottomLeft_GrSurfaceOrigin,
-                                               kRGBA_8888_SkColorType, kUnpremul_SkAlphaType);
+    auto img = SkImage::MakeFromTexture(canvas_->recordingContext(),
+                                        tex,
+                                        kBottomLeft_GrSurfaceOrigin,
+                                        kBGRA_8888_SkColorType, kPremul_SkAlphaType, nullptr, nullptr, nullptr);
     return std::make_shared<BitmapX>(img, dpi_scale_);
 }
 
@@ -304,10 +313,12 @@ void PainterX::flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, cons
 {
     SkPaint p;
     p.setAntiAlias(true);
-    if (brush.style() == graph2d::PAINT_STYLE_STROKE) {
+    if (brush.style() == graph2d::PAINT_STYLE_STROKE)
+    {
         p.setStroke(true);
         p.setStrokeWidth(brush.strokeWidth());
-        switch (brush.strokeCap()) {
+        switch (brush.strokeCap())
+        {
         case graph2d::STROKE_CAP_BUTT: p.setStrokeCap(SkPaint::kButt_Cap);
             break;
         case graph2d::STROKE_CAP_ROUND: p.setStrokeCap(SkPaint::kRound_Cap);
@@ -316,7 +327,8 @@ void PainterX::flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, cons
             break;
         default: ;
         }
-        switch (brush.strokeJoin()) {
+        switch (brush.strokeJoin())
+        {
         case graph2d::STROKE_JOIN_MITER: p.setStrokeJoin(SkPaint::kMiter_Join);
             break;
         case graph2d::STROKE_JOIN_ROUND: p.setStrokeJoin(SkPaint::kRound_Join);
@@ -329,14 +341,16 @@ void PainterX::flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, cons
     }
 
     // Background color
-    if (!brush.color().isTransparent()) {
+    if (!brush.color().isTransparent())
+    {
         SkPaint p1(p);
         p1.setColor(brush.color());
         func(p1);
     }
 
     // Background image
-    if (auto img = brush.shader()) {
+    if (auto img = brush.shader())
+    {
         SkPaint p1(p);
         auto ximg = static_cast<const BitmapXInterface*>(img);
         auto ximg_dpi_scale = ximg->dpiScale(dpi_scale_);
@@ -376,7 +390,8 @@ sk_sp<SkImage> PainterX::makeOutsetShadowBitmap(const scene2d::RectF& padding_re
         border_radius.bottom_left.height + inset_border_width.bottom
     });
     if (rect.right - rect.left >= 2 * max_border_radius
-        && rect.bottom - rect.top >= 2 * max_border_radius) {
+        && rect.bottom - rect.top >= 2 * max_border_radius)
+    {
         expand_edges = style::EdgeOffsetF::fromAll(blur_radius + max_border_radius);
         rect = scene2d::RectF::fromXYWH(blur_radius,
                                         blur_radius,
@@ -395,7 +410,8 @@ sk_sp<SkImage> PainterX::makeOutsetShadowBitmap(const scene2d::RectF& padding_re
                                             (blur_radius + rrect.height() + blur_radius) * dpi_scale_,
                                             box_shadow.color.getRgba());
 
-    if (surface_) {
+    if (surface_)
+    {
         auto b = surface_->getCachedBitmap(cache_key);
         if (b)
             return b;
@@ -458,7 +474,8 @@ sk_sp<SkImage> PainterX::makeInsetShadowBitmap(const scene2d::RectF& padding_rec
                                             (blur_radius + rrect.height() + blur_radius) * dpi_scale_,
                                             box_shadow.color.getRgba());
 
-    if (surface_) {
+    if (surface_)
+    {
         auto b = surface_->getCachedBitmap(cache_key);
         if (b)
             return b;

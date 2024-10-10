@@ -5,6 +5,9 @@
 #include "absl/types/span.h"
 #include <unordered_map>
 #include <string>
+#ifdef _WIN32
+#include "src/utils/win/SkWGL.h"
+#endif
 
 namespace xskia {
 
@@ -28,6 +31,12 @@ public:
 		const char* family_name,
 		SkFontStyle style);
 	BitmapSubItemX getBitmap(const std::string& url, float dpi_scale);
+#ifdef _WIN32
+	HGLRC rootGLContext() const
+	{
+		return root_context_ ? root_context_->getGLRC() : nullptr;
+	}
+#endif
 
 private:
 	void loadBitmapToCache(const std::string& name);
@@ -35,6 +44,9 @@ private:
 
 	std::unordered_map<std::string, sk_sp<SkTypeface>> font_cache_;
 	std::unordered_map<std::string, sk_sp<SkImage>> bitmap_cache_;
+#ifdef _WIN32
+	sk_sp<SkWGLPbufferContext> root_context_;
+#endif
 };
 
 }

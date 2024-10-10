@@ -16,6 +16,11 @@ list(APPEND kwui_priv_srcs
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintPathX.h
     ${CMAKE_CURRENT_SOURCE_DIR}/PaintPathX.cpp
 )
+if (WIN32)
+    list(APPEND kwui_priv_srcs
+        ${CMAKE_CURRENT_SOURCE_DIR}/GLWindowContextXWin32.cpp
+    )
+endif()
 
 set(kwui_pub_srcs ${kwui_pub_srcs} PARENT_SCOPE)
 set(kwui_priv_srcs ${kwui_priv_srcs} PARENT_SCOPE)

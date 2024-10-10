@@ -5,3 +5,4 @@
 #include "PaintSurfaceX.h"
 #include "GraphicDeviceX.h"
 #include "BitmapX.h"
+#include "GLWindowContextX.h"
