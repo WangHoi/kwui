@@ -39,6 +39,7 @@ private:
     GrGLint stencil_test_;
     GrGLint active_texture_;
     GrGLint texture2d_;
+    GrGLint sampler_;
     GrGLint current_program_;
 
     struct VertexArrayAttrib

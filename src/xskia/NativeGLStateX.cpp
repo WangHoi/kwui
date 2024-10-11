@@ -14,6 +14,9 @@
 #ifndef GR_GL_BLEND_EQUATION_RGB
 #define GR_GL_BLEND_EQUATION_RGB 0x8009
 #endif
+#ifndef GR_GL_SAMPLER_BINDING
+#define GR_GL_SAMPLER_BINDING 0x8919
+#endif
 
 #define GL_CALL(IFACE, X)                                       \
     do {                                                        \
@@ -79,6 +82,7 @@ ScopedNativeGLStateX::ScopedNativeGLStateX(const GrGLContext& ctx)
     // Textures
     GR_GL_CALL(gl_, GetIntegerv(GR_GL_ACTIVE_TEXTURE, &active_texture_));
     GR_GL_CALL(gl_, GetIntegerv(GR_GL_TEXTURE_BINDING_2D, &texture2d_));
+    GR_GL_CALL(gl_, GetIntegerv(GR_GL_SAMPLER_BINDING, &sampler_));
 
     // Program
     GR_GL_CALL(gl_, GetIntegerv(GR_GL_CURRENT_PROGRAM, &current_program_));
@@ -119,7 +123,6 @@ ScopedNativeGLStateX::~ScopedNativeGLStateX()
 {
     GR_GL_CALL(gl_, BindVertexArray(vao_));
     GR_GL_CALL(gl_, BindBuffer(GR_GL_ARRAY_BUFFER, vbo_));
-    GR_GL_CALL(gl_, BindBuffer(GR_GL_ELEMENT_ARRAY_BUFFER, ibo_));
     GR_GL_CALL(gl_, BindBuffer(GR_GL_ELEMENT_ARRAY_BUFFER, ibo_));
     GR_GL_CALL(gl_, BindFramebuffer(GR_GL_FRAMEBUFFER, fbo_));
 
@@ -165,6 +168,8 @@ ScopedNativeGLStateX::~ScopedNativeGLStateX()
 
     GR_GL_CALL(gl_, ActiveTexture(active_texture_));
     GR_GL_CALL(gl_, BindTexture(GR_GL_TEXTURE_2D, texture2d_));
+    GR_GL_CALL(gl_, BindSampler(active_texture_ - GR_GL_TEXTURE0, sampler_));
+
     GR_GL_CALL(gl_, UseProgram(current_program_));
 
     // struct FreeModule
