@@ -37,6 +37,9 @@ private:
     GrGLint depth_test_;
     GrGLint depth_mask_;
     GrGLint stencil_test_;
+    GrGLint active_texture_;
+    GrGLint texture2d_;
+    GrGLint current_program_;
 
     struct VertexArrayAttrib
     {

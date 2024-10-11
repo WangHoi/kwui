@@ -1,5 +1,6 @@
 #include "NativeGLStateX.h"
 
+#include "../../tests/custom_control/glad/gl.h"
 #include "src/gpu/ganesh/gl/GrGLContext.h"
 #include "src/core/SkLeanWindows.h"
 #include "base/log.h"
@@ -74,6 +75,13 @@ ScopedNativeGLStateX::ScopedNativeGLStateX(const GrGLContext& ctx)
 
     // Stencil
     GR_GL_CALL(gl_, GetIntegerv(GR_GL_STENCIL_TEST, &stencil_test_));
+
+    // Textures
+    GR_GL_CALL(gl_, GetIntegerv(GR_GL_ACTIVE_TEXTURE, &active_texture_));
+    GR_GL_CALL(gl_, GetIntegerv(GR_GL_TEXTURE_BINDING_2D, &texture2d_));
+
+    // Program
+    GR_GL_CALL(gl_, GetIntegerv(GR_GL_CURRENT_PROGRAM, &current_program_));
 
     /*
     struct FreeModule
@@ -154,6 +162,10 @@ ScopedNativeGLStateX::~ScopedNativeGLStateX()
         GR_GL_CALL(gl_, Enable(GR_GL_STENCIL_TEST));
     else
         GR_GL_CALL(gl_, Disable(GR_GL_STENCIL_TEST));
+
+    GR_GL_CALL(gl_, ActiveTexture(active_texture_));
+    GR_GL_CALL(gl_, BindTexture(GR_GL_TEXTURE_2D, texture2d_));
+    GR_GL_CALL(gl_, UseProgram(current_program_));
 
     // struct FreeModule
     // {
