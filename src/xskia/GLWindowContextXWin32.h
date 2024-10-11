@@ -16,6 +16,8 @@ public:
     GLWindowContextXWin32(HWND, const sk_app::DisplayParams&, HGLRC);
     ~GLWindowContextXWin32() override;
 
+    void makeCurrent();
+
     HGLRC glrc() const
     {
         return fHGLRC;
@@ -34,6 +36,7 @@ protected:
 
 private:
     HWND fHWND;
+    HDC fHDC;
     HGLRC fHGLRC;
     HGLRC fSharedHGLRC;
 

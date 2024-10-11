@@ -36,6 +36,7 @@ namespace xskia
 GLWindowContextXWin32::GLWindowContextXWin32(HWND wnd, const DisplayParams& params, HGLRC shared)
     : INHERITED(params)
       , fHWND(wnd)
+      , fHDC(nullptr)
       , fHGLRC(nullptr)
       , fSharedHGLRC(shared)
 {
@@ -49,37 +50,42 @@ GLWindowContextXWin32::~GLWindowContextXWin32()
     this->destroyContext();
 }
 
+void GLWindowContextXWin32::makeCurrent()
+{
+    wglMakeCurrent(fHDC, fHGLRC);
+}
+
 sk_sp<const GrGLInterface> GLWindowContextXWin32::onInitializeContext()
 {
-    HDC dc = GetDC(fHWND);
+    fHDC = GetDC(fHWND);
 
-    fHGLRC = SkCreateWGLContext(dc, fDisplayParams.fMSAASampleCount, false /* deepColor */,
+    fHGLRC = SkCreateWGLContext(fHDC, fDisplayParams.fMSAASampleCount, false /* deepColor */,
                                 kGLPreferCoreProfile_SkWGLContextRequest, fSharedHGLRC);
     if (nullptr == fHGLRC) {
         return nullptr;
     }
 
     SkWGLExtensions extensions;
-    if (extensions.hasExtension(dc, "WGL_EXT_swap_control")) {
+    if (extensions.hasExtension(fHDC, "WGL_EXT_swap_control")) {
         extensions.swapInterval(fDisplayParams.fDisableVsync ? 0 : 1);
     }
 
-    if (wglMakeCurrent(dc, fHGLRC)) {
+    if (wglMakeCurrent(fHDC, fHGLRC)) {
         glClearStencil(0);
         glClearColor(0, 0, 0, 0);
         glStencilMask(0xffffffff);
         glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
         // use DescribePixelFormat to get the stencil and color bit depth.
-        int pixelFormat = GetPixelFormat(dc);
+        int pixelFormat = GetPixelFormat(fHDC);
         PIXELFORMATDESCRIPTOR pfd;
-        DescribePixelFormat(dc, pixelFormat, sizeof(pfd), &pfd);
+        DescribePixelFormat(fHDC, pixelFormat, sizeof(pfd), &pfd);
         fStencilBits = pfd.cStencilBits;
 
         // Get sample count if the MSAA WGL extension is present
-        if (extensions.hasExtension(dc, "WGL_ARB_multisample")) {
+        if (extensions.hasExtension(fHDC, "WGL_ARB_multisample")) {
             static const int kSampleCountAttr = SK_WGL_SAMPLES;
-            extensions.getPixelFormatAttribiv(dc,
+            extensions.getPixelFormatAttribiv(fHDC,
                                               pixelFormat,
                                               0,
                                               1,
@@ -102,13 +108,13 @@ sk_sp<const GrGLInterface> GLWindowContextXWin32::onInitializeContext()
     {
         auto driver = GrGLGetDriverInfo(gl_ifce.get());
         bool srgb_framebuffer = driver.fVersion >= GR_GL_VER(3, 0) ||
-                                extensions.hasExtension(dc, "GL_ARB_framebuffer_sRGB") ||
-                                extensions.hasExtension(dc, "GL_EXT_framebuffer_sRGB");
+                                extensions.hasExtension(fHDC, "GL_ARB_framebuffer_sRGB") ||
+                                extensions.hasExtension(fHDC, "GL_EXT_framebuffer_sRGB");
         if (srgb_framebuffer)
             glEnable(GR_GL_FRAMEBUFFER_SRGB);
 
         bool seamless_cubemap = driver.fVersion >= GR_GL_VER(3, 2) ||
-                                extensions.hasExtension(dc, "GL_ARB_seamless_cube_map");
+                                extensions.hasExtension(fHDC, "GL_ARB_seamless_cube_map");
         if (seamless_cubemap)
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
@@ -119,15 +125,15 @@ sk_sp<const GrGLInterface> GLWindowContextXWin32::onInitializeContext()
 void GLWindowContextXWin32::onDestroyContext()
 {
     wglDeleteContext(fHGLRC);
+    ReleaseDC(fHWND, fHDC);
+    fHDC = NULL;
     fHGLRC = NULL;
 }
 
 
 void GLWindowContextXWin32::onSwapBuffers()
 {
-    HDC dc = GetDC((HWND)fHWND);
-    SwapBuffers(dc);
-    ReleaseDC((HWND)fHWND, dc);
+    SwapBuffers(fHDC);
 }
 
 std::unique_ptr<GLWindowContextXWin32> MakeGLForWin(HWND wnd, const DisplayParams& params, HGLRC shared)

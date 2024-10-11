@@ -680,6 +680,7 @@ void DialogWin32::OnPaint() {
 void DialogWin32::OnResize() {
     LOG(INFO) << "OnResize pixelSize " << pixel_size_.width << "x" << pixel_size_.height << "px";
     ClosePopups();
+    DiscardDeviceResources();
     UpdateBorderAndRenderTarget();
     RequestPaint();
 }

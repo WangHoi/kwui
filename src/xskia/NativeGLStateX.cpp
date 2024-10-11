@@ -48,6 +48,13 @@ ScopedNativeGLStateX::ScopedNativeGLStateX(const GrGLContext& ctx)
     GR_GL_CALL(gl_, GetIntegerv(GR_GL_ELEMENT_ARRAY_BUFFER_BINDING, &ibo_));
     GR_GL_CALL(gl_, GetIntegerv(GR_GL_FRAMEBUFFER_BINDING, &fbo_));
 
+    LOG(INFO) << ">--- beginNativeRendering " << vao_ << ", " << (void*)&ctx;
+
+    if (vao_ == 0)
+    {
+        int kk = 1;
+    }
+
     if (caps_->srgbWriteControl())
     {
         GR_GL_CALL(gl_, GetIntegerv(GR_GL_FRAMEBUFFER_SRGB, &srb_framebuffer_));
@@ -121,6 +128,7 @@ ScopedNativeGLStateX::ScopedNativeGLStateX(const GrGLContext& ctx)
 
 ScopedNativeGLStateX::~ScopedNativeGLStateX()
 {
+    LOG(INFO) << "<--- endNativeRendering " << vao_;
     GR_GL_CALL(gl_, BindVertexArray(vao_));
     GR_GL_CALL(gl_, BindBuffer(GR_GL_ARRAY_BUFFER, vbo_));
     GR_GL_CALL(gl_, BindBuffer(GR_GL_ELEMENT_ARRAY_BUFFER, ibo_));

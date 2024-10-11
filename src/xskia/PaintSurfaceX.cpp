@@ -6,7 +6,10 @@
 #include "GLWindowContextXWin32.h"
 #include "GraphicDeviceX.h"
 #include "PainterX.h"
+#include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrRecordingContext.h"
+#include "src/gpu/ganesh/GrDirectContextPriv.h"
+#include "src/gpu/ganesh/GrGpu.h"
 #ifdef __ANDROID__
 #include "tools/sk_app/android/WindowContextFactory_android.h"
 #endif
@@ -98,7 +101,9 @@ std::unique_ptr<graph2d::PaintContextInterface> PaintSurfaceX::beginPaint()
 #else
     if (!surface_)
         return nullptr;
-    auto ctx = surface_->getCanvas()->recordingContext();
+    auto ctx = (GLWindowContextXWin32*)wnd_context_.get();
+    LOG(INFO) << "PaintSurfaceX::beginPaint " << wnd_context_.get();
+    ctx->makeCurrent();
     return std::make_unique<PainterX>(this, surface_->getCanvas(), config_.dpi_scale);
 #endif
 }
@@ -114,6 +119,7 @@ bool PaintSurfaceX::endPaint()
 		return false;
 	}
 #else
+    LOG(INFO) << "PaintSurfaceX::endPaint " << wnd_context_.get();
     if (!surface_)
         return false;
     surface_->flush();
@@ -225,6 +231,8 @@ void PaintSurfaceX::createSurface()
 
         surface_ = SkSurface::MakeRasterDirect(image_info, pixels, w * 4);
     } else if (config_.surface_type == kwui::PAINT_SURFACE_X_OPENGL) {
+        wnd_context_ = nullptr;
+
         sk_app::DisplayParams params;
         params.fMSAASampleCount = 4;
         // params.fSurfaceProps = SkSurfaceProps(SkSurfaceProps::kDynamicMSAA_Flag, SkPixelGeometry::kUnknown_SkPixelGeometry);

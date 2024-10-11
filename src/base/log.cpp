@@ -77,7 +77,11 @@ void initialize_log(kwui::LogCallback func)
         sink = new CallbackLogSink(func);
     } else {
 #ifndef __ANDROID__
+#ifdef NDEBUG
         sink = new StdErrLogSink;
+#else
+        sink = new DebugOutputLogSink();
+#endif
 #endif
     }
     if (sink) {
