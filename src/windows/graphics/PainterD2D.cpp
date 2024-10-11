@@ -855,6 +855,11 @@ void PainterImpl::drawPath(const graph2d::PaintPathInterface* path, const graph2
     }
 }
 
+graph2d::PaintSurfaceInterface* PainterImpl::surface() const
+{
+    return surface_;
+}
+
 std::shared_ptr<BitmapD2D> PainterImpl::makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
                                                                const style::EdgeOffsetF& inset_border_width,
                                                                const scene2d::CornerRadiusF& border_radius,

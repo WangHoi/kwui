@@ -39,6 +39,11 @@ public:
     sk_sp<SkImage> getCachedBitmap(const std::string& key) const;
     void updateCachedBitmap(const std::string& key, sk_sp<SkImage> bitmap);
 
+    SkSurface* skSurface() const
+    {
+        return surface_.get();
+    }
+
 private:
     PaintSurfaceX(const CreateInfo& config);
     void realizeSurfaceType();

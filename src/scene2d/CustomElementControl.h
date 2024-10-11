@@ -11,6 +11,9 @@
 #include <deque>
 #include <memory>
 #include <functional>
+#if WITH_SKIA
+#include "xskia/NativeGLStateX.h"
+#endif
 
 namespace scene2d::control
 {
@@ -29,7 +32,7 @@ public:
     void onMouseEvent(Node* node, MouseEvent& evt) override;
 
     // Implements `CustomElementPaintContext`
-    void setFillBitmap(void* native_bitmap, float dpi_scale) override;
+    void setFillBitmap(void* native_bitmap, float dpi_scale, void (*release_fn)(void*), void* release_udata) override;
     void drawRoundedRect(float left, float top, float width, float height, float radius) override;
     void drawPath(const kwui::CustomElementPaintPath& path, const kwui::CustomElementPaintBrush& brush) override;
     void drawText(const std::string& text, float x, float y,
@@ -38,6 +41,8 @@ public:
     float getDpiScale() const override;
     void writePixels(const void* pixels, size_t src_width, size_t src_height, size_t src_stride, float dst_x,
                      float dst_y, kwui::ColorType color_type) override;
+    void beginNativeRendering() override;
+    void endNativeRendering() override;
 
 private:
     base::string_atom name_;
@@ -48,6 +53,9 @@ private:
     graph2d::PaintContextInterface* cur_painter_ = nullptr;
     RectF cur_rect_;
     std::shared_ptr<graph2d::BitmapInterface> tmp_fill_bitmap_;
+#if WITH_SKIA
+    std::unique_ptr<xskia::ScopedNativeGLStateX> gl_state_saver_;
+#endif
 };
 
 ControlFactoryFn CustomElementContrlFactory(base::string_atom name, kwui::CustomElementFactoryFn factory_fn);

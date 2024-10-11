@@ -299,12 +299,20 @@ void PainterX::drawBitmapRect(const graph2d::BitmapInterface* image, const scene
                            SkCanvas::kStrict_SrcRectConstraint);
 }
 
-std::shared_ptr<graph2d::BitmapInterface> PainterX::adoptBackendTexture(const GrBackendTexture& tex)
+graph2d::PaintSurfaceInterface* PainterX::surface() const
+{
+    return surface_;
+}
+
+std::shared_ptr<graph2d::BitmapInterface> PainterX::createBitmapFromBackendTexture(
+    const GrBackendTexture& tex,
+    SkImage::TextureReleaseProc releaseP,
+    SkImage::ReleaseContext releaseC)
 {
     auto img = SkImage::MakeFromTexture(canvas_->recordingContext(),
                                         tex,
                                         kBottomLeft_GrSurfaceOrigin,
-                                        kBGRA_8888_SkColorType, kPremul_SkAlphaType, nullptr, nullptr, nullptr);
+                                        kBGRA_8888_SkColorType, kPremul_SkAlphaType, nullptr, releaseP, releaseC);
     return std::make_shared<BitmapX>(img, dpi_scale_);
 }
 

@@ -3,6 +3,11 @@
 #include "graph2d/graph2d.h"
 #include "api/kwui/CustomElementPaint.h"
 #include "api/kwui/CustomElementPaint_private.h"
+#include "include/gpu/GrDirectContext.h"
+#include "include/gpu/GrRecordingContext.h"
+#include "src/gpu/ganesh/GrDirectContextPriv.h"
+#include "src/gpu/ganesh/gl/GrGLGpu.h"
+#include "xskia/PaintSurfaceX.h"
 
 #if WITH_SKIA
 #include <include/gpu/GrBackendSurface.h>
@@ -96,7 +101,7 @@ void CustomElementControl::onMouseEvent(Node* node, MouseEvent& evt)
     }
 }
 
-void CustomElementControl::setFillBitmap(void* native_bitmap, float dpi_scale)
+void CustomElementControl::setFillBitmap(void* native_bitmap, float dpi_scale, void (*release_fn)(void*), void* release_udata)
 {
     if (!cur_painter_)
         return;
@@ -110,7 +115,7 @@ void CustomElementControl::setFillBitmap(void* native_bitmap, float dpi_scale)
     gl_info.fFormat = GR_GL_RGBA8;
     GrBackendTexture tex(pixel_width, pixel_height, GrMipmapped::kNo, gl_info);
     auto xp = (xskia::PainterX*)cur_painter_;
-    tmp_fill_bitmap_ = xp->adoptBackendTexture(tex);
+    tmp_fill_bitmap_ = xp->createBitmapFromBackendTexture(tex, release_fn, release_udata);
 #else
 #ifdef _WIN32
     do {
@@ -192,6 +197,43 @@ void CustomElementControl::writePixels(const void* pixels, size_t src_width, siz
     cur_painter_->drawBitmap(bmp.get(),
                              PointF(dst_x, dst_y),
                              DimensionF(src_width, src_height));
+}
+
+void CustomElementControl::beginNativeRendering()
+{
+    auto d = kwui::Application::instance()->internalData();
+    if (d->renderer_type == kwui::INTERNAL_RENDERER_D3D10_1)
+    {
+
+    }
+    else if (d->renderer_type == kwui::INTERNAL_RENDERER_D3D11_1)
+    {
+
+    }
+    else if (d->renderer_type == kwui::INTERNAL_RENDERER_OPENGL)
+    {
+        auto s = (xskia::PaintSurfaceX*)cur_painter_->surface();
+        auto ctx = (GrDirectContext*)s->skSurface()->recordingContext();
+        auto gpu = (GrGLGpu*)ctx->priv().getGpu();
+        gl_state_saver_ = std::make_unique<xskia::ScopedNativeGLStateX>(gpu->glContext());
+    }
+}
+
+void CustomElementControl::endNativeRendering()
+{
+    auto d = kwui::Application::instance()->internalData();
+    if (d->renderer_type == kwui::INTERNAL_RENDERER_D3D10_1)
+    {
+
+    }
+    else if (d->renderer_type == kwui::INTERNAL_RENDERER_D3D11_1)
+    {
+
+    }
+    else if (d->renderer_type == kwui::INTERNAL_RENDERER_OPENGL)
+    {
+        gl_state_saver_ = nullptr;
+    }
 }
 
 ControlFactoryFn CustomElementContrlFactory(base::string_atom name, kwui::CustomElementFactoryFn factory_fn)

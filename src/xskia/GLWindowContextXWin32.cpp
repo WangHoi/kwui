@@ -11,12 +11,17 @@
 #include "src/utils/win/SkWGL.h"
 #include "tools/sk_app/GLWindowContext.h"
 #include "tools/sk_app/win/WindowContextFactory_win.h"
+#include "src/gpu/ganesh/gl/GrGLUtil.h"
 
 #include <Windows.h>
 #include <GL/gl.h>
 
 using sk_app::GLWindowContext;
 using sk_app::DisplayParams;
+
+#ifndef GL_TEXTURE_CUBE_MAP_SEAMLESS
+#define GL_TEXTURE_CUBE_MAP_SEAMLESS 0x884F
+#endif
 
 #if defined(_M_ARM64)
 
@@ -49,7 +54,7 @@ sk_sp<const GrGLInterface> GLWindowContextXWin32::onInitializeContext()
     HDC dc = GetDC(fHWND);
 
     fHGLRC = SkCreateWGLContext(dc, fDisplayParams.fMSAASampleCount, false /* deepColor */,
-                                kGLPreferCompatibilityProfile_SkWGLContextRequest, fSharedHGLRC);
+                                kGLPreferCoreProfile_SkWGLContextRequest, fSharedHGLRC);
     if (nullptr == fHGLRC) {
         return nullptr;
     }
@@ -57,21 +62,6 @@ sk_sp<const GrGLInterface> GLWindowContextXWin32::onInitializeContext()
     SkWGLExtensions extensions;
     if (extensions.hasExtension(dc, "WGL_EXT_swap_control")) {
         extensions.swapInterval(fDisplayParams.fDisableVsync ? 0 : 1);
-    }
-
-    // Look to see if RenderDoc is attached. If so, re-create the context with a core profile
-    if (wglMakeCurrent(dc, fHGLRC)) {
-        auto iface = GrGLMakeNativeInterface();
-        bool renderDocAttached = iface->hasExtension("GL_EXT_debug_tool");
-        iface.reset(nullptr);
-        if (renderDocAttached) {
-            wglDeleteContext(fHGLRC);
-            fHGLRC = SkCreateWGLContext(dc, fDisplayParams.fMSAASampleCount, false /* deepColor */,
-                                        kGLPreferCoreProfile_SkWGLContextRequest, fSharedHGLRC);
-            if (nullptr == fHGLRC) {
-                return nullptr;
-            }
-        }
     }
 
     if (wglMakeCurrent(dc, fHGLRC)) {
@@ -106,7 +96,23 @@ sk_sp<const GrGLInterface> GLWindowContextXWin32::onInitializeContext()
         fHeight = rect.bottom - rect.top;
         glViewport(0, 0, fWidth, fHeight);
     }
-    return GrGLMakeNativeInterface();
+
+    auto gl_ifce = GrGLMakeNativeInterface();
+    if (gl_ifce)
+    {
+        auto driver = GrGLGetDriverInfo(gl_ifce.get());
+        bool srgb_framebuffer = driver.fVersion >= GR_GL_VER(3, 0) ||
+                                extensions.hasExtension(dc, "GL_ARB_framebuffer_sRGB") ||
+                                extensions.hasExtension(dc, "GL_EXT_framebuffer_sRGB");
+        if (srgb_framebuffer)
+            glEnable(GR_GL_FRAMEBUFFER_SRGB);
+
+        bool seamless_cubemap = driver.fVersion >= GR_GL_VER(3, 2) ||
+                                extensions.hasExtension(dc, "GL_ARB_seamless_cube_map");
+        if (seamless_cubemap)
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
+    return gl_ifce;
 }
 
 

@@ -19,7 +19,7 @@ class GlyphRunInterface;
 namespace graph2d
 {
 class PaintPathInterface;
-
+class PaintSurfaceInterface;
 class GlyphRunInterface;
 class BitmapInterface;
 
@@ -105,5 +105,6 @@ public:
                          const style::Color& background_color,
                          float border_width,
                          const style::Color& border_color) = 0;
+    virtual PaintSurfaceInterface* surface() const = 0;
 };
 }

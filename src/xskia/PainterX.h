@@ -1,5 +1,6 @@
 #include <include/gpu/GrBackendSurface.h>
 #include "graph2d/PaintContextInterface.h"
+#include "graph2d/PaintSurface.h"
 #include "include/core/SkCanvas.h"
 
 namespace xskia
@@ -55,10 +56,14 @@ public:
                        const scene2d::CornerRadiusF& border_radius, const graph2d::BoxShadow& box_shadow) override;
     void drawBitmapRect(const graph2d::BitmapInterface* image, const scene2d::RectF& src_rect,
                         const scene2d::RectF& dst_rect) override;
-    std::shared_ptr<graph2d::BitmapInterface> adoptBackendTexture(const GrBackendTexture& tex);
+    graph2d::PaintSurfaceInterface* surface() const override;
+    std::shared_ptr<graph2d::BitmapInterface> createBitmapFromBackendTexture(const GrBackendTexture& tex,
+                                                                             SkImage::TextureReleaseProc releaseP,
+                                                                             SkImage::ReleaseContext releaseC);
 
 private:
-    void flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, const graph2d::PaintBrush& brush, const scene2d::PointF* offset = nullptr) const;
+    void flattenSkPaint(absl::FunctionRef<void(const SkPaint&)> func, const graph2d::PaintBrush& brush,
+                        const scene2d::PointF* offset = nullptr) const;
     // returns a 1.0 dpi image
     sk_sp<SkImage> makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,
                                           const style::EdgeOffsetF& inset_border_width,

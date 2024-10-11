@@ -6,6 +6,7 @@
 #include "GLWindowContextXWin32.h"
 #include "GraphicDeviceX.h"
 #include "PainterX.h"
+#include "include/gpu/GrRecordingContext.h"
 #ifdef __ANDROID__
 #include "tools/sk_app/android/WindowContextFactory_android.h"
 #endif
@@ -74,10 +75,13 @@ std::unique_ptr<PaintSurfaceX> PaintSurfaceX::create(const CreateInfo& config)
 
 void PaintSurfaceX::resize(int pixel_width, int pixel_height, float dpi_scale)
 {
-    config_.pixel_size.width = pixel_width;
-    config_.pixel_size.height = pixel_height;
-    config_.dpi_scale = dpi_scale;
-    createSurface();
+    if (pixel_width > 0 && pixel_height > 0)
+    {
+        config_.pixel_size.width = pixel_width;
+        config_.pixel_size.height = pixel_height;
+        config_.dpi_scale = dpi_scale;
+        createSurface();
+    }
 }
 
 std::unique_ptr<graph2d::PaintContextInterface> PaintSurfaceX::beginPaint()
@@ -94,6 +98,7 @@ std::unique_ptr<graph2d::PaintContextInterface> PaintSurfaceX::beginPaint()
 #else
     if (!surface_)
         return nullptr;
+    auto ctx = surface_->getCanvas()->recordingContext();
     return std::make_unique<PainterX>(this, surface_->getCanvas(), config_.dpi_scale);
 #endif
 }

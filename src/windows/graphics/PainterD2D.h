@@ -443,6 +443,7 @@ public:
     void drawDRRect(const scene2d::RRectF& outer, const scene2d::RRectF& inner,
                     const graph2d::PaintBrush& brush) override;
     void drawPath(const graph2d::PaintPathInterface* path, const graph2d::PaintBrush& brush) override;
+    graph2d::PaintSurfaceInterface* surface() const override;
 
 private:
     std::shared_ptr<BitmapD2D> makeOutsetShadowBitmap(const scene2d::RectF& padding_rect,

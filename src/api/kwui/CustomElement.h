@@ -50,7 +50,9 @@ class KWUI_EXPORT CustomElementPaintContextInterface
 public:
     virtual ~CustomElementPaintContextInterface() = default;
     // TODO: remove me, use CustomElementPaint
-    virtual void setFillBitmap(void* native_bitmap, float dpi_scale) = 0;
+    virtual void setFillBitmap(void* native_bitmap, float dpi_scale,
+                               void (*release_fn)(void*) = nullptr,
+                               void* release_udata = nullptr) = 0;
     virtual void drawRoundedRect(float left, float top, float width, float height, float radius) = 0;
     virtual void drawPath(const CustomElementPaintPath& path, const CustomElementPaintBrush& brush) = 0;
     virtual void drawText(const std::string& text, float x, float y, const CustomElementPaintBrush& brush,
@@ -60,5 +62,8 @@ public:
                              size_t src_width, size_t src_height, size_t src_stride,
                              float dst_x, float dst_y,
                              ColorType color_type) = 0;
+
+    virtual void beginNativeRendering() = 0;
+    virtual void endNativeRendering() = 0;
 };
 }
