@@ -6,8 +6,7 @@
 #include "GLWindowContextXWin32.h"
 #include "GraphicDeviceX.h"
 #include "PainterX.h"
-#include "include/gpu/GrDirectContext.h"
-#include "include/gpu/GrRecordingContext.h"
+#include "api/kwui/Application_private.h"
 #include "src/gpu/ganesh/GrDirectContextPriv.h"
 #include "src/gpu/ganesh/GrGpu.h"
 #ifdef __ANDROID__
@@ -231,7 +230,13 @@ void PaintSurfaceX::createSurface()
 
         surface_ = SkSurface::MakeRasterDirect(image_info, pixels, w * 4);
     } else if (config_.surface_type == kwui::PAINT_SURFACE_X_OPENGL) {
-        wnd_context_ = nullptr;
+        if (wnd_context_)
+        {
+            auto* gl_wnd_ctx = (GLWindowContextXWin32*)wnd_context_.get();
+            if (kwui::g_render_callback)
+                kwui::g_render_callback(kwui::RENDER_EVENT_GL_CONTEXT_INVALIDATE, gl_wnd_ctx->glrc());
+            wnd_context_ = nullptr;
+        }
 
         sk_app::DisplayParams params;
         params.fMSAASampleCount = 4;

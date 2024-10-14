@@ -11,8 +11,14 @@
 namespace kwui
 {
 typedef void (*LogCallback)(const char* msg);
+typedef void (*RenderCallback)(int event, void* data);
 
-enum InternalRendererType
+enum KWUI_EXPORT RenderEvent
+{
+    RENDER_EVENT_GL_CONTEXT_INVALIDATE,
+};
+
+enum KWUI_EXPORT InternalRendererType
 {
     INTERNAL_RENDERER_UNKNOWN,
     INTERNAL_RENDERER_D3D10_1,
@@ -52,6 +58,7 @@ public:
     static Application* instance();
     static void setPaintSurfaceTypeHint(PaintSurfaceType type);
     static void setLogCallback(LogCallback callback);
+    static void setRenderCallback(RenderCallback callback);
     static bool scriptReloadEnabled();
     static void enableScriptReload(bool enable);
     static bool isMainThread();

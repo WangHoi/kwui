@@ -29,6 +29,7 @@
 namespace kwui
 {
 PaintSurfaceType g_surface_type_hint = PAINT_SURFACE_DEFAULT;
+RenderCallback g_render_callback = nullptr;
 
 static Application* g_app = nullptr;
 static LogCallback g_log_callback = nullptr;
@@ -193,6 +194,11 @@ void Application::setPaintSurfaceTypeHint(PaintSurfaceType type)
 void Application::setLogCallback(LogCallback callback)
 {
     g_log_callback = callback;
+}
+
+void Application::setRenderCallback(RenderCallback callback)
+{
+    g_render_callback = callback;
 }
 
 bool Application::scriptReloadEnabled()
